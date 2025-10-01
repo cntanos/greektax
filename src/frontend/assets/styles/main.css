@@ -437,6 +437,28 @@ header {
   color: #495057;
 }
 
+.results-visualisation {
+  margin: 1.5rem 0;
+  padding: 1rem;
+  border: 1px solid #e9ecef;
+  border-radius: 0.5rem;
+  background: #ffffff;
+  box-shadow: 0 0.5rem 1.25rem rgba(15, 23, 42, 0.04);
+}
+
+.results-visualisation h4 {
+  margin: 0 0 0.75rem;
+}
+
+.results-visualisation p {
+  margin-top: 0;
+  color: #6c757d;
+}
+
+.sankey-chart {
+  min-height: 320px;
+}
+
 .no-print {
   /* Utility class to hide sections in print layout */
 }

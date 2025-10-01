@@ -112,29 +112,29 @@
             ></div>
           </fieldset>
 
-          <fieldset class="fieldset">
+          <div class="section-toggle">
+            <input
+              type="checkbox"
+              id="toggle-employment"
+              data-toggle-target="employment-section"
+            />
+            <label
+              for="toggle-employment"
+              data-i18n-key="fields.toggle-employment"
+            >
+              Include salary income
+            </label>
+          </div>
+          <fieldset
+            class="fieldset"
+            id="employment-section"
+            hidden
+            aria-hidden="true"
+          >
             <legend data-i18n-key="calculator.legends.employment_pension">
               Employment &amp; pension income
             </legend>
-            <div class="section-toggle">
-              <input
-                type="checkbox"
-                id="toggle-employment"
-                data-toggle-target="employment-section"
-              />
-              <label
-                for="toggle-employment"
-                data-i18n-key="fields.toggle-employment"
-              >
-                Include salary income
-              </label>
-            </div>
-            <div
-              class="form-grid double"
-              id="employment-section"
-              hidden
-              aria-hidden="true"
-            >
+            <div class="form-grid double">
               <div class="form-control">
                 <label
                   for="employment-mode"
@@ -879,12 +879,29 @@
 
         <section id="calculation-results" hidden aria-live="polite">
           <h3 data-i18n-key="calculator.results_heading">Results</h3>
+          <div id="sankey-wrapper" class="results-visualisation" hidden>
+            <h4 data-i18n-key="sankey.heading">Income distribution</h4>
+            <p id="sankey-empty" data-i18n-key="sankey.empty">
+              Add taxable income above to see how taxes and net income split
+              across categories.
+            </p>
+            <div
+              id="sankey-chart"
+              class="sankey-chart"
+              role="img"
+              aria-hidden="true"
+            ></div>
+          </div>
           <div class="summary-grid" id="summary-grid"></div>
           <div class="details-list" id="details-list"></div>
         </section>
       </section>
     </main>
 
+    <script
+      src="https://cdn.plot.ly/plotly-2.26.0.min.js"
+      defer
+    ></script>
     <script src="./assets/scripts/main.js" defer></script>
   </body>
 </html>

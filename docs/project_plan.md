@@ -198,15 +198,28 @@ deliver user value in incremental, testable slices.
 - Reworked the detail grid layout for consistent label/value pairing and better
   readability on narrow screens.【F:src/frontend/assets/styles/main.css†L400-L432】
 
-## Sprint 16 (Current)
+## Sprint 16 (Completed)
+
+**Highlights**
+- Delivered a Plotly-powered Sankey diagram at the top of the results view so
+  users can immediately see how each income stream divides between taxes,
+  contributions, and take-home pay.
+- Reworked the employment and pension toggle so the entire section now hides in
+  tandem with the checkbox, keeping the form consistent with other optional
+  income categories.
+- Ensured language changes refresh the latest calculation output and year
+  guidance without a full page reload, preserving localisation accuracy during
+  review sessions.
+
+## Sprint 17 (Current)
 
 **Objectives**
 - Integrate the configuration validation tooling into contributor workflows and
   continuous integration to surface actionable feedback early.
 - Refine lightweight, privacy-preserving scenario export concepts that extend
   local persistence without introducing server storage.
-- Plan moderated usability reviews focused on localisation guidance and the
-  refreshed summary layout to drive the next wave of refinements.
+- Plan moderated usability reviews focused on localisation guidance and the new
+  results visualisations to drive the next wave of refinements.
 
 **Planned Deliverables**
 - CI-ready configuration validation checks plus contributor documentation on

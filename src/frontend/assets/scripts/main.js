@@ -72,6 +72,16 @@ const UI_MESSAGES = {
         deductions: "Deductions",
       },
     },
+    sankey: {
+      heading: "Income distribution",
+      empty:
+        "Add taxable income above to see how taxes, contributions, and take-home pay split across categories.",
+      taxes: "Taxes",
+      contributions: "Contributions & expenses",
+      net: "Net income",
+      aria_label:
+        "Sankey diagram showing how gross income flows into taxes, contributions, and net amounts.",
+    },
     forms: {
       no_investment_categories: "No investment categories configured for this year.",
       freelance: {
@@ -278,6 +288,16 @@ const UI_MESSAGES = {
         obligations: "Πρόσθετες υποχρεώσεις",
         deductions: "Εκπτώσεις",
       },
+    },
+    sankey: {
+      heading: "Κατανομή εισοδήματος",
+      empty:
+        "Προσθέστε φορολογητέο εισόδημα για να δείτε πώς κατανέμονται οι φόροι, οι εισφορές και το καθαρό εισόδημα ανά κατηγορία.",
+      taxes: "Φόροι",
+      contributions: "Εισφορές & δαπάνες",
+      net: "Καθαρό εισόδημα",
+      aria_label:
+        "Διάγραμμα Sankey που δείχνει τη ροή του ακαθάριστου εισοδήματος σε φόρους, εισφορές και καθαρά ποσά.",
     },
     forms: {
       no_investment_categories:
@@ -529,6 +549,9 @@ const toggleObligations = document.getElementById("toggle-obligations");
 const calculatorForm = document.getElementById("calculator-form");
 const calculatorStatus = document.getElementById("calculator-status");
 const resultsSection = document.getElementById("calculation-results");
+const sankeyWrapper = document.getElementById("sankey-wrapper");
+const sankeyChart = document.getElementById("sankey-chart");
+const sankeyEmptyState = document.getElementById("sankey-empty");
 const summaryGrid = document.getElementById("summary-grid");
 const detailsList = document.getElementById("details-list");
 const downloadButton = document.getElementById("download-button");
@@ -724,6 +747,7 @@ function applyLocale(locale) {
   persistLocale(locale);
   document.documentElement.lang = locale === "el" ? "el" : "en";
   localiseStaticText();
+  renderYearWarnings(currentYearMetadata);
   if (localeSelect) {
     localeSelect.value = locale;
   }
@@ -733,6 +757,9 @@ function applyLocale(locale) {
   refreshInvestmentCategories();
   refreshDeductionHints();
   populateFreelanceMetadata(currentFreelanceMetadata);
+  if (lastCalculation) {
+    renderCalculation(lastCalculation);
+  }
 }
 
 function localiseStaticText() {
@@ -2049,6 +2076,189 @@ function buildCalculationPayload() {
   return payload;
 }
 
+function renderSankey(result) {
+  if (!sankeyWrapper || !sankeyChart) {
+    return;
+  }
+
+  if (typeof Plotly === "undefined") {
+    sankeyWrapper.hidden = true;
+    return;
+  }
+
+  const details = Array.isArray(result?.details) ? result.details : [];
+  const nodeLabels = [];
+  const nodeIndex = new Map();
+  const sources = [];
+  const targets = [];
+  const values = [];
+  const linkLabels = [];
+
+  const ensureNode = (label) => {
+    const resolved = label || "";
+    if (nodeIndex.has(resolved)) {
+      return nodeIndex.get(resolved);
+    }
+    const index = nodeLabels.length;
+    nodeLabels.push(resolved);
+    nodeIndex.set(resolved, index);
+    return index;
+  };
+
+  const toChartValue = (value) => {
+    const number = Number.parseFloat(value ?? 0);
+    if (!Number.isFinite(number) || number <= 0) {
+      return 0;
+    }
+    return Math.round(number * 100) / 100;
+  };
+
+  const addLink = (source, target, value, label) => {
+    const chartValue = toChartValue(value);
+    if (!chartValue) {
+      return;
+    }
+    sources.push(source);
+    targets.push(target);
+    values.push(chartValue);
+    linkLabels.push(label);
+  };
+
+  let taxesIndex = null;
+  let contributionsIndex = null;
+  let netIndex = null;
+
+  const getTaxesIndex = () => {
+    if (taxesIndex === null) {
+      taxesIndex = ensureNode(t("sankey.taxes"));
+    }
+    return taxesIndex;
+  };
+
+  const getContributionsIndex = () => {
+    if (contributionsIndex === null) {
+      contributionsIndex = ensureNode(t("sankey.contributions"));
+    }
+    return contributionsIndex;
+  };
+
+  const getNetIndex = () => {
+    if (netIndex === null) {
+      netIndex = ensureNode(t("sankey.net"));
+    }
+    return netIndex;
+  };
+
+  details.forEach((detail) => {
+    if (!detail) {
+      return;
+    }
+
+    const grossRaw = Number.parseFloat(detail.gross_income ?? 0);
+    if (!Number.isFinite(grossRaw) || grossRaw <= 0) {
+      return;
+    }
+
+    const sourceLabel = detail.label || detail.category;
+    if (!sourceLabel) {
+      return;
+    }
+
+    const sourceIndex = ensureNode(sourceLabel);
+
+    const taxRaw = Math.max(Number.parseFloat(detail.total_tax ?? detail.tax ?? 0), 0);
+    let netRaw = Math.max(Number.parseFloat(detail.net_income ?? 0), 0);
+    let contributionsRaw = Math.max(grossRaw - taxRaw - netRaw, 0);
+
+    const allocated = taxRaw + netRaw + contributionsRaw;
+    const difference = grossRaw - allocated;
+    if (difference > 0.01) {
+      netRaw += difference;
+    } else if (difference < -0.01) {
+      const adjustment = Math.min(netRaw, Math.abs(difference));
+      netRaw -= adjustment;
+      const remaining = difference + adjustment;
+      if (remaining < -0.01) {
+        const contributionAdjustment = Math.min(contributionsRaw, Math.abs(remaining));
+        contributionsRaw -= contributionAdjustment;
+      }
+    }
+
+    addLink(
+      sourceIndex,
+      getTaxesIndex(),
+      taxRaw,
+      `${sourceLabel} → ${t("sankey.taxes")}: ${formatCurrency(taxRaw)}`,
+    );
+
+    if (contributionsRaw > 0.005) {
+      addLink(
+        sourceIndex,
+        getContributionsIndex(),
+        contributionsRaw,
+        `${sourceLabel} → ${t("sankey.contributions")}: ${formatCurrency(contributionsRaw)}`,
+      );
+    }
+
+    if (netRaw > 0.005) {
+      addLink(
+        sourceIndex,
+        getNetIndex(),
+        netRaw,
+        `${sourceLabel} → ${t("sankey.net")}: ${formatCurrency(netRaw)}`,
+      );
+    }
+  });
+
+  if (!values.length) {
+    if (sankeyEmptyState) {
+      sankeyEmptyState.hidden = false;
+    }
+    sankeyWrapper.hidden = false;
+    sankeyChart.setAttribute("aria-hidden", "true");
+    sankeyChart.removeAttribute("aria-label");
+    Plotly.purge(sankeyChart);
+    return;
+  }
+
+  if (sankeyEmptyState) {
+    sankeyEmptyState.hidden = true;
+  }
+
+  const data = [
+    {
+      type: "sankey",
+      orientation: "h",
+      node: {
+        pad: 16,
+        thickness: 18,
+        label: nodeLabels,
+        line: { color: "#dee2e6", width: 0.5 },
+        color: nodeLabels.map(() => "#0d6efd1a"),
+      },
+      link: {
+        source: sources,
+        target: targets,
+        value: values,
+        label: linkLabels,
+        hovertemplate: "%{label}<extra></extra>",
+      },
+    },
+  ];
+
+  const layout = {
+    margin: { l: 10, r: 10, t: 10, b: 10 },
+    paper_bgcolor: "rgba(0,0,0,0)",
+    plot_bgcolor: "rgba(0,0,0,0)",
+    font: { size: 12 },
+  };
+
+  Plotly.react(sankeyChart, data, layout, { displayModeBar: false, responsive: true });
+  sankeyWrapper.hidden = false;
+  sankeyChart.setAttribute("aria-hidden", "false");
+  sankeyChart.setAttribute("aria-label", t("sankey.aria_label"));
+}
+
 function renderSummary(summary) {
   if (!summaryGrid) {
     return;
@@ -2252,6 +2462,7 @@ function renderCalculation(result) {
   downloadCsvButton?.removeAttribute("disabled");
   printButton?.removeAttribute("disabled");
 
+  renderSankey(result);
   renderSummary(result.summary || {});
   renderDetails(result.details || []);
 
