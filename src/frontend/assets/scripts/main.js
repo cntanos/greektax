@@ -6,35 +6,39 @@
  * returned by the Flask back-end.
  */
 
-const LOCAL_API_BASE = "http://127.0.0.1:5000/api/v1";
-const DEPLOYED_API_BASE = "https://cntanos.pythonanywhere.com/api/v1";
+const REMOTE_API_BASE = "https://cntanos.pythonanywhere.com/api/v1";
+const LOCAL_API_BASE = "/api/v1";
 const API_BASE = (() => {
-  if (typeof window === "undefined") {
-    return DEPLOYED_API_BASE;
-  }
+  const { protocol, hostname } = window.location;
+  const normalizedHost = (hostname || "").toLowerCase();
 
-  const host = window.location.hostname || "";
+  const isLoopbackHost =
+    normalizedHost === "localhost" ||
+    normalizedHost === "127.0.0.1" ||
+    normalizedHost === "0.0.0.0";
 
-  const LOCAL_HOSTS = new Set([
-    "",
-    "localhost",
-    "127.0.0.1",
-    "0.0.0.0",
-    "[::1]",
-  ]);
+  const isPrivateNetworkIp =
+    /^10\./.test(normalizedHost) ||
+    /^192\.168\./.test(normalizedHost) ||
+    /^172\.(1[6-9]|2\d|3[0-1])\./.test(normalizedHost);
 
-  const isPrivateNetwork = /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(host);
+  const isLocalHostname =
+    isLoopbackHost ||
+    isPrivateNetworkIp ||
+    normalizedHost.endsWith(".local") ||
+    protocol === "file:";
 
-  if (
-    window.location.protocol === "file:" ||
-    LOCAL_HOSTS.has(host) ||
-    host.endsWith(".local") ||
-    isPrivateNetwork
-  ) {
+  if (isLocalHostname) {
     return LOCAL_API_BASE;
   }
 
-  return DEPLOYED_API_BASE;
+  if (normalizedHost.endsWith("pythonanywhere.com")) {
+    return REMOTE_API_BASE;
+  }
+
+  // NOTE: Preserve automatic switching between the local API during development
+  // and the deployed remote backend at https://cntanos.pythonanywhere.com/api/v1.
+  return REMOTE_API_BASE;
 })();
 const CALCULATIONS_ENDPOINT = `${API_BASE}/calculations`;
 const CONFIG_YEARS_ENDPOINT = `${API_BASE}/config/years`;
