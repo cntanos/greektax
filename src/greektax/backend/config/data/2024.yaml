@@ -5,6 +5,14 @@ meta:
   notes: "Initial 2024 configuration with employment and freelance coverage"
 income:
   employment:
+    payroll:
+      allowed_payments_per_year:
+        - 14
+        - 12
+      default_payments_per_year: 14
+    contributions:
+      employee_rate: 0.1387
+      employer_rate: 0.2243
     tax_brackets:
       - upper: 10000
         rate: 0.09
@@ -23,6 +31,13 @@ income:
         "3": 1120
       incremental_amount_per_child: 220
   pension:
+    payroll:
+      allowed_payments_per_year:
+        - 14
+      default_payments_per_year: 14
+    contributions:
+      employee_rate: 0.0
+      employer_rate: 0.0
     tax_brackets:
       - upper: 10000
         rate: 0.09

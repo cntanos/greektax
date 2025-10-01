@@ -4,8 +4,12 @@
     "payload": {
       "year": 2024,
       "locale": "en",
-      "dependents": {"children": 0},
-      "employment": {"gross_income": 20000},
+      "dependents": {
+        "children": 0
+      },
+      "employment": {
+        "gross_income": 20000
+      },
       "freelance": {
         "gross_revenue": 18000,
         "deductible_expenses": 4000,
@@ -16,7 +20,7 @@
       "summary": {
         "income_total": 34000.0,
         "tax_total": 6133.0,
-        "net_income": 24867.0,
+        "net_income": 22093.0,
         "average_monthly_tax": 511.08
       },
       "details": {
@@ -34,8 +38,12 @@
     "name": "pension_rental_investment_obligations",
     "payload": {
       "year": 2024,
-      "dependents": {"children": 2},
-      "pension": {"gross_income": 18000},
+      "dependents": {
+        "children": 2
+      },
+      "pension": {
+        "gross_income": 18000
+      },
       "rental": {
         "gross_income": 15000,
         "deductible_expenses": 2000
@@ -145,7 +153,7 @@
       "summary": {
         "income_total": 25900.0,
         "tax_total": 3975.0,
-        "net_income": 21925.0,
+        "net_income": 18332.67,
         "average_monthly_tax": 331.25
       },
       "details": {
@@ -155,7 +163,7 @@
           "total_tax": 3975.0,
           "payments_per_year": 14,
           "gross_income_per_payment": 1850.0,
-          "net_income_per_payment": 1566.07
+          "net_income_per_payment": 1309.48
         }
       }
     }
@@ -164,14 +172,18 @@
     "name": "employment_large_family_credit_allocation",
     "payload": {
       "year": 2024,
-      "dependents": {"children": 3},
-      "employment": {"gross_income": 42000}
+      "dependents": {
+        "children": 3
+      },
+      "employment": {
+        "gross_income": 42000
+      }
     },
     "expectations": {
       "summary": {
         "income_total": 42000.0,
         "tax_total": 9260.0,
-        "net_income": 32740.0,
+        "net_income": 26914.6,
         "average_monthly_tax": 771.67
       },
       "details": {
@@ -187,15 +199,21 @@
     "name": "employment_pension_credit_share",
     "payload": {
       "year": 2024,
-      "dependents": {"children": 1},
-      "employment": {"gross_income": 22000},
-      "pension": {"gross_income": 8000}
+      "dependents": {
+        "children": 1
+      },
+      "employment": {
+        "gross_income": 22000
+      },
+      "pension": {
+        "gross_income": 8000
+      }
     },
     "expectations": {
       "summary": {
         "income_total": 30000.0,
         "tax_total": 5090.0,
-        "net_income": 24910.0,
+        "net_income": 21858.6,
         "average_monthly_tax": 424.17
       },
       "details": {

@@ -85,6 +85,10 @@ const UI_MESSAGES = {
       payments_per_year: "Payments per year",
       gross_income_per_payment: "Gross per payment",
       net_income_per_payment: "Net per payment",
+      employee_contributions: "Employee contributions",
+      employer_contributions: "Employer contributions",
+      employee_contributions_per_payment: "Employee contributions per payment",
+      employer_contributions_per_payment: "Employer contributions per payment",
       breakdown: "Breakdown",
     },
     fields: {
@@ -93,7 +97,18 @@ const UI_MESSAGES = {
       "employment-income": "Employment gross income (€)",
       "employment-monthly-income": "Monthly gross income (€)",
       "employment-payments": "Salary payments per year",
+      "employment-mode": "Salary input type",
+      "employment-mode-gross": "Enter gross amounts",
+      "employment-mode-net": "Enter net amounts",
+      "employment-net-income": "Annual net income (€)",
+      "employment-net-monthly-income": "Net income per payment (€)",
       "pension-income": "Pension gross income (€)",
+      "pension-mode": "Pension input type",
+      "pension-mode-gross": "Enter gross amounts",
+      "pension-mode-net": "Enter net amounts",
+      "pension-payments": "Pension payments per year",
+      "pension-net-income": "Annual net pension (€)",
+      "pension-net-monthly-income": "Net pension per payment (€)",
       "freelance-revenue": "Freelance gross revenue (€)",
       "freelance-expenses": "Freelance deductible expenses (€)",
       "freelance-contributions": "Mandatory social contributions (€)",
@@ -183,6 +198,10 @@ const UI_MESSAGES = {
       payments_per_year: "Καταβολές ανά έτος",
       gross_income_per_payment: "Ακαθάριστο ανά καταβολή",
       net_income_per_payment: "Καθαρό ανά καταβολή",
+      employee_contributions: "Εισφορές εργαζομένου",
+      employer_contributions: "Εισφορές εργοδότη",
+      employee_contributions_per_payment: "Εισφορές εργαζομένου ανά καταβολή",
+      employer_contributions_per_payment: "Εισφορές εργοδότη ανά καταβολή",
       breakdown: "Ανάλυση",
     },
     fields: {
@@ -191,7 +210,18 @@ const UI_MESSAGES = {
       "employment-income": "Ακαθάριστο εισόδημα μισθωτών (€)",
       "employment-monthly-income": "Μηνιαίο ακαθάριστο εισόδημα (€)",
       "employment-payments": "Μισθολογικές καταβολές ανά έτος",
+      "employment-mode": "Τύπος εισαγωγής μισθού",
+      "employment-mode-gross": "Καταχώρηση ακαθάριστων ποσών",
+      "employment-mode-net": "Καταχώρηση καθαρών ποσών",
+      "employment-net-income": "Ετήσιο καθαρό εισόδημα (€)",
+      "employment-net-monthly-income": "Καθαρό ποσό ανά καταβολή (€)",
       "pension-income": "Ακαθάριστο εισόδημα συντάξεων (€)",
+      "pension-mode": "Τύπος εισαγωγής σύνταξης",
+      "pension-mode-gross": "Καταχώρηση ακαθάριστων ποσών",
+      "pension-mode-net": "Καταχώρηση καθαρών ποσών",
+      "pension-payments": "Καταβολές συντάξεων ανά έτος",
+      "pension-net-income": "Ετήσιο καθαρό ποσό σύνταξης (€)",
+      "pension-net-monthly-income": "Καθαρό ποσό σύνταξης ανά καταβολή (€)",
       "freelance-revenue": "Ακαθάριστα έσοδα ελευθέρου επαγγελματία (€)",
       "freelance-expenses": "Εκπιπτόμενες δαπάνες ελευθέρου επαγγελματία (€)",
       "freelance-contributions": "Υποχρεωτικές εισφορές (€)",
@@ -216,6 +246,10 @@ const UI_MESSAGES = {
 };
 
 let currentLocale = "en";
+const yearMetadataByYear = new Map();
+let currentYearMetadata = null;
+let currentEmploymentMode = "gross";
+let currentPensionMode = "gross";
 let currentInvestmentCategories = [];
 let currentDeductionHints = [];
 let dynamicFieldLabels = {};
@@ -229,12 +263,25 @@ const previewJson = document.getElementById("preview-json");
 
 const yearSelect = document.getElementById("year-select");
 const childrenInput = document.getElementById("children-input");
+const employmentModeSelect = document.getElementById("employment-mode");
 const employmentIncomeInput = document.getElementById("employment-income");
 const employmentMonthlyIncomeInput = document.getElementById(
   "employment-monthly-income",
 );
+const employmentNetIncomeInput = document.getElementById(
+  "employment-net-income",
+);
+const employmentNetMonthlyIncomeInput = document.getElementById(
+  "employment-net-monthly-income",
+);
 const employmentPaymentsInput = document.getElementById("employment-payments");
+const pensionModeSelect = document.getElementById("pension-mode");
+const pensionPaymentsInput = document.getElementById("pension-payments");
 const pensionIncomeInput = document.getElementById("pension-income");
+const pensionNetIncomeInput = document.getElementById("pension-net-income");
+const pensionNetMonthlyIncomeInput = document.getElementById(
+  "pension-net-monthly-income",
+);
 const freelanceRevenueInput = document.getElementById("freelance-revenue");
 const freelanceExpensesInput = document.getElementById("freelance-expenses");
 const freelanceContributionsInput = document.getElementById(
@@ -449,6 +496,126 @@ function formatPercent(value) {
   return formatter.format(value);
 }
 
+function isInputVisible(input) {
+  if (!input) {
+    return false;
+  }
+  if (input.hidden) {
+    return false;
+  }
+  const control = input.closest(".form-control");
+  if (control && control.hidden) {
+    return false;
+  }
+  return true;
+}
+
+function updateSectionMode(section, mode) {
+  const desiredMode = mode === "net" ? "net" : "gross";
+  document
+    .querySelectorAll(`.form-control[data-section="${section}"]`)
+    .forEach((control) => {
+      const controlMode = control.getAttribute("data-mode");
+      if (!controlMode) {
+        return;
+      }
+      const isVisible = controlMode === desiredMode;
+      control.hidden = !isVisible;
+      if (!isVisible) {
+        const input = control.querySelector("input");
+        if (input) {
+          clearFieldError(input);
+        }
+      }
+    });
+}
+
+function updateEmploymentMode(mode) {
+  currentEmploymentMode = mode === "net" ? "net" : "gross";
+  if (employmentModeSelect) {
+    employmentModeSelect.value = currentEmploymentMode;
+  }
+  updateSectionMode("employment", currentEmploymentMode);
+}
+
+function updatePensionMode(mode) {
+  currentPensionMode = mode === "net" ? "net" : "gross";
+  if (pensionModeSelect) {
+    pensionModeSelect.value = currentPensionMode;
+  }
+  updateSectionMode("pension", currentPensionMode);
+}
+
+function populatePayrollSelect(select, payrollConfig) {
+  if (!select) {
+    return;
+  }
+
+  select.innerHTML = "";
+  if (!payrollConfig) {
+    select.value = "";
+    select.disabled = true;
+    return;
+  }
+
+  const { allowed_payments_per_year: allowed, default_payments_per_year: fallback } =
+    payrollConfig;
+  if (!Array.isArray(allowed) || allowed.length === 0) {
+    select.value = "";
+    select.disabled = true;
+    return;
+  }
+
+  allowed.forEach((value) => {
+    const option = document.createElement("option");
+    option.value = String(value);
+    option.textContent = String(value);
+    select.appendChild(option);
+  });
+
+  const defaultValue = fallback || allowed[allowed.length - 1];
+  select.value = String(defaultValue);
+  select.disabled = false;
+}
+
+function getPayrollMetadata(section) {
+  if (!currentYearMetadata) {
+    return null;
+  }
+  if (section === "employment") {
+    return currentYearMetadata.employment || null;
+  }
+  if (section === "pension") {
+    return currentYearMetadata.pension || null;
+  }
+  return null;
+}
+
+function resolvePaymentsValue(select, section) {
+  const raw = Number.parseInt(select?.value ?? "", 10);
+  if (Number.isFinite(raw) && raw > 0) {
+    return raw;
+  }
+  const metadata = getPayrollMetadata(section);
+  const fallback = metadata?.payroll?.default_payments_per_year;
+  return typeof fallback === "number" && fallback > 0 ? fallback : undefined;
+}
+
+function applyYearMetadata(year) {
+  currentYearMetadata = yearMetadataByYear.get(year) || null;
+  populatePayrollSelect(
+    employmentPaymentsInput,
+    currentYearMetadata?.employment?.payroll || null,
+  );
+  populatePayrollSelect(
+    pensionPaymentsInput,
+    currentYearMetadata?.pension?.payroll || null,
+  );
+
+  updateEmploymentMode(currentEmploymentMode);
+  updatePensionMode(currentPensionMode);
+}
+
 function buildDownloadFilename(extension) {
   const year = lastCalculation?.meta?.year ?? "summary";
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
@@ -588,16 +755,25 @@ async function loadYearOptions() {
     const payload = await response.json();
     const years = Array.isArray(payload.years) ? payload.years : [];
     yearSelect.innerHTML = "";
+    yearMetadataByYear.clear();
 
     years.forEach((entry) => {
       const option = document.createElement("option");
       option.value = String(entry.year);
       option.textContent = `${entry.year}`;
       yearSelect.appendChild(option);
+      if (entry && typeof entry.year === "number") {
+        yearMetadataByYear.set(entry.year, entry);
+      }
     });
 
     if (payload.default_year) {
       yearSelect.value = String(payload.default_year);
+    }
+
+    const selectedYear = Number.parseInt(yearSelect.value ?? "", 10);
+    if (Number.isFinite(selectedYear)) {
+      applyYearMetadata(selectedYear);
     }
 
     setCalculatorStatus(t("status.ready"));
@@ -790,6 +966,10 @@ function validateNumberInput(input) {
     return true;
   }
 
+  if (!isInputVisible(input)) {
+    return true;
+  }
+
   clearFieldError(input);
 
   const rawValue = (input.value ?? "").trim();
@@ -854,6 +1034,9 @@ function validateForm() {
   const inputs = calculatorForm.querySelectorAll('input[type="number"]');
   let isValid = true;
   inputs.forEach((input) => {
+    if (!isInputVisible(input)) {
+      return;
+    }
     if (!validateNumberInput(input)) {
       isValid = false;
     }
@@ -881,6 +1064,9 @@ function readNumber(input) {
   if (!input) {
     return 0;
   }
+  if (!isInputVisible(input)) {
+    return 0;
+  }
   const normalised = (input.value ?? "0").toString().replace(",", ".");
   const value = Number.parseFloat(normalised);
   if (!Number.isFinite(value) || value < 0) {
@@ -898,8 +1084,18 @@ function buildCalculationPayload() {
     payload.dependents = { children };
   }
 
-  if (employmentIncomeInput || employmentMonthlyIncomeInput) {
-    const employmentPayload = {};
+  const employmentPayload = {};
+  const employmentMode = employmentModeSelect?.value || currentEmploymentMode;
+  if (employmentMode === "net") {
+    const netIncome = readNumber(employmentNetIncomeInput);
+    if (netIncome > 0) {
+      employmentPayload.net_income = netIncome;
+    }
+    const netMonthly = readNumber(employmentNetMonthlyIncomeInput);
+    if (netMonthly > 0) {
+      employmentPayload.net_monthly_income = netMonthly;
+    }
+  } else {
     const grossIncome = readNumber(employmentIncomeInput);
     if (grossIncome > 0) {
       employmentPayload.gross_income = grossIncome;
@@ -909,21 +1105,56 @@ function buildCalculationPayload() {
     if (monthlyIncome > 0) {
       employmentPayload.monthly_income = monthlyIncome;
     }
+  }
 
-    const paymentsValue = Number.parseInt(employmentPaymentsInput?.value ?? "", 10);
-    if (Number.isFinite(paymentsValue) && paymentsValue > 0) {
-      employmentPayload.payments_per_year = paymentsValue;
+  const employmentPayments = resolvePaymentsValue(
+    employmentPaymentsInput,
+    "employment",
+  );
+  if (
+    employmentPayments &&
+    (employmentPayload.net_income !== undefined ||
+      employmentPayload.net_monthly_income !== undefined ||
+      employmentPayload.gross_income !== undefined ||
+      employmentPayload.monthly_income !== undefined)
+  ) {
+    employmentPayload.payments_per_year = employmentPayments;
+  }
+
+  if (Object.keys(employmentPayload).length > 0) {
+    payload.employment = employmentPayload;
+  }
+
+  const pensionPayload = {};
+  const pensionMode = pensionModeSelect?.value || currentPensionMode;
+  if (pensionMode === "net") {
+    const netIncome = readNumber(pensionNetIncomeInput);
+    if (netIncome > 0) {
+      pensionPayload.net_income = netIncome;
     }
-
-    if (Object.keys(employmentPayload).length > 0) {
-      payload.employment = employmentPayload;
+    const netMonthly = readNumber(pensionNetMonthlyIncomeInput);
+    if (netMonthly > 0) {
+      pensionPayload.net_monthly_income = netMonthly;
+    }
+  } else {
+    const pensionGross = readNumber(pensionIncomeInput);
+    if (pensionGross > 0) {
+      pensionPayload.gross_income = pensionGross;
     }
   }
 
-  if (pensionIncomeInput) {
-    payload.pension = {
-      gross_income: readNumber(pensionIncomeInput),
-    };
+  const pensionPayments = resolvePaymentsValue(pensionPaymentsInput, "pension");
+  if (
+    pensionPayments &&
+    (pensionPayload.net_income !== undefined ||
+      pensionPayload.net_monthly_income !== undefined ||
+      pensionPayload.gross_income !== undefined)
+  ) {
+    pensionPayload.payments_per_year = pensionPayments;
+  }
+
+  if (Object.keys(pensionPayload).length > 0) {
+    payload.pension = pensionPayload;
   }
 
   if (freelanceRevenueInput || freelanceContributionsInput) {
@@ -1023,7 +1254,12 @@ function renderDetailCard(detail) {
     "gross_income",
     "monthly_gross_income",
     "payments_per_year",
+    "gross_income_per_payment",
     "deductible_contributions",
+    "employee_contributions",
+    "employee_contributions_per_payment",
+    "employer_contributions",
+    "employer_contributions_per_payment",
     "deductible_expenses",
     "taxable_income",
     "tax_before_credits",
@@ -1038,8 +1274,20 @@ function renderDetailCard(detail) {
     gross_income: detailLabels.gross_income || "Gross income",
     monthly_gross_income: detailLabels.monthly_gross_income || "Monthly gross income",
     payments_per_year: detailLabels.payments_per_year || "Payments per year",
+    gross_income_per_payment:
+      detailLabels.gross_income_per_payment || "Gross per payment",
     deductible_contributions:
       detailLabels.deductible_contributions || "Mandatory contributions",
+    employee_contributions:
+      detailLabels.employee_contributions || "Employee contributions",
+    employee_contributions_per_payment:
+      detailLabels.employee_contributions_per_payment ||
+      "Employee contributions per payment",
+    employer_contributions:
+      detailLabels.employer_contributions || "Employer contributions",
+    employer_contributions_per_payment:
+      detailLabels.employer_contributions_per_payment ||
+      "Employer contributions per payment",
     deductible_expenses:
       detailLabels.deductible_expenses || "Deductible expenses",
     taxable_income: detailLabels.taxable_income || "Taxable income",
@@ -1267,6 +1515,10 @@ function downloadCsvSummary() {
     "payments_per_year",
     "gross_income_per_payment",
     "deductible_contributions",
+    "employee_contributions",
+    "employee_contributions_per_payment",
+    "employer_contributions",
+    "employer_contributions_per_payment",
     "deductible_expenses",
     "taxable_income",
     "tax_before_credits",
@@ -1363,10 +1615,36 @@ function initialiseCalculator() {
     return;
   }
 
+  if (employmentModeSelect) {
+    currentEmploymentMode = employmentModeSelect.value || "gross";
+    updateEmploymentMode(currentEmploymentMode);
+  }
+
+  if (pensionModeSelect) {
+    currentPensionMode = pensionModeSelect.value || "gross";
+    updatePensionMode(currentPensionMode);
+  }
+
   calculatorForm.addEventListener("submit", submitCalculation);
   yearSelect.addEventListener("change", () => {
+    const selectedYear = Number.parseInt(yearSelect.value ?? "", 10);
+    if (Number.isFinite(selectedYear)) {
+      applyYearMetadata(selectedYear);
+    }
     refreshInvestmentCategories();
     refreshDeductionHints();
+  });
+
+  employmentModeSelect?.addEventListener("change", (event) => {
+    const target = event.target;
+    const value = typeof target?.value === "string" ? target.value : "gross";
+    updateEmploymentMode(value);
+  });
+
+  pensionModeSelect?.addEventListener("change", (event) => {
+    const target = event.target;
+    const value = typeof target?.value === "string" ? target.value : "gross";
+    updatePensionMode(value);
   });
 
   downloadButton?.addEventListener("click", downloadJsonSummary);
