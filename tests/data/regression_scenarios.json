@@ -1,0 +1,69 @@
+[
+  {
+    "name": "salary_freelance_combo",
+    "payload": {
+      "year": 2024,
+      "locale": "en",
+      "dependents": {"children": 0},
+      "employment": {"gross_income": 20000},
+      "freelance": {
+        "gross_revenue": 18000,
+        "deductible_expenses": 4000,
+        "mandatory_contributions": 3000
+      }
+    },
+    "expectations": {
+      "summary": {
+        "income_total": 34000.0,
+        "tax_total": 4093.0,
+        "net_income": 26907.0
+      },
+      "details": {
+        "employment": {
+          "total_tax": 2323.0
+        },
+        "freelance": {
+          "taxable_income": 11000.0,
+          "total_tax": 1770.0
+        }
+      }
+    }
+  },
+  {
+    "name": "pension_rental_investment",
+    "payload": {
+      "year": 2024,
+      "dependents": {"children": 2},
+      "pension": {"gross_income": 18000},
+      "rental": {
+        "gross_income": 15000,
+        "deductible_expenses": 2000
+      },
+      "investment": {
+        "dividends": 1200,
+        "interest": 400,
+        "capital_gains": 3500
+      }
+    },
+    "expectations": {
+      "summary": {
+        "income_total": 38100.0,
+        "tax_total": 4555.0,
+        "net_income": 31545.0
+      },
+      "details": {
+        "pension": {
+          "total_tax": 1760.0
+        },
+        "rental": {
+          "taxable_income": 13000.0,
+          "total_tax": 2150.0
+        },
+        "investment": {
+          "gross_income": 5100.0,
+          "total_tax": 645.0
+        }
+      }
+    }
+  }
+]

@@ -11,8 +11,10 @@ POST /api/v1/calculations
 Content-Type: application/json
 ```
 
-> _The HTTP route will be implemented in a later sprint. The contract is stable
-> and already exercised by the calculation service tests._
+Successful requests return `200 OK` with the calculation payload described
+below. Validation issues produce a `400 Bad Request` response with a JSON body
+containing `error` and `message` fields. When invalid field values are
+detected, the API returns `{"error": "validation_error", "message": "..."}`.
 
 ## Request Body
 

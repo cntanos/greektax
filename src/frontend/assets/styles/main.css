@@ -10,6 +10,13 @@ body {
   color: #222;
 }
 
+main {
+  max-width: 720px;
+  margin: 0 auto;
+  display: grid;
+  gap: 2rem;
+}
+
 header {
   text-align: center;
   margin-bottom: 2rem;
@@ -24,6 +31,59 @@ header {
   margin-top: 2rem;
   font-size: 0.9rem;
   color: #a33;
+}
+
+#language-preview {
+  background: #fff;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.08);
+}
+
+#locale-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+#locale-select,
+#preview-button {
+  font-size: 1rem;
+  padding: 0.5rem 0.75rem;
+}
+
+#preview-button {
+  background: #0d6efd;
+  border: none;
+  color: #fff;
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
+#preview-button:hover,
+#preview-button:focus {
+  background: #0b5ed7;
+}
+
+.preview-output {
+  margin-top: 1.5rem;
+  background: #f8f9fa;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  border: 1px solid #dee2e6;
+}
+
+#preview-status[data-status="error"] {
+  color: #b02a37;
+  font-weight: 600;
+}
+
+#preview-json {
+  max-height: 18rem;
+  overflow: auto;
+  margin: 0;
 }
 
 /* TODO: Implement responsive layout, bilingual typography adjustments, and

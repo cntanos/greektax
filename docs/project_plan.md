@@ -49,28 +49,39 @@ deliver user value in incremental, testable slices.
 - Localization plumbing with English and Greek catalogues plus comprehensive
   unit coverage.
 
-## Sprint 2 (Current)
+## Sprint 2 (Completed)
+
+**Highlights**
+- Calculation engine broadened to cover pension, rental, and investment income
+  categories with aggregated summaries.
+- Localization catalogue extended for the new income categories in both
+  supported languages.
+- API contract published with explicit validation guidance for future clients.
+
+## Sprint 3 (Current)
 
 **Objectives**
-- Broaden the calculation engine to cover pension, rental, and investment
-  income categories with aggregated summaries.
-- Expand the localization catalogue for the newly supported categories.
-- Publish an API contract and improve error messaging for validation failures.
+- Expose the calculation engine through a REST endpoint with structured error
+  handling.
+- Provide a language toggle on the front-end that propagates the selected
+  locale to the API.
+- Establish regression fixtures that exercise representative taxpayer profiles.
 
-**Deliverables**
-- Year configuration extended with pension, rental, and investment sections for
-  2024.
-- Calculation service enhancements producing bilingual breakdowns for all
-  categories alongside unit tests for new scenarios.
-- API contract documentation capturing request validation rules and
-  response structure.
+**Deliverables (to date)**
+- Flask blueprint serving `POST /api/v1/calculations` with localisation-aware
+  responses and JSON error envelopes.
+- Front-end preview controls that persist locale preference and request
+  translated summaries from the backend.
+- Regression scenario catalogue consumed by integration tests for ongoing
+  validation.
 
-**Next Steps (Preview of Sprint 3)**
-- Implement REST endpoints that expose the calculation service and return
-  structured validation errors.
-- Begin integrating the front-end language toggle with backend localization.
-- Introduce scenario fixtures that mirror representative taxpayer profiles for
-  regression testing.
+**Next Steps (Preview of Sprint 4)**
+- Add REST endpoints for configuration metadata (available years, investment
+  categories) to support dynamic UI elements.
+- Connect core form inputs on the front-end to the API and render the returned
+  breakdown.
+- Provide printable/exportable summaries and broaden scenario coverage to VAT
+  and ENFIA inputs.
 
 > _This plan is updated at the end of each sprint to capture accomplishments_
 > _and upcoming milestones._
