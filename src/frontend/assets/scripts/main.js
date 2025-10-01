@@ -70,14 +70,79 @@ const readConfiguredApiBase = () => {
   );
 };
 
-const API_BASE = (() => {
-  const configuredBase = readConfiguredApiBase();
-  if (configuredBase) {
-    return configuredBase;
+const CONFIGURED_API_BASE = readConfiguredApiBase();
+let resolvedApiBase = CONFIGURED_API_BASE ?? null;
+
+const dedupeApiBases = (candidates) => {
+  const seen = new Set();
+  const result = [];
+
+  candidates.forEach((candidate) => {
+    const sanitized = sanitizeApiBase(candidate);
+    if (!sanitized || seen.has(sanitized)) {
+      return;
+    }
+
+    seen.add(sanitized);
+    result.push(sanitized);
+  });
+
+  return result;
+};
+
+const normalizeApiPath = (path) => {
+  if (typeof path !== "string") {
+    throw new TypeError("API path must be a string");
   }
 
-  const { protocol, hostname } = window.location;
-  const normalizedHost = (hostname || "").toLowerCase();
+  if (!path) {
+    return "";
+  }
+
+  return path.startsWith("/") ? path : `/${path}`;
+};
+
+const buildApiUrl = (base, path) => {
+  const sanitizedBase = sanitizeApiBase(base);
+  if (!sanitizedBase) {
+    throw new Error("Unable to build API URL without a base");
+  }
+
+  const normalizedPath = normalizeApiPath(path);
+  return `${sanitizedBase}${normalizedPath}`;
+};
+
+const cloneFetchOptions = (options) => {
+  if (!options) {
+    return {};
+  }
+
+  const clone = { ...options };
+
+  if (typeof Headers !== "undefined" && options.headers instanceof Headers) {
+    const headersClone = new Headers();
+    options.headers.forEach((value, key) => {
+      headersClone.append(key, value);
+    });
+    clone.headers = headersClone;
+  } else if (
+    options.headers &&
+    typeof options.headers === "object" &&
+    !Array.isArray(options.headers)
+  ) {
+    clone.headers = { ...options.headers };
+  }
+
+  delete clone.body;
+
+  return clone;
+};
+
+const computeDefaultApiBaseCandidates = () => {
+  const location = typeof window !== "undefined" ? window.location : null;
+  const protocol = location?.protocol ?? "";
+  const hostname = location?.hostname ?? "";
+  const normalizedHost = hostname.toLowerCase();
 
   const isLoopbackHost =
     normalizedHost === "localhost" ||
@@ -96,24 +161,97 @@ const API_BASE = (() => {
     normalizedHost.endsWith(".local") ||
     protocol === "file:";
 
-  if (isLocalHostname) {
-    return LOCAL_API_BASE;
+  const candidates = [LOCAL_API_BASE];
+
+  const shouldTryRemote = !isLocalHostname || normalizedHost.endsWith("pythonanywhere.com");
+  if (shouldTryRemote) {
+    candidates.push(REMOTE_API_BASE);
   }
 
-  if (normalizedHost.endsWith("pythonanywhere.com")) {
-    return REMOTE_API_BASE;
+  return dedupeApiBases(candidates);
+};
+
+const getApiBaseCandidates = () => {
+  if (CONFIGURED_API_BASE) {
+    return [CONFIGURED_API_BASE];
   }
 
-  return REMOTE_API_BASE;
-})();
-const CALCULATIONS_ENDPOINT = `${API_BASE}/calculations`;
-const CONFIG_YEARS_ENDPOINT = `${API_BASE}/config/years`;
-const CONFIG_INVESTMENT_ENDPOINT = (year, locale) =>
-  `${API_BASE}/config/${year}/investment-categories?locale=${encodeURIComponent(
-    locale,
-  )}`;
-const CONFIG_DEDUCTIONS_ENDPOINT = (year, locale) =>
-  `${API_BASE}/config/${year}/deductions?locale=${encodeURIComponent(locale)}`;
+  return computeDefaultApiBaseCandidates();
+};
+
+const getApiBaseAttemptOrder = () => {
+  const candidates = getApiBaseCandidates();
+  if (!resolvedApiBase) {
+    return candidates;
+  }
+
+  const attempts = [resolvedApiBase];
+  candidates.forEach((candidate) => {
+    if (!attempts.includes(candidate)) {
+      attempts.push(candidate);
+    }
+  });
+
+  return attempts;
+};
+
+const fetchFromApi = async (path, options = {}) => {
+  const normalizedPath = normalizeApiPath(path);
+  const baseOptions = cloneFetchOptions(options);
+  const rawBody = options.body;
+  const attempts = getApiBaseAttemptOrder();
+  let lastError = null;
+
+  for (let index = 0; index < attempts.length; index += 1) {
+    const base = attempts[index];
+    const url = buildApiUrl(base, normalizedPath);
+    const attemptOptions = { ...baseOptions };
+    if (rawBody !== undefined) {
+      attemptOptions.body = rawBody;
+    }
+
+    try {
+      const response = await fetch(url, attemptOptions);
+      if (!response.ok) {
+        const error = new Error(
+          `Request to ${url} failed with status ${response.status}`,
+        );
+        error.status = response.status;
+        lastError = error;
+
+        if (index === attempts.length - 1) {
+          throw error;
+        }
+
+        console.warn(
+          `API request to ${url} returned ${response.status}. Trying next base.`,
+        );
+        continue;
+      }
+
+      resolvedApiBase = base;
+      if (typeof window !== "undefined") {
+        window.__GREEKTAX_ACTIVE_API_BASE__ = base;
+      }
+
+      return response;
+    } catch (error) {
+      lastError = error;
+
+      if (index === attempts.length - 1) {
+        throw error;
+      }
+
+      console.warn(
+        `API request to ${url} failed. Trying next base.`,
+        error,
+      );
+    }
+  }
+
+  throw lastError ?? new Error("Unable to reach API");
+};
+
 const STORAGE_KEY = "greektax.locale";
 const CALCULATOR_STORAGE_KEY = "greektax.calculator.v1";
 const CALCULATOR_STORAGE_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours
@@ -1740,7 +1878,7 @@ async function loadYearOptions() {
 
   setCalculatorStatus(t("status.loading_years"));
   try {
-    const response = await fetch(CONFIG_YEARS_ENDPOINT);
+    const response = await fetchFromApi("/config/years");
     if (!response.ok) {
       throw new Error(`Unable to load years (${response.status})`);
     }
@@ -1826,8 +1964,10 @@ async function refreshInvestmentCategories() {
   }
 
   try {
-    const response = await fetch(
-      CONFIG_INVESTMENT_ENDPOINT(year, currentLocale || "en"),
+    const response = await fetchFromApi(
+      `/config/${year}/investment-categories?locale=${encodeURIComponent(
+        currentLocale || "en",
+      )}`,
     );
     if (!response.ok) {
       throw new Error(`Unable to load investment categories (${response.status})`);
@@ -2154,8 +2294,10 @@ async function refreshDeductionHints() {
   }
 
   try {
-    const response = await fetch(
-      CONFIG_DEDUCTIONS_ENDPOINT(year, currentLocale || "en"),
+    const response = await fetchFromApi(
+      `/config/${year}/deductions?locale=${encodeURIComponent(
+        currentLocale || "en",
+      )}`,
     );
     if (!response.ok) {
       throw new Error(`Unable to load deduction hints (${response.status})`);
@@ -3119,7 +3261,7 @@ async function submitCalculation(event) {
   setCalculatorStatus(t("status.calculating"));
 
   try {
-    const response = await fetch(CALCULATIONS_ENDPOINT, {
+    const response = await fetchFromApi("/calculations", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
