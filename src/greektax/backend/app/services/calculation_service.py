@@ -3,12 +3,16 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from types import MappingProxyType
 from typing import Any, Dict, Mapping, Optional, Sequence
 
 from greektax.backend.app.localization import Translator, get_translator
 from greektax.backend.config.year_config import (
     EmploymentConfig,
     FreelanceConfig,
+    InvestmentConfig,
+    PensionConfig,
+    RentalConfig,
     TaxBracket,
     YearConfiguration,
     load_year_configuration,
@@ -23,9 +27,13 @@ class _NormalisedPayload:
     locale: str
     children: int
     employment_income: float
+    pension_income: float
     freelance_profit: float
     freelance_contributions: float
     include_trade_fee: bool
+    rental_gross_income: float
+    rental_deductible_expenses: float
+    investment_amounts: Mapping[str, float]
 
     @property
     def freelance_taxable_income(self) -> float:
@@ -37,12 +45,33 @@ class _NormalisedPayload:
         return self.employment_income > 0
 
     @property
+    def has_pension_income(self) -> bool:
+        return self.pension_income > 0
+
+    @property
     def has_freelance_activity(self) -> bool:
         return (
             self.freelance_profit > 0
             or self.freelance_contributions > 0
             or self.freelance_taxable_income > 0
         )
+
+    @property
+    def rental_taxable_income(self) -> float:
+        taxable = self.rental_gross_income - self.rental_deductible_expenses
+        return taxable if taxable > 0 else 0.0
+
+    @property
+    def has_rental_income(self) -> bool:
+        return (
+            self.rental_gross_income > 0
+            or self.rental_deductible_expenses > 0
+            or self.rental_taxable_income > 0
+        )
+
+    @property
+    def has_investment_income(self) -> bool:
+        return any(amount > 0 for amount in self.investment_amounts.values())
 
 
 def _to_float(value: Any, field_name: str) -> float:
@@ -133,14 +162,37 @@ def _normalise_payload(payload: Mapping[str, Any]) -> _NormalisedPayload:
 
     include_trade_fee = _to_bool(freelance_section.get("include_trade_fee"), True)
 
+    pension_section = _extract_section(payload, "pension")
+    pension_income = _to_float(
+        pension_section.get("gross_income", 0.0), "pension.gross_income"
+    )
+
+    rental_section = _extract_section(payload, "rental")
+    rental_gross = _to_float(
+        rental_section.get("gross_income", 0.0), "rental.gross_income"
+    )
+    rental_expenses = _to_float(
+        rental_section.get("deductible_expenses", 0.0),
+        "rental.deductible_expenses",
+    )
+
+    investment_section = _extract_section(payload, "investment")
+    investment_amounts: Dict[str, float] = {}
+    for key, value in investment_section.items():
+        investment_amounts[str(key)] = _to_float(value, f"investment.{key}")
+
     return _NormalisedPayload(
         year=year,
         locale=locale,
         children=children,
         employment_income=employment_income,
+        pension_income=pension_income,
         freelance_profit=profit,
         freelance_contributions=contributions,
         include_trade_fee=include_trade_fee,
+        rental_gross_income=rental_gross,
+        rental_deductible_expenses=rental_expenses,
+        investment_amounts=MappingProxyType(investment_amounts),
     )
 
 
@@ -193,6 +245,35 @@ def _calculate_employment(
     return detail
 
 
+def _calculate_pension(
+    payload: _NormalisedPayload,
+    config: PensionConfig,
+    translator: Translator,
+) -> Optional[Dict[str, Any]]:
+    if not payload.has_pension_income:
+        return None
+
+    gross = payload.pension_income
+    taxable = gross
+    tax_before_credit = _calculate_progressive_tax(taxable, config.brackets)
+    credit = config.tax_credit.amount_for_children(payload.children)
+    tax_after_credit = tax_before_credit - credit
+    if tax_after_credit < 0:
+        tax_after_credit = 0.0
+
+    return {
+        "category": "pension",
+        "label": translator("details.pension"),
+        "gross_income": _round_currency(gross),
+        "taxable_income": _round_currency(taxable),
+        "tax_before_credits": _round_currency(tax_before_credit),
+        "credits": _round_currency(credit),
+        "tax": _round_currency(tax_after_credit),
+        "total_tax": _round_currency(tax_after_credit),
+        "net_income": _round_currency(gross - tax_after_credit),
+    }
+
+
 def _calculate_trade_fee(payload: _NormalisedPayload, config: FreelanceConfig) -> float:
     if not payload.include_trade_fee:
         return 0.0
@@ -233,6 +314,78 @@ def _calculate_freelance(
     return detail
 
 
+def _calculate_rental(
+    payload: _NormalisedPayload,
+    config: RentalConfig,
+    translator: Translator,
+) -> Optional[Dict[str, Any]]:
+    if not payload.has_rental_income:
+        return None
+
+    gross = payload.rental_gross_income
+    expenses = payload.rental_deductible_expenses
+    taxable = payload.rental_taxable_income
+    tax = _calculate_progressive_tax(taxable, config.brackets)
+    net_income = gross - expenses - tax
+
+    return {
+        "category": "rental",
+        "label": translator("details.rental"),
+        "gross_income": _round_currency(gross),
+        "deductible_expenses": _round_currency(expenses),
+        "taxable_income": _round_currency(taxable),
+        "tax": _round_currency(tax),
+        "total_tax": _round_currency(tax),
+        "net_income": _round_currency(net_income),
+    }
+
+
+def _calculate_investment(
+    payload: _NormalisedPayload,
+    config: InvestmentConfig,
+    translator: Translator,
+) -> Optional[Dict[str, Any]]:
+    if not payload.has_investment_income:
+        return None
+
+    breakdown: list[Dict[str, Any]] = []
+    gross_total = 0.0
+    tax_total = 0.0
+
+    for category, rate in config.rates.items():
+        amount = float(payload.investment_amounts.get(category, 0.0))
+        if amount <= 0:
+            continue
+
+        tax = amount * rate
+        gross_total += amount
+        tax_total += tax
+        breakdown.append(
+            {
+                "type": category,
+                "label": translator(f"details.investment.{category}"),
+                "amount": _round_currency(amount),
+                "rate": rate,
+                "tax": _round_currency(tax),
+            }
+        )
+
+    if gross_total <= 0:
+        return None
+
+    net_income = gross_total - tax_total
+
+    return {
+        "category": "investment",
+        "label": translator("details.investment"),
+        "gross_income": _round_currency(gross_total),
+        "tax": _round_currency(tax_total),
+        "total_tax": _round_currency(tax_total),
+        "net_income": _round_currency(net_income),
+        "items": breakdown,
+    }
+
+
 def _round_currency(value: float) -> float:
     return round(value, 2)
 
@@ -249,9 +402,21 @@ def calculate_tax(payload: Dict[str, Any]) -> Dict[str, Any]:
     if employment_detail:
         details.append(employment_detail)
 
+    pension_detail = _calculate_pension(normalised, config.pension, translator)
+    if pension_detail:
+        details.append(pension_detail)
+
     freelance_detail = _calculate_freelance(normalised, config.freelance, translator)
     if freelance_detail:
         details.append(freelance_detail)
+
+    rental_detail = _calculate_rental(normalised, config.rental, translator)
+    if rental_detail:
+        details.append(rental_detail)
+
+    investment_detail = _calculate_investment(normalised, config.investment, translator)
+    if investment_detail:
+        details.append(investment_detail)
 
     income_total = sum(item.get("gross_income", 0.0) for item in details)
     tax_total = sum(item.get("total_tax", 0.0) for item in details)

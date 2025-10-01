@@ -5,7 +5,15 @@ from __future__ import annotations
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Dict, Iterable, Mapping, MutableMapping, Optional, Sequence
+from typing import (
+    Any,
+    Dict,
+    Iterable,
+    Mapping,
+    MutableMapping,
+    Optional,
+    Sequence,
+)
 
 import yaml
 
@@ -67,6 +75,14 @@ class EmploymentConfig:
 
 
 @dataclass(frozen=True)
+class PensionConfig:
+    """Configuration for pension income."""
+
+    brackets: Sequence[TaxBracket]
+    tax_credit: EmploymentTaxCredit
+
+
+@dataclass(frozen=True)
 class TradeFeeConfig:
     """Settings for the business activity fee (τέλος επιτηδεύματος)."""
 
@@ -84,13 +100,30 @@ class FreelanceConfig:
 
 
 @dataclass(frozen=True)
+class RentalConfig:
+    """Configuration for rental income."""
+
+    brackets: Sequence[TaxBracket]
+
+
+@dataclass(frozen=True)
+class InvestmentConfig:
+    """Configuration for investment income categories."""
+
+    rates: Dict[str, float]
+
+
+@dataclass(frozen=True)
 class YearConfiguration:
     """Structured representation of a tax year configuration."""
 
     year: int
     meta: Dict[str, Any]
     employment: EmploymentConfig
+    pension: PensionConfig
     freelance: FreelanceConfig
+    rental: RentalConfig
+    investment: InvestmentConfig
 
 
 def _parse_tax_brackets(brackets: Iterable[Mapping[str, Any]]) -> Sequence[TaxBracket]:
@@ -122,6 +155,24 @@ def _parse_tax_brackets(brackets: Iterable[Mapping[str, Any]]) -> Sequence[TaxBr
     return parsed
 
 
+def _parse_tax_credit(raw: Mapping[str, Any]) -> EmploymentTaxCredit:
+    amounts_raw = raw.get("amounts_by_children")
+    if not isinstance(amounts_raw, MutableMapping):
+        raise ConfigurationError("'amounts_by_children' must be a mapping")
+
+    amounts: Dict[int, float] = {}
+    for key, value in amounts_raw.items():
+        child_count = int(key)
+        amounts[child_count] = float(value)
+
+    incremental = float(raw.get("incremental_amount_per_child", 0.0))
+
+    return EmploymentTaxCredit(
+        amounts_by_children=amounts,
+        incremental_amount_per_child=incremental,
+    )
+
+
 def _parse_employment_config(raw: Mapping[str, Any]) -> EmploymentConfig:
     brackets_raw = raw.get("tax_brackets")
     if not isinstance(brackets_raw, Iterable):
@@ -131,23 +182,30 @@ def _parse_employment_config(raw: Mapping[str, Any]) -> EmploymentConfig:
     if not isinstance(credit_raw, Mapping):
         raise ConfigurationError("Employment configuration must include 'tax_credit'")
 
-    amounts_raw = credit_raw.get("amounts_by_children")
-    if not isinstance(amounts_raw, MutableMapping):
-        raise ConfigurationError("'amounts_by_children' must be a mapping")
-
-    amounts: Dict[int, float] = {}
-    for key, value in amounts_raw.items():
-        child_count = int(key)
-        amounts[child_count] = float(value)
-
-    incremental = float(credit_raw.get("incremental_amount_per_child", 0.0))
-
     return EmploymentConfig(
         brackets=_parse_tax_brackets(brackets_raw),
-        tax_credit=EmploymentTaxCredit(
-            amounts_by_children=amounts,
-            incremental_amount_per_child=incremental,
-        ),
+        tax_credit=_parse_tax_credit(credit_raw),
+    )
+
+
+def _parse_pension_config(
+    raw: Mapping[str, Any], fallback_credit: EmploymentTaxCredit
+) -> PensionConfig:
+    brackets_raw = raw.get("tax_brackets")
+    if not isinstance(brackets_raw, Iterable):
+        raise ConfigurationError("Pension configuration must include 'tax_brackets'")
+
+    credit_raw = raw.get("tax_credit")
+    if credit_raw is None:
+        credit = fallback_credit
+    else:
+        if not isinstance(credit_raw, Mapping):
+            raise ConfigurationError("Pension tax credit must be a mapping")
+        credit = _parse_tax_credit(credit_raw)
+
+    return PensionConfig(
+        brackets=_parse_tax_brackets(brackets_raw),
+        tax_credit=credit,
     )
 
 
@@ -182,6 +240,29 @@ def _parse_freelance_config(raw: Mapping[str, Any]) -> FreelanceConfig:
     )
 
 
+def _parse_rental_config(raw: Mapping[str, Any]) -> RentalConfig:
+    brackets_raw = raw.get("tax_brackets")
+    if not isinstance(brackets_raw, Iterable):
+        raise ConfigurationError("Rental configuration must include 'tax_brackets'")
+
+    return RentalConfig(brackets=_parse_tax_brackets(brackets_raw))
+
+
+def _parse_investment_config(raw: Mapping[str, Any]) -> InvestmentConfig:
+    rates_raw = raw.get("rates")
+    if not isinstance(rates_raw, MutableMapping):
+        raise ConfigurationError("Investment configuration must include a 'rates' mapping")
+
+    rates: Dict[str, float] = {}
+    for key, value in rates_raw.items():
+        rates[str(key)] = float(value)
+
+    if not rates:
+        raise ConfigurationError("Investment configuration requires at least one rate")
+
+    return InvestmentConfig(rates=rates)
+
+
 def _parse_year_configuration(year: int, raw: Mapping[str, Any]) -> YearConfiguration:
     income_section = raw.get("income")
     if not isinstance(income_section, Mapping):
@@ -191,9 +272,21 @@ def _parse_year_configuration(year: int, raw: Mapping[str, Any]) -> YearConfigur
     if not isinstance(employment_raw, Mapping):
         raise ConfigurationError("Income configuration requires an 'employment' section")
 
+    pension_raw = income_section.get("pension")
+    if not isinstance(pension_raw, Mapping):
+        raise ConfigurationError("Income configuration requires a 'pension' section")
+
     freelance_raw = income_section.get("freelance")
     if not isinstance(freelance_raw, Mapping):
         raise ConfigurationError("Income configuration requires a 'freelance' section")
+
+    rental_raw = income_section.get("rental")
+    if not isinstance(rental_raw, Mapping):
+        raise ConfigurationError("Income configuration requires a 'rental' section")
+
+    investment_raw = income_section.get("investment")
+    if not isinstance(investment_raw, Mapping):
+        raise ConfigurationError("Income configuration requires an 'investment' section")
 
     meta = raw.get("meta")
     if meta is None:
@@ -207,11 +300,16 @@ def _parse_year_configuration(year: int, raw: Mapping[str, Any]) -> YearConfigur
             f"Configuration year mismatch: expected {year}, found {config_year}"
         )
 
+    employment_config = _parse_employment_config(employment_raw)
+
     return YearConfiguration(
         year=year,
         meta=dict(meta),
-        employment=_parse_employment_config(employment_raw),
+        employment=employment_config,
+        pension=_parse_pension_config(pension_raw, employment_config.tax_credit),
         freelance=_parse_freelance_config(freelance_raw),
+        rental=_parse_rental_config(rental_raw),
+        investment=_parse_investment_config(investment_raw),
     )
 
 

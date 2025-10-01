@@ -40,29 +40,37 @@ deliver user value in incremental, testable slices.
   placeholder tests.
 - Delivery roadmap documented to onboard contributors.
 
-## Sprint 1 (Current)
+## Sprint 1 (Completed)
+
+**Highlights**
+- Schema-validated configuration loader with caching for 2024 tax rules.
+- Initial calculation engine slice for employment and freelance income,
+  including statutory credits and trade fee handling.
+- Localization plumbing with English and Greek catalogues plus comprehensive
+  unit coverage.
+
+## Sprint 2 (Current)
 
 **Objectives**
-- Provide validated, structured configuration for 2024 tax rules.
-- Deliver the first slice of the tax engine covering employment and freelance
-  income, including statutory credits and the trade fee.
-- Introduce localization plumbing to support bilingual responses.
+- Broaden the calculation engine to cover pension, rental, and investment
+  income categories with aggregated summaries.
+- Expand the localization catalogue for the newly supported categories.
+- Publish an API contract and improve error messaging for validation failures.
 
 **Deliverables**
-- Dataclass-backed configuration loader with schema validation and caching.
-- 2024 YAML configuration featuring progressive brackets, tax credits, and
-  trade-fee parameters.
-- Calculation service producing bilingual summaries for employment and
-  freelance scenarios with unit test coverage.
-- Localization catalogue supporting English and Greek labels for backend
-  responses.
+- Year configuration extended with pension, rental, and investment sections for
+  2024.
+- Calculation service enhancements producing bilingual breakdowns for all
+  categories alongside unit tests for new scenarios.
+- API contract documentation capturing request validation rules and
+  response structure.
 
-**Next Steps (Preview of Sprint 2)**
-- Extend the calculation engine to cover rental, investment, and pension
-  categories with aggregation logic.
-- Expand localization resources and begin wiring front-end language toggles.
-- Add payload validation errors suitable for API responses and document the
-  request/response contract.
+**Next Steps (Preview of Sprint 3)**
+- Implement REST endpoints that expose the calculation service and return
+  structured validation errors.
+- Begin integrating the front-end language toggle with backend localization.
+- Introduce scenario fixtures that mirror representative taxpayer profiles for
+  regression testing.
 
 > _This plan is updated at the end of each sprint to capture accomplishments_
 > _and upcoming milestones._

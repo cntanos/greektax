@@ -92,3 +92,60 @@ def test_calculate_tax_respects_locale_toggle() -> None:
     assert result["meta"]["locale"] == "el"
     assert result["details"][0]["label"] == "Εισόδημα μισθωτών"
     assert result["summary"]["labels"]["income_total"] == "Συνολικό εισόδημα"
+
+
+def test_calculate_tax_with_pension_and_rental_income() -> None:
+    payload = {
+        "year": 2024,
+        "dependents": {"children": 2},
+        "pension": {"gross_income": 18_000},
+        "rental": {"gross_income": 15_000, "deductible_expenses": 2_000},
+    }
+
+    result = calculate_tax(payload)
+
+    pension_detail = next(
+        detail for detail in result["details"] if detail["category"] == "pension"
+    )
+    rental_detail = next(
+        detail for detail in result["details"] if detail["category"] == "rental"
+    )
+
+    # Pension tax: (10k * 9%) + (8k * 22%) = 900 + 1760 = 2,660
+    # Credit for 2 children = 900 -> tax 1,760
+    assert pension_detail["total_tax"] == pytest.approx(1_760.0)
+
+    # Rental taxable: 15k - 2k = 13k -> 12k @15% + 1k @35% = 2,150
+    assert rental_detail["taxable_income"] == pytest.approx(13_000.0)
+    assert rental_detail["total_tax"] == pytest.approx(2_150.0)
+    assert rental_detail["net_income"] == pytest.approx(10_850.0)
+
+    assert result["summary"]["income_total"] == pytest.approx(33_000.0)
+    assert result["summary"]["tax_total"] == pytest.approx(3_910.0)
+
+
+def test_calculate_tax_with_investment_income_breakdown() -> None:
+    payload = {
+        "year": 2024,
+        "investment": {
+            "dividends": 1_000,
+            "interest": 500,
+            "capital_gains": 2_000,
+        },
+    }
+
+    result = calculate_tax(payload)
+
+    investment_detail = next(
+        detail for detail in result["details"] if detail["category"] == "investment"
+    )
+
+    assert investment_detail["gross_income"] == pytest.approx(3_500.0)
+    # Tax: 1k*5% + 500*15% + 2k*15% = 50 + 75 + 300 = 425
+    assert investment_detail["total_tax"] == pytest.approx(425.0)
+    assert investment_detail["net_income"] == pytest.approx(3_075.0)
+    assert {item["type"] for item in investment_detail["items"]} == {
+        "dividends",
+        "interest",
+        "capital_gains",
+    }
