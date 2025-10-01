@@ -49,7 +49,7 @@ def _profile_section(name: str, store: Optional[Dict[str, float]]):
         store[name] = perf_counter() - start
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class _NormalisedPayload:
     """Validates and stores user input in a predictable structure."""
 
@@ -174,7 +174,7 @@ class _NormalisedPayload:
         return self.luxury_due > 0
 
 
-@dataclass
+@dataclass(slots=True)
 class _GeneralIncomeComponent:
     """Represents an income category that shares the progressive scale."""
 
@@ -221,6 +221,25 @@ class _GeneralIncomeComponent:
         if not self.payments_per_year or self.payments_per_year <= 0:
             return None
         return self.gross_income / self.payments_per_year
+
+
+@dataclass(slots=True)
+class _DetailTotals:
+    """Tracks cumulative totals for calculation results."""
+
+    income: float = 0.0
+    tax: float = 0.0
+    net: float = 0.0
+
+    def add(self, income: float = 0.0, tax: float = 0.0, net: float = 0.0) -> None:
+        self.income += income
+        self.tax += tax
+        self.net += net
+
+    def merge(self, other: "_DetailTotals") -> None:
+        self.income += other.income
+        self.tax += other.tax
+        self.net += other.net
 
 
 def _to_float(value: Any, field_name: str) -> float:
@@ -927,10 +946,10 @@ def _calculate_general_income_details(
     payload: _NormalisedPayload,
     config: YearConfiguration,
     translator: Translator,
-) -> tuple[list[Dict[str, Any]], float]:
+) -> tuple[list[Dict[str, Any]], float, _DetailTotals]:
     components = _build_general_income_components(payload, config)
     if not components:
-        return [], 0.0
+        return [], 0.0, _DetailTotals()
 
     deductions_applied = _apply_deductions_to_components(
         components, payload.total_deductions
@@ -938,15 +957,21 @@ def _calculate_general_income_details(
     _apply_progressive_tax(components, payload, config)
 
     details: list[Dict[str, Any]] = []
+    totals = _DetailTotals()
     for component in components:
+        gross_income = _round_currency(component.gross_income)
+        taxable_income = _round_currency(component.taxable_income)
+        tax_amount = _round_currency(component.tax_after_credit)
+        total_tax = _round_currency(component.total_tax())
+        net_income = _round_currency(component.net_income())
         detail: Dict[str, Any] = {
             "category": component.category,
             "label": translator(component.label_key),
-            "gross_income": _round_currency(component.gross_income),
-            "taxable_income": _round_currency(component.taxable_income),
-            "tax": _round_currency(component.tax_after_credit),
-            "total_tax": _round_currency(component.total_tax()),
-            "net_income": _round_currency(component.net_income()),
+            "gross_income": gross_income,
+            "taxable_income": taxable_income,
+            "tax": tax_amount,
+            "total_tax": total_tax,
+            "net_income": net_income,
         }
 
         if component.deductible_expenses:
@@ -1010,8 +1035,9 @@ def _calculate_general_income_details(
             )
 
         details.append(detail)
+        totals.add(gross_income, total_tax, net_income)
 
-    return details, deductions_applied
+    return details, deductions_applied, totals
 
 
 def _calculate_rental(
@@ -1139,6 +1165,22 @@ def _calculate_luxury(payload: _NormalisedPayload, translator: Translator) -> Op
     }
 
 
+def _update_totals_from_detail(
+    detail: Mapping[str, Any], totals: _DetailTotals
+) -> None:
+    gross = detail.get("gross_income")
+    if isinstance(gross, Real):
+        totals.income += float(gross)
+
+    tax = detail.get("total_tax")
+    if isinstance(tax, Real):
+        totals.tax += float(tax)
+
+    net = detail.get("net_income")
+    if isinstance(net, Real):
+        totals.net += float(net)
+
+
 def calculate_tax(payload: Dict[str, Any]) -> Dict[str, Any]:
     """Compute tax summary for the provided payload."""
 
@@ -1160,25 +1202,24 @@ def calculate_tax(payload: Dict[str, Any]) -> Dict[str, Any]:
     translator = get_translator(normalised.locale)
 
     details: list[Dict[str, Any]] = []
-    totals = {"income": 0.0, "tax": 0.0, "net": 0.0}
+    totals = _DetailTotals()
 
     def _append_detail(entry: Mapping[str, Any]) -> None:
-        details.append(dict(entry))
-        for key, bucket in (
-            ("gross_income", "income"),
-            ("total_tax", "tax"),
-            ("net_income", "net"),
-        ):
-            value = entry.get(key, 0.0)
-            if isinstance(value, Real):
-                totals[bucket] += float(value)
+        if isinstance(entry, dict):
+            detail = entry
+        else:
+            detail = dict(entry)
+        details.append(detail)
+        _update_totals_from_detail(detail, totals)
 
     with _profile_section("general_income", timings):
-        general_income_details, deductions_applied = _calculate_general_income_details(
-            normalised, config, translator
-        )
-    for detail in general_income_details:
-        _append_detail(detail)
+        (
+            general_income_details,
+            deductions_applied,
+            general_totals,
+        ) = _calculate_general_income_details(normalised, config, translator)
+    details.extend(general_income_details)
+    totals.merge(general_totals)
 
     with _profile_section("rental", timings):
         rental_detail = _calculate_rental(normalised, config.rental, translator)
@@ -1207,9 +1248,9 @@ def calculate_tax(payload: Dict[str, Any]) -> Dict[str, Any]:
     if luxury_detail:
         _append_detail(luxury_detail)
 
-    income_total = totals["income"]
-    tax_total = totals["tax"]
-    net_income = totals["net"]
+    income_total = totals.income
+    tax_total = totals.tax
+    net_income = totals.net
     net_monthly_income = net_income / 12 if net_income else 0.0
     average_monthly_tax = tax_total / 12 if tax_total else 0.0
     effective_tax_rate = (tax_total / income_total) if income_total > 0 else 0.0

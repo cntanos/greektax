@@ -25,12 +25,14 @@ Sample output captured after the sprint improvements:
     "roles": ["group", "img", "list", "listitem"]
   },
   "backend": {
-    "average_ms": 0.1469,
+    "average_ms": 0.1219,
     "iterations": 75,
-    "total_ms": 11.0198
+    "max_ms": 0.8269,
+    "min_ms": 0.1011,
+    "total_ms": 9.1437
   },
   "frontend_assets_bytes": {
-    "src/frontend/assets/scripts/main.js": 100333,
+    "src/frontend/assets/scripts/main.js": 101618,
     "src/frontend/assets/styles/main.css": 19676
   }
 }
@@ -39,4 +41,6 @@ Sample output captured after the sprint improvements:
 The calculation timings rely on the profiling hooks in
 `greektax/backend/app/services/calculation_service.py`. Setting the environment
 variable `GREEKTAX_PROFILE_CALCULATIONS=true` prints per-section timings for
-ad-hoc investigations while keeping the API contract unchanged.
+ad-hoc investigations while keeping the API contract unchanged. The snapshot now
+reports minimum and maximum iteration durations to surface jitter alongside the
+average and cumulative timings.
