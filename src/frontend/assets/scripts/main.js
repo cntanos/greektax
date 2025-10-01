@@ -83,6 +83,7 @@ const UI_MESSAGES = {
       net_income: "Net impact",
       monthly_gross_income: "Monthly gross income",
       payments_per_year: "Payments per year",
+      gross_income_per_payment: "Gross per payment",
       net_income_per_payment: "Net per payment",
       breakdown: "Breakdown",
     },
@@ -102,6 +103,10 @@ const UI_MESSAGES = {
       "vat-due": "VAT due (€)",
       "enfia-due": "ENFIA amount (€)",
       "luxury-due": "Luxury living tax (€)",
+    },
+    hints: {
+      "employment-payments":
+        "Most salaried roles use 14 payments (12 monthly plus bonuses). Adjust if your contract pays a different number of times per year.",
     },
     actions: {
       calculate: "Calculate taxes",
@@ -176,6 +181,7 @@ const UI_MESSAGES = {
       net_income: "Καθαρή επίδραση",
       monthly_gross_income: "Μηνιαίο ακαθάριστο εισόδημα",
       payments_per_year: "Καταβολές ανά έτος",
+      gross_income_per_payment: "Ακαθάριστο ανά καταβολή",
       net_income_per_payment: "Καθαρό ανά καταβολή",
       breakdown: "Ανάλυση",
     },
@@ -195,6 +201,10 @@ const UI_MESSAGES = {
       "vat-due": "Οφειλόμενος ΦΠΑ (€)",
       "enfia-due": "Ποσό ΕΝΦΙΑ (€)",
       "luxury-due": "Φόρος πολυτελούς διαβίωσης (€)",
+    },
+    hints: {
+      "employment-payments":
+        "Συνήθως καταβάλλονται 14 μισθοί (12 μηνιαίοι και 2 δώρα). Προσαρμόστε τον αριθμό αν η σύμβασή σας προβλέπει διαφορετικές καταβολές ανά έτος.",
     },
     actions: {
       calculate: "Υπολογισμός φόρων",
@@ -447,6 +457,9 @@ function buildDownloadFilename(extension) {
 
 function clearFormHints() {
   document.querySelectorAll(".form-control .form-hint").forEach((element) => {
+    if (element.dataset.staticHint === "true") {
+      return;
+    }
     element.remove();
   });
   document.querySelectorAll(".form-control .form-allowances").forEach((element) => {
@@ -960,25 +973,33 @@ function renderSummary(summary) {
   summaryGrid.innerHTML = "";
   const labels = summary.labels || {};
   const summaryFields = [
-    { key: "income_total", formatter: formatCurrency },
-    { key: "tax_total", formatter: formatCurrency },
-    { key: "net_income", formatter: formatCurrency },
+    { key: "net_income", formatter: formatCurrency, className: "primary" },
+    { key: "tax_total", formatter: formatCurrency, className: "accent" },
     { key: "net_monthly_income", formatter: formatCurrency },
+    { key: "average_monthly_tax", formatter: formatCurrency },
+    { key: "income_total", formatter: formatCurrency },
     { key: "effective_tax_rate", formatter: formatPercent },
   ];
 
-  summaryFields.forEach(({ key, formatter }) => {
+  summaryFields.forEach(({ key, formatter, className }) => {
     if (!(key in summary)) {
       return;
     }
     const wrapper = document.createElement("dl");
-    wrapper.className = "summary-item";
+    const classes = ["summary-item"];
+    if (className) {
+      classes.push(`summary-item--${className}`);
+    }
+    wrapper.className = classes.join(" ");
+    wrapper.dataset.field = key;
 
     const dt = document.createElement("dt");
     dt.textContent = labels[key] || key;
+    dt.dataset.field = key;
 
     const dd = document.createElement("dd");
     dd.textContent = formatter(summary[key]);
+    dd.dataset.field = key;
 
     wrapper.appendChild(dt);
     wrapper.appendChild(dd);
@@ -1045,6 +1066,7 @@ function renderDetailCard(detail) {
 
     const dt = document.createElement("dt");
     dt.textContent = labels[key];
+    dt.dataset.field = key;
 
     const dd = document.createElement("dd");
     if (key === "payments_per_year") {
@@ -1052,6 +1074,7 @@ function renderDetailCard(detail) {
     } else {
       dd.textContent = formatCurrency(value);
     }
+    dd.dataset.field = key;
 
     dl.appendChild(dt);
     dl.appendChild(dd);
@@ -1223,10 +1246,11 @@ function downloadCsvSummary() {
   const lines = [["Section", "Label", "Value"]];
 
   const summaryFields = [
-    { key: "income_total", formatter: formatCurrency },
-    { key: "tax_total", formatter: formatCurrency },
     { key: "net_income", formatter: formatCurrency },
+    { key: "tax_total", formatter: formatCurrency },
     { key: "net_monthly_income", formatter: formatCurrency },
+    { key: "average_monthly_tax", formatter: formatCurrency },
+    { key: "income_total", formatter: formatCurrency },
     { key: "effective_tax_rate", formatter: formatPercent },
   ];
 
@@ -1241,6 +1265,7 @@ function downloadCsvSummary() {
     "gross_income",
     "monthly_gross_income",
     "payments_per_year",
+    "gross_income_per_payment",
     "deductible_contributions",
     "deductible_expenses",
     "taxable_income",

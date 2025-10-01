@@ -125,6 +125,11 @@ class _GeneralIncomeComponent:
             return None
         return self.net_income() / self.payments_per_year
 
+    def gross_income_per_payment(self) -> Optional[float]:
+        if not self.payments_per_year or self.payments_per_year <= 0:
+            return None
+        return self.gross_income / self.payments_per_year
+
 
 def _to_float(value: Any, field_name: str) -> float:
     try:
@@ -458,6 +463,9 @@ def _calculate_general_income_details(
 
         if component.payments_per_year:
             detail["payments_per_year"] = component.payments_per_year
+            gross_per_payment = component.gross_income_per_payment()
+            if gross_per_payment is not None:
+                detail["gross_income_per_payment"] = _round_currency(gross_per_payment)
             net_per_payment = component.net_income_per_payment()
             if net_per_payment is not None:
                 detail["net_income_per_payment"] = _round_currency(net_per_payment)
@@ -627,6 +635,7 @@ def calculate_tax(payload: Dict[str, Any]) -> Dict[str, Any]:
     tax_total = sum(item.get("total_tax", 0.0) for item in details)
     net_income = sum(item.get("net_income", 0.0) for item in details)
     net_monthly_income = net_income / 12 if net_income else 0.0
+    average_monthly_tax = tax_total / 12 if tax_total else 0.0
     effective_tax_rate = (tax_total / income_total) if income_total > 0 else 0.0
 
     return {
@@ -635,12 +644,14 @@ def calculate_tax(payload: Dict[str, Any]) -> Dict[str, Any]:
             "tax_total": _round_currency(tax_total),
             "net_income": _round_currency(net_income),
             "net_monthly_income": _round_currency(net_monthly_income),
+            "average_monthly_tax": _round_currency(average_monthly_tax),
             "effective_tax_rate": _round_rate(effective_tax_rate),
             "labels": {
                 "income_total": translator("summary.income_total"),
                 "tax_total": translator("summary.tax_total"),
                 "net_income": translator("summary.net_income"),
                 "net_monthly_income": translator("summary.net_monthly_income"),
+                "average_monthly_tax": translator("summary.average_monthly_tax"),
                 "effective_tax_rate": translator("summary.effective_tax_rate"),
             },
         },
