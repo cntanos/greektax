@@ -19,7 +19,20 @@ const STORAGE_KEY = "greektax.locale";
 
 const UI_MESSAGES = {
   en: {
+    ui: {
+      tagline: "Unofficial tax estimation toolkit for Greece",
+      overview_heading: "Overview",
+      overview_description:
+        "Estimate annual income taxes for Greece across employment, freelance, rental, and investment categories. Select a tax year, choose your language, and provide the income figures relevant to your situation to receive a bilingual breakdown of obligations.",
+      disclaimer:
+        "Disclaimer: This tool is unofficial and provided as-is without data storage. Please consult a professional accountant for formal filings.",
+    },
     preview: {
+      heading: "Preview localisation",
+      description:
+        "Choose your preferred language and request a sample calculation to see the backend translations in action. The preview uses demo data only.",
+      locale_label: "Language",
+      button: "Preview calculation",
       idle: "No preview requested yet.",
       requesting: "Requesting preview from the API…",
       success: "Preview updated using backend localisation.",
@@ -42,6 +55,18 @@ const UI_MESSAGES = {
       max_number: "{{field}} must be at most {{max}}.",
       non_integer: "{{field}} must be a whole number.",
     },
+    calculator: {
+      heading: "Tax calculator",
+      results_heading: "Results",
+      legends: {
+        year_household: "Year and household",
+        employment_pension: "Employment & pension income",
+        freelance: "Freelance income",
+        rental: "Rental income",
+        investment: "Investment income",
+        obligations: "Additional obligations",
+      },
+    },
     forms: {
       no_investment_categories: "No investment categories configured for this year.",
       share_title: "GreekTax summary",
@@ -63,25 +88,45 @@ const UI_MESSAGES = {
       breakdown: "Breakdown",
     },
     fields: {
-      year: "Tax year",
+      "year-select": "Tax year",
       "children-input": "Dependent children",
-      "employment-income": "Employment gross income",
-      "pension-income": "Pension gross income",
-      "freelance-revenue": "Freelance gross revenue",
-      "freelance-expenses": "Freelance deductible expenses",
-      "freelance-contributions": "Mandatory social contributions",
-      "rental-income": "Rental gross income",
-      "rental-expenses": "Rental deductible expenses",
-      "vat-due": "VAT due",
-      "enfia-due": "ENFIA amount",
-      "luxury-due": "Luxury living tax",
+      "employment-income": "Employment gross income (€)",
+      "pension-income": "Pension gross income (€)",
+      "freelance-revenue": "Freelance gross revenue (€)",
+      "freelance-expenses": "Freelance deductible expenses (€)",
+      "freelance-contributions": "Mandatory social contributions (€)",
+      "trade-fee-toggle": "Include business activity fee",
+      "rental-income": "Rental gross income (€)",
+      "rental-expenses": "Rental deductible expenses (€)",
+      "vat-due": "VAT due (€)",
+      "enfia-due": "ENFIA amount (€)",
+      "luxury-due": "Luxury living tax (€)",
+    },
+    actions: {
+      calculate: "Calculate taxes",
+      download: "Download summary (JSON)",
+      share: "Open shareable summary",
+      print: "Print summary",
     },
     share: {
       open_failed: "Popup blocked. Please allow pop-ups to view the summary.",
     },
   },
   el: {
+    ui: {
+      tagline: "Μη επίσημο εργαλείο εκτίμησης φόρων για την Ελλάδα",
+      overview_heading: "Επισκόπηση",
+      overview_description:
+        "Υπολογίστε ετήσιες φορολογικές υποχρεώσεις στην Ελλάδα για μισθωτούς, ελεύθερους επαγγελματίες, ενοίκια και επενδύσεις. Επιλέξτε φορολογικό έτος, γλώσσα και εισάγετε τα ποσά για να λάβετε δίγλωσση ανάλυση.",
+      disclaimer:
+        "Αποποίηση ευθύνης: Το εργαλείο είναι ανεπίσημο και παρέχεται ως έχει χωρίς αποθήκευση δεδομένων. Συμβουλευτείτε λογιστή για επίσημες δηλώσεις.",
+    },
     preview: {
+      heading: "Προεπισκόπηση εντοπισμού",
+      description:
+        "Επιλέξτε γλώσσα και ζητήστε δείγμα υπολογισμού για να δείτε τις μεταφράσεις του διακομιστή. Η προεπισκόπηση χρησιμοποιεί μόνο δοκιμαστικά δεδομένα.",
+      locale_label: "Γλώσσα",
+      button: "Προεπισκόπηση υπολογισμού",
       idle: "Δεν έχει ζητηθεί προεπισκόπηση ακόμη.",
       requesting: "Αίτημα προεπισκόπησης προς το API…",
       success: "Η προεπισκόπηση ενημερώθηκε με τις μεταφράσεις του διακομιστή.",
@@ -103,6 +148,18 @@ const UI_MESSAGES = {
       min_number: "{{field}} πρέπει να είναι τουλάχιστον {{min}}.",
       max_number: "{{field}} πρέπει να είναι το πολύ {{max}}.",
       non_integer: "{{field}} πρέπει να είναι ακέραιος αριθμός.",
+    },
+    calculator: {
+      heading: "Φορολογικός υπολογιστής",
+      results_heading: "Αποτελέσματα",
+      legends: {
+        year_household: "Έτος και νοικοκυριό",
+        employment_pension: "Εισόδημα μισθωτών & συντάξεων",
+        freelance: "Εισόδημα ελεύθερου επαγγελματία",
+        rental: "Εισόδημα από ενοίκια",
+        investment: "Επενδυτικά εισοδήματα",
+        obligations: "Πρόσθετες υποχρεώσεις",
+      },
     },
     forms: {
       no_investment_categories:
@@ -126,18 +183,25 @@ const UI_MESSAGES = {
       breakdown: "Ανάλυση",
     },
     fields: {
-      year: "Φορολογικό έτος",
+      "year-select": "Φορολογικό έτος",
       "children-input": "Εξαρτώμενα τέκνα",
-      "employment-income": "Ακαθάριστο εισόδημα μισθωτών",
-      "pension-income": "Ακαθάριστο εισόδημα συντάξεων",
-      "freelance-revenue": "Ακαθάριστα έσοδα ελευθέρου επαγγελματία",
-      "freelance-expenses": "Εκπιπτόμενες δαπάνες ελευθέρου επαγγελματία",
-      "freelance-contributions": "Υποχρεωτικές εισφορές",
-      "rental-income": "Ακαθάριστα έσοδα ενοικίων",
-      "rental-expenses": "Εκπιπτόμενες δαπάνες ενοικίων",
-      "vat-due": "Οφειλόμενος ΦΠΑ",
-      "enfia-due": "Ποσό ΕΝΦΙΑ",
-      "luxury-due": "Φόρος πολυτελούς διαβίωσης",
+      "employment-income": "Ακαθάριστο εισόδημα μισθωτών (€)",
+      "pension-income": "Ακαθάριστο εισόδημα συντάξεων (€)",
+      "freelance-revenue": "Ακαθάριστα έσοδα ελευθέρου επαγγελματία (€)",
+      "freelance-expenses": "Εκπιπτόμενες δαπάνες ελευθέρου επαγγελματία (€)",
+      "freelance-contributions": "Υποχρεωτικές εισφορές (€)",
+      "trade-fee-toggle": "Συμπερίληψη τέλους επιτηδεύματος",
+      "rental-income": "Ακαθάριστα έσοδα ενοικίων (€)",
+      "rental-expenses": "Εκπιπτόμενες δαπάνες ενοικίων (€)",
+      "vat-due": "Οφειλόμενος ΦΠΑ (€)",
+      "enfia-due": "Ποσό ΕΝΦΙΑ (€)",
+      "luxury-due": "Φόρος πολυτελούς διαβίωσης (€)",
+    },
+    actions: {
+      calculate: "Υπολογισμός φόρων",
+      download: "Λήψη σύνοψης (JSON)",
+      share: "Άνοιγμα κοινόχρηστης σύνοψης",
+      print: "Εκτύπωση σύνοψης",
     },
     share: {
       open_failed:
@@ -258,6 +322,7 @@ function applyLocale(locale) {
   currentLocale = locale;
   persistLocale(locale);
   document.documentElement.lang = locale === "el" ? "el" : "en";
+  localiseStaticText();
   if (localeSelect) {
     localeSelect.value = locale;
   }
@@ -266,6 +331,19 @@ function applyLocale(locale) {
   }
   refreshInvestmentCategories();
   refreshDeductionHints();
+}
+
+function localiseStaticText() {
+  document.querySelectorAll("[data-i18n-key]").forEach((element) => {
+    const key = element.getAttribute("data-i18n-key");
+    if (!key) {
+      return;
+    }
+    const message = t(key);
+    if (typeof message === "string") {
+      element.textContent = message;
+    }
+  });
 }
 
 function updatePreviewIdleMessage() {

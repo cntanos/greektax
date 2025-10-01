@@ -21,11 +21,15 @@ Metadata endpoints support the front-end in building dynamic forms:
 ```
 GET /api/v1/config/years
 GET /api/v1/config/<year>/investment-categories?locale=<locale>
+GET /api/v1/config/<year>/deductions?locale=<locale>
 ```
 
 The first returns all configured tax years plus a suggested default. The second
 exposes investment income categories (identifier, rate, locale-aware label) for
-the requested year.
+the requested year. The third surfaces deduction hints for the UI, returning the
+deduction identifier, the applicable income categories, the translated display
+label and description, as well as validation metadata (e.g., minimum, maximum,
+or numeric type) to apply on the client.
 
 ## Request Body
 
@@ -46,6 +50,7 @@ the requested year.
 | `investment.*` | number | ❌ | Amounts for each configured investment category (e.g. `dividends`, `interest`, `capital_gains`, `royalties`). |
 | `obligations.vat` | number | ❌ | Value Added Tax due for the year. Included in totals without further calculation. |
 | `obligations.enfia` | number | ❌ | ENFIA property tax amount to include in the summary. |
+| `obligations.luxury` | number | ❌ | Luxury living tax amount for high-value assets. Added directly to the summary. |
 
 All numeric fields must be non-negative. Boolean fields accept `true`, `false`,
 and equivalent string toggles (`"yes"`, `"no"`, `"1"`, `"0"`, etc.). Missing
