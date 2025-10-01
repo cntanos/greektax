@@ -224,23 +224,37 @@ deliver user value in incremental, testable slices.
   inputs survive locale changes and refreshes, preventing silent value resets
   during review sessions.
 
-## Sprint 18 (Current)
+## Sprint 18 (Completed)
+
+**Highlights**
+- Streamlined general-income processing with slot-based dataclasses and
+  aggregated totals so repeated calculations reuse intermediate results while
+  preserving localisation-rich detail output.【F:src/greektax/backend/app/services/calculation_service.py†L46-L84】【F:src/greektax/backend/app/services/calculation_service.py†L904-L1020】
+- Deferred Plotly bootstrapping and staged theme re-renders to keep the Sankey
+  diagram responsive on slower devices and to smooth the dark-mode transition
+  experience.【F:src/frontend/assets/scripts/main.js†L24-L113】【F:src/frontend/assets/scripts/main.js†L2363-L2549】
+- Enhanced the performance snapshot utility with richer timing telemetry so
+  teams can track minimum, maximum, and average calculation durations alongside
+  accessibility metadata.【F:scripts/performance_snapshot.py†L38-L88】
+
+## Sprint 19 (Current)
 
 **Objectives**
-- Profile the calculation request pipeline and trim redundant data processing
-  so the core engine responds faster without altering the API contract.
-- Optimise front-end rendering by deferring heavy chart bootstrapping and
-  smoothing dark-mode transitions for responsive interactions.
-- Capture baseline performance and accessibility metrics to monitor future
-  optimisation impact across locales and themes.
+- Expand calculation regression coverage for multi-income households, ensuring
+  deductions, trade-fee rules, and credits align with published requirements
+  ahead of annual configuration updates.【F:Requirements.md†L96-L152】
+- Formalise a scenario catalogue and contributor checklist describing expected
+  gross-to-net flows so reviewers can validate accuracy changes quickly.
+- Audit UI validation copy and localisation hooks to reduce ambiguity when
+  users combine monthly and annual inputs across income categories.
 
 **Planned Deliverables**
-- Benchmarked calculation engine report with targeted configuration caching or
-  arithmetic simplifications landed in code.
-- Front-end updates introducing lazy Plotly loading, refined theme tokens, and
-  documentation on CogniSys-inspired styling guardrails.
-- Automated checks or scripts that log timing, bundle size, and accessibility
-  snapshots for regression detection in upcoming sprints.
+- Additional regression fixtures exercising agricultural, freelance, and rental
+  interactions with deduction caps and trade-fee toggles.
+- Contributor documentation outlining scenario expectations, acceptance
+  criteria, and review steps for multi-income submissions.
+- Localisation and validation refinements across calculator controls informed
+  by the expanded scenario catalogue.
 
 > _This plan is updated at the end of each sprint to capture accomplishments_
 > _and upcoming milestones._

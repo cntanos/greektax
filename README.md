@@ -60,6 +60,20 @@ Additional tooling configured for future sprints:
 - `ruff` for linting (`ruff check src tests`)
 - `mypy` for static type checks (`mypy src`)
 
+### Performance Snapshot
+
+Capture a lightweight performance and accessibility baseline with the
+instrumented helper:
+
+```bash
+python scripts/performance_snapshot.py
+```
+
+The report logs backend calculation timings (including minimum, maximum, and
+average durations), bundle sizes for the key front-end assets, and ARIA usage in
+the HTML shell. See [`docs/performance_baseline.md`](docs/performance_baseline.md)
+for guidance on interpreting the output.
+
 ## Brand & Media Assets
 
 Binary media files are intentionally not stored in this repository. When UI work

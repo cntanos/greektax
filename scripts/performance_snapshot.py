@@ -57,13 +57,20 @@ def measure_backend(iterations: int) -> dict[str, float]:
     payload = dict(SAMPLE_PAYLOAD)
     calculate_tax(payload)  # Warm cache
     start = perf_counter()
+    durations: list[float] = []
     for _ in range(iterations):
+        iteration_start = perf_counter()
         calculate_tax(payload)
+        durations.append(perf_counter() - iteration_start)
     elapsed = perf_counter() - start
+    min_duration = min(durations) if durations else 0.0
+    max_duration = max(durations) if durations else 0.0
     return {
         "iterations": iterations,
         "total_ms": elapsed * 1000,
         "average_ms": (elapsed / iterations) * 1000,
+        "min_ms": min_duration * 1000,
+        "max_ms": max_duration * 1000,
     }
 
 
