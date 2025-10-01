@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
+import logging
+import os
+from contextlib import contextmanager
 from dataclasses import dataclass, replace
+from numbers import Real
+from time import perf_counter
 from types import MappingProxyType
 from typing import Any, Dict, Iterable, Mapping, Optional, Sequence
 
@@ -17,6 +22,31 @@ from greektax.backend.config.year_config import (
     YearConfiguration,
     load_year_configuration,
 )
+
+
+_LOGGER = logging.getLogger(__name__)
+
+
+def _profiling_enabled() -> bool:
+    """Return ``True`` when calculation profiling should be captured."""
+
+    flag = os.getenv("GREEKTAX_PROFILE_CALCULATIONS", "")
+    return flag.strip().lower() in {"1", "true", "yes", "on"}
+
+
+@contextmanager
+def _profile_section(name: str, store: Optional[Dict[str, float]]):
+    """Capture the duration of a named section when profiling is enabled."""
+
+    if store is None:
+        yield
+        return
+
+    start = perf_counter()
+    try:
+        yield
+    finally:
+        store[name] = perf_counter() - start
 
 
 @dataclass(frozen=True)
@@ -1118,45 +1148,80 @@ def calculate_tax(payload: Dict[str, Any]) -> Dict[str, Any]:
     if "year" not in payload:
         raise ValueError("Payload must include a tax year")
 
+    timings: Optional[Dict[str, float]] = {} if _profiling_enabled() else None
+    overall_start = perf_counter() if timings is not None else None
+
     year = _to_int(payload["year"], "year")
     config: YearConfiguration = load_year_configuration(year)
-    normalised = _normalise_payload(payload, year, config)
+
+    with _profile_section("normalise_payload", timings):
+        normalised = _normalise_payload(payload, year, config)
+
     translator = get_translator(normalised.locale)
 
     details: list[Dict[str, Any]] = []
-    general_income_details, deductions_applied = _calculate_general_income_details(
-        normalised, config, translator
-    )
-    details.extend(general_income_details)
+    totals = {"income": 0.0, "tax": 0.0, "net": 0.0}
 
-    rental_detail = _calculate_rental(normalised, config.rental, translator)
+    def _append_detail(entry: Mapping[str, Any]) -> None:
+        details.append(dict(entry))
+        for key, bucket in (
+            ("gross_income", "income"),
+            ("total_tax", "tax"),
+            ("net_income", "net"),
+        ):
+            value = entry.get(key, 0.0)
+            if isinstance(value, Real):
+                totals[bucket] += float(value)
+
+    with _profile_section("general_income", timings):
+        general_income_details, deductions_applied = _calculate_general_income_details(
+            normalised, config, translator
+        )
+    for detail in general_income_details:
+        _append_detail(detail)
+
+    with _profile_section("rental", timings):
+        rental_detail = _calculate_rental(normalised, config.rental, translator)
     if rental_detail:
-        details.append(rental_detail)
+        _append_detail(rental_detail)
 
-    investment_detail = _calculate_investment(normalised, config.investment, translator)
+    with _profile_section("investment", timings):
+        investment_detail = _calculate_investment(
+            normalised, config.investment, translator
+        )
     if investment_detail:
-        details.append(investment_detail)
+        _append_detail(investment_detail)
 
-    vat_detail = _calculate_vat(normalised, translator)
+    with _profile_section("vat", timings):
+        vat_detail = _calculate_vat(normalised, translator)
     if vat_detail:
-        details.append(vat_detail)
+        _append_detail(vat_detail)
 
-    enfia_detail = _calculate_enfia(normalised, translator)
+    with _profile_section("enfia", timings):
+        enfia_detail = _calculate_enfia(normalised, translator)
     if enfia_detail:
-        details.append(enfia_detail)
+        _append_detail(enfia_detail)
 
-    luxury_detail = _calculate_luxury(normalised, translator)
+    with _profile_section("luxury", timings):
+        luxury_detail = _calculate_luxury(normalised, translator)
     if luxury_detail:
-        details.append(luxury_detail)
+        _append_detail(luxury_detail)
 
-    income_total = sum(item.get("gross_income", 0.0) for item in details)
-    tax_total = sum(item.get("total_tax", 0.0) for item in details)
-    net_income = sum(item.get("net_income", 0.0) for item in details)
+    income_total = totals["income"]
+    tax_total = totals["tax"]
+    net_income = totals["net"]
     net_monthly_income = net_income / 12 if net_income else 0.0
     average_monthly_tax = tax_total / 12 if tax_total else 0.0
     effective_tax_rate = (tax_total / income_total) if income_total > 0 else 0.0
 
     deductions_entered = normalised.total_deductions
+
+    if timings is not None and overall_start is not None:
+        timings["total"] = perf_counter() - overall_start
+        _LOGGER.debug(
+            "calculate_tax timings (ms): %s",
+            {name: round(duration * 1000, 3) for name, duration in timings.items()},
+        )
 
     return {
         "summary": {

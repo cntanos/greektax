@@ -77,6 +77,14 @@ polish.
 - Documentation references the new visual communication requirement and outlines
   at least three future UI enhancements for subsequent sprints.
 
+## Styling Guardrails (Sprint 18)
+- Light and dark theme tokens were retuned to align with CogniSys branding while
+  preserving accessibility contrast across summaries, cards, and visualisation
+  containers.【F:src/frontend/assets/styles/main.css†L1-L76】【F:src/frontend/assets/styles/main.css†L78-L139】
+- Theme switches now trigger a scoped transition class so background, text,
+  border, and shadow changes animate smoothly without impacting users who prefer
+  reduced motion settings.【F:src/frontend/assets/scripts/main.js†L115-L134】【F:src/frontend/assets/styles/main.css†L141-L159】
+
 ## Dependencies & Risks
 - Localisation updates may require coordination with translators for new highlight
   copy and legend descriptions.
