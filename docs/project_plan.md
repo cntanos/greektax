@@ -126,31 +126,70 @@ deliver user value in incremental, testable slices.
 - Refined the web UI to foreground key totals, accept monthly payment inputs,
   and keep CSV exports client-side for leaner usability.
 
-## Sprint 10 (Current)
+## Sprint 10 (Completed)
+
+**Highlights**
+- Bolstered regression coverage for varied employment arrangements, aligning
+  allowances and credits with documented tax guidance while capturing expected
+  gross/net breakdowns for 12- and 14-payment schedules.
+- Refined UI copy and labels so salary, tax, and deduction totals remain legible
+  across locales, paving the way for deeper hierarchy and layout adjustments in
+  upcoming sprints.
+- Clarified payment-frequency validation flows in both the API contract and
+  front-end messaging, reducing ambiguity for hybrid monthly/annual entry
+  patterns.
+
+## Sprint 11 (Completed)
+
+**Highlights**
+- Conducted wireframe explorations and content hierarchy audits that establish
+  the target structure for a refreshed calculator summary with clearer gross,
+  net, and obligation groupings.
+- Delivered a UI improvement plan capturing responsive layout rules, design
+  tokens, accessibility priorities, and localisation checks to guide upcoming
+  implementation work.
+- Partnered with localisation stakeholders and support to capture copy issues,
+  telemetry hooks, and validation pain points feeding the next sprint backlog.
+
+## Sprint 12 (Completed)
+
+**Highlights**
+- Shipped the reimagined calculator summary with progressive disclosure,
+  localisation-ready formatting, and richer telemetry to monitor user
+  navigation.
+- Hardened validation and inline education for monthly versus annual entry,
+  reducing user error reports across locales.
+- Closed responsive and accessibility gaps through targeted layout tokens,
+  focus-order fixes, and automated axe verification documented for future QA.
+
+## Sprint 13 (Current)
 
 **Objectives**
-- Fortify the tax computation pipeline with broader scenario coverage and
-  cross-checks against official guidance.
-- Elevate the clarity and usability of the refreshed UI, ensuring the new
-  monthly input model is intuitive for 12-, 14-, or custom-payment schedules.
-- Document and validate the expanded gross/net breakdowns to sustain
-  stakeholder confidence in calculation correctness.
+- Align the calculator experience with documented Greek payroll and social
+  security rules, including fixed payroll frequencies and automatic EFKA
+  contribution handling.【F:docs/ui_improvement_plan.md†L13-L36】
+- Expand inputs and summaries to support gross-to-net and net-to-gross flows,
+  deductions, dependent children, and additional income categories called for in
+  the requirements.【F:docs/ui_improvement_plan.md†L38-L73】
+- Establish configuration-driven year management, trade-fee parameters, and
+  extensibility hooks so annual updates require minimal code churn.【F:docs/ui_improvement_plan.md†L75-L118】
 
 **Planned Deliverables**
-- Add high-fidelity regression cases for diverse employment arrangements,
-  verifying allowances, credits, and edge conditions in the tax engine.
-- Improve UI content hierarchy and labelling so gross, net, tax, and deduction
-  figures remain immediately legible across locales and screen sizes.
-- Extend API and front-end validation copy to clarify payment-per-year entry and
-  surface additional derived metrics where helpful for decision-making.
+- Employment and pension UI slices with payroll-frequency selectors, gross/net
+  toggles, and EFKA breakdown displays wired to backend calculation changes.
+- Freelance and deductions experiences that capture EFKA category selections,
+  trade-fee modifiers, and legally recognised deduction inputs with validation.
+- Dynamic section toggles, agricultural/other income capture, and year-aware
+  configuration plumbing surfaced throughout the interface and API contract.
 
-**Next Steps (Preview of Sprint 11)**
-- Broaden localisation QA with accessibility-focused audits and user testing of
-  the revised summaries.
-- Explore deeper support for supplementary income categories (e.g., bonuses or
-  deferred compensation) informed by Sprint 10 findings.
-- Monitor analytics and feedback channels to prioritise further usability or
-  accuracy enhancements.
+**Next Steps (Preview of Sprint 14)**
+- Validate implemented EFKA, deduction, and payroll features with domain
+  specialists and update regression scenarios for edge cases (e.g., partial
+  years, exempt professions).
+- Explore extending configuration coverage to planned legislative changes (e.g.,
+  trade-fee sunset) and prototype alerts for missing configuration data.
+- Investigate localisation refinements and guidance assets (videos, tooltips) to
+  reinforce the expanded data-entry workload introduced in Sprint 13.
 
 > _This plan is updated at the end of each sprint to capture accomplishments_
 > _and upcoming milestones._
