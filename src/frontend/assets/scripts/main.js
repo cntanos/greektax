@@ -97,13 +97,20 @@ const UI_MESSAGES = {
       freelance: {
         efka: {
           category: {
-            general_a: "Category A (standard tier)",
-            general_a_description:
-              "Includes base EFKA contributions plus small auxiliary fund coverage.",
-            general_b: "Category B (enhanced tier)",
-            reduced: "Reduced contributions",
-            reduced_description:
-              "Available to eligible professionals with reduced EFKA obligations.",
+            general_class_1: "General scheme — Class 1",
+            general_class_2: "General scheme — Class 2",
+            general_class_3: "General scheme — Class 3",
+            general_class_4: "General scheme — Class 4",
+            general_class_5: "General scheme — Class 5",
+            general_class_6: "General scheme — Class 6",
+            general_reduced: "General scheme — Reduced contributions",
+            general_reduced_description:
+              "Available to eligible professionals within the reduced-rate window.",
+            engineer_class_1: "Engineers (TSMEDE) — Class 1",
+            engineer_class_2: "Engineers (TSMEDE) — Class 2",
+            engineer_class_3: "Engineers (TSMEDE) — Class 3",
+            engineer_description:
+              "Includes mandatory auxiliary (ETEAEP) and lump-sum fund contributions.",
           },
         },
         mandatory_contributions: "Mandatory social contributions",
@@ -117,6 +124,7 @@ const UI_MESSAGES = {
       category_contributions: "EFKA category contributions",
       additional_contributions: "Additional contributions",
       auxiliary_contributions: "Auxiliary contributions",
+      lump_sum_contributions: "Lump-sum fund contributions",
       deductible_expenses: "Deductible expenses",
       taxable_income: "Taxable income",
       tax_before_credits: "Tax before credits",
@@ -156,16 +164,22 @@ const UI_MESSAGES = {
       "pension-net-monthly-income": "Net pension per payment (€)",
       "freelance-revenue": "Freelance gross revenue (€)",
       "freelance-expenses": "Freelance deductible expenses (€)",
-      "freelance-contributions": "Mandatory social contributions (€)",
-      "freelance-auxiliary-contributions": "Auxiliary fund contributions (€)",
-      "freelance-efka-category": "EFKA contribution category",
+      "freelance-contributions": "Manual EFKA contributions (€)",
+      "freelance-auxiliary-contributions": "Manual auxiliary fund contributions (€)",
+      "freelance-lump-sum-contributions": "Manual lump-sum fund contributions (€)",
+      "freelance-manual-contributions": "Override EFKA payments",
+      "freelance-manual-contributions-hint":
+        "Use if your actual payments differ from the auto-calculated totals.",
+      "freelance-activity-start-year": "Year freelance activity started",
+      "freelance-activity-start-year-hint":
+        "Determines eligibility for the reduced business activity fee.",
+      "freelance-efka-category": "EFKA contribution class",
       "freelance-efka-category-placeholder": "Select EFKA category (optional)",
       "freelance-efka-months": "Contribution months",
       "freelance-trade-fee-location": "Trade fee location",
       "freelance-trade-fee-standard": "Standard amount",
       "freelance-trade-fee-reduced": "Reduced amount",
       "freelance-years-active": "Years self-employed",
-      "freelance-newly-self-employed": "Newly self-employed",
       "trade-fee-toggle": "Include business activity fee",
       "toggle-employment": "Include salary income",
       "toggle-freelance": "Include freelance income",
@@ -190,13 +204,20 @@ const UI_MESSAGES = {
       freelance: {
         efka: {
           category: {
-            general_a: "Category A (standard tier)",
-            general_a_description:
-              "Includes base EFKA contributions plus small auxiliary fund coverage.",
-            general_b: "Category B (enhanced tier)",
-            reduced: "Reduced contributions",
-            reduced_description:
-              "Available to eligible professionals with reduced EFKA obligations.",
+            general_class_1: "General scheme — Class 1",
+            general_class_2: "General scheme — Class 2",
+            general_class_3: "General scheme — Class 3",
+            general_class_4: "General scheme — Class 4",
+            general_class_5: "General scheme — Class 5",
+            general_class_6: "General scheme — Class 6",
+            general_reduced: "General scheme — Reduced contributions",
+            general_reduced_description:
+              "Available to eligible professionals within the reduced-rate window.",
+            engineer_class_1: "Engineers (TSMEDE) — Class 1",
+            engineer_class_2: "Engineers (TSMEDE) — Class 2",
+            engineer_class_3: "Engineers (TSMEDE) — Class 3",
+            engineer_description:
+              "Includes mandatory auxiliary (ETEAEP) and lump-sum fund contributions.",
           },
         },
       },
@@ -205,10 +226,24 @@ const UI_MESSAGES = {
       "employment-payments":
         "Most salaried roles use 14 payments (12 monthly plus bonuses). Adjust if your contract pays a different number of times per year.",
       "freelance-efka-category": "Select a contribution class to prefill mandatory EFKA payments.",
-      "freelance-efka-category-base": "Base EFKA contribution: {{amount}} per month.",
-      "freelance-efka-category-auxiliary": "Auxiliary fund contribution: {{amount}} per month.",
+      "freelance-efka-summary-empty":
+        "Select a contribution class to view monthly pension, health, and auxiliary amounts.",
+      "freelance-efka-summary-base":
+        "Base EFKA (pension and health): {{monthly}} × {{months}} months = {{total}}.",
+      "freelance-efka-summary-auxiliary":
+        "Auxiliary fund: {{monthly}} × {{months}} months = {{total}}.",
+      "freelance-efka-summary-lump":
+        "Lump-sum fund: {{monthly}} × {{months}} months = {{total}}.",
+      "freelance-efka-summary-total":
+        "Estimated annual EFKA payments: {{total}}.",
+      "freelance-activity-start-year":
+        "Enter the year your freelance activity was first registered to check reduced trade-fee eligibility.",
       "freelance-trade-fee": "Trade fee applied: {{amount}}.",
       "freelance-trade-fee-new": "Reduced rate applies for the first {{years}} years of activity.",
+      "freelance-trade-fee-new-eligible":
+        "Based on your start year, the reduced amount applies for this tax year.",
+      "freelance-trade-fee-new-expired":
+        "The reduced-rate window has ended (more than {{years}} years of activity).",
       "freelance-trade-fee-sunset":
         "The trade fee is scheduled to change from {{year}} (status: {{status}}). Confirm any exemptions with your accountant.",
     },
@@ -315,13 +350,20 @@ const UI_MESSAGES = {
       freelance: {
         efka: {
           category: {
-            general_a: "Κατηγορία Α (τυπική)",
-            general_a_description:
-              "Περιλαμβάνει βασικές εισφορές ΕΦΚΑ και μικρή επικουρική κάλυψη.",
-            general_b: "Κατηγορία Β (ενισχυμένη)",
-            reduced: "Μειωμένες εισφορές",
-            reduced_description:
-              "Διαθέσιμη σε επαγγελματίες με δικαίωμα μειωμένων εισφορών.",
+            general_class_1: "Γενικό καθεστώς — Κλάση 1",
+            general_class_2: "Γενικό καθεστώς — Κλάση 2",
+            general_class_3: "Γενικό καθεστώς — Κλάση 3",
+            general_class_4: "Γενικό καθεστώς — Κλάση 4",
+            general_class_5: "Γενικό καθεστώς — Κλάση 5",
+            general_class_6: "Γενικό καθεστώς — Κλάση 6",
+            general_reduced: "Γενικό καθεστώς — Μειωμένες εισφορές",
+            general_reduced_description:
+              "Διαθέσιμη για όσους βρίσκονται εντός του παραθύρου μειωμένου συντελεστή.",
+            engineer_class_1: "Μηχανικοί (ΤΣΜΕΔΕ) — Κλάση 1",
+            engineer_class_2: "Μηχανικοί (ΤΣΜΕΔΕ) — Κλάση 2",
+            engineer_class_3: "Μηχανικοί (ΤΣΜΕΔΕ) — Κλάση 3",
+            engineer_description:
+              "Περιλαμβάνει υποχρεωτικές εισφορές επικουρικού (ΕΤΕΑΕΠ) και εφάπαξ.",
           },
         },
         mandatory_contributions: "Υποχρεωτικές εισφορές",
@@ -335,6 +377,7 @@ const UI_MESSAGES = {
       category_contributions: "Εισφορές κατηγορίας ΕΦΚΑ",
       additional_contributions: "Επιπλέον εισφορές",
       auxiliary_contributions: "Εισφορές επικουρικού",
+      lump_sum_contributions: "Εισφορές εφάπαξ",
       deductible_expenses: "Εκπιπτόμενες δαπάνες",
       taxable_income: "Φορολογητέο εισόδημα",
       tax_before_credits: "Φόρος πριν τις εκπτώσεις",
@@ -374,8 +417,15 @@ const UI_MESSAGES = {
       "pension-net-monthly-income": "Καθαρό ποσό σύνταξης ανά καταβολή (€)",
       "freelance-revenue": "Ακαθάριστα έσοδα ελευθέρου επαγγελματία (€)",
       "freelance-expenses": "Εκπιπτόμενες δαπάνες ελευθέρου επαγγελματία (€)",
-      "freelance-contributions": "Υποχρεωτικές εισφορές (€)",
-      "freelance-auxiliary-contributions": "Εισφορές επικουρικού ταμείου (€)",
+      "freelance-contributions": "Χειροκίνητες εισφορές ΕΦΚΑ (€)",
+      "freelance-auxiliary-contributions": "Χειροκίνητες εισφορές επικουρικού (€)",
+      "freelance-lump-sum-contributions": "Χειροκίνητες εισφορές εφάπαξ (€)",
+      "freelance-manual-contributions": "Παράκαμψη ποσών ΕΦΚΑ",
+      "freelance-manual-contributions-hint":
+        "Χρησιμοποιήστε την όταν τα πραγματικά ποσά διαφέρουν από τους αυτόματους υπολογισμούς.",
+      "freelance-activity-start-year": "Έτος έναρξης δραστηριότητας",
+      "freelance-activity-start-year-hint":
+        "Καθορίζει την επιλεξιμότητα για το μειωμένο τέλος επιτηδεύματος.",
       "freelance-efka-category": "Κατηγορία εισφορών ΕΦΚΑ",
       "freelance-efka-category-placeholder": "Επιλέξτε κατηγορία ΕΦΚΑ (προαιρετικά)",
       "freelance-efka-months": "Μήνες εισφορών",
@@ -383,7 +433,6 @@ const UI_MESSAGES = {
       "freelance-trade-fee-standard": "Τυπικό ποσό",
       "freelance-trade-fee-reduced": "Μειωμένο ποσό",
       "freelance-years-active": "Έτη ως ελεύθερος επαγγελματίας",
-      "freelance-newly-self-employed": "Νεοσύστατος επαγγελματίας",
       "trade-fee-toggle": "Συμπερίληψη τέλους επιτηδεύματος",
       "toggle-employment": "Συμπερίληψη μισθολογικού εισοδήματος",
       "toggle-freelance": "Συμπερίληψη εισοδήματος ελευθέρων επαγγελματιών",
@@ -408,13 +457,20 @@ const UI_MESSAGES = {
       freelance: {
         efka: {
           category: {
-            general_a: "Κατηγορία Α (τυπική)",
-            general_a_description:
-              "Περιλαμβάνει βασικές εισφορές ΕΦΚΑ και μικρή επικουρική κάλυψη.",
-            general_b: "Κατηγορία Β (ενισχυμένη)",
-            reduced: "Μειωμένες εισφορές",
-            reduced_description:
-              "Διαθέσιμη σε επαγγελματίες με δικαίωμα μειωμένων εισφορών.",
+            general_class_1: "Γενικό καθεστώς — Κλάση 1",
+            general_class_2: "Γενικό καθεστώς — Κλάση 2",
+            general_class_3: "Γενικό καθεστώς — Κλάση 3",
+            general_class_4: "Γενικό καθεστώς — Κλάση 4",
+            general_class_5: "Γενικό καθεστώς — Κλάση 5",
+            general_class_6: "Γενικό καθεστώς — Κλάση 6",
+            general_reduced: "Γενικό καθεστώς — Μειωμένες εισφορές",
+            general_reduced_description:
+              "Διαθέσιμη για όσους βρίσκονται εντός του παραθύρου μειωμένου συντελεστή.",
+            engineer_class_1: "Μηχανικοί (ΤΣΜΕΔΕ) — Κλάση 1",
+            engineer_class_2: "Μηχανικοί (ΤΣΜΕΔΕ) — Κλάση 2",
+            engineer_class_3: "Μηχανικοί (ΤΣΜΕΔΕ) — Κλάση 3",
+            engineer_description:
+              "Περιλαμβάνει υποχρεωτικές εισφορές επικουρικού (ΕΤΕΑΕΠ) και εφάπαξ.",
           },
         },
       },
@@ -423,10 +479,24 @@ const UI_MESSAGES = {
       "employment-payments":
         "Συνήθως καταβάλλονται 14 μισθοί (12 μηνιαίοι και 2 δώρα). Προσαρμόστε τον αριθμό αν η σύμβασή σας προβλέπει διαφορετικές καταβολές ανά έτος.",
       "freelance-efka-category": "Επιλέξτε κατηγορία εισφορών για αυτόματη συμπλήρωση των υποχρεωτικών ποσών.",
-      "freelance-efka-category-base": "Βασική εισφορά ΕΦΚΑ: {{amount}} ανά μήνα.",
-      "freelance-efka-category-auxiliary": "Εισφορά επικουρικού ταμείου: {{amount}} ανά μήνα.",
+      "freelance-efka-summary-empty":
+        "Επιλέξτε κατηγορία για να εμφανιστούν τα μηνιαία ποσά κύριας, υγειονομικής και επικουρικής ασφάλισης.",
+      "freelance-efka-summary-base":
+        "Βασική εισφορά (κύρια και υγείας): {{monthly}} × {{months}} μήνες = {{total}}.",
+      "freelance-efka-summary-auxiliary":
+        "Επικουρικό ταμείο: {{monthly}} × {{months}} μήνες = {{total}}.",
+      "freelance-efka-summary-lump":
+        "Ταμείο πρόνοιας/εφάπαξ: {{monthly}} × {{months}} μήνες = {{total}}.",
+      "freelance-efka-summary-total":
+        "Εκτιμώμενες ετήσιες εισφορές ΕΦΚΑ: {{total}}.",
+      "freelance-activity-start-year":
+        "Δηλώστε το έτος έναρξης δραστηριότητας για να ελεγχθεί η επιλεξιμότητα μειωμένου τέλους επιτηδεύματος.",
       "freelance-trade-fee": "Εφαρμοζόμενο τέλος επιτηδεύματος: {{amount}}.",
       "freelance-trade-fee-new": "Ισχύει μειωμένο ποσό για τα πρώτα {{years}} έτη δραστηριότητας.",
+      "freelance-trade-fee-new-eligible":
+        "Με βάση το έτος έναρξης, ισχύει το μειωμένο ποσό για το τρέχον έτος.",
+      "freelance-trade-fee-new-expired":
+        "Το παράθυρο μειωμένης χρέωσης έχει λήξει (πάνω από {{years}} έτη δραστηριότητας).",
       "freelance-trade-fee-sunset":
         "Το τέλος επιτηδεύματος αναμένεται να αλλάξει από {{year}} (κατάσταση: {{status}}). Επιβεβαιώστε τυχόν απαλλαγές με τον λογιστή σας.",
     },
@@ -476,6 +546,8 @@ let currentPensionMode = "gross";
 let currentInvestmentCategories = [];
 let currentDeductionHints = [];
 let currentFreelanceMetadata = null;
+let derivedFreelanceYearsActive = null;
+let derivedFreelanceNewlySelfEmployed = false;
 let dynamicFieldLabels = {};
 let deductionValidationByInput = {};
 let lastCalculation = null;
@@ -520,6 +592,12 @@ const freelanceContributionsInput = document.getElementById(
 const freelanceAuxiliaryContributionsInput = document.getElementById(
   "freelance-auxiliary-contributions",
 );
+const freelanceLumpSumContributionsInput = document.getElementById(
+  "freelance-lump-sum-contributions",
+);
+const freelanceActivityStartInput = document.getElementById(
+  "freelance-activity-start-year",
+);
 const tradeFeeToggle = document.getElementById("trade-fee-toggle");
 const freelanceEfkaSelect = document.getElementById("freelance-efka-category");
 const freelanceEfkaMonthsInput = document.getElementById("freelance-efka-months");
@@ -529,9 +607,7 @@ const freelanceTradeFeeLocationSelect = document.getElementById(
 );
 const freelanceTradeFeeHint = document.getElementById("freelance-trade-fee-hint");
 const freelanceYearsActiveInput = document.getElementById("freelance-years-active");
-const freelanceNewlySelfEmployedToggle = document.getElementById(
-  "freelance-newly-self-employed",
-);
+const freelanceEfkaSummary = document.getElementById("freelance-efka-summary");
 const rentalIncomeInput = document.getElementById("rental-income");
 const rentalExpensesInput = document.getElementById("rental-expenses");
 const investmentFieldsContainer = document.getElementById("investment-fields");
@@ -1686,57 +1762,162 @@ async function refreshInvestmentCategories() {
   }
 }
 
-function updateFreelanceCategoryHint() {
-  if (!freelanceEfkaHint) {
-    return;
+function getFreelanceCategoryById(id) {
+  if (!id || !currentFreelanceMetadata) {
+    return null;
   }
 
-  if (!freelanceEfkaSelect || !freelanceEfkaSelect.value) {
-    const message = t("hints.freelance-efka-category");
-    if (message) {
-      freelanceEfkaHint.textContent = message;
+  const categories = currentFreelanceMetadata.efka_categories;
+  if (!Array.isArray(categories)) {
+    return null;
+  }
+
+  return categories.find((entry) => entry && entry.id === id) || null;
+}
+
+function parseFreelanceContributionMonths() {
+  if (!freelanceEfkaMonthsInput) {
+    return 0;
+  }
+
+  const value = Number.parseInt(freelanceEfkaMonthsInput.value ?? "", 10);
+  if (!Number.isFinite(value) || value < 0) {
+    return 0;
+  }
+  return value;
+}
+
+function getFreelanceStartYear() {
+  if (!freelanceActivityStartInput) {
+    return null;
+  }
+
+  const rawValue = (freelanceActivityStartInput.value ?? "").trim();
+  if (!rawValue) {
+    return null;
+  }
+
+  const parsed = Number.parseInt(rawValue, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return null;
+  }
+
+  return parsed;
+}
+
+function syncFreelanceActivityDerivedState() {
+  const startYear = getFreelanceStartYear();
+  let yearsActive = null;
+  const selectedYear = Number.parseInt(yearSelect?.value ?? "", 10);
+  if (Number.isFinite(selectedYear) && startYear !== null) {
+    yearsActive = selectedYear - startYear + 1;
+    if (yearsActive < 0) {
+      yearsActive = 0;
+    }
+  }
+
+  derivedFreelanceYearsActive = yearsActive;
+
+  if (freelanceYearsActiveInput) {
+    if (yearsActive === null || yearsActive <= 0) {
+      freelanceYearsActiveInput.value = "0";
+    } else {
+      freelanceYearsActiveInput.value = String(yearsActive);
+    }
+  }
+
+  const reductionYears =
+    currentFreelanceMetadata?.trade_fee?.newly_self_employed_reduction_years ?? null;
+  derivedFreelanceNewlySelfEmployed =
+    reductionYears !== null &&
+    reductionYears !== undefined &&
+    yearsActive !== null &&
+    yearsActive > 0 &&
+    yearsActive <= reductionYears;
+}
+
+function updateFreelanceCategoryHint() {
+  const categoryId = freelanceEfkaSelect?.value || "";
+  const category = getFreelanceCategoryById(categoryId);
+  const months = parseFreelanceContributionMonths();
+
+  const summaryMessages = [];
+  if (category && months >= 0) {
+    const baseMonthly = Number(category.monthly_amount || 0);
+    const auxiliaryMonthly = Number(category.auxiliary_monthly_amount || 0);
+    const lumpMonthly = Number(category.lump_sum_monthly_amount || 0);
+    const totalMonthly = baseMonthly + auxiliaryMonthly + lumpMonthly;
+
+    if (baseMonthly > 0) {
+      summaryMessages.push(
+        t("hints.freelance-efka-summary-base", {
+          monthly: formatCurrency(baseMonthly),
+          months,
+          total: formatCurrency(baseMonthly * months),
+        }),
+      );
+    }
+
+    if (auxiliaryMonthly > 0) {
+      summaryMessages.push(
+        t("hints.freelance-efka-summary-auxiliary", {
+          monthly: formatCurrency(auxiliaryMonthly),
+          months,
+          total: formatCurrency(auxiliaryMonthly * months),
+        }),
+      );
+    }
+
+    if (lumpMonthly > 0) {
+      summaryMessages.push(
+        t("hints.freelance-efka-summary-lump", {
+          monthly: formatCurrency(lumpMonthly),
+          months,
+          total: formatCurrency(lumpMonthly * months),
+        }),
+      );
+    }
+
+    if (totalMonthly > 0) {
+      summaryMessages.push(
+        t("hints.freelance-efka-summary-total", {
+          total: formatCurrency(totalMonthly * months),
+        }),
+      );
+    }
+  }
+
+  if (freelanceEfkaSummary) {
+    if (summaryMessages.length > 0) {
+      freelanceEfkaSummary.textContent = summaryMessages.join(" ");
+      freelanceEfkaSummary.hidden = false;
+    } else {
+      const message = t("hints.freelance-efka-summary-empty");
+      if (message) {
+        freelanceEfkaSummary.textContent = message;
+        freelanceEfkaSummary.hidden = false;
+      } else {
+        freelanceEfkaSummary.textContent = "";
+        freelanceEfkaSummary.hidden = true;
+      }
+    }
+  }
+
+  if (freelanceEfkaHint) {
+    if (category?.description_key) {
+      freelanceEfkaHint.textContent = t(category.description_key);
       freelanceEfkaHint.hidden = false;
     } else {
-      freelanceEfkaHint.textContent = "";
-      freelanceEfkaHint.hidden = true;
+      const defaultMessage = t("hints.freelance-efka-category");
+      if (!category && defaultMessage) {
+        freelanceEfkaHint.textContent = defaultMessage;
+        freelanceEfkaHint.hidden = false;
+      } else {
+        freelanceEfkaHint.textContent = "";
+        freelanceEfkaHint.hidden = true;
+      }
     }
-    return;
   }
-
-  const option = freelanceEfkaSelect.selectedOptions?.[0];
-  if (!option) {
-    freelanceEfkaHint.textContent = "";
-    freelanceEfkaHint.hidden = true;
-    return;
-  }
-
-  const monthlyAmount = Number.parseFloat(option.dataset.monthlyAmount || "0");
-  const auxiliaryAmount = Number.parseFloat(
-    option.dataset.auxiliaryMonthlyAmount || "0",
-  );
-  const descriptionKey = option.dataset.descriptionKey;
-
-  const parts = [];
-  if (Number.isFinite(monthlyAmount) && monthlyAmount > 0) {
-    parts.push(
-      t("hints.freelance-efka-category-base", {
-        amount: formatCurrency(monthlyAmount),
-      }),
-    );
-  }
-  if (Number.isFinite(auxiliaryAmount) && auxiliaryAmount > 0) {
-    parts.push(
-      t("hints.freelance-efka-category-auxiliary", {
-        amount: formatCurrency(auxiliaryAmount),
-      }),
-    );
-  }
-  if (descriptionKey) {
-    parts.push(t(descriptionKey));
-  }
-
-  freelanceEfkaHint.textContent = parts.join(" ");
-  freelanceEfkaHint.hidden = parts.length === 0;
 }
 
 function updateTradeFeeHint() {
@@ -1766,11 +1947,21 @@ function updateTradeFeeHint() {
   ];
 
   if (tradeFee.newly_self_employed_reduction_years) {
+    const reductionYears = tradeFee.newly_self_employed_reduction_years;
     messages.push(
       t("hints.freelance-trade-fee-new", {
-        years: tradeFee.newly_self_employed_reduction_years,
+        years: reductionYears,
       }),
     );
+    if (derivedFreelanceYearsActive !== null && derivedFreelanceYearsActive > 0) {
+      if (derivedFreelanceNewlySelfEmployed) {
+        messages.push(t("hints.freelance-trade-fee-new-eligible"));
+      } else if (derivedFreelanceYearsActive > reductionYears) {
+        messages.push(
+          t("hints.freelance-trade-fee-new-expired", { years: reductionYears }),
+        );
+      }
+    }
   }
 
   if (tradeFee.sunset?.description_key) {
@@ -1859,9 +2050,10 @@ function populateFreelanceMetadata(metadata) {
     }
   }
 
+  applyPendingCalculatorState();
+  syncFreelanceActivityDerivedState();
   updateFreelanceCategoryHint();
   updateTradeFeeHint();
-  applyPendingCalculatorState();
 }
 
 async function refreshDeductionHints() {
@@ -2193,10 +2385,14 @@ function buildCalculationPayload() {
     const expenses = readNumber(freelanceExpensesInput);
     const contributions = readNumber(freelanceContributionsInput);
     const auxiliary = readNumber(freelanceAuxiliaryContributionsInput);
+    const lumpSum = readNumber(freelanceLumpSumContributionsInput);
     const efkaCategory = freelanceEfkaSelect?.value;
     const efkaMonths = readInteger(freelanceEfkaMonthsInput);
     const tradeFeeLocation = freelanceTradeFeeLocationSelect?.value;
-    const yearsActive = readInteger(freelanceYearsActiveInput);
+    const yearsActive =
+      derivedFreelanceYearsActive !== null && derivedFreelanceYearsActive > 0
+        ? derivedFreelanceYearsActive
+        : readInteger(freelanceYearsActiveInput);
 
     if (revenue > 0) {
       freelancePayload.gross_revenue = revenue;
@@ -2210,6 +2406,9 @@ function buildCalculationPayload() {
     if (auxiliary > 0) {
       freelancePayload.auxiliary_contributions = auxiliary;
     }
+    if (lumpSum > 0) {
+      freelancePayload.lump_sum_contributions = lumpSum;
+    }
     if (efkaCategory) {
       freelancePayload.efka_category = efkaCategory;
     }
@@ -2222,7 +2421,7 @@ function buildCalculationPayload() {
     if (yearsActive > 0) {
       freelancePayload.years_active = yearsActive;
     }
-    if (freelanceNewlySelfEmployedToggle?.checked) {
+    if (derivedFreelanceNewlySelfEmployed) {
       freelancePayload.newly_self_employed = true;
     }
 
@@ -2652,6 +2851,7 @@ function renderDetailCard(detail) {
     "category_contributions",
     "additional_contributions",
     "auxiliary_contributions",
+    "lump_sum_contributions",
     "employee_contributions",
     "employee_contributions_per_payment",
     "employer_contributions",
@@ -2681,6 +2881,8 @@ function renderDetailCard(detail) {
       detailLabels.additional_contributions || "Additional contributions",
     auxiliary_contributions:
       detailLabels.auxiliary_contributions || "Auxiliary contributions",
+    lump_sum_contributions:
+      detailLabels.lump_sum_contributions || "Lump-sum contributions",
     employee_contributions:
       detailLabels.employee_contributions || "Employee contributions",
     employee_contributions_per_payment:
@@ -3034,6 +3236,11 @@ function initialiseCalculator() {
   initialiseSectionToggles();
   applyPendingCalculatorState();
   freelanceEfkaSelect?.addEventListener("change", updateFreelanceCategoryHint);
+  freelanceEfkaMonthsInput?.addEventListener("input", updateFreelanceCategoryHint);
+  freelanceActivityStartInput?.addEventListener("input", () => {
+    syncFreelanceActivityDerivedState();
+    updateTradeFeeHint();
+  });
   freelanceTradeFeeLocationSelect?.addEventListener(
     "change",
     updateTradeFeeHint,
@@ -3049,6 +3256,9 @@ function initialiseCalculator() {
     }
     refreshInvestmentCategories();
     refreshDeductionHints();
+    syncFreelanceActivityDerivedState();
+    updateFreelanceCategoryHint();
+    updateTradeFeeHint();
   });
 
   employmentModeSelect?.addEventListener("change", (event) => {

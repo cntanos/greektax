@@ -34,7 +34,12 @@ def test_list_years_endpoint(client: FlaskClient) -> None:
     assert sunset["documentation_url"].startswith("https://")
     categories = freelance_meta["efka_categories"]
     assert isinstance(categories, list)
-    assert any(category["id"] == "general_a" for category in categories)
+    general_category = next(
+        category for category in categories if category["id"] == "general_class_1"
+    )
+    assert general_category["monthly_amount"] > 0
+    assert "pension_monthly_amount" in general_category
+    assert "health_monthly_amount" in general_category
 
     warnings = current_year["warnings"]
     assert isinstance(warnings, list) and warnings

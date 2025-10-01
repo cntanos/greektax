@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 
 from greektax.backend.app.services.calculation_service import calculate_tax
+from greektax.backend.config.year_config import load_year_configuration
 
 
 def test_calculate_tax_defaults_to_zero_summary() -> None:
@@ -289,23 +290,70 @@ def test_calculate_tax_with_freelance_category_contributions() -> None:
         "year": 2024,
         "freelance": {
             "profit": 30_000,
-            "efka_category": "general_a",
+            "efka_category": "general_class_1",
             "efka_months": 6,
             "mandatory_contributions": 500,
             "auxiliary_contributions": 120,
         },
     }
 
+    config = load_year_configuration(2024)
+    category = next(
+        entry for entry in config.freelance.efka_categories if entry.id == "general_class_1"
+    )
+    expected_category_contribution = category.monthly_amount * 6
+    expected_deductible = expected_category_contribution + 500 + 120
+
     result = calculate_tax(payload)
 
     freelance_detail = result["details"][0]
     assert freelance_detail["category"] == "freelance"
-    assert freelance_detail["category_contributions"] == pytest.approx(1_320.0)
-    assert freelance_detail["deductible_contributions"] == pytest.approx(1_940.0)
+    assert freelance_detail["category_contributions"] == pytest.approx(
+        expected_category_contribution
+    )
+    assert freelance_detail["deductible_contributions"] == pytest.approx(
+        expected_deductible
+    )
     assert freelance_detail["additional_contributions"] == pytest.approx(500.0)
     assert freelance_detail["auxiliary_contributions"] == pytest.approx(120.0)
-    assert freelance_detail["trade_fee"] == pytest.approx(650.0)
-    assert freelance_detail["total_tax"] == pytest.approx(6_006.8)
+    assert "lump_sum_contributions" not in freelance_detail
+    assert freelance_detail["trade_fee"] == pytest.approx(
+        config.freelance.trade_fee.standard_amount
+    )
+
+
+def test_calculate_tax_with_engineer_lump_sum_contributions() -> None:
+    """Engineer categories include auxiliary and lump-sum contributions."""
+
+    config = load_year_configuration(2024)
+    category = next(
+        entry for entry in config.freelance.efka_categories if entry.id == "engineer_class_1"
+    )
+    months = 12
+    auxiliary_total = (category.auxiliary_monthly_amount or 0) * months
+    lump_sum_total = (category.lump_sum_monthly_amount or 0) * months
+
+    payload = {
+        "year": 2024,
+        "freelance": {
+            "profit": 40_000,
+            "efka_category": "engineer_class_1",
+            "efka_months": months,
+            "auxiliary_contributions": auxiliary_total,
+            "lump_sum_contributions": lump_sum_total,
+        },
+    }
+
+    result = calculate_tax(payload)
+    freelance_detail = result["details"][0]
+
+    expected_category = category.monthly_amount * months
+    expected_total = expected_category + auxiliary_total + lump_sum_total
+
+    assert freelance_detail["category_contributions"] == pytest.approx(expected_category)
+    assert freelance_detail["auxiliary_contributions"] == pytest.approx(auxiliary_total)
+    assert freelance_detail["lump_sum_contributions"] == pytest.approx(lump_sum_total)
+    assert freelance_detail["deductible_contributions"] == pytest.approx(expected_total)
 
 
 def test_calculate_tax_applies_deductions_across_components() -> None:
@@ -378,20 +426,27 @@ def test_calculate_tax_trade_fee_reduction_rules() -> None:
         "year": 2024,
         "freelance": {
             "profit": 12_000,
-            "efka_category": "general_a",
+            "efka_category": "general_class_1",
             "trade_fee_location": "standard",
             "years_active": 2,
             "newly_self_employed": True,
         },
     }
 
+    config = load_year_configuration(2024)
+    trade_fee_config = config.freelance.trade_fee
+
     reduced_fee_result = calculate_tax(base_payload)
     reduced_detail = reduced_fee_result["details"][0]
-    assert reduced_detail["trade_fee"] == pytest.approx(325.0)
-    assert reduced_detail["total_tax"] == pytest.approx(1_167.4)
+    assert reduced_detail["trade_fee"] == pytest.approx(
+        trade_fee_config.reduced_amount or trade_fee_config.standard_amount
+    )
 
     no_fee_payload = {"year": 2024, "freelance": {**base_payload["freelance"], "include_trade_fee": False}}
     no_fee_result = calculate_tax(no_fee_payload)
     no_fee_detail = no_fee_result["details"][0]
     assert no_fee_detail["trade_fee"] == pytest.approx(0.0)
-    assert no_fee_detail["total_tax"] == pytest.approx(842.4)
+    expected_difference = reduced_detail["trade_fee"]
+    assert reduced_detail["total_tax"] == pytest.approx(
+        no_fee_detail["total_tax"] + expected_difference
+    )

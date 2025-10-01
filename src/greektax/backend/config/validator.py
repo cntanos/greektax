@@ -161,6 +161,42 @@ def _validate_efka_categories(categories: Sequence[EFKACategoryConfig]) -> list[
                 )
             )
 
+        pension_amount = category.pension_monthly_amount
+        if pension_amount is not None and pension_amount < 0:
+            errors.append(
+                _format_scope(
+                    "freelance.efka_categories",
+                    (
+                        "category "
+                        f"'{category.id}' pension monthly amount must be non-negative"
+                    ),
+                )
+            )
+
+        health_amount = category.health_monthly_amount
+        if health_amount is not None and health_amount < 0:
+            errors.append(
+                _format_scope(
+                    "freelance.efka_categories",
+                    (
+                        "category "
+                        f"'{category.id}' health monthly amount must be non-negative"
+                    ),
+                )
+            )
+
+        lump_sum_amount = category.lump_sum_monthly_amount
+        if lump_sum_amount is not None and lump_sum_amount < 0:
+            errors.append(
+                _format_scope(
+                    "freelance.efka_categories",
+                    (
+                        "category "
+                        f"'{category.id}' lump-sum monthly amount must be non-negative"
+                    ),
+                )
+            )
+
     return errors
 
 
