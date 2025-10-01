@@ -62,9 +62,12 @@ const UI_MESSAGES = {
         year_household: "Year and household",
         employment_pension: "Employment & pension income",
         freelance: "Freelance income",
+        agricultural: "Agricultural income",
+        other: "Other income",
         rental: "Rental income",
         investment: "Investment income",
         obligations: "Additional obligations",
+        deductions: "Deductions",
       },
     },
     forms: {
@@ -73,6 +76,9 @@ const UI_MESSAGES = {
     detailFields: {
       gross_income: "Gross income",
       deductible_contributions: "Mandatory contributions",
+      category_contributions: "EFKA category contributions",
+      additional_contributions: "Additional contributions",
+      auxiliary_contributions: "Auxiliary contributions",
       deductible_expenses: "Deductible expenses",
       taxable_income: "Taxable income",
       tax_before_credits: "Tax before credits",
@@ -90,6 +96,7 @@ const UI_MESSAGES = {
       employee_contributions_per_payment: "Employee contributions per payment",
       employer_contributions_per_payment: "Employer contributions per payment",
       breakdown: "Breakdown",
+      deductions_applied: "Deductions applied",
     },
     fields: {
       "year-select": "Tax year",
@@ -112,16 +119,57 @@ const UI_MESSAGES = {
       "freelance-revenue": "Freelance gross revenue (€)",
       "freelance-expenses": "Freelance deductible expenses (€)",
       "freelance-contributions": "Mandatory social contributions (€)",
+      "freelance-auxiliary-contributions": "Auxiliary fund contributions (€)",
+      "freelance-efka-category": "EFKA contribution category",
+      "freelance-efka-category-placeholder": "Select EFKA category (optional)",
+      "freelance-efka-months": "Contribution months",
+      "freelance-trade-fee-location": "Trade fee location",
+      "freelance-trade-fee-standard": "Standard amount",
+      "freelance-trade-fee-reduced": "Reduced amount",
+      "freelance-years-active": "Years self-employed",
+      "freelance-newly-self-employed": "Newly self-employed",
       "trade-fee-toggle": "Include business activity fee",
+      "toggle-freelance": "Include freelance income",
+      "toggle-agricultural": "Include agricultural income",
+      "toggle-other": "Include other income",
+      "toggle-rental": "Include rental income",
+      "toggle-investment": "Include investment income",
+      "toggle-deductions": "Include deductions",
+      "toggle-obligations": "Include additional obligations",
+      "agricultural-revenue": "Agricultural revenue (€)",
+      "agricultural-expenses": "Agricultural expenses (€)",
+      "other-income": "Other taxable income (€)",
       "rental-income": "Rental gross income (€)",
       "rental-expenses": "Rental deductible expenses (€)",
+      "deductions-donations": "Charitable donations (€)",
+      "deductions-medical": "Medical expenses (€)",
+      "deductions-education": "Education expenses (€)",
+      "deductions-insurance": "Insurance premiums (€)",
       "vat-due": "VAT due (€)",
       "enfia-due": "ENFIA amount (€)",
       "luxury-due": "Luxury living tax (€)",
+      freelance: {
+        efka: {
+          category: {
+            general_a: "Category A (standard tier)",
+            general_a_description:
+              "Includes base EFKA contributions plus small auxiliary fund coverage.",
+            general_b: "Category B (enhanced tier)",
+            reduced: "Reduced contributions",
+            reduced_description:
+              "Available to eligible professionals with reduced EFKA obligations.",
+          },
+        },
+      },
     },
     hints: {
       "employment-payments":
         "Most salaried roles use 14 payments (12 monthly plus bonuses). Adjust if your contract pays a different number of times per year.",
+      "freelance-efka-category": "Select a contribution class to prefill mandatory EFKA payments.",
+      "freelance-efka-category-base": "Base EFKA contribution: {{amount}} per month.",
+      "freelance-efka-category-auxiliary": "Auxiliary fund contribution: {{amount}} per month.",
+      "freelance-trade-fee": "Trade fee applied: {{amount}}.",
+      "freelance-trade-fee-new": "Reduced rate applies for the first {{years}} years of activity.",
     },
     actions: {
       calculate: "Calculate taxes",
@@ -174,9 +222,12 @@ const UI_MESSAGES = {
         year_household: "Έτος και νοικοκυριό",
         employment_pension: "Εισόδημα μισθωτών & συντάξεων",
         freelance: "Εισόδημα ελεύθερου επαγγελματία",
+        agricultural: "Αγροτικό εισόδημα",
+        other: "Λοιπά εισοδήματα",
         rental: "Εισόδημα από ενοίκια",
         investment: "Επενδυτικά εισοδήματα",
         obligations: "Πρόσθετες υποχρεώσεις",
+        deductions: "Εκπτώσεις",
       },
     },
     forms: {
@@ -186,6 +237,9 @@ const UI_MESSAGES = {
     detailFields: {
       gross_income: "Ακαθάριστο εισόδημα",
       deductible_contributions: "Υποχρεωτικές εισφορές",
+      category_contributions: "Εισφορές κατηγορίας ΕΦΚΑ",
+      additional_contributions: "Επιπλέον εισφορές",
+      auxiliary_contributions: "Εισφορές επικουρικού",
       deductible_expenses: "Εκπιπτόμενες δαπάνες",
       taxable_income: "Φορολογητέο εισόδημα",
       tax_before_credits: "Φόρος πριν τις εκπτώσεις",
@@ -203,6 +257,7 @@ const UI_MESSAGES = {
       employee_contributions_per_payment: "Εισφορές εργαζομένου ανά καταβολή",
       employer_contributions_per_payment: "Εισφορές εργοδότη ανά καταβολή",
       breakdown: "Ανάλυση",
+      deductions_applied: "Εφαρμοσμένες εκπτώσεις",
     },
     fields: {
       "year-select": "Φορολογικό έτος",
@@ -225,16 +280,57 @@ const UI_MESSAGES = {
       "freelance-revenue": "Ακαθάριστα έσοδα ελευθέρου επαγγελματία (€)",
       "freelance-expenses": "Εκπιπτόμενες δαπάνες ελευθέρου επαγγελματία (€)",
       "freelance-contributions": "Υποχρεωτικές εισφορές (€)",
+      "freelance-auxiliary-contributions": "Εισφορές επικουρικού ταμείου (€)",
+      "freelance-efka-category": "Κατηγορία εισφορών ΕΦΚΑ",
+      "freelance-efka-category-placeholder": "Επιλέξτε κατηγορία ΕΦΚΑ (προαιρετικά)",
+      "freelance-efka-months": "Μήνες εισφορών",
+      "freelance-trade-fee-location": "Περιοχή τέλους επιτηδεύματος",
+      "freelance-trade-fee-standard": "Τυπικό ποσό",
+      "freelance-trade-fee-reduced": "Μειωμένο ποσό",
+      "freelance-years-active": "Έτη ως ελεύθερος επαγγελματίας",
+      "freelance-newly-self-employed": "Νεοσύστατος επαγγελματίας",
       "trade-fee-toggle": "Συμπερίληψη τέλους επιτηδεύματος",
+      "toggle-freelance": "Συμπερίληψη εισοδήματος ελευθέρων επαγγελματιών",
+      "toggle-agricultural": "Συμπερίληψη αγροτικού εισοδήματος",
+      "toggle-other": "Συμπερίληψη λοιπών εισοδημάτων",
+      "toggle-rental": "Συμπερίληψη εισοδήματος από ενοίκια",
+      "toggle-investment": "Συμπερίληψη επενδυτικών εισοδημάτων",
+      "toggle-deductions": "Συμπερίληψη εκπτώσεων",
+      "toggle-obligations": "Συμπερίληψη πρόσθετων υποχρεώσεων",
+      "agricultural-revenue": "Ακαθάριστα αγροτικά έσοδα (€)",
+      "agricultural-expenses": "Εκπιπτόμενες αγροτικές δαπάνες (€)",
+      "other-income": "Λοιπά φορολογητέα εισοδήματα (€)",
       "rental-income": "Ακαθάριστα έσοδα ενοικίων (€)",
       "rental-expenses": "Εκπιπτόμενες δαπάνες ενοικίων (€)",
+      "deductions-donations": "Δωρεές (€)",
+      "deductions-medical": "Ιατρικές δαπάνες (€)",
+      "deductions-education": "Εκπαιδευτικές δαπάνες (€)",
+      "deductions-insurance": "Ασφαλιστικά ασφάλιστρα (€)",
       "vat-due": "Οφειλόμενος ΦΠΑ (€)",
       "enfia-due": "Ποσό ΕΝΦΙΑ (€)",
       "luxury-due": "Φόρος πολυτελούς διαβίωσης (€)",
+      freelance: {
+        efka: {
+          category: {
+            general_a: "Κατηγορία Α (τυπική)",
+            general_a_description:
+              "Περιλαμβάνει βασικές εισφορές ΕΦΚΑ και μικρή επικουρική κάλυψη.",
+            general_b: "Κατηγορία Β (ενισχυμένη)",
+            reduced: "Μειωμένες εισφορές",
+            reduced_description:
+              "Διαθέσιμη σε επαγγελματίες με δικαίωμα μειωμένων εισφορών.",
+          },
+        },
+      },
     },
     hints: {
       "employment-payments":
         "Συνήθως καταβάλλονται 14 μισθοί (12 μηνιαίοι και 2 δώρα). Προσαρμόστε τον αριθμό αν η σύμβασή σας προβλέπει διαφορετικές καταβολές ανά έτος.",
+      "freelance-efka-category": "Επιλέξτε κατηγορία εισφορών για αυτόματη συμπλήρωση των υποχρεωτικών ποσών.",
+      "freelance-efka-category-base": "Βασική εισφορά ΕΦΚΑ: {{amount}} ανά μήνα.",
+      "freelance-efka-category-auxiliary": "Εισφορά επικουρικού ταμείου: {{amount}} ανά μήνα.",
+      "freelance-trade-fee": "Εφαρμοζόμενο τέλος επιτηδεύματος: {{amount}}.",
+      "freelance-trade-fee-new": "Ισχύει μειωμένο ποσό για τα πρώτα {{years}} έτη δραστηριότητας.",
     },
     actions: {
       calculate: "Υπολογισμός φόρων",
@@ -252,6 +348,7 @@ let currentEmploymentMode = "gross";
 let currentPensionMode = "gross";
 let currentInvestmentCategories = [];
 let currentDeductionHints = [];
+let currentFreelanceMetadata = null;
 let dynamicFieldLabels = {};
 let deductionValidationByInput = {};
 let lastCalculation = null;
@@ -287,13 +384,48 @@ const freelanceExpensesInput = document.getElementById("freelance-expenses");
 const freelanceContributionsInput = document.getElementById(
   "freelance-contributions",
 );
+const freelanceAuxiliaryContributionsInput = document.getElementById(
+  "freelance-auxiliary-contributions",
+);
 const tradeFeeToggle = document.getElementById("trade-fee-toggle");
+const freelanceEfkaSelect = document.getElementById("freelance-efka-category");
+const freelanceEfkaMonthsInput = document.getElementById("freelance-efka-months");
+const freelanceEfkaHint = document.getElementById("freelance-efka-category-hint");
+const freelanceTradeFeeLocationSelect = document.getElementById(
+  "freelance-trade-fee-location",
+);
+const freelanceTradeFeeHint = document.getElementById("freelance-trade-fee-hint");
+const freelanceYearsActiveInput = document.getElementById("freelance-years-active");
+const freelanceNewlySelfEmployedToggle = document.getElementById(
+  "freelance-newly-self-employed",
+);
 const rentalIncomeInput = document.getElementById("rental-income");
 const rentalExpensesInput = document.getElementById("rental-expenses");
 const investmentFieldsContainer = document.getElementById("investment-fields");
+const agriculturalRevenueInput = document.getElementById("agricultural-revenue");
+const agriculturalExpensesInput = document.getElementById("agricultural-expenses");
+const otherIncomeInput = document.getElementById("other-income");
+const deductionsDonationsInput = document.getElementById("deductions-donations");
+const deductionsMedicalInput = document.getElementById("deductions-medical");
+const deductionsEducationInput = document.getElementById("deductions-education");
+const deductionsInsuranceInput = document.getElementById("deductions-insurance");
 const vatInput = document.getElementById("vat-due");
 const enfiaInput = document.getElementById("enfia-due");
 const luxuryInput = document.getElementById("luxury-due");
+const freelanceSection = document.getElementById("freelance-section");
+const agriculturalSection = document.getElementById("agricultural-section");
+const otherSection = document.getElementById("other-section");
+const rentalSection = document.getElementById("rental-section");
+const investmentSection = document.getElementById("investment-section");
+const deductionsSection = document.getElementById("deductions-section");
+const obligationsSection = document.getElementById("obligations-section");
+const toggleFreelance = document.getElementById("toggle-freelance");
+const toggleAgricultural = document.getElementById("toggle-agricultural");
+const toggleOther = document.getElementById("toggle-other");
+const toggleRental = document.getElementById("toggle-rental");
+const toggleInvestment = document.getElementById("toggle-investment");
+const toggleDeductions = document.getElementById("toggle-deductions");
+const toggleObligations = document.getElementById("toggle-obligations");
 const calculatorForm = document.getElementById("calculator-form");
 const calculatorStatus = document.getElementById("calculator-status");
 const resultsSection = document.getElementById("calculation-results");
@@ -387,6 +519,7 @@ function applyLocale(locale) {
   }
   refreshInvestmentCategories();
   refreshDeductionHints();
+  populateFreelanceMetadata(currentFreelanceMetadata);
 }
 
 function localiseStaticText() {
@@ -510,6 +643,74 @@ function isInputVisible(input) {
   return true;
 }
 
+function isSectionActive(section) {
+  return Boolean(section && !section.hidden);
+}
+
+function resetSectionInputs(section) {
+  if (!section) {
+    return;
+  }
+  section.querySelectorAll('input[type="number"]').forEach((input) => {
+    if (!input) {
+      return;
+    }
+    const defaultValue = input.defaultValue ?? "0";
+    input.value = defaultValue || "0";
+  });
+  section.querySelectorAll('input[type="checkbox"]').forEach((input) => {
+    if (!input) {
+      return;
+    }
+    input.checked = Boolean(input.defaultChecked);
+  });
+  section.querySelectorAll("select").forEach((select) => {
+    if (!select) {
+      return;
+    }
+    select.selectedIndex = 0;
+  });
+}
+
+function handleSectionToggle(toggle) {
+  if (!toggle) {
+    return;
+  }
+  const targetId = toggle.getAttribute("data-toggle-target");
+  if (!targetId) {
+    return;
+  }
+  const section = document.getElementById(targetId);
+  if (!section) {
+    return;
+  }
+  const isChecked = Boolean(toggle.checked);
+  section.hidden = !isChecked;
+  section.setAttribute("aria-hidden", String(!isChecked));
+  if (!isChecked) {
+    resetSectionInputs(section);
+  }
+}
+
+function initialiseSectionToggles() {
+  const toggles = [
+    toggleFreelance,
+    toggleAgricultural,
+    toggleOther,
+    toggleRental,
+    toggleInvestment,
+    toggleDeductions,
+    toggleObligations,
+  ];
+  toggles.forEach((toggle) => {
+    if (!toggle) {
+      return;
+    }
+    handleSectionToggle(toggle);
+    toggle.addEventListener("change", () => handleSectionToggle(toggle));
+  });
+}
+
 function updateSectionMode(section, mode) {
   const desiredMode = mode === "net" ? "net" : "gross";
   document
@@ -614,6 +815,7 @@ function applyYearMetadata(year) {
 
   updateEmploymentMode(currentEmploymentMode);
   updatePensionMode(currentPensionMode);
+  populateFreelanceMetadata(currentYearMetadata?.freelance || null);
 }
 
 function buildDownloadFilename(extension) {
@@ -849,6 +1051,170 @@ async function refreshInvestmentCategories() {
   }
 }
 
+function updateFreelanceCategoryHint() {
+  if (!freelanceEfkaHint) {
+    return;
+  }
+
+  if (!freelanceEfkaSelect || !freelanceEfkaSelect.value) {
+    const message = t("hints.freelance-efka-category");
+    if (message) {
+      freelanceEfkaHint.textContent = message;
+      freelanceEfkaHint.hidden = false;
+    } else {
+      freelanceEfkaHint.textContent = "";
+      freelanceEfkaHint.hidden = true;
+    }
+    return;
+  }
+
+  const option = freelanceEfkaSelect.selectedOptions?.[0];
+  if (!option) {
+    freelanceEfkaHint.textContent = "";
+    freelanceEfkaHint.hidden = true;
+    return;
+  }
+
+  const monthlyAmount = Number.parseFloat(option.dataset.monthlyAmount || "0");
+  const auxiliaryAmount = Number.parseFloat(
+    option.dataset.auxiliaryMonthlyAmount || "0",
+  );
+  const descriptionKey = option.dataset.descriptionKey;
+
+  const parts = [];
+  if (Number.isFinite(monthlyAmount) && monthlyAmount > 0) {
+    parts.push(
+      t("hints.freelance-efka-category-base", {
+        amount: formatCurrency(monthlyAmount),
+      }),
+    );
+  }
+  if (Number.isFinite(auxiliaryAmount) && auxiliaryAmount > 0) {
+    parts.push(
+      t("hints.freelance-efka-category-auxiliary", {
+        amount: formatCurrency(auxiliaryAmount),
+      }),
+    );
+  }
+  if (descriptionKey) {
+    parts.push(t(descriptionKey));
+  }
+
+  freelanceEfkaHint.textContent = parts.join(" ");
+  freelanceEfkaHint.hidden = parts.length === 0;
+}
+
+function updateTradeFeeHint() {
+  if (!freelanceTradeFeeHint) {
+    return;
+  }
+
+  const tradeFee = currentFreelanceMetadata?.trade_fee || {};
+  let amount = tradeFee.standard_amount ?? null;
+  const location = freelanceTradeFeeLocationSelect?.value || "standard";
+  if (
+    location === "reduced" &&
+    tradeFee.reduced_amount !== null &&
+    tradeFee.reduced_amount !== undefined
+  ) {
+    amount = tradeFee.reduced_amount;
+  }
+
+  if (typeof amount !== "number" || Number.isNaN(amount)) {
+    freelanceTradeFeeHint.textContent = "";
+    freelanceTradeFeeHint.hidden = true;
+    return;
+  }
+
+  const messages = [
+    t("hints.freelance-trade-fee", { amount: formatCurrency(amount) }),
+  ];
+
+  if (tradeFee.newly_self_employed_reduction_years) {
+    messages.push(
+      t("hints.freelance-trade-fee-new", {
+        years: tradeFee.newly_self_employed_reduction_years,
+      }),
+    );
+  }
+
+  freelanceTradeFeeHint.textContent = messages.join(" ");
+  freelanceTradeFeeHint.hidden = false;
+}
+
+function populateFreelanceMetadata(metadata) {
+  currentFreelanceMetadata = metadata || null;
+
+  if (freelanceEfkaSelect) {
+    const previousValue = freelanceEfkaSelect.value || "";
+    freelanceEfkaSelect.innerHTML = "";
+
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = t("fields.freelance-efka-category-placeholder");
+    freelanceEfkaSelect.appendChild(placeholder);
+
+    const categories = Array.isArray(metadata?.efka_categories)
+      ? metadata.efka_categories
+      : [];
+
+    categories.forEach((category) => {
+      if (!category) {
+        return;
+      }
+      const option = document.createElement("option");
+      option.value = category.id;
+      option.textContent = `${t(category.label_key)} (${formatCurrency(
+        category.monthly_amount || 0,
+      )}/month)`;
+      option.dataset.monthlyAmount = String(category.monthly_amount || 0);
+      option.dataset.auxiliaryMonthlyAmount = String(
+        category.auxiliary_monthly_amount || 0,
+      );
+      if (category.description_key) {
+        option.dataset.descriptionKey = category.description_key;
+      }
+      freelanceEfkaSelect.appendChild(option);
+    });
+
+    if (previousValue) {
+      freelanceEfkaSelect.value = previousValue;
+      if (freelanceEfkaSelect.value !== previousValue) {
+        freelanceEfkaSelect.selectedIndex = 0;
+      }
+    } else {
+      freelanceEfkaSelect.selectedIndex = 0;
+    }
+  }
+
+  if (freelanceTradeFeeLocationSelect) {
+    const previousLocation = freelanceTradeFeeLocationSelect.value || "standard";
+    freelanceTradeFeeLocationSelect.innerHTML = "";
+
+    const tradeFee = metadata?.trade_fee || {};
+
+    const standardOption = document.createElement("option");
+    standardOption.value = "standard";
+    standardOption.textContent = t("fields.freelance-trade-fee-standard");
+    freelanceTradeFeeLocationSelect.appendChild(standardOption);
+
+    if (tradeFee.reduced_amount !== null && tradeFee.reduced_amount !== undefined) {
+      const reducedOption = document.createElement("option");
+      reducedOption.value = "reduced";
+      reducedOption.textContent = t("fields.freelance-trade-fee-reduced");
+      freelanceTradeFeeLocationSelect.appendChild(reducedOption);
+    }
+
+    freelanceTradeFeeLocationSelect.value = previousLocation;
+    if (!freelanceTradeFeeLocationSelect.value) {
+      freelanceTradeFeeLocationSelect.value = "standard";
+    }
+  }
+
+  updateFreelanceCategoryHint();
+  updateTradeFeeHint();
+}
+
 async function refreshDeductionHints() {
   if (!yearSelect) {
     return;
@@ -1075,6 +1441,21 @@ function readNumber(input) {
   return value;
 }
 
+function readInteger(input) {
+  if (!input) {
+    return 0;
+  }
+  if (!isInputVisible(input)) {
+    return 0;
+  }
+  const normalised = (input.value ?? "0").toString().trim();
+  const value = Number.parseInt(normalised, 10);
+  if (!Number.isFinite(value) || value < 0) {
+    return 0;
+  }
+  return value;
+}
+
 function buildCalculationPayload() {
   const year = Number.parseInt(yearSelect?.value ?? "0", 10);
   const payload = { year, locale: currentLocale };
@@ -1157,23 +1538,81 @@ function buildCalculationPayload() {
     payload.pension = pensionPayload;
   }
 
-  if (freelanceRevenueInput || freelanceContributionsInput) {
-    payload.freelance = {
-      gross_revenue: readNumber(freelanceRevenueInput),
-      deductible_expenses: readNumber(freelanceExpensesInput),
-      mandatory_contributions: readNumber(freelanceContributionsInput),
-      include_trade_fee: Boolean(tradeFeeToggle?.checked),
-    };
+  if (isSectionActive(freelanceSection)) {
+    const freelancePayload = {};
+    const revenue = readNumber(freelanceRevenueInput);
+    const expenses = readNumber(freelanceExpensesInput);
+    const contributions = readNumber(freelanceContributionsInput);
+    const auxiliary = readNumber(freelanceAuxiliaryContributionsInput);
+    const efkaCategory = freelanceEfkaSelect?.value;
+    const efkaMonths = readInteger(freelanceEfkaMonthsInput);
+    const tradeFeeLocation = freelanceTradeFeeLocationSelect?.value;
+    const yearsActive = readInteger(freelanceYearsActiveInput);
+
+    if (revenue > 0) {
+      freelancePayload.gross_revenue = revenue;
+    }
+    if (expenses > 0) {
+      freelancePayload.deductible_expenses = expenses;
+    }
+    if (contributions > 0) {
+      freelancePayload.mandatory_contributions = contributions;
+    }
+    if (auxiliary > 0) {
+      freelancePayload.auxiliary_contributions = auxiliary;
+    }
+    if (efkaCategory) {
+      freelancePayload.efka_category = efkaCategory;
+    }
+    if (efkaMonths > 0) {
+      freelancePayload.efka_months = efkaMonths;
+    }
+    if (tradeFeeLocation && tradeFeeLocation !== "standard") {
+      freelancePayload.trade_fee_location = tradeFeeLocation;
+    }
+    if (yearsActive > 0) {
+      freelancePayload.years_active = yearsActive;
+    }
+    if (freelanceNewlySelfEmployedToggle?.checked) {
+      freelancePayload.newly_self_employed = true;
+    }
+
+    freelancePayload.include_trade_fee = Boolean(tradeFeeToggle?.checked);
+
+    if (Object.keys(freelancePayload).length > 1 || revenue > 0 || expenses > 0) {
+      payload.freelance = freelancePayload;
+    }
   }
 
-  if (rentalIncomeInput || rentalExpensesInput) {
-    payload.rental = {
+  if (isSectionActive(agriculturalSection)) {
+    const revenue = readNumber(agriculturalRevenueInput);
+    const expenses = readNumber(agriculturalExpensesInput);
+    if (revenue > 0 || expenses > 0) {
+      payload.agricultural = {
+        gross_revenue: revenue,
+        deductible_expenses: expenses,
+      };
+    }
+  }
+
+  if (isSectionActive(otherSection)) {
+    const otherIncome = readNumber(otherIncomeInput);
+    if (otherIncome > 0) {
+      payload.other = { taxable_income: otherIncome };
+    }
+  }
+
+  if (isSectionActive(rentalSection)) {
+    const rentalPayload = {
       gross_income: readNumber(rentalIncomeInput),
       deductible_expenses: readNumber(rentalExpensesInput),
     };
+    if (rentalPayload.gross_income > 0 || rentalPayload.deductible_expenses > 0) {
+      payload.rental = rentalPayload;
+    }
   }
 
-  if (currentInvestmentCategories.length) {
+  if (isSectionActive(investmentSection) && currentInvestmentCategories.length) {
     const investmentPayload = {};
     currentInvestmentCategories.forEach((category) => {
       const field = document.getElementById(`investment-${category.id}`);
@@ -1187,11 +1626,28 @@ function buildCalculationPayload() {
     }
   }
 
-  payload.obligations = {
-    vat: readNumber(vatInput),
-    enfia: readNumber(enfiaInput),
-    luxury: readNumber(luxuryInput),
-  };
+  if (isSectionActive(deductionsSection)) {
+    const deductionsPayload = {
+      donations: readNumber(deductionsDonationsInput),
+      medical: readNumber(deductionsMedicalInput),
+      education: readNumber(deductionsEducationInput),
+      insurance: readNumber(deductionsInsuranceInput),
+    };
+    if (Object.values(deductionsPayload).some((value) => value > 0)) {
+      payload.deductions = deductionsPayload;
+    }
+  }
+
+  if (isSectionActive(obligationsSection)) {
+    const obligationsPayload = {
+      vat: readNumber(vatInput),
+      enfia: readNumber(enfiaInput),
+      luxury: readNumber(luxuryInput),
+    };
+    if (Object.values(obligationsPayload).some((value) => value > 0)) {
+      payload.obligations = obligationsPayload;
+    }
+  }
 
   return payload;
 }
@@ -1206,6 +1662,8 @@ function renderSummary(summary) {
   const summaryFields = [
     { key: "net_income", formatter: formatCurrency, className: "primary" },
     { key: "tax_total", formatter: formatCurrency, className: "accent" },
+    { key: "deductions_applied", formatter: formatCurrency },
+    { key: "deductions_entered", formatter: formatCurrency },
     { key: "net_monthly_income", formatter: formatCurrency },
     { key: "average_monthly_tax", formatter: formatCurrency },
     { key: "income_total", formatter: formatCurrency },
@@ -1256,6 +1714,9 @@ function renderDetailCard(detail) {
     "payments_per_year",
     "gross_income_per_payment",
     "deductible_contributions",
+    "category_contributions",
+    "additional_contributions",
+    "auxiliary_contributions",
     "employee_contributions",
     "employee_contributions_per_payment",
     "employer_contributions",
@@ -1269,6 +1730,7 @@ function renderDetailCard(detail) {
     "total_tax",
     "net_income",
     "net_income_per_payment",
+    "deductions_applied",
   ];
   const labels = {
     gross_income: detailLabels.gross_income || "Gross income",
@@ -1278,6 +1740,12 @@ function renderDetailCard(detail) {
       detailLabels.gross_income_per_payment || "Gross per payment",
     deductible_contributions:
       detailLabels.deductible_contributions || "Mandatory contributions",
+    category_contributions:
+      detailLabels.category_contributions || "Category contributions",
+    additional_contributions:
+      detailLabels.additional_contributions || "Additional contributions",
+    auxiliary_contributions:
+      detailLabels.auxiliary_contributions || "Auxiliary contributions",
     employee_contributions:
       detailLabels.employee_contributions || "Employee contributions",
     employee_contributions_per_payment:
@@ -1300,6 +1768,8 @@ function renderDetailCard(detail) {
     net_income: detailLabels.net_income || "Net impact",
     net_income_per_payment:
       detailLabels.net_income_per_payment || "Net per payment",
+    deductions_applied:
+      detailLabels.deductions_applied || "Deductions applied",
   };
 
   fieldOrder.forEach((key) => {
@@ -1496,6 +1966,8 @@ function downloadCsvSummary() {
   const summaryFields = [
     { key: "net_income", formatter: formatCurrency },
     { key: "tax_total", formatter: formatCurrency },
+    { key: "deductions_applied", formatter: formatCurrency },
+    { key: "deductions_entered", formatter: formatCurrency },
     { key: "net_monthly_income", formatter: formatCurrency },
     { key: "average_monthly_tax", formatter: formatCurrency },
     { key: "income_total", formatter: formatCurrency },
@@ -1515,6 +1987,9 @@ function downloadCsvSummary() {
     "payments_per_year",
     "gross_income_per_payment",
     "deductible_contributions",
+    "category_contributions",
+    "additional_contributions",
+    "auxiliary_contributions",
     "employee_contributions",
     "employee_contributions_per_payment",
     "employer_contributions",
@@ -1528,6 +2003,7 @@ function downloadCsvSummary() {
     "total_tax",
     "net_income",
     "net_income_per_payment",
+    "deductions_applied",
   ];
 
   details.forEach((detail) => {
@@ -1624,6 +2100,13 @@ function initialiseCalculator() {
     currentPensionMode = pensionModeSelect.value || "gross";
     updatePensionMode(currentPensionMode);
   }
+
+  initialiseSectionToggles();
+  freelanceEfkaSelect?.addEventListener("change", updateFreelanceCategoryHint);
+  freelanceTradeFeeLocationSelect?.addEventListener(
+    "change",
+    updateTradeFeeHint,
+  );
 
   calculatorForm.addEventListener("submit", submitCalculation);
   yearSelect.addEventListener("change", () => {

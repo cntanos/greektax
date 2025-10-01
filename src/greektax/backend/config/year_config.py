@@ -104,11 +104,37 @@ class TradeFeeConfig:
 
 
 @dataclass(frozen=True)
+class EFKACategoryConfig:
+    """Configuration entry describing a freelancer EFKA contribution category."""
+
+    id: str
+    label_key: str
+    monthly_amount: float
+    auxiliary_monthly_amount: Optional[float] = None
+    description_key: Optional[str] = None
+
+
+@dataclass(frozen=True)
 class FreelanceConfig:
     """Configuration for freelance/business income."""
 
     brackets: Sequence[TaxBracket]
     trade_fee: TradeFeeConfig
+    efka_categories: Sequence[EFKACategoryConfig]
+
+
+@dataclass(frozen=True)
+class AgriculturalConfig:
+    """Configuration for agricultural income taxed on the progressive scale."""
+
+    brackets: Sequence[TaxBracket]
+
+
+@dataclass(frozen=True)
+class OtherIncomeConfig:
+    """Configuration for other progressive income categories."""
+
+    brackets: Sequence[TaxBracket]
 
 
 @dataclass(frozen=True)
@@ -173,6 +199,8 @@ class YearConfiguration:
     employment: EmploymentConfig
     pension: PensionConfig
     freelance: FreelanceConfig
+    agricultural: AgriculturalConfig
+    other: OtherIncomeConfig
     rental: RentalConfig
     investment: InvestmentConfig
     deductions: DeductionConfig
@@ -355,6 +383,59 @@ def _parse_trade_fee(raw: Mapping[str, Any]) -> TradeFeeConfig:
     )
 
 
+def _parse_efka_categories(raw: Optional[Iterable[Mapping[str, Any]]]) -> Sequence[EFKACategoryConfig]:
+    if not raw:
+        return tuple()
+
+    categories: list[EFKACategoryConfig] = []
+    for entry in raw:
+        if not isinstance(entry, Mapping):
+            raise ConfigurationError("EFKA categories must be defined using mappings")
+
+        category_id = entry.get("id")
+        if not category_id or not isinstance(category_id, str):
+            raise ConfigurationError("EFKA categories require a string 'id'")
+
+        label_key = entry.get("label_key")
+        if not label_key or not isinstance(label_key, str):
+            raise ConfigurationError("EFKA categories require a 'label_key' string")
+
+        monthly_amount = entry.get("monthly_amount")
+        if monthly_amount is None:
+            raise ConfigurationError("EFKA categories require 'monthly_amount'")
+
+        monthly_value = float(monthly_amount)
+        if monthly_value < 0:
+            raise ConfigurationError("EFKA 'monthly_amount' must be non-negative")
+
+        auxiliary_amount = entry.get("auxiliary_monthly_amount")
+        auxiliary_value = (
+            float(auxiliary_amount) if auxiliary_amount is not None else None
+        )
+        if auxiliary_value is not None and auxiliary_value < 0:
+            raise ConfigurationError(
+                "EFKA 'auxiliary_monthly_amount' must be non-negative when provided"
+            )
+
+        description_key = entry.get("description_key")
+        if description_key is not None and not isinstance(description_key, str):
+            raise ConfigurationError(
+                "EFKA category 'description_key' must be a string when provided"
+            )
+
+        categories.append(
+            EFKACategoryConfig(
+                id=category_id,
+                label_key=label_key,
+                monthly_amount=monthly_value,
+                auxiliary_monthly_amount=auxiliary_value,
+                description_key=description_key,
+            )
+        )
+
+    return tuple(categories)
+
+
 def _parse_freelance_config(raw: Mapping[str, Any]) -> FreelanceConfig:
     brackets_raw = raw.get("tax_brackets")
     if not isinstance(brackets_raw, Iterable):
@@ -364,10 +445,37 @@ def _parse_freelance_config(raw: Mapping[str, Any]) -> FreelanceConfig:
     if not isinstance(trade_fee_raw, Mapping):
         raise ConfigurationError("Freelance configuration must include 'trade_fee'")
 
+    efka_categories_raw = raw.get("efka_categories")
+    if efka_categories_raw is None:
+        efka_categories = tuple()
+    elif not isinstance(efka_categories_raw, Iterable):
+        raise ConfigurationError("'efka_categories' must be an iterable when provided")
+    else:
+        efka_categories = _parse_efka_categories(efka_categories_raw)
+
     return FreelanceConfig(
         brackets=_parse_tax_brackets(brackets_raw),
         trade_fee=_parse_trade_fee(trade_fee_raw),
+        efka_categories=efka_categories,
     )
+
+
+def _parse_agricultural_config(raw: Mapping[str, Any]) -> AgriculturalConfig:
+    brackets_raw = raw.get("tax_brackets")
+    if not isinstance(brackets_raw, Iterable):
+        raise ConfigurationError(
+            "Agricultural configuration must include 'tax_brackets'"
+        )
+
+    return AgriculturalConfig(brackets=_parse_tax_brackets(brackets_raw))
+
+
+def _parse_other_income_config(raw: Mapping[str, Any]) -> OtherIncomeConfig:
+    brackets_raw = raw.get("tax_brackets")
+    if not isinstance(brackets_raw, Iterable):
+        raise ConfigurationError("Other income configuration must include 'tax_brackets'")
+
+    return OtherIncomeConfig(brackets=_parse_tax_brackets(brackets_raw))
 
 
 def _parse_rental_config(raw: Mapping[str, Any]) -> RentalConfig:
@@ -538,6 +646,12 @@ def _parse_year_configuration(year: int, raw: Mapping[str, Any]) -> YearConfigur
     freelance_raw = income_section.get("freelance")
     if not isinstance(freelance_raw, Mapping):
         raise ConfigurationError("Income configuration requires a 'freelance' section")
+    agricultural_raw = income_section.get("agricultural")
+    if not isinstance(agricultural_raw, Mapping):
+        raise ConfigurationError("Income configuration requires an 'agricultural' section")
+    other_raw = income_section.get("other")
+    if not isinstance(other_raw, Mapping):
+        raise ConfigurationError("Income configuration requires an 'other' section")
 
     rental_raw = income_section.get("rental")
     if not isinstance(rental_raw, Mapping):
@@ -569,6 +683,8 @@ def _parse_year_configuration(year: int, raw: Mapping[str, Any]) -> YearConfigur
             pension_raw, employment_config.tax_credit, employment_config.payroll
         ),
         freelance=_parse_freelance_config(freelance_raw),
+        agricultural=_parse_agricultural_config(agricultural_raw),
+        other=_parse_other_income_config(other_raw),
         rental=_parse_rental_config(rental_raw),
         investment=_parse_investment_config(investment_raw),
         deductions=_parse_deductions_config(raw.get("deductions")),

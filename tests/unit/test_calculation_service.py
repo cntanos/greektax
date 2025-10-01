@@ -280,3 +280,118 @@ def test_calculate_tax_multi_year_credit_difference() -> None:
 
     assert tax_2025 < tax_2024
     assert result_2025["meta"]["year"] == 2025
+
+
+def test_calculate_tax_with_freelance_category_contributions() -> None:
+    """EFKA category metadata populates contribution breakdowns."""
+
+    payload = {
+        "year": 2024,
+        "freelance": {
+            "profit": 30_000,
+            "efka_category": "general_a",
+            "efka_months": 6,
+            "mandatory_contributions": 500,
+            "auxiliary_contributions": 120,
+        },
+    }
+
+    result = calculate_tax(payload)
+
+    freelance_detail = result["details"][0]
+    assert freelance_detail["category"] == "freelance"
+    assert freelance_detail["category_contributions"] == pytest.approx(1_320.0)
+    assert freelance_detail["deductible_contributions"] == pytest.approx(1_940.0)
+    assert freelance_detail["additional_contributions"] == pytest.approx(500.0)
+    assert freelance_detail["auxiliary_contributions"] == pytest.approx(120.0)
+    assert freelance_detail["trade_fee"] == pytest.approx(650.0)
+    assert freelance_detail["total_tax"] == pytest.approx(6_006.8)
+
+
+def test_calculate_tax_applies_deductions_across_components() -> None:
+    """Itemised deductions are distributed proportionally across taxable income."""
+
+    payload = {
+        "year": 2024,
+        "locale": "en",
+        "employment": {"gross_income": 30_000},
+        "agricultural": {"gross_revenue": 12_000, "deductible_expenses": 2_000},
+        "deductions": {
+            "donations": 2_000,
+            "medical": 1_000,
+            "education": 1_000,
+            "insurance": 1_000,
+        },
+    }
+
+    result = calculate_tax(payload)
+
+    employment_detail = next(
+        detail for detail in result["details"] if detail["category"] == "employment"
+    )
+    agricultural_detail = next(
+        detail for detail in result["details"] if detail["category"] == "agricultural"
+    )
+
+    assert employment_detail["deductions_applied"] == pytest.approx(3_750.0)
+    assert employment_detail["taxable_income"] == pytest.approx(26_250.0)
+    assert agricultural_detail["deductions_applied"] == pytest.approx(1_250.0)
+    assert agricultural_detail["taxable_income"] == pytest.approx(8_750.0)
+
+    summary = result["summary"]
+    assert summary["deductions_entered"] == pytest.approx(5_000.0)
+    assert summary["deductions_applied"] == pytest.approx(5_000.0)
+
+
+def test_calculate_tax_with_agricultural_and_other_income() -> None:
+    """Agricultural and other income categories produce dedicated details."""
+
+    payload = {
+        "year": 2024,
+        "agricultural": {"gross_revenue": 15_000, "deductible_expenses": 2_000},
+        "other": {"taxable_income": 5_000},
+    }
+
+    result = calculate_tax(payload)
+
+    agricultural_detail = next(
+        detail for detail in result["details"] if detail["category"] == "agricultural"
+    )
+    other_detail = next(
+        detail for detail in result["details"] if detail["category"] == "other"
+    )
+
+    assert agricultural_detail["taxable_income"] == pytest.approx(13_000.0)
+    assert agricultural_detail["total_tax"] == pytest.approx(1_921.11, rel=1e-4)
+    assert other_detail["taxable_income"] == pytest.approx(5_000.0)
+    assert other_detail["total_tax"] == pytest.approx(738.89, rel=1e-4)
+
+    summary = result["summary"]
+    assert summary["income_total"] == pytest.approx(20_000.0)
+    assert summary["tax_total"] == pytest.approx(2_660.0)
+
+
+def test_calculate_tax_trade_fee_reduction_rules() -> None:
+    """Trade fee respects optional inclusion and reduction toggles."""
+
+    base_payload = {
+        "year": 2024,
+        "freelance": {
+            "profit": 12_000,
+            "efka_category": "general_a",
+            "trade_fee_location": "standard",
+            "years_active": 2,
+            "newly_self_employed": True,
+        },
+    }
+
+    reduced_fee_result = calculate_tax(base_payload)
+    reduced_detail = reduced_fee_result["details"][0]
+    assert reduced_detail["trade_fee"] == pytest.approx(325.0)
+    assert reduced_detail["total_tax"] == pytest.approx(1_167.4)
+
+    no_fee_payload = {"year": 2024, "freelance": {**base_payload["freelance"], "include_trade_fee": False}}
+    no_fee_result = calculate_tax(no_fee_payload)
+    no_fee_detail = no_fee_result["details"][0]
+    assert no_fee_detail["trade_fee"] == pytest.approx(0.0)
+    assert no_fee_detail["total_tax"] == pytest.approx(842.4)
