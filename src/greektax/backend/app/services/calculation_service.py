@@ -25,7 +25,11 @@ class _NormalisedPayload:
     locale: str
     children: int
     employment_income: float
+    employment_monthly_income: Optional[float]
+    employment_payments_per_year: Optional[int]
     pension_income: float
+    pension_monthly_income: Optional[float]
+    pension_payments_per_year: Optional[int]
     freelance_profit: float
     freelance_contributions: float
     include_trade_fee: bool
@@ -101,6 +105,8 @@ class _GeneralIncomeComponent:
     tax_before_credit: float = 0.0
     credit: float = 0.0
     tax_after_credit: float = 0.0
+    payments_per_year: Optional[int] = None
+    monthly_gross_income: Optional[float] = None
 
     def total_tax(self) -> float:
         total = self.tax_after_credit
@@ -113,6 +119,11 @@ class _GeneralIncomeComponent:
         if self.category == "freelance":
             net -= self.contributions + self.trade_fee
         return net
+
+    def net_income_per_payment(self) -> Optional[float]:
+        if not self.payments_per_year or self.payments_per_year <= 0:
+            return None
+        return self.net_income() / self.payments_per_year
 
 
 def _to_float(value: Any, field_name: str) -> float:
@@ -177,9 +188,36 @@ def _normalise_payload(payload: Mapping[str, Any]) -> _NormalisedPayload:
     children = _to_int(dependants_section.get("children", 0), "dependents.children")
 
     employment_section = _extract_section(payload, "employment")
+    employment_payments: Optional[int] = None
+    employment_monthly_income: Optional[float] = None
+
+    if "payments_per_year" in employment_section:
+        payments = _to_int(
+            employment_section.get("payments_per_year"),
+            "employment.payments_per_year",
+        )
+        if payments <= 0:
+            raise ValueError("Field 'employment.payments_per_year' must be positive")
+        employment_payments = payments
+
+    if "monthly_income" in employment_section:
+        monthly = _to_float(
+            employment_section.get("monthly_income", 0.0),
+            "employment.monthly_income",
+        )
+        if monthly > 0:
+            employment_monthly_income = monthly
+
     employment_income = _to_float(
         employment_section.get("gross_income", 0.0), "employment.gross_income"
     )
+
+    if employment_monthly_income is not None:
+        payments = employment_payments or 14
+        employment_payments = payments
+        employment_income = employment_monthly_income * payments
+    elif employment_income > 0 and employment_payments:
+        employment_monthly_income = employment_income / employment_payments
 
     freelance_section = _extract_section(payload, "freelance")
     profit_value: Optional[Any] = freelance_section.get("profit")
@@ -204,9 +242,34 @@ def _normalise_payload(payload: Mapping[str, Any]) -> _NormalisedPayload:
     include_trade_fee = _to_bool(freelance_section.get("include_trade_fee"), True)
 
     pension_section = _extract_section(payload, "pension")
+    pension_payments: Optional[int] = None
+    pension_monthly_income: Optional[float] = None
+
+    if "payments_per_year" in pension_section:
+        payments = _to_int(
+            pension_section.get("payments_per_year"), "pension.payments_per_year"
+        )
+        if payments <= 0:
+            raise ValueError("Field 'pension.payments_per_year' must be positive")
+        pension_payments = payments
+
+    if "monthly_income" in pension_section:
+        monthly = _to_float(
+            pension_section.get("monthly_income", 0.0), "pension.monthly_income"
+        )
+        if monthly > 0:
+            pension_monthly_income = monthly
+
     pension_income = _to_float(
         pension_section.get("gross_income", 0.0), "pension.gross_income"
     )
+
+    if pension_monthly_income is not None:
+        payments = pension_payments or 14
+        pension_payments = payments
+        pension_income = pension_monthly_income * payments
+    elif pension_income > 0 and pension_payments:
+        pension_monthly_income = pension_income / pension_payments
 
     rental_section = _extract_section(payload, "rental")
     rental_gross = _to_float(
@@ -234,7 +297,11 @@ def _normalise_payload(payload: Mapping[str, Any]) -> _NormalisedPayload:
         locale=locale,
         children=children,
         employment_income=employment_income,
+        employment_monthly_income=employment_monthly_income,
+        employment_payments_per_year=employment_payments,
         pension_income=pension_income,
+        pension_monthly_income=pension_monthly_income,
+        pension_payments_per_year=pension_payments,
         freelance_profit=profit,
         freelance_contributions=contributions,
         include_trade_fee=include_trade_fee,
@@ -289,6 +356,8 @@ def _calculate_general_income_details(
                 gross_income=payload.employment_income,
                 taxable_income=payload.employment_income,
                 credit_eligible=True,
+                payments_per_year=payload.employment_payments_per_year,
+                monthly_gross_income=payload.employment_monthly_income,
             )
         )
 
@@ -300,6 +369,8 @@ def _calculate_general_income_details(
                 gross_income=payload.pension_income,
                 taxable_income=payload.pension_income,
                 credit_eligible=True,
+                payments_per_year=payload.pension_payments_per_year,
+                monthly_gross_income=payload.pension_monthly_income,
             )
         )
 
@@ -382,6 +453,15 @@ def _calculate_general_income_details(
             if component.trade_fee:
                 detail["trade_fee_label"] = translator("details.trade_fee")
 
+        if component.monthly_gross_income is not None:
+            detail["monthly_gross_income"] = _round_currency(component.monthly_gross_income)
+
+        if component.payments_per_year:
+            detail["payments_per_year"] = component.payments_per_year
+            net_per_payment = component.net_income_per_payment()
+            if net_per_payment is not None:
+                detail["net_income_per_payment"] = _round_currency(net_per_payment)
+
         details.append(detail)
 
     return details
@@ -463,6 +543,10 @@ def _round_currency(value: float) -> float:
     return round(value, 2)
 
 
+def _round_rate(value: float) -> float:
+    return round(value, 4)
+
+
 def _calculate_vat(payload: _NormalisedPayload, translator: Translator) -> Optional[Dict[str, Any]]:
     if not payload.has_vat_obligation:
         return None
@@ -542,16 +626,22 @@ def calculate_tax(payload: Dict[str, Any]) -> Dict[str, Any]:
     income_total = sum(item.get("gross_income", 0.0) for item in details)
     tax_total = sum(item.get("total_tax", 0.0) for item in details)
     net_income = sum(item.get("net_income", 0.0) for item in details)
+    net_monthly_income = net_income / 12 if net_income else 0.0
+    effective_tax_rate = (tax_total / income_total) if income_total > 0 else 0.0
 
     return {
         "summary": {
             "income_total": _round_currency(income_total),
             "tax_total": _round_currency(tax_total),
             "net_income": _round_currency(net_income),
+            "net_monthly_income": _round_currency(net_monthly_income),
+            "effective_tax_rate": _round_rate(effective_tax_rate),
             "labels": {
                 "income_total": translator("summary.income_total"),
                 "tax_total": translator("summary.tax_total"),
                 "net_income": translator("summary.net_income"),
+                "net_monthly_income": translator("summary.net_monthly_income"),
+                "effective_tax_rate": translator("summary.effective_tax_rate"),
             },
         },
         "details": details,
