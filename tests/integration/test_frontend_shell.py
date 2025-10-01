@@ -1,4 +1,4 @@
-"""Integration tests for the static front-end preview."""
+"""Integration tests for the static front-end shell."""
 
 from flask.testing import FlaskClient
 
@@ -14,7 +14,7 @@ def test_frontend_index_is_served(client: FlaskClient) -> None:
 
 
 def test_frontend_assets_are_available(client: FlaskClient) -> None:
-    """Static assets must be accessible to hydrate the preview UI."""
+    """Static assets must be accessible to hydrate the UI shell."""
 
     response = client.get("/assets/scripts/main.js")
 

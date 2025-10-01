@@ -198,24 +198,6 @@ deliver user value in incremental, testable slices.
 - Reworked the detail grid layout for consistent label/value pairing and better
   readability on narrow screens.【F:src/frontend/assets/styles/main.css†L400-L432】
 
-## Sprint 16 (In Progress)
-
-**Focus**
-- Elevate the landing hero with localisation-aware highlight cards that explain
-  guided inputs, instant localisation previews, and the Sankey visualisation to
-  satisfy the new visual communication requirement.【F:src/frontend/index.html†L1-L120】【F:Requirements.md†L96-L111】
-- Refresh card, button, and summary styling with updated gradients, focus
-  treatments, and responsive spacing so the UI hierarchy remains clear on mobile
-  screens.【F:src/frontend/assets/styles/main.css†L1-L220】【F:src/frontend/assets/styles/main.css†L360-L460】
-- Reconfigure the Sankey chart with explicit colour tokens, legend markup, and
-  improved accessibility metadata to keep income flows legible.【F:src/frontend/assets/scripts/main.js†L2079-L2350】【F:src/frontend/index.html†L840-L912】
-
-**Planned Outcomes**
-- Requirements, UI plan, and project documentation updated to emphasise
-  accessibility-driven visual communication and outline future UI polish items.
-- Browser-based smoke tests and screenshot baselines capturing the refreshed
-  landing and Sankey experiences for stakeholder review.
-
 ## Sprint 16 (Completed)
 
 **Highlights**
@@ -229,23 +211,36 @@ deliver user value in incremental, testable slices.
   guidance without a full page reload, preserving localisation accuracy during
   review sessions.
 
-## Sprint 17 (Current)
+## Sprint 17 (Completed)
+
+**Highlights**
+- Replaced the localisation preview form with header-level language and theme
+  switches adopting CogniSys branding assets to reinforce bilingual controls at
+  the top of the experience.
+- Deepened the light and dark design token palette, tuned Sankey colours, and
+  refreshed surface styling so the refreshed dark mode reads closer to CogniSys'
+  visual identity.
+- Hardened client-side persistence so investment income and other numeric
+  inputs survive locale changes and refreshes, preventing silent value resets
+  during review sessions.
+
+## Sprint 18 (Current)
 
 **Objectives**
-- Integrate the configuration validation tooling into contributor workflows and
-  continuous integration to surface actionable feedback early.
-- Refine lightweight, privacy-preserving scenario export concepts that extend
-  local persistence without introducing server storage.
-- Plan moderated usability reviews focused on localisation guidance and the new
-  results visualisations to drive the next wave of refinements.
+- Profile the calculation request pipeline and trim redundant data processing
+  so the core engine responds faster without altering the API contract.
+- Optimise front-end rendering by deferring heavy chart bootstrapping and
+  smoothing dark-mode transitions for responsive interactions.
+- Capture baseline performance and accessibility metrics to monitor future
+  optimisation impact across locales and themes.
 
 **Planned Deliverables**
-- CI-ready configuration validation checks plus contributor documentation on
-  interpreting and fixing failures.
-- Updated prototypes or design notes detailing offline-friendly scenario export
-  flows and accessibility considerations.
-- Usability test scripts and localisation checklists ready for stakeholder
-  sessions covering the enhanced calculator experiences.
+- Benchmarked calculation engine report with targeted configuration caching or
+  arithmetic simplifications landed in code.
+- Front-end updates introducing lazy Plotly loading, refined theme tokens, and
+  documentation on CogniSys-inspired styling guardrails.
+- Automated checks or scripts that log timing, bundle size, and accessibility
+  snapshots for regression detection in upcoming sprints.
 
 > _This plan is updated at the end of each sprint to capture accomplishments_
 > _and upcoming milestones._

@@ -33,26 +33,14 @@ const UI_MESSAGES = {
       highlight_inputs_title: "Guided calculator inputs",
       highlight_inputs_copy:
         "Toggle each income type only when you need it, supported by inline tips and validation.",
-      highlight_localisation_title: "Instant localisation previews",
+      highlight_localisation_title: "Bilingual header controls",
       highlight_localisation_copy:
-        "Switch between English and Greek without losing context or calculated values.",
+        "Use the top-right language buttons to switch between English and Greek without losing your data.",
       highlight_visual_title: "Visual income breakdown",
       highlight_visual_copy:
         "Track taxes, contributions, and take-home pay through a colour-coded Sankey diagram.",
-      theme_label: "Theme",
       theme_option_light: "Light",
       theme_option_dark: "Dark",
-    },
-    preview: {
-      heading: "Preview localisation",
-      description:
-        "Choose your preferred language and request a sample calculation to see the backend translations in action. The preview uses demo data only.",
-      locale_label: "Language",
-      button: "Preview calculation",
-      idle: "No preview requested yet.",
-      requesting: "Requesting preview from the API…",
-      success: "Preview updated using backend localisation.",
-      error: "Unable to fetch preview. Is the backend running?",
     },
     status: {
       loading_years: "Loading tax years…",
@@ -262,26 +250,14 @@ const UI_MESSAGES = {
       highlight_inputs_title: "Καθοδηγούμενη εισαγωγή στοιχείων",
       highlight_inputs_copy:
         "Ενεργοποιήστε μόνο τις ενότητες εισοδήματος που σας αφορούν με ενσωματωμένες συμβουλές και ελέγχους.",
-      highlight_localisation_title: "Άμεση προεπισκόπηση μεταφράσεων",
+      highlight_localisation_title: "Έλεγχος γλώσσας στην κορυφή",
       highlight_localisation_copy:
-        "Εναλλάσσετε Αγγλικά και Ελληνικά χωρίς να χάνετε το πλαίσιο ή τα υπολογισμένα ποσά.",
+        "Χρησιμοποιήστε τα κουμπιά γλώσσας στο επάνω μέρος για να εναλλάσσετε Αγγλικά και Ελληνικά χωρίς να χάνονται τα δεδομένα σας.",
       highlight_visual_title: "Οπτική απεικόνιση εισοδήματος",
       highlight_visual_copy:
         "Παρακολουθήστε φόρους, εισφορές και καθαρό ποσό σε διάγραμμα Sankey με χρωματική κωδικοποίηση.",
-      theme_label: "Θέμα",
       theme_option_light: "Φωτεινό",
       theme_option_dark: "Σκοτεινό",
-    },
-    preview: {
-      heading: "Προεπισκόπηση εντοπισμού",
-      description:
-        "Επιλέξτε γλώσσα και ζητήστε δείγμα υπολογισμού για να δείτε τις μεταφράσεις του διακομιστή. Η προεπισκόπηση χρησιμοποιεί μόνο δοκιμαστικά δεδομένα.",
-      locale_label: "Γλώσσα",
-      button: "Προεπισκόπηση υπολογισμού",
-      idle: "Δεν έχει ζητηθεί προεπισκόπηση ακόμη.",
-      requesting: "Αίτημα προεπισκόπησης προς το API…",
-      success: "Η προεπισκόπηση ενημερώθηκε με τις μεταφράσεις του διακομιστή.",
-      error: "Δεν ήταν δυνατή η λήψη της προεπισκόπησης. Εκτελείται ο διακομιστής;",
     },
     status: {
       loading_years: "Φόρτωση διαθέσιμων φορολογικών ετών…",
@@ -498,11 +474,12 @@ let lastCalculation = null;
 let pendingCalculatorState = null;
 let calculatorStatePersistHandle = null;
 
-const localeSelect = document.getElementById("locale-select");
-const themeSelect = document.getElementById("theme-select");
-const previewButton = document.getElementById("preview-button");
-const previewStatus = document.getElementById("preview-status");
-const previewJson = document.getElementById("preview-json");
+const localeButtons = Array.from(
+  document.querySelectorAll("[data-locale-option]"),
+);
+const themeButtons = Array.from(
+  document.querySelectorAll("[data-theme-option]"),
+);
 
 const yearSelect = document.getElementById("year-select");
 const childrenInput = document.getElementById("children-input");
@@ -585,17 +562,6 @@ const detailsList = document.getElementById("details-list");
 const downloadButton = document.getElementById("download-button");
 const downloadCsvButton = document.getElementById("download-csv-button");
 const printButton = document.getElementById("print-button");
-
-const demoPayload = {
-  year: 2024,
-  dependents: { children: 1 },
-  employment: { gross_income: 24000 },
-  freelance: {
-    gross_revenue: 12000,
-    deductible_expenses: 2000,
-    mandatory_contributions: 2500,
-  },
-};
 
 function lookupMessage(locale, keyParts) {
   let cursor = UI_MESSAGES[locale];
@@ -799,6 +765,27 @@ function captureCalculatorState() {
   return values;
 }
 
+function preserveCurrentFormValues() {
+  if (!calculatorForm) {
+    return;
+  }
+
+  const snapshot = captureCalculatorState();
+  if (!snapshot || typeof snapshot !== "object") {
+    return;
+  }
+
+  const keys = Object.keys(snapshot);
+  if (!keys.length) {
+    return;
+  }
+
+  pendingCalculatorState = {
+    ...(pendingCalculatorState || {}),
+    ...snapshot,
+  };
+}
+
 function persistCalculatorState() {
   if (!calculatorForm) {
     return;
@@ -846,13 +833,37 @@ function resolveLocaleTag(locale) {
   return locale || "en-GB";
 }
 
+function updateLocaleButtonState(locale) {
+  if (!localeButtons.length) {
+    return;
+  }
+
+  localeButtons.forEach((button) => {
+    const value = button.dataset.localeOption || "en";
+    const isActive = value === locale;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-pressed", isActive ? "true" : "false");
+  });
+}
+
+function updateThemeButtonState(theme) {
+  if (!themeButtons.length) {
+    return;
+  }
+
+  themeButtons.forEach((button) => {
+    const value = button.dataset.themeOption || DEFAULT_THEME;
+    const isActive = value === theme;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-pressed", isActive ? "true" : "false");
+  });
+}
+
 function applyTheme(theme) {
   const normalized = theme === "dark" ? "dark" : DEFAULT_THEME;
   currentTheme = normalized;
   document.documentElement.setAttribute("data-theme", normalized);
-  if (themeSelect) {
-    themeSelect.value = normalized;
-  }
+  updateThemeButtonState(normalized);
   persistTheme(normalized);
   if (lastCalculation) {
     renderCalculation(lastCalculation);
@@ -860,17 +871,14 @@ function applyTheme(theme) {
 }
 
 function applyLocale(locale) {
-  currentLocale = locale;
-  persistLocale(locale);
-  document.documentElement.lang = locale === "el" ? "el" : "en";
+  const resolved = locale === "el" ? "el" : "en";
+  currentLocale = resolved;
+  persistLocale(resolved);
+  document.documentElement.lang = resolved;
+  updateLocaleButtonState(resolved);
   localiseStaticText();
   renderYearWarnings(currentYearMetadata);
-  if (localeSelect) {
-    localeSelect.value = locale;
-  }
-  if (previewStatus && previewStatus.dataset.initialised) {
-    previewStatus.textContent = t("preview.idle");
-  }
+  preserveCurrentFormValues();
   refreshInvestmentCategories();
   refreshDeductionHints();
   populateFreelanceMetadata(currentFreelanceMetadata);
@@ -903,62 +911,36 @@ function localiseStaticText() {
   });
 }
 
-function updatePreviewIdleMessage() {
-  if (previewStatus) {
-    previewStatus.textContent = t("preview.idle");
-    previewStatus.dataset.initialised = "true";
-  }
-}
-
-function setPreviewStatus(message, { isError = false, showJson = false } = {}) {
-  if (previewStatus) {
-    previewStatus.textContent = message;
-    previewStatus.setAttribute("data-status", isError ? "error" : "info");
-  }
-  if (previewJson) {
-    previewJson.hidden = !showJson;
-  }
-}
-
-function initialiseThemeControls() {
-  if (!themeSelect) {
+function initialiseLocaleControls() {
+  if (!localeButtons.length) {
     return;
   }
 
-  themeSelect.addEventListener("change", (event) => {
-    const value = typeof event.target?.value === "string" ? event.target.value : DEFAULT_THEME;
-    applyTheme(value);
+  localeButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const value = button.dataset.localeOption || "en";
+      if (value === currentLocale) {
+        return;
+      }
+      applyLocale(value);
+    });
   });
 }
 
-async function requestPreview(locale) {
-  const payload = { ...demoPayload, locale };
-  setPreviewStatus(t("preview.requesting"));
-
-  try {
-    const response = await fetch(CALCULATIONS_ENDPOINT, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Accept-Language": locale,
-      },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      const errorPayload = await response.json().catch(() => ({}));
-      throw new Error(errorPayload.message || response.statusText);
-    }
-
-    const result = await response.json();
-    setPreviewStatus(t("preview.success"), { showJson: true });
-    if (previewJson) {
-      previewJson.textContent = JSON.stringify(result, null, 2);
-    }
-  } catch (error) {
-    console.error("Failed to load preview", error);
-    setPreviewStatus(t("preview.error"), { isError: true });
+function initialiseThemeControls() {
+  if (!themeButtons.length) {
+    return;
   }
+
+  themeButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const value = button.dataset.themeOption || DEFAULT_THEME;
+      if (value === currentTheme) {
+        return;
+      }
+      applyTheme(value);
+    });
+  });
 }
 
 function setCalculatorStatus(message, { isError = false } = {}) {
@@ -979,13 +961,17 @@ function formatNumber(value) {
 }
 
 function formatCurrency(value) {
-  const formatter = new Intl.NumberFormat(resolveLocaleTag(currentLocale), {
-    style: "currency",
-    currency: "EUR",
+  const localeTag = resolveLocaleTag(currentLocale);
+  const parsed = Number.parseFloat(value ?? 0);
+  const numeric = Number.isFinite(parsed) ? parsed : 0;
+  const formatter = new Intl.NumberFormat(localeTag, {
+    style: "decimal",
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
-  return formatter.format(value || 0);
+  const formatted = formatter.format(Math.abs(numeric));
+  const sign = numeric < 0 ? "-" : "";
+  return `${sign}${formatted}\u00a0€`;
 }
 
 function formatPercent(value) {
@@ -1528,6 +1514,7 @@ function renderInvestmentFields(categories) {
     return;
   }
 
+  preserveCurrentFormValues();
   investmentFieldsContainer.innerHTML = "";
   if (!categories.length) {
     const message = document.createElement("p");
@@ -1695,6 +1682,8 @@ function updateTradeFeeHint() {
 
 function populateFreelanceMetadata(metadata) {
   currentFreelanceMetadata = metadata || null;
+
+  preserveCurrentFormValues();
 
   if (freelanceEfkaSelect) {
     const previousValue = freelanceEfkaSelect.value || "";
@@ -2881,24 +2870,6 @@ function printSummary() {
   window.print();
 }
 
-function initialisePreviewControls() {
-  if (!localeSelect || !previewButton || !previewStatus || !previewJson) {
-    console.warn("Preview controls missing from DOM");
-    return;
-  }
-
-  localeSelect.addEventListener("change", (event) => {
-    const target = event.target;
-    const locale = typeof target?.value === "string" ? target.value : "en";
-    applyLocale(locale);
-  });
-
-  previewButton.addEventListener("click", () => {
-    const locale = localeSelect.value || "en";
-    requestPreview(locale);
-  });
-}
-
 function initialiseCalculator() {
   if (!calculatorForm || !yearSelect) {
     return;
@@ -2968,11 +2939,10 @@ function bootstrap() {
   const initialTheme = resolveStoredTheme();
   applyTheme(initialTheme);
   const initialLocale = resolveStoredLocale();
-  updatePreviewIdleMessage();
   applyLocale(initialLocale);
 
+  initialiseLocaleControls();
   initialiseThemeControls();
-  initialisePreviewControls();
   initialiseCalculator();
 
   console.info("GreekTax interface initialised");

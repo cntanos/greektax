@@ -22,13 +22,13 @@ def create_app() -> Flask:
 
     @app.route("/", methods=["GET"])
     def serve_frontend():
-        """Return the static UI entry point for local previews."""
+        """Return the static UI entry point for the local shell."""
 
         return send_from_directory(FRONTEND_ROOT, "index.html")
 
     @app.route("/assets/<path:filename>", methods=["GET"])
     def serve_frontend_assets(filename: str):
-        """Expose static assets (CSS/JS) used by the prototype UI."""
+        """Expose static assets (CSS/JS) used by the prototype UI shell."""
 
         return send_from_directory(ASSETS_ROOT, filename)
 
