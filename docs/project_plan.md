@@ -198,6 +198,24 @@ deliver user value in incremental, testable slices.
 - Reworked the detail grid layout for consistent label/value pairing and better
   readability on narrow screens.【F:src/frontend/assets/styles/main.css†L400-L432】
 
+## Sprint 16 (In Progress)
+
+**Focus**
+- Elevate the landing hero with localisation-aware highlight cards that explain
+  guided inputs, instant localisation previews, and the Sankey visualisation to
+  satisfy the new visual communication requirement.【F:src/frontend/index.html†L1-L120】【F:Requirements.md†L96-L111】
+- Refresh card, button, and summary styling with updated gradients, focus
+  treatments, and responsive spacing so the UI hierarchy remains clear on mobile
+  screens.【F:src/frontend/assets/styles/main.css†L1-L220】【F:src/frontend/assets/styles/main.css†L360-L460】
+- Reconfigure the Sankey chart with explicit colour tokens, legend markup, and
+  improved accessibility metadata to keep income flows legible.【F:src/frontend/assets/scripts/main.js†L2079-L2350】【F:src/frontend/index.html†L840-L912】
+
+**Planned Outcomes**
+- Requirements, UI plan, and project documentation updated to emphasise
+  accessibility-driven visual communication and outline future UI polish items.
+- Browser-based smoke tests and screenshot baselines capturing the refreshed
+  landing and Sankey experiences for stakeholder review.
+
 ## Sprint 16 (Completed)
 
 **Highlights**

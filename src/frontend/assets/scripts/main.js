@@ -28,6 +28,15 @@ const UI_MESSAGES = {
         "Estimate annual income taxes for Greece across employment, freelance, rental, and investment categories. Select a tax year, choose your language, and provide the income figures relevant to your situation to receive a bilingual breakdown of obligations.",
       disclaimer:
         "Disclaimer: This tool is unofficial and provided as-is. Inputs are stored locally on your device for up to two hours and are never sent to a server. Please consult a professional accountant for formal filings.",
+      highlight_inputs_title: "Guided calculator inputs",
+      highlight_inputs_copy:
+        "Toggle each income type only when you need it, supported by inline tips and validation.",
+      highlight_localisation_title: "Instant localisation previews",
+      highlight_localisation_copy:
+        "Switch between English and Greek without losing context or calculated values.",
+      highlight_visual_title: "Visual income breakdown",
+      highlight_visual_copy:
+        "Track taxes, contributions, and take-home pay through a colour-coded Sankey diagram.",
     },
     preview: {
       heading: "Preview localisation",
@@ -75,7 +84,7 @@ const UI_MESSAGES = {
     sankey: {
       heading: "Income distribution",
       empty:
-        "Add taxable income above to see how taxes, contributions, and take-home pay split across categories.",
+        "Add taxable income above to reveal colour-coded flows for taxes, contributions, and take-home pay across categories.",
       taxes: "Taxes",
       contributions: "Contributions & expenses",
       net: "Net income",
@@ -245,6 +254,15 @@ const UI_MESSAGES = {
         "Υπολογίστε ετήσιες φορολογικές υποχρεώσεις στην Ελλάδα για μισθωτούς, ελεύθερους επαγγελματίες, ενοίκια και επενδύσεις. Επιλέξτε φορολογικό έτος, γλώσσα και εισάγετε τα ποσά για να λάβετε δίγλωσση ανάλυση.",
       disclaimer:
         "Αποποίηση ευθύνης: Το εργαλείο είναι ανεπίσημο και παρέχεται ως έχει. Τα δεδομένα εισόδου αποθηκεύονται τοπικά στη συσκευή σας για έως δύο ώρες και δεν αποστέλλονται σε διακομιστή. Συμβουλευτείτε λογιστή για επίσημες δηλώσεις.",
+      highlight_inputs_title: "Καθοδηγούμενη εισαγωγή στοιχείων",
+      highlight_inputs_copy:
+        "Ενεργοποιήστε μόνο τις ενότητες εισοδήματος που σας αφορούν με ενσωματωμένες συμβουλές και ελέγχους.",
+      highlight_localisation_title: "Άμεση προεπισκόπηση μεταφράσεων",
+      highlight_localisation_copy:
+        "Εναλλάσσετε Αγγλικά και Ελληνικά χωρίς να χάνετε το πλαίσιο ή τα υπολογισμένα ποσά.",
+      highlight_visual_title: "Οπτική απεικόνιση εισοδήματος",
+      highlight_visual_copy:
+        "Παρακολουθήστε φόρους, εισφορές και καθαρό ποσό σε διάγραμμα Sankey με χρωματική κωδικοποίηση.",
     },
     preview: {
       heading: "Προεπισκόπηση εντοπισμού",
@@ -292,7 +310,7 @@ const UI_MESSAGES = {
     sankey: {
       heading: "Κατανομή εισοδήματος",
       empty:
-        "Προσθέστε φορολογητέο εισόδημα για να δείτε πώς κατανέμονται οι φόροι, οι εισφορές και το καθαρό εισόδημα ανά κατηγορία.",
+        "Προσθέστε φορολογητέο εισόδημα για να εμφανιστούν οι χρωματισμένες ροές φόρων, εισφορών και καθαρού ποσού ανά κατηγορία.",
       taxes: "Φόροι",
       contributions: "Εισφορές & δαπάνες",
       net: "Καθαρό εισόδημα",
@@ -2093,6 +2111,26 @@ function renderSankey(result) {
   const targets = [];
   const values = [];
   const linkLabels = [];
+  const linkColors = [];
+
+  const sankeyTotals = {
+    taxes: t("sankey.taxes"),
+    contributions: t("sankey.contributions"),
+    net: t("sankey.net"),
+  };
+
+  const linkColorPalette = {
+    taxes: "rgba(214, 51, 132, 0.72)",
+    contributions: "rgba(32, 201, 151, 0.72)",
+    net: "rgba(13, 110, 253, 0.72)",
+    default: "rgba(73, 80, 87, 0.6)",
+  };
+
+  const nodeAccentColors = {
+    [sankeyTotals.taxes]: "rgba(214, 51, 132, 0.18)",
+    [sankeyTotals.contributions]: "rgba(32, 201, 151, 0.18)",
+    [sankeyTotals.net]: "rgba(13, 110, 253, 0.18)",
+  };
 
   const ensureNode = (label) => {
     const resolved = label || "";
@@ -2113,7 +2151,7 @@ function renderSankey(result) {
     return Math.round(number * 100) / 100;
   };
 
-  const addLink = (source, target, value, label) => {
+  const addLink = (source, target, value, label, tone = "default") => {
     const chartValue = toChartValue(value);
     if (!chartValue) {
       return;
@@ -2122,6 +2160,7 @@ function renderSankey(result) {
     targets.push(target);
     values.push(chartValue);
     linkLabels.push(label);
+    linkColors.push(linkColorPalette[tone] || linkColorPalette.default);
   };
 
   let taxesIndex = null;
@@ -2189,6 +2228,7 @@ function renderSankey(result) {
       getTaxesIndex(),
       taxRaw,
       `${sourceLabel} → ${t("sankey.taxes")}: ${formatCurrency(taxRaw)}`,
+      "taxes",
     );
 
     if (contributionsRaw > 0.005) {
@@ -2196,7 +2236,10 @@ function renderSankey(result) {
         sourceIndex,
         getContributionsIndex(),
         contributionsRaw,
-        `${sourceLabel} → ${t("sankey.contributions")}: ${formatCurrency(contributionsRaw)}`,
+        `${sourceLabel} → ${t("sankey.contributions")}: ${formatCurrency(
+          contributionsRaw,
+        )}`,
+        "contributions",
       );
     }
 
@@ -2206,6 +2249,7 @@ function renderSankey(result) {
         getNetIndex(),
         netRaw,
         `${sourceLabel} → ${t("sankey.net")}: ${formatCurrency(netRaw)}`,
+        "net",
       );
     }
   });
@@ -2225,23 +2269,33 @@ function renderSankey(result) {
     sankeyEmptyState.hidden = true;
   }
 
+  const nodeColors = nodeLabels.map(
+    (label) => nodeAccentColors[label] || "rgba(33, 37, 41, 0.08)",
+  );
+
   const data = [
     {
       type: "sankey",
       orientation: "h",
       node: {
-        pad: 16,
+        pad: 18,
         thickness: 18,
         label: nodeLabels,
-        line: { color: "#dee2e6", width: 0.5 },
-        color: nodeLabels.map(() => "#0d6efd1a"),
+        line: { color: "#adb5bd", width: 1 },
+        color: nodeColors,
       },
       link: {
         source: sources,
         target: targets,
         value: values,
         label: linkLabels,
+        color: linkColors,
+        line: { color: "rgba(255, 255, 255, 0.9)", width: 1.2 },
         hovertemplate: "%{label}<extra></extra>",
+      },
+      hoverlabel: {
+        bgcolor: "#212529",
+        font: { color: "#ffffff" },
       },
     },
   ];
@@ -2250,7 +2304,7 @@ function renderSankey(result) {
     margin: { l: 10, r: 10, t: 10, b: 10 },
     paper_bgcolor: "rgba(0,0,0,0)",
     plot_bgcolor: "rgba(0,0,0,0)",
-    font: { size: 12 },
+    font: { size: 12, color: "#212529" },
   };
 
   Plotly.react(sankeyChart, data, layout, { displayModeBar: false, responsive: true });

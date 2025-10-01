@@ -1,103 +1,97 @@
-# Sprint 13 UI & Tax Compliance Implementation Plan
+# Sprint 16 UI Narrative & Visualisation Plan
 
 ## Purpose
-Sprint 13 transforms the Sprint 12 UI refactor into a legally-aligned experience
-that reflects the documented requirements and current Greek tax law. The work
-prioritises controls for statutory payroll frequencies, EFKA contributions for
-employees and freelancers, richer deduction capture, and configuration-driven
-year management while safeguarding localisation, accessibility, and telemetry
-foundations from earlier sprints.
+Sprint 16 evolves the refreshed calculator shell into a cohesive visual
+experience that foregrounds guidance, improves the Sankey flow legibility, and
+makes colour choices and typography align with the new accessibility mandate in
+the requirements.【F:Requirements.md†L96-L111】 The sprint closes the gap between
+the documented visual expectations and the current prototype so that subsequent
+iterations can focus on deeper calculation accuracy without revisiting core UI
+polish.
 
-## Regulatory & Requirements Drivers
-- **Payroll cadence** – Greek employment contracts pay salary in fourteen
-  instalments (twelve monthly payments plus Easter, summer, and Christmas
-  bonuses). Interfaces must constrain payroll choices accordingly and update when
-  legislation changes.【F:Requirements.md†L145-L177】
-- **Social security contributions** – Employee EFKA contributions total 13.87 %
-  of gross remuneration and apply to allowances, while freelancers select fixed
-  monthly categories. The calculator must surface and respect these rules in both
-  entry forms and summaries.【F:Requirements.md†L209-L235】【F:Requirements.md†L243-L276】
-- **Deductions, dependants, and additional income** – Users require inputs for
-  deductions, dependent children credits, agricultural/other income categories,
-  and location-aware trade fees to mirror the official forms.【F:Requirements.md†L279-L348】【F:Requirements.md†L352-L426】
-- **Year-specific configuration** – Tax brackets, credits, contribution rates,
-  and trade-fee rules vary annually, demanding configuration-backed year
-  selection and validation paths.【F:Requirements.md†L428-L476】
+## Requirements & Research Drivers
+- **Visual communication mandate** – The requirements now call for colour-aware
+  legends, accessible contrasts, and concise benefit callouts that orient users
+  before they begin data entry.【F:Requirements.md†L96-L111】
+- **Bilingual positioning** – Highlight cards and navigation copy must continue
+  to respect localisation investments from prior sprints while presenting the
+  new hero narrative succinctly in both languages.【F:src/frontend/assets/scripts/main.js†L20-L118】【F:src/frontend/assets/scripts/main.js†L241-L339】
+- **Interactive clarity** – The Sankey diagram must display high-contrast
+  connectors, hover states, and colour-coded groupings so that taxpayers can
+  instantly understand how gross amounts flow into taxes, contributions, and net
+  income.【F:src/frontend/assets/scripts/main.js†L2079-L2350】
 
-## Sprint 12 Learnings Informing This Sprint
-- The refreshed summary layout improved comprehension but exposed gaps in payroll
-  validation and EFKA transparency during feedback sessions.
-- Inline education reduced hybrid monthly/annual confusion; extending that model
-  to deductions and contribution logic will mitigate additional complexity.
-- Telemetry now captures navigation and error events, supplying baselines for the
-  expanded data-entry flows we introduce this sprint.
+## Sprint 15 Learnings Informing Sprint 16
+- Persistent calculator storage improved resilience but exposed a visually flat
+  landing experience and under-emphasised privacy messaging.
+- The Sankey configuration relied on default Plotly styling, leading to low
+  contrast links and no contextual legend during user testing sessions.
+- Highlight cards that explain the calculator benefits were absent, causing
+  onboarding sessions to spend extra time verbally describing the tool.
 
-## Sprint 13 Goals
-1. Provide employment and pension journeys that let users declare gross or net
-   salaries, enforce lawful payroll frequencies, and display EFKA breakdowns for
-   both employee and employer portions.
-2. Deliver freelance, rental, investment, and agricultural sections that surface
-   only when toggled on, capture EFKA categories or actual contributions, and
-   apply location-aware trade fees.
-3. Add structured deduction inputs, dependent-children selection, and year-aware
-   validation that informs users when configuration data is missing or
-   inconsistent.
+## Sprint 16 Goals
+1. Introduce a headline hero treatment with localisation-aware highlight cards
+   that summarise guided inputs, live localisation previews, and visual
+   breakdowns.
+2. Redesign the Sankey visualisation with explicit colour palettes, link
+   contrast, and in-context legends that match accessibility targets.
+3. Align core surfaces (cards, buttons, result summaries) with an updated design
+   token set that reinforces hierarchy without sacrificing readability on small
+   screens.
+4. Document forward-looking UI next steps and risks so future sprints can plan
+   deeper responsive behaviour and dark-theme validation.
 
 ## Key Workstreams
 | Workstream | Focus | Primary Outputs |
 | --- | --- | --- |
-| Employment & pension compliance | Replace numeric payroll inputs with drop-down selectors, add gross/net toggles, and present EFKA contribution cards linked to the calculation engine. | Updated HTML/JS modules, localisation keys for payroll/legal copy, automated tests covering gross-to-net and net-to-gross cases. |
-| Freelance contributions & trade fees | Model EFKA category selection, auxiliary fund capture, and trade-fee modifiers (location, newly self-employed) driven from configuration. | New configuration schema entries, client-side controls with validation, backend payload adjustments, and summary breakdown updates. |
-| Dynamic income & deductions UX | Introduce income-type toggles, agricultural/other income sections, and deduction inputs with guardrails and contextual help. | Conditional rendering logic, translation updates, validation/error message matrix, and analytics dashboards for section usage. |
-| Year management & resilience | Surface supported years from configuration, handle missing data gracefully, and document overrides for future tax-law changes. | Year selector UI, configuration integrity checks, error-handling patterns, and maintenance playbook entries. |
+| Hero narrative & highlights | Craft the updated landing hero with eyebrow tag, headline, and three benefit highlight cards that localise cleanly. | Revised HTML structure, new localisation keys, and copy decks for both languages. |
+| Sankey clarity | Apply explicit colour palettes, link widths, and legends so chart interactions are legible and screen-reader metadata remains accurate. | Plotly configuration updates, legend markup, accessibility notes, and smoke test scripts. |
+| Design token refresh | Elevate cards, buttons, alerts, and summary panels with gradient surfaces and focus treatments that honour the new requirement. | Updated CSS variables, responsive adjustments, and regression screenshots documenting the visual baseline. |
+| Documentation & roadmap | Capture outstanding UI follow-ups (dark mode, mobile nav, chart animations) and align with the overarching project plan. | Updated requirements annotations, project plan addendum, and open issues list. |
 
 ## Delivery Approach
-1. **Iteration 1 – Employment & pension foundations (Days 1-3)**
-   - Implement payroll dropdowns, gross/net selection state, and EFKA calculations
-     for employment and pension flows.
-   - Expose contribution breakdown cards and ensure localisation coverage for new
-     legal copy.
-2. **Iteration 2 – Freelance & income toggles (Days 4-6)**
-   - Build EFKA category selectors, auxiliary contribution inputs, and trade-fee
-     logic driven by configuration.
-   - Add income-type toggles and conditional rendering for freelance,
-     agricultural, rental, and investment sections.
-3. **Iteration 3 – Deductions & dependants (Days 7-8)**
-   - Ship deduction fields (donations, medical, education, insurance) with
-     validation and dependent-children controls tied to tax credits.
-   - Extend summaries to highlight deductions and credits applied.
-4. **Iteration 4 – Year management & hardening (Days 9-10)**
-   - Populate the year selector from available configuration files and add
-     missing-config alerts.
-   - Execute accessibility, localisation, and telemetry regression passes.
+1. **Iteration 1 – Hero & copy alignment (Days 1-2)**
+   - Implement hero structure, highlight cards, and eyebrow tag with localisation
+     coverage.
+   - Validate copy with bilingual reviewers and ensure preview module still
+     functions post-layout change.
+2. **Iteration 2 – Sankey visualisation polish (Days 3-4)**
+   - Apply colour tokens, legend markup, and hover/ARIA improvements.
+   - Run browser-based smoke checks to confirm responsiveness and accessibility
+     tooling catch no regressions.
+3. **Iteration 3 – Surface styling & tokens (Days 5-6)**
+   - Update cards, buttons, and result grids with new gradients, shadows, and
+     focus-visible treatments.
+   - Exercise regression scripts on small-screen breakpoints.
+4. **Iteration 4 – Documentation & follow-up backlog (Day 7)**
+   - Update requirements, plan documents, and capture future UI backlog items.
+   - Prepare before/after visuals for stakeholder review.
 
 ## Acceptance Criteria
-- Employment payroll inputs are limited to legally supported frequencies and
-  automatically recalculate EFKA contributions for gross and net scenarios.
-- Freelance workflows compute contributions from category selections or manual
-  overrides and apply the correct trade fee based on location and tenure.
-- Deductions, dependants, and additional income sections are hidden by default,
-  surface only when toggled, and feed accurate figures into the calculation
-  payload and results summary.
-- Year selection dynamically loads configuration assets, with user-facing errors
-  when data is absent and automated tests covering at least two years.
+- Hero area contains eyebrow label, headline, and three localised highlight
+  cards describing guided inputs, localisation previews, and the Sankey view.
+- Sankey diagram renders with distinct node/link colours, displays a legend, and
+  maintains accessible hover/ARIA metadata even when no data is present.
+- Summary cards, detail cards, and action buttons adopt refreshed design tokens
+  with focus-visible styling and maintain readability on 320 px wide screens.
+- Documentation references the new visual communication requirement and outlines
+  at least three future UI enhancements for subsequent sprints.
 
 ## Dependencies & Risks
-- Collaboration with tax-domain reviewers is required to confirm EFKA rates,
-  trade-fee thresholds, and deduction limits per year.
-- Calculation-service updates must land alongside UI changes to avoid
-  inconsistent gross/net results.
-- Additional fields increase translation volume; localisation review capacity may
-  constrain release timing.
+- Localisation updates may require coordination with translators for new highlight
+  copy and legend descriptions.
+- Plotly configuration changes must stay compatible with backend data shapes to
+  avoid runtime chart errors.
+- Accessibility tooling (e.g., axe) should be rerun after visual updates to guard
+  against colour contrast regressions.
 
 ## Out of Scope
-- Employer-side contribution payments beyond informational display.
-- VAT, ENFIA, or other extended tax modules outside the documented requirements.
-- Persisting user input; the calculator remains stateless and privacy-focused.
+- Introducing a dark theme or advanced animation sequencing (tracked for future
+  sprints).
+- Modifying the tax calculation logic or API payload formats.
+- Adding new income or deduction categories beyond existing configuration data.
 
 ## References
-1. TIES – Greece (KPMG), payroll frequency guidance.
-2. OECD Tax and Benefit Policy Descriptions for Greece 2024, EFKA contribution
-   breakdown.
-3. Hellenic Ministry of Labour, freelancer contribution categories.
-4. GreekTax Requirements document, deduction and configuration mandates.
+1. GreekTax Requirements – non-functional visual communication guidance.【F:Requirements.md†L96-L111】
+2. Front-end localisation catalogue for hero and Sankey copy.【F:src/frontend/assets/scripts/main.js†L20-L118】【F:src/frontend/assets/scripts/main.js†L241-L339】
+3. Current Sankey rendering implementation for refinement baseline.【F:src/frontend/assets/scripts/main.js†L2079-L2350】
