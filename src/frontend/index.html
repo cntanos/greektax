@@ -7,11 +7,16 @@
     <link rel="stylesheet" href="./assets/styles/main.css" />
   </head>
   <body>
-    <header class="no-print">
-      <h1>GreekTax</h1>
-      <p class="tagline" data-i18n-key="ui.tagline">
-        Unofficial tax estimation toolkit for Greece
-      </p>
+    <header class="site-header no-print">
+      <div class="site-header__inner">
+        <div class="site-title-group">
+          <span class="site-eyebrow">Prototype</span>
+          <h1>GreekTax</h1>
+        </div>
+        <p class="tagline" data-i18n-key="ui.tagline">
+          Unofficial tax estimation toolkit for Greece
+        </p>
+      </div>
     </header>
 
     <main>
@@ -23,6 +28,53 @@
           language, and provide the income figures relevant to your situation to
           receive a bilingual breakdown of obligations.
         </p>
+        <ul class="intro-highlights">
+          <li class="intro-highlight">
+            <p
+              class="intro-highlight__title"
+              data-i18n-key="ui.highlight_inputs_title"
+            >
+              Guided calculator inputs
+            </p>
+            <p
+              class="intro-highlight__copy"
+              data-i18n-key="ui.highlight_inputs_copy"
+            >
+              Toggle income types as you need them, with inline hints and
+              validation.
+            </p>
+          </li>
+          <li class="intro-highlight">
+            <p
+              class="intro-highlight__title"
+              data-i18n-key="ui.highlight_localisation_title"
+            >
+              Instant localisation previews
+            </p>
+            <p
+              class="intro-highlight__copy"
+              data-i18n-key="ui.highlight_localisation_copy"
+            >
+              Switch between English and Greek while keeping the calculator in
+              sync.
+            </p>
+          </li>
+          <li class="intro-highlight">
+            <p
+              class="intro-highlight__title"
+              data-i18n-key="ui.highlight_visual_title"
+            >
+              Visual income breakdown
+            </p>
+            <p
+              class="intro-highlight__copy"
+              data-i18n-key="ui.highlight_visual_copy"
+            >
+              Follow taxes, contributions, and take-home pay through a
+              colour-coded Sankey diagram.
+            </p>
+          </li>
+        </ul>
         <p class="disclaimer" data-i18n-key="ui.disclaimer">
           Disclaimer: This tool is unofficial and provided as-is. Inputs are
           stored locally on your device for up to two hours and are never sent
@@ -881,9 +933,33 @@
           <h3 data-i18n-key="calculator.results_heading">Results</h3>
           <div id="sankey-wrapper" class="results-visualisation" hidden>
             <h4 data-i18n-key="sankey.heading">Income distribution</h4>
+            <div class="sankey-legend" role="list">
+              <div
+                class="sankey-legend__item"
+                data-flow="taxes"
+                role="listitem"
+              >
+                <span class="sankey-legend__swatch" aria-hidden="true"></span>
+                <span data-i18n-key="sankey.taxes">Taxes</span>
+              </div>
+              <div
+                class="sankey-legend__item"
+                data-flow="contributions"
+                role="listitem"
+              >
+                <span class="sankey-legend__swatch" aria-hidden="true"></span>
+                <span data-i18n-key="sankey.contributions">
+                  Contributions &amp; expenses
+                </span>
+              </div>
+              <div class="sankey-legend__item" data-flow="net" role="listitem">
+                <span class="sankey-legend__swatch" aria-hidden="true"></span>
+                <span data-i18n-key="sankey.net">Net income</span>
+              </div>
+            </div>
             <p id="sankey-empty" data-i18n-key="sankey.empty">
-              Add taxable income above to see how taxes and net income split
-              across categories.
+              Add taxable income above to reveal colour-coded flows for taxes,
+              contributions, and take-home pay across categories.
             </p>
             <div
               id="sankey-chart"
