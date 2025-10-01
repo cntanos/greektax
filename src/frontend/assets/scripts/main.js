@@ -100,11 +100,12 @@ const API_BASE = (() => {
     return LOCAL_API_BASE;
   }
 
-  if (normalizedHost.endsWith("pythonanywhere.com")) {
+  const isRemoteHost = normalizedHost.endsWith("pythonanywhere.com");
+  if (isRemoteHost) {
     return REMOTE_API_BASE;
   }
 
-  return REMOTE_API_BASE;
+  return LOCAL_API_BASE;
 })();
 const CALCULATIONS_ENDPOINT = `${API_BASE}/calculations`;
 const CONFIG_YEARS_ENDPOINT = `${API_BASE}/config/years`;
