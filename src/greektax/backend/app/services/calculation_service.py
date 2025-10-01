@@ -8,10 +8,8 @@ from typing import Any, Dict, Mapping, Optional, Sequence
 
 from greektax.backend.app.localization import Translator, get_translator
 from greektax.backend.config.year_config import (
-    EmploymentConfig,
     FreelanceConfig,
     InvestmentConfig,
-    PensionConfig,
     RentalConfig,
     TaxBracket,
     YearConfiguration,
@@ -87,6 +85,34 @@ class _NormalisedPayload:
     @property
     def has_luxury_obligation(self) -> bool:
         return self.luxury_due > 0
+
+
+@dataclass
+class _GeneralIncomeComponent:
+    """Represents an income category that shares the progressive scale."""
+
+    category: str
+    label_key: str
+    gross_income: float
+    taxable_income: float
+    credit_eligible: bool
+    contributions: float = 0.0
+    trade_fee: float = 0.0
+    tax_before_credit: float = 0.0
+    credit: float = 0.0
+    tax_after_credit: float = 0.0
+
+    def total_tax(self) -> float:
+        total = self.tax_after_credit
+        if self.category == "freelance":
+            total += self.trade_fee
+        return total
+
+    def net_income(self) -> float:
+        net = self.gross_income - self.tax_after_credit
+        if self.category == "freelance":
+            net -= self.contributions + self.trade_fee
+        return net
 
 
 def _to_float(value: Any, field_name: str) -> float:
@@ -240,65 +266,6 @@ def _calculate_progressive_tax(amount: float, brackets: Sequence[TaxBracket]) ->
     return total
 
 
-def _calculate_employment(
-    payload: _NormalisedPayload,
-    config: EmploymentConfig,
-    translator: Translator,
-) -> Optional[Dict[str, Any]]:
-    if not payload.has_employment_income:
-        return None
-
-    gross = payload.employment_income
-    taxable = gross
-    tax_before_credit = _calculate_progressive_tax(taxable, config.brackets)
-    credit = config.tax_credit.amount_for_children(payload.children)
-    tax_after_credit = tax_before_credit - credit
-    if tax_after_credit < 0:
-        tax_after_credit = 0.0
-
-    detail = {
-        "category": "employment",
-        "label": translator("details.employment"),
-        "gross_income": _round_currency(gross),
-        "taxable_income": _round_currency(taxable),
-        "tax_before_credits": _round_currency(tax_before_credit),
-        "credits": _round_currency(credit),
-        "tax": _round_currency(tax_after_credit),
-        "total_tax": _round_currency(tax_after_credit),
-        "net_income": _round_currency(gross - tax_after_credit),
-    }
-    return detail
-
-
-def _calculate_pension(
-    payload: _NormalisedPayload,
-    config: PensionConfig,
-    translator: Translator,
-) -> Optional[Dict[str, Any]]:
-    if not payload.has_pension_income:
-        return None
-
-    gross = payload.pension_income
-    taxable = gross
-    tax_before_credit = _calculate_progressive_tax(taxable, config.brackets)
-    credit = config.tax_credit.amount_for_children(payload.children)
-    tax_after_credit = tax_before_credit - credit
-    if tax_after_credit < 0:
-        tax_after_credit = 0.0
-
-    return {
-        "category": "pension",
-        "label": translator("details.pension"),
-        "gross_income": _round_currency(gross),
-        "taxable_income": _round_currency(taxable),
-        "tax_before_credits": _round_currency(tax_before_credit),
-        "credits": _round_currency(credit),
-        "tax": _round_currency(tax_after_credit),
-        "total_tax": _round_currency(tax_after_credit),
-        "net_income": _round_currency(gross - tax_after_credit),
-    }
-
-
 def _calculate_trade_fee(payload: _NormalisedPayload, config: FreelanceConfig) -> float:
     if not payload.include_trade_fee:
         return 0.0
@@ -307,36 +274,117 @@ def _calculate_trade_fee(payload: _NormalisedPayload, config: FreelanceConfig) -
     return config.trade_fee.standard_amount
 
 
-def _calculate_freelance(
+def _calculate_general_income_details(
     payload: _NormalisedPayload,
-    config: FreelanceConfig,
+    config: YearConfiguration,
     translator: Translator,
-) -> Optional[Dict[str, Any]]:
-    if not payload.has_freelance_activity:
-        return None
+) -> list[Dict[str, Any]]:
+    components: list[_GeneralIncomeComponent] = []
 
-    gross = payload.freelance_profit
-    contributions = payload.freelance_contributions
-    taxable = payload.freelance_taxable_income
-    tax = _calculate_progressive_tax(taxable, config.brackets)
-    trade_fee = _calculate_trade_fee(payload, config)
-    total_tax = tax + trade_fee
-    net_income = gross - contributions - total_tax
+    if payload.has_employment_income:
+        components.append(
+            _GeneralIncomeComponent(
+                category="employment",
+                label_key="details.employment",
+                gross_income=payload.employment_income,
+                taxable_income=payload.employment_income,
+                credit_eligible=True,
+            )
+        )
 
-    detail = {
-        "category": "freelance",
-        "label": translator("details.freelance"),
-        "gross_income": _round_currency(gross),
-        "deductible_contributions": _round_currency(contributions),
-        "taxable_income": _round_currency(taxable),
-        "tax": _round_currency(tax),
-        "trade_fee": _round_currency(trade_fee),
-        "total_tax": _round_currency(total_tax),
-        "net_income": _round_currency(net_income),
-    }
-    if trade_fee:
-        detail["trade_fee_label"] = translator("details.trade_fee")
-    return detail
+    if payload.has_pension_income:
+        components.append(
+            _GeneralIncomeComponent(
+                category="pension",
+                label_key="details.pension",
+                gross_income=payload.pension_income,
+                taxable_income=payload.pension_income,
+                credit_eligible=True,
+            )
+        )
+
+    if payload.has_freelance_activity:
+        trade_fee = _calculate_trade_fee(payload, config.freelance)
+        components.append(
+            _GeneralIncomeComponent(
+                category="freelance",
+                label_key="details.freelance",
+                gross_income=payload.freelance_profit,
+                taxable_income=payload.freelance_taxable_income,
+                credit_eligible=False,
+                contributions=payload.freelance_contributions,
+                trade_fee=trade_fee,
+            )
+        )
+
+    if not components:
+        return []
+
+    total_taxable = sum(component.taxable_income for component in components)
+    brackets = config.employment.brackets
+    tax_before_credit = (
+        _calculate_progressive_tax(total_taxable, brackets) if total_taxable > 0 else 0.0
+    )
+
+    credit_candidates: list[float] = []
+    if payload.has_employment_income:
+        credit_candidates.append(
+            config.employment.tax_credit.amount_for_children(payload.children)
+        )
+    if payload.has_pension_income:
+        credit_candidates.append(
+            config.pension.tax_credit.amount_for_children(payload.children)
+        )
+    credit_requested = max(credit_candidates) if credit_candidates else 0.0
+    credit_applied = min(credit_requested, tax_before_credit)
+
+    if total_taxable > 0:
+        for component in components:
+            share = component.taxable_income / total_taxable
+            component.tax_before_credit = tax_before_credit * share
+    else:
+        for component in components:
+            component.tax_before_credit = 0.0
+
+    eligible_tax = sum(
+        component.tax_before_credit
+        for component in components
+        if component.credit_eligible
+    )
+
+    for component in components:
+        if component.credit_eligible and eligible_tax > 0:
+            share = component.tax_before_credit / eligible_tax
+            component.credit = credit_applied * share
+        else:
+            component.credit = 0.0
+        component.tax_after_credit = max(component.tax_before_credit - component.credit, 0.0)
+
+    details: list[Dict[str, Any]] = []
+    for component in components:
+        detail: Dict[str, Any] = {
+            "category": component.category,
+            "label": translator(component.label_key),
+            "gross_income": _round_currency(component.gross_income),
+            "taxable_income": _round_currency(component.taxable_income),
+            "tax": _round_currency(component.tax_after_credit),
+            "total_tax": _round_currency(component.total_tax()),
+            "net_income": _round_currency(component.net_income()),
+        }
+
+        if component.category in {"employment", "pension"}:
+            detail["tax_before_credits"] = _round_currency(component.tax_before_credit)
+            detail["credits"] = _round_currency(component.credit)
+
+        if component.category == "freelance":
+            detail["deductible_contributions"] = _round_currency(component.contributions)
+            detail["trade_fee"] = _round_currency(component.trade_fee)
+            if component.trade_fee:
+                detail["trade_fee_label"] = translator("details.trade_fee")
+
+        details.append(detail)
+
+    return details
 
 
 def _calculate_rental(
@@ -468,17 +516,8 @@ def calculate_tax(payload: Dict[str, Any]) -> Dict[str, Any]:
     translator = get_translator(normalised.locale)
 
     details: list[Dict[str, Any]] = []
-    employment_detail = _calculate_employment(normalised, config.employment, translator)
-    if employment_detail:
-        details.append(employment_detail)
-
-    pension_detail = _calculate_pension(normalised, config.pension, translator)
-    if pension_detail:
-        details.append(pension_detail)
-
-    freelance_detail = _calculate_freelance(normalised, config.freelance, translator)
-    if freelance_detail:
-        details.append(freelance_detail)
+    general_income_details = _calculate_general_income_details(normalised, config, translator)
+    details.extend(general_income_details)
 
     rental_detail = _calculate_rental(normalised, config.rental, translator)
     if rental_detail:

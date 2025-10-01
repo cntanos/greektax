@@ -15,16 +15,16 @@
     "expectations": {
       "summary": {
         "income_total": 34000.0,
-        "tax_total": 4093.0,
-        "net_income": 26907.0
+        "tax_total": 6133.0,
+        "net_income": 24867.0
       },
       "details": {
         "employment": {
-          "total_tax": 2323.0
+          "total_tax": 3261.71
         },
         "freelance": {
           "taxable_income": 11000.0,
-          "total_tax": 1770.0
+          "total_tax": 2871.29
         }
       }
     }
