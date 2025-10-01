@@ -104,5 +104,27 @@
         }
       }
     }
+  },
+  {
+    "name": "luxury_obligation_only",
+    "payload": {
+      "year": 2024,
+      "obligations": {
+        "luxury": 925.75
+      }
+    },
+    "expectations": {
+      "summary": {
+        "income_total": 0.0,
+        "tax_total": 925.75,
+        "net_income": -925.75
+      },
+      "details": {
+        "luxury": {
+          "total_tax": 925.75,
+          "net_income": -925.75
+        }
+      }
+    }
   }
 ]

@@ -66,17 +66,9 @@ deliver user value in incremental, testable slices.
 - Locale-aware preview controls on the front-end persisting user preferences.
 - Regression scenario catalogue underpinning integration coverage.
 
-## Sprint 4 (Current)
+## Sprint 4 (Completed)
 
-**Objectives**
-- Surface configuration metadata (available years, investment categories) for
-  dynamic UI rendering.
-- Wire the primary calculator form to the API, including printable/exportable
-  summaries.
-- Expand automated coverage to VAT and ENFIA obligations alongside existing
-  income scenarios.
-
-**Deliverables (to date)**
+**Highlights**
 - REST endpoints exposing available tax years and locale-aware investment
   categories.
 - Interactive calculator UI tied to the backend with download and print helpers
@@ -84,13 +76,31 @@ deliver user value in incremental, testable slices.
 - Regression scenarios and unit tests validating VAT/ENFIA obligations within
   the calculation engine.
 
-**Next Steps (Preview of Sprint 5)**
-- Introduce endpoints for year metadata beyond investment categories (e.g.
-  deductible catalogues) to power richer UI hints.
-- Implement client-side validation and localisation for the expanded form
-  fields.
-- Deliver shareable/print-ready summary layouts (PDF or HTML) and broaden
-  regression coverage to luxury tax and VAT edge cases.
+## Sprint 5 (Current)
+
+**Objectives**
+- Extend configuration metadata endpoints with deduction guidance for form
+  tooling.
+- Strengthen front-end localisation and validation across all calculator
+  controls.
+- Provide printable and shareable summaries while tightening regression coverage
+  around luxury-tax and VAT obligations.
+
+**Deliverables (to date)**
+- `/api/v1/config/<year>/deductions` endpoint returning locale-aware deduction
+  hints with validation metadata.
+- Calculator interface that localises static copy, labels, and validation
+  feedback when switching locales.
+- Shareable HTML summary generator and expanded regression scenarios including a
+  luxury-tax-only edge case.
+
+**Next Steps (Preview of Sprint 6)**
+- Publish richer deduction metadata (e.g., allowance thresholds) for enhanced UI
+  helpers and contextual education.
+- Explore downloadable PDF/CSV exports for summaries alongside persisted share
+  links.
+- Expand regression coverage to multi-year comparisons and printable export
+  rendering fidelity.
 
 > _This plan is updated at the end of each sprint to capture accomplishments_
 > _and upcoming milestones._
