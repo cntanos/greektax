@@ -1,0 +1,7 @@
+# TODO: Populate 2024 configuration with official tax brackets, credits, and
+# localized labels. Each section should align with the domain models defined in
+# ``greektax.backend.app.models`` once implemented.
+meta:
+  version: 0
+  status: draft
+  notes: "Placeholder configuration for initial scaffolding"
