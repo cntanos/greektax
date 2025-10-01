@@ -172,3 +172,20 @@ def test_calculate_tax_includes_additional_obligations() -> None:
     assert details["luxury"]["total_tax"] == pytest.approx(880.0)
     assert details["luxury"]["label"] == "Luxury living tax"
     assert details["luxury"]["net_income"] == pytest.approx(-880.0)
+
+
+def test_calculate_tax_multi_year_credit_difference() -> None:
+    base_payload = {
+        "locale": "en",
+        "dependents": {"children": 2},
+        "employment": {"gross_income": 25_000},
+    }
+
+    result_2024 = calculate_tax({"year": 2024, **base_payload})
+    result_2025 = calculate_tax({"year": 2025, **base_payload})
+
+    tax_2024 = result_2024["summary"]["tax_total"]
+    tax_2025 = result_2025["summary"]["tax_total"]
+
+    assert tax_2025 < tax_2024
+    assert result_2025["meta"]["year"] == 2025

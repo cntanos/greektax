@@ -16,6 +16,8 @@ from flask import Flask
 from flask.testing import FlaskClient
 
 from greektax.backend.app import create_app
+from greektax.backend.app.routes import summaries
+from greektax.backend.app.services.share_service import InMemoryShareRepository
 
 
 @pytest.fixture()
@@ -32,3 +34,10 @@ def client(app: Flask) -> FlaskClient:
     """Provide a test client bound to the configured Flask app."""
 
     return app.test_client()
+
+
+@pytest.fixture(autouse=True)
+def reset_share_repository() -> None:
+    """Ensure each test case operates with a fresh share repository."""
+
+    summaries._REPOSITORY = InMemoryShareRepository()

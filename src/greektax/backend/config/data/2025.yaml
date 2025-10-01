@@ -1,8 +1,8 @@
-year: 2024
+year: 2025
 meta:
   version: 1
   status: draft
-  notes: "Initial 2024 configuration with employment and freelance coverage"
+  notes: "Draft 2025 configuration with updated family tax credits"
 income:
   employment:
     tax_brackets:
@@ -17,11 +17,11 @@ income:
       - rate: 0.44
     tax_credit:
       amounts_by_children:
-        "0": 777
-        "1": 810
-        "2": 900
-        "3": 1120
-      incremental_amount_per_child: 220
+        "0": 780
+        "1": 820
+        "2": 910
+        "3": 1140
+      incremental_amount_per_child: 230
   pension:
     tax_brackets:
       - upper: 10000
@@ -45,8 +45,8 @@ income:
         rate: 0.36
       - rate: 0.44
     trade_fee:
-      standard_amount: 650
-      reduced_amount: 325
+      standard_amount: 620
+      reduced_amount: 310
       newly_self_employed_reduction_years: 5
   rental:
     tax_brackets:
@@ -79,13 +79,13 @@ deductions:
           description_key: forms.dependents.children_allowance.description
           thresholds:
             - label_key: forms.dependents.children_allowance.threshold.none
-              amount: 777
+              amount: 780
             - label_key: forms.dependents.children_allowance.threshold.one
-              amount: 810
+              amount: 820
             - label_key: forms.dependents.children_allowance.threshold.two
-              amount: 900
+              amount: 910
             - label_key: forms.dependents.children_allowance.threshold.three_plus
-              amount: 1120
+              amount: 1140
               notes_key: forms.dependents.children_allowance.threshold.three_plus_note
     - id: freelance.mandatory_contributions
       applies_to:

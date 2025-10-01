@@ -15,6 +15,7 @@ const CONFIG_INVESTMENT_ENDPOINT = (year, locale) =>
   )}`;
 const CONFIG_DEDUCTIONS_ENDPOINT = (year, locale) =>
   `${API_BASE}/config/${year}/deductions?locale=${encodeURIComponent(locale)}`;
+const SUMMARIES_ENDPOINT = `${API_BASE}/summaries`;
 const STORAGE_KEY = "greektax.locale";
 
 const UI_MESSAGES = {
@@ -45,6 +46,9 @@ const UI_MESSAGES = {
       select_year: "Please select a tax year before calculating.",
       calculating: "Calculating tax breakdown…",
       calculation_complete: "Calculation complete.",
+      persisting_share: "Preparing shareable summary…",
+      share_ready: "Share link ready.",
+      share_failed: "Unable to prepare share link.",
       validation_errors: "Please fix the highlighted fields and try again.",
       calculation_failed: "Unable to process calculation.",
     },
@@ -105,11 +109,30 @@ const UI_MESSAGES = {
     actions: {
       calculate: "Calculate taxes",
       download: "Download summary (JSON)",
+      download_csv: "Download summary (CSV)",
+      download_pdf: "Download summary (PDF)",
       share: "Open shareable summary",
       print: "Print summary",
     },
     share: {
       open_failed: "Popup blocked. Please allow pop-ups to view the summary.",
+      copy: "Copy link",
+      copy_success: "Share link copied to clipboard.",
+      copy_error: "Unable to copy link to clipboard.",
+      link_label: "Shareable link",
+      link_placeholder: "https://example.com/share/...",
+      expiry_notice: "Share links remain available for 24 hours.",
+      expires_at: "Link expires {{datetime}}.",
+      expired: "Share link expired. Generate a new summary.",
+      feedback_prompt: "Was the expiry message clear?",
+      feedback_clear: "Yes, it was clear",
+      feedback_unclear: "No, it needs work",
+      feedback_notes_label: "Optional feedback",
+      feedback_notes_placeholder: "Let us know how we can improve the expiry message.",
+      feedback_submit: "Send feedback",
+      feedback_sending: "Sending feedback…",
+      feedback_submitted: "Feedback received — thank you!",
+      feedback_error: "Unable to send feedback. Please try again.",
     },
   },
   el: {
@@ -139,6 +162,9 @@ const UI_MESSAGES = {
       select_year: "Επιλέξτε φορολογικό έτος πριν από τον υπολογισμό.",
       calculating: "Υπολογισμός ανάλυσης φόρου…",
       calculation_complete: "Ο υπολογισμός ολοκληρώθηκε.",
+      persisting_share: "Προετοιμασία κοινόχρηστης σύνοψης…",
+      share_ready: "Ο σύνδεσμος κοινοποίησης είναι έτοιμος.",
+      share_failed: "Αδυναμία προετοιμασίας συνδέσμου.",
       validation_errors: "Διορθώστε τα επισημασμένα πεδία και προσπαθήστε ξανά.",
       calculation_failed: "Δεν ήταν δυνατή η επεξεργασία του υπολογισμού.",
     },
@@ -200,12 +226,31 @@ const UI_MESSAGES = {
     actions: {
       calculate: "Υπολογισμός φόρων",
       download: "Λήψη σύνοψης (JSON)",
+      download_csv: "Λήψη σύνοψης (CSV)",
+      download_pdf: "Λήψη σύνοψης (PDF)",
       share: "Άνοιγμα κοινόχρηστης σύνοψης",
       print: "Εκτύπωση σύνοψης",
     },
     share: {
       open_failed:
         "Το αναδυόμενο παράθυρο μπλοκαρίστηκε. Επιτρέψτε τα αναδυόμενα για να δείτε τη σύνοψη.",
+      copy: "Αντιγραφή συνδέσμου",
+      copy_success: "Ο σύνδεσμος αντιγράφηκε στο πρόχειρο.",
+      copy_error: "Αδυναμία αντιγραφής του συνδέσμου.",
+      link_label: "Κοινόχρηστος σύνδεσμος",
+      link_placeholder: "https://example.com/share/...",
+      expiry_notice: "Οι σύνδεσμοι κοινοποίησης παραμένουν ενεργοί για 24 ώρες.",
+      expires_at: "Ο σύνδεσμος λήγει {{datetime}}.",
+      expired: "Ο σύνδεσμος έχει λήξει. Δημιουργήστε νέα σύνοψη.",
+      feedback_prompt: "Ήταν σαφές το μήνυμα λήξης;",
+      feedback_clear: "Ναι, ήταν σαφές",
+      feedback_unclear: "Όχι, χρειάζεται βελτίωση",
+      feedback_notes_label: "Προαιρετικά σχόλια",
+      feedback_notes_placeholder: "Πείτε μας πώς μπορούμε να βελτιώσουμε το μήνυμα λήξης.",
+      feedback_submit: "Αποστολή σχολίων",
+      feedback_sending: "Αποστολή σχολίων…",
+      feedback_submitted: "Ευχαριστούμε για τα σχόλιά σας!",
+      feedback_error: "Δεν ήταν δυνατή η αποστολή των σχολίων.",
     },
   },
 };
@@ -216,6 +261,9 @@ let currentDeductionHints = [];
 let dynamicFieldLabels = {};
 let deductionValidationByInput = {};
 let lastCalculation = null;
+let lastShareRecord = null;
+let lastShareSignature = null;
+let shareFeedbackSelection = null;
 
 const localeSelect = document.getElementById("locale-select");
 const previewButton = document.getElementById("preview-button");
@@ -244,8 +292,20 @@ const resultsSection = document.getElementById("calculation-results");
 const summaryGrid = document.getElementById("summary-grid");
 const detailsList = document.getElementById("details-list");
 const downloadButton = document.getElementById("download-button");
+const downloadCsvButton = document.getElementById("download-csv-button");
+const downloadPdfButton = document.getElementById("download-pdf-button");
 const shareButton = document.getElementById("share-button");
 const printButton = document.getElementById("print-button");
+const copyShareLinkButton = document.getElementById("copy-share-link-button");
+const shareLinkInput = document.getElementById("share-link");
+const shareExpiryElement = document.getElementById("share-expiry");
+const shareFeedbackContainer = document.getElementById("share-feedback");
+const shareFeedbackButtons = shareFeedbackContainer
+  ? Array.from(shareFeedbackContainer.querySelectorAll("[data-feedback]"))
+  : [];
+const shareFeedbackNotes = document.getElementById("share-feedback-notes");
+const shareFeedbackSubmit = document.getElementById("share-feedback-submit");
+const shareFeedbackStatus = document.getElementById("share-feedback-status");
 
 const demoPayload = {
   year: 2024,
@@ -331,6 +391,11 @@ function applyLocale(locale) {
   }
   refreshInvestmentCategories();
   refreshDeductionHints();
+  if (lastShareRecord) {
+    updateShareLink(lastShareRecord);
+  } else {
+    updateShareLink(null);
+  }
 }
 
 function localiseStaticText() {
@@ -342,6 +407,17 @@ function localiseStaticText() {
     const message = t(key);
     if (typeof message === "string") {
       element.textContent = message;
+    }
+  });
+
+  document.querySelectorAll("[data-i18n-placeholder]").forEach((element) => {
+    const key = element.getAttribute("data-i18n-placeholder");
+    if (!key) {
+      return;
+    }
+    const message = t(key);
+    if (typeof message === "string" && "placeholder" in element) {
+      element.placeholder = message;
     }
   });
 }
@@ -429,8 +505,238 @@ function formatPercent(value) {
   return formatter.format(value);
 }
 
+function formatDateTime(date) {
+  const formatter = new Intl.DateTimeFormat(resolveLocaleTag(currentLocale), {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+  return formatter.format(date);
+}
+
+function getShareExpiryDate(record) {
+  if (!record || !record.meta || !record.meta.expires_at) {
+    return null;
+  }
+  const expiryDate = new Date(record.meta.expires_at);
+  if (Number.isNaN(expiryDate.getTime())) {
+    return null;
+  }
+  return expiryDate;
+}
+
+function isShareRecordExpired(record) {
+  const expiryDate = getShareExpiryDate(record);
+  if (!expiryDate) {
+    return false;
+  }
+  return expiryDate.getTime() <= Date.now();
+}
+
+function resetShareFeedback() {
+  if (!shareFeedbackContainer) {
+    return;
+  }
+
+  shareFeedbackContainer.dataset.shareId = "";
+  shareFeedbackContainer.dataset.state = "";
+  shareFeedbackContainer.setAttribute("hidden", "true");
+  shareFeedbackSelection = null;
+  shareFeedbackButtons.forEach((button) => {
+    button.dataset.selected = "false";
+    button.setAttribute("aria-pressed", "false");
+    button.removeAttribute("disabled");
+  });
+  if (shareFeedbackSubmit) {
+    shareFeedbackSubmit.setAttribute("disabled", "true");
+  }
+  if (shareFeedbackStatus) {
+    shareFeedbackStatus.textContent = "";
+    delete shareFeedbackStatus.dataset.status;
+  }
+  if (shareFeedbackNotes) {
+    shareFeedbackNotes.value = "";
+  }
+}
+
+function prepareShareFeedback(record) {
+  if (!shareFeedbackContainer || !record?.id) {
+    return;
+  }
+
+  shareFeedbackContainer.dataset.shareId = record.id;
+  shareFeedbackContainer.dataset.state = "pending";
+  shareFeedbackContainer.removeAttribute("hidden");
+  shareFeedbackSelection = null;
+  shareFeedbackButtons.forEach((button) => {
+    button.dataset.selected = "false";
+    button.setAttribute("aria-pressed", "false");
+    button.removeAttribute("disabled");
+  });
+  if (shareFeedbackSubmit) {
+    shareFeedbackSubmit.setAttribute("disabled", "true");
+  }
+  if (shareFeedbackStatus) {
+    shareFeedbackStatus.textContent = "";
+    delete shareFeedbackStatus.dataset.status;
+  }
+  if (shareFeedbackNotes) {
+    shareFeedbackNotes.value = "";
+  }
+}
+
+function disableShareFeedback() {
+  if (!shareFeedbackContainer) {
+    return;
+  }
+  shareFeedbackContainer.dataset.state = "disabled";
+  shareFeedbackButtons.forEach((button) => button.setAttribute("disabled", "true"));
+  if (shareFeedbackSubmit) {
+    shareFeedbackSubmit.setAttribute("disabled", "true");
+  }
+}
+
+function handleShareFeedbackChoice(value) {
+  if (!shareFeedbackContainer || shareFeedbackContainer.dataset.state === "submitted") {
+    return;
+  }
+
+  shareFeedbackSelection = value;
+  shareFeedbackButtons.forEach((button) => {
+    const selected = button.dataset.feedback === value;
+    button.dataset.selected = selected ? "true" : "false";
+    button.setAttribute("aria-pressed", selected ? "true" : "false");
+  });
+  if (shareFeedbackSubmit) {
+    shareFeedbackSubmit.removeAttribute("disabled");
+  }
+  if (shareFeedbackStatus) {
+    shareFeedbackStatus.textContent = "";
+    delete shareFeedbackStatus.dataset.status;
+  }
+}
+
+async function submitShareFeedback() {
+  if (!shareFeedbackContainer || !shareFeedbackSubmit) {
+    return;
+  }
+
+  const shareId = shareFeedbackContainer.dataset.shareId;
+  if (!shareId || !shareFeedbackSelection) {
+    return;
+  }
+
+  const notesValue = shareFeedbackNotes ? shareFeedbackNotes.value : "";
+  const trimmedNotes = notesValue.trim();
+  const body = { clarity: shareFeedbackSelection };
+  if (trimmedNotes) {
+    body.notes = trimmedNotes;
+  }
+
+  try {
+    shareFeedbackSubmit.setAttribute("disabled", "true");
+    shareFeedbackButtons.forEach((button) => button.setAttribute("disabled", "true"));
+    if (shareFeedbackStatus) {
+      shareFeedbackStatus.textContent = t("share.feedback_sending");
+      shareFeedbackStatus.dataset.status = "pending";
+    }
+
+    const response = await fetch(`${SUMMARIES_ENDPOINT}/${shareId}/feedback`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const errorPayload = await response.json().catch(() => ({}));
+      throw new Error(errorPayload.message || response.statusText);
+    }
+
+    shareFeedbackContainer.dataset.state = "submitted";
+    if (shareFeedbackStatus) {
+      shareFeedbackStatus.textContent = t("share.feedback_submitted");
+      shareFeedbackStatus.dataset.status = "success";
+    }
+  } catch (error) {
+    console.error("Failed to submit share feedback", error);
+    shareFeedbackButtons.forEach((button) => button.removeAttribute("disabled"));
+    if (shareFeedbackSubmit) {
+      shareFeedbackSubmit.removeAttribute("disabled");
+    }
+    if (shareFeedbackStatus) {
+      shareFeedbackStatus.textContent = t("share.feedback_error");
+      shareFeedbackStatus.dataset.status = "error";
+    }
+  }
+}
+
+function updateShareLink(record) {
+  const link = record?.links?.share_page || record?.links?.html || null;
+  if (!shareLinkInput) {
+    return;
+  }
+
+  if (link) {
+    const absolute = link.startsWith("http")
+      ? link
+      : new URL(link, window.location.origin).toString();
+    shareLinkInput.value = absolute;
+    copyShareLinkButton?.removeAttribute("disabled");
+  } else {
+    shareLinkInput.value = "";
+    copyShareLinkButton?.setAttribute("disabled", "true");
+  }
+
+  if (!shareExpiryElement) {
+    return;
+  }
+
+  if (!record) {
+    shareExpiryElement.textContent = t("share.expiry_notice");
+    delete shareExpiryElement.dataset.status;
+    resetShareFeedback();
+    return;
+  }
+
+  const expiryDate = getShareExpiryDate(record);
+  if (!expiryDate) {
+    shareExpiryElement.textContent = t("share.expiry_notice");
+    delete shareExpiryElement.dataset.status;
+    resetShareFeedback();
+    return;
+  }
+
+  if (expiryDate.getTime() <= Date.now()) {
+    shareExpiryElement.textContent = t("share.expired");
+    shareExpiryElement.dataset.status = "expired";
+    copyShareLinkButton?.setAttribute("disabled", "true");
+    disableShareFeedback();
+    return;
+  }
+
+  shareExpiryElement.textContent = t("share.expires_at", {
+    datetime: formatDateTime(expiryDate),
+  });
+  shareExpiryElement.dataset.status = "active";
+  if (
+    shareFeedbackContainer &&
+    shareFeedbackContainer.dataset.state !== "submitted" &&
+    shareFeedbackContainer.dataset.shareId === record.id
+  ) {
+    shareFeedbackContainer.removeAttribute("hidden");
+  }
+}
+
+function buildDownloadFilename(extension) {
+  const year = lastCalculation?.meta?.year ?? "summary";
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  return `greektax-${year}-${timestamp}.${extension}`;
+}
+
 function clearFormHints() {
   document.querySelectorAll(".form-control .form-hint").forEach((element) => {
+    element.remove();
+  });
+  document.querySelectorAll(".form-control .form-allowances").forEach((element) => {
     element.remove();
   });
 }
@@ -463,6 +769,67 @@ function applyHintToField(hint) {
   } else {
     hintElement.textContent = "";
     hintElement.hidden = true;
+  }
+
+  let allowancesContainer = container.querySelector(".form-allowances");
+  if (Array.isArray(hint.allowances) && hint.allowances.length) {
+    if (!allowancesContainer) {
+      allowancesContainer = document.createElement("div");
+      allowancesContainer.className = "form-allowances";
+      container.appendChild(allowancesContainer);
+    }
+    allowancesContainer.innerHTML = "";
+    hint.allowances.forEach((allowance) => {
+      if (!allowance) {
+        return;
+      }
+      const wrapper = document.createElement("div");
+      wrapper.className = "allowance-item";
+
+      if (allowance.label) {
+        const heading = document.createElement("strong");
+        heading.textContent = allowance.label;
+        wrapper.appendChild(heading);
+      }
+
+      if (allowance.description) {
+        const description = document.createElement("p");
+        description.textContent = allowance.description;
+        wrapper.appendChild(description);
+      }
+
+      if (Array.isArray(allowance.thresholds) && allowance.thresholds.length) {
+        const list = document.createElement("ul");
+        allowance.thresholds.forEach((threshold) => {
+          if (!threshold) {
+            return;
+          }
+          const item = document.createElement("li");
+          const parts = [];
+          if (threshold.amount !== undefined) {
+            parts.push(formatCurrency(threshold.amount));
+          }
+          if (threshold.percentage !== undefined) {
+            parts.push(formatPercent(threshold.percentage));
+          }
+          let text = threshold.label || "";
+          if (parts.length) {
+            text = `${text}${text ? ": " : ""}${parts.join(" / ")}`;
+          }
+          if (threshold.notes) {
+            text = `${text}${text ? " — " : ""}${threshold.notes}`;
+          }
+          item.textContent = text;
+          list.appendChild(item);
+        });
+        wrapper.appendChild(list);
+      }
+
+      allowancesContainer.appendChild(wrapper);
+    });
+    allowancesContainer.hidden = false;
+  } else if (allowancesContainer) {
+    allowancesContainer.remove();
   }
 
   const validation = hint.validation || {};
@@ -987,8 +1354,15 @@ function renderCalculation(result) {
 
   lastCalculation = result;
   downloadButton?.removeAttribute("disabled");
+  downloadCsvButton?.removeAttribute("disabled");
+  downloadPdfButton?.removeAttribute("disabled");
   shareButton?.removeAttribute("disabled");
   printButton?.removeAttribute("disabled");
+  copyShareLinkButton?.setAttribute("disabled", "true");
+  lastShareRecord = null;
+  lastShareSignature = null;
+  updateShareLink(null);
+  resetShareFeedback();
 
   renderSummary(result.summary || {});
   renderDetails(result.details || []);
@@ -1009,9 +1383,16 @@ function resetResults() {
     detailsList.innerHTML = "";
   }
   downloadButton?.setAttribute("disabled", "true");
+  downloadCsvButton?.setAttribute("disabled", "true");
+  downloadPdfButton?.setAttribute("disabled", "true");
   shareButton?.setAttribute("disabled", "true");
   printButton?.setAttribute("disabled", "true");
+  copyShareLinkButton?.setAttribute("disabled", "true");
   lastCalculation = null;
+  lastShareRecord = null;
+  lastShareSignature = null;
+  updateShareLink(null);
+  resetShareFeedback();
 }
 
 async function submitCalculation(event) {
@@ -1062,13 +1443,12 @@ async function submitCalculation(event) {
   }
 }
 
-function downloadSummary() {
+function downloadJsonSummary() {
   if (!lastCalculation) {
     return;
   }
 
-  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-  const filename = `greektax-${lastCalculation.meta?.year ?? "summary"}-${timestamp}.json`;
+  const filename = buildDownloadFilename("json");
   const blob = new Blob([JSON.stringify(lastCalculation, null, 2)], {
     type: "application/json",
   });
@@ -1082,6 +1462,137 @@ function downloadSummary() {
   document.body.removeChild(anchor);
 
   URL.revokeObjectURL(url);
+}
+
+async function downloadRemoteFile(url, filename) {
+  const response = await fetch(url, { credentials: "same-origin" });
+  if (!response.ok) {
+    const errorPayload = await response.json().catch(() => ({}));
+    const message = errorPayload.message || response.statusText;
+    throw new Error(message);
+  }
+
+  const blob = await response.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = objectUrl;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+  URL.revokeObjectURL(objectUrl);
+}
+
+async function ensurePersistedSummary() {
+  if (!lastCalculation) {
+    return null;
+  }
+
+  const signature = JSON.stringify(lastCalculation);
+  if (
+    lastShareRecord &&
+    lastShareSignature === signature &&
+    !isShareRecordExpired(lastShareRecord)
+  ) {
+    updateShareLink(lastShareRecord);
+    if (shareFeedbackContainer) {
+      if (shareFeedbackContainer.dataset.shareId !== lastShareRecord.id) {
+        prepareShareFeedback(lastShareRecord);
+      } else if (shareFeedbackContainer.dataset.state !== "submitted") {
+        shareFeedbackContainer.removeAttribute("hidden");
+      }
+    }
+    return lastShareRecord;
+  }
+
+  setCalculatorStatus(t("status.persisting_share"));
+
+  try {
+    const response = await fetch(SUMMARIES_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ result: lastCalculation }),
+    });
+
+    if (!response.ok) {
+      const errorPayload = await response.json().catch(() => ({}));
+      throw new Error(errorPayload.message || response.statusText);
+    }
+
+    const record = await response.json();
+    lastShareRecord = record;
+    lastShareSignature = signature;
+    updateShareLink(record);
+    if (shareFeedbackContainer) {
+      if (shareFeedbackContainer.dataset.shareId !== record.id) {
+        prepareShareFeedback(record);
+      } else if (shareFeedbackContainer.dataset.state !== "submitted") {
+        shareFeedbackContainer.removeAttribute("hidden");
+      }
+    }
+    setCalculatorStatus(t("status.share_ready"));
+    return record;
+  } catch (error) {
+    console.error("Failed to persist shareable summary", error);
+    setCalculatorStatus(t("status.share_failed"), { isError: true });
+    throw error;
+  }
+}
+
+async function downloadCsvSummary() {
+  if (!lastCalculation) {
+    return;
+  }
+
+  try {
+    const record = await ensurePersistedSummary();
+    if (!record?.links?.csv) {
+      throw new Error("CSV export link missing");
+    }
+    await downloadRemoteFile(record.links.csv, buildDownloadFilename("csv"));
+  } catch (error) {
+    console.error("CSV download failed", error);
+  }
+}
+
+async function downloadPdfSummary() {
+  if (!lastCalculation) {
+    return;
+  }
+
+  try {
+    const record = await ensurePersistedSummary();
+    if (!record?.links?.pdf) {
+      throw new Error("PDF export link missing");
+    }
+    await downloadRemoteFile(record.links.pdf, buildDownloadFilename("pdf"));
+  } catch (error) {
+    console.error("PDF download failed", error);
+  }
+}
+
+async function copyShareLink() {
+  if (!shareLinkInput || !shareLinkInput.value) {
+    return;
+  }
+
+  const text = shareLinkInput.value;
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text);
+    } else {
+      shareLinkInput.focus();
+      shareLinkInput.select();
+      const success = document.execCommand("copy");
+      if (!success) {
+        throw new Error("copy command failed");
+      }
+    }
+    setCalculatorStatus(t("share.copy_success"));
+  } catch (error) {
+    console.error("Clipboard interaction failed", error);
+    setCalculatorStatus(t("share.copy_error"), { isError: true });
+  }
 }
 
 function escapeHtml(value) {
@@ -1207,21 +1718,28 @@ function buildShareableSummaryHtml(result) {
 </html>`;
 }
 
-function openShareableSummary() {
+async function openShareableSummary() {
   if (!lastCalculation) {
     return;
   }
 
-  const html = buildShareableSummaryHtml(lastCalculation);
-  const summaryWindow = window.open("", "_blank", "noopener");
-  if (!summaryWindow) {
+  try {
+    const record = await ensurePersistedSummary();
+    const shareLink = record?.links?.share_page || record?.links?.html;
+    if (!shareLink) {
+      throw new Error("Share link unavailable");
+    }
+    const absolute = shareLink.startsWith("http")
+      ? shareLink
+      : new URL(shareLink, window.location.origin).toString();
+    const summaryWindow = window.open(absolute, "_blank", "noopener");
+    if (!summaryWindow) {
+      setCalculatorStatus(t("share.open_failed"), { isError: true });
+    }
+  } catch (error) {
+    console.error("Failed to open share summary", error);
     setCalculatorStatus(t("share.open_failed"), { isError: true });
-    return;
   }
-
-  summaryWindow.document.open();
-  summaryWindow.document.write(html);
-  summaryWindow.document.close();
 }
 
 function printSummary() {
@@ -1260,9 +1778,24 @@ function initialiseCalculator() {
     refreshDeductionHints();
   });
 
-  downloadButton?.addEventListener("click", downloadSummary);
+  downloadButton?.addEventListener("click", downloadJsonSummary);
+  downloadCsvButton?.addEventListener("click", downloadCsvSummary);
+  downloadPdfButton?.addEventListener("click", downloadPdfSummary);
   shareButton?.addEventListener("click", openShareableSummary);
   printButton?.addEventListener("click", printSummary);
+  copyShareLinkButton?.addEventListener("click", copyShareLink);
+  shareFeedbackButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const { feedback } = button.dataset;
+      if (feedback) {
+        handleShareFeedbackChoice(feedback);
+      }
+    });
+  });
+  shareFeedbackSubmit?.addEventListener("click", (event) => {
+    event.preventDefault();
+    submitShareFeedback();
+  });
 
   attachValidationHandlers();
 
