@@ -32,3 +32,17 @@ def test_investment_categories_missing_year(client: FlaskClient) -> None:
     assert response.status_code == HTTPStatus.NOT_FOUND
     payload = response.get_json()
     assert payload["error"] == "not_found"
+
+
+def test_deduction_hints_endpoint(client: FlaskClient) -> None:
+    response = client.get("/api/v1/config/2024/deductions?locale=el")
+
+    assert response.status_code == HTTPStatus.OK
+    payload = response.get_json()
+    assert payload["locale"] == "el"
+
+    hints = {hint["id"]: hint for hint in payload["hints"]}
+    assert "dependents.children" in hints
+    children_hint = hints["dependents.children"]
+    assert children_hint["input_id"] == "children-input"
+    assert children_hint["description"].startswith("Επηρεάζει")

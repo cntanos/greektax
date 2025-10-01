@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="./assets/styles/main.css" />
   </head>
   <body>
-    <header>
+    <header class="no-print">
       <h1>GreekTax</h1>
       <p class="tagline">Unofficial tax estimation toolkit for Greece</p>
     </header>
@@ -29,7 +29,7 @@
 
       <section
         id="language-preview"
-        class="card"
+        class="card no-print"
         aria-labelledby="language-preview-title"
       >
         <h2 id="language-preview-title">Preview localisation</h2>
@@ -217,6 +217,17 @@
                   value="0"
                 />
               </div>
+              <div class="form-control">
+                <label for="luxury-due">Luxury living tax (€)</label>
+                <input
+                  id="luxury-due"
+                  name="obligations.luxury"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value="0"
+                />
+              </div>
             </div>
           </fieldset>
 
@@ -226,6 +237,9 @@
             </button>
             <button type="button" class="button secondary" id="download-button" disabled>
               Download summary (JSON)
+            </button>
+            <button type="button" class="button ghost" id="share-button" disabled>
+              Open shareable summary
             </button>
             <button type="button" class="button ghost" id="print-button" disabled>
               Print summary

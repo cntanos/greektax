@@ -61,3 +61,43 @@ income:
       interest: 0.15
       capital_gains: 0.15
       royalties: 0.20
+deductions:
+  hints:
+    - id: dependents.children
+      applies_to:
+        - employment
+        - pension
+      label_key: forms.dependents.children
+      description_key: forms.dependents.children_hint
+      input_id: children-input
+      validation:
+        type: integer
+        min: 0
+        max: 10
+    - id: freelance.mandatory_contributions
+      applies_to:
+        - freelance
+      label_key: forms.freelance.mandatory_contributions
+      description_key: forms.freelance.mandatory_contributions_hint
+      input_id: freelance-contributions
+      validation:
+        type: currency
+        min: 0
+    - id: rental.deductible_expenses
+      applies_to:
+        - rental
+      label_key: forms.rental.deductible_expenses
+      description_key: forms.rental.deductible_expenses_hint
+      input_id: rental-expenses
+      validation:
+        type: currency
+        min: 0
+    - id: obligations.luxury
+      applies_to:
+        - luxury
+      label_key: forms.obligations.luxury
+      description_key: forms.obligations.luxury_hint
+      input_id: luxury-due
+      validation:
+        type: currency
+        min: 0

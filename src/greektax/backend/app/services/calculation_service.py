@@ -36,6 +36,7 @@ class _NormalisedPayload:
     investment_amounts: Mapping[str, float]
     vat_due: float
     enfia_due: float
+    luxury_due: float
 
     @property
     def freelance_taxable_income(self) -> float:
@@ -82,6 +83,10 @@ class _NormalisedPayload:
     @property
     def has_enfia_obligation(self) -> bool:
         return self.enfia_due > 0
+
+    @property
+    def has_luxury_obligation(self) -> bool:
+        return self.luxury_due > 0
 
 
 def _to_float(value: Any, field_name: str) -> float:
@@ -194,6 +199,9 @@ def _normalise_payload(payload: Mapping[str, Any]) -> _NormalisedPayload:
     obligations_section = _extract_section(payload, "obligations")
     vat_due = _to_float(obligations_section.get("vat", 0.0), "obligations.vat")
     enfia_due = _to_float(obligations_section.get("enfia", 0.0), "obligations.enfia")
+    luxury_due = _to_float(
+        obligations_section.get("luxury", 0.0), "obligations.luxury"
+    )
 
     return _NormalisedPayload(
         year=year,
@@ -209,6 +217,7 @@ def _normalise_payload(payload: Mapping[str, Any]) -> _NormalisedPayload:
         investment_amounts=MappingProxyType(investment_amounts),
         vat_due=vat_due,
         enfia_due=enfia_due,
+        luxury_due=luxury_due,
     )
 
 
@@ -436,6 +445,21 @@ def _calculate_enfia(payload: _NormalisedPayload, translator: Translator) -> Opt
     }
 
 
+def _calculate_luxury(payload: _NormalisedPayload, translator: Translator) -> Optional[Dict[str, Any]]:
+    if not payload.has_luxury_obligation:
+        return None
+
+    amount = payload.luxury_due
+    rounded = _round_currency(amount)
+    return {
+        "category": "luxury",
+        "label": translator("details.luxury"),
+        "tax": rounded,
+        "total_tax": rounded,
+        "net_income": _round_currency(-amount),
+    }
+
+
 def calculate_tax(payload: Dict[str, Any]) -> Dict[str, Any]:
     """Compute tax summary for the provided payload."""
 
@@ -471,6 +495,10 @@ def calculate_tax(payload: Dict[str, Any]) -> Dict[str, Any]:
     enfia_detail = _calculate_enfia(normalised, translator)
     if enfia_detail:
         details.append(enfia_detail)
+
+    luxury_detail = _calculate_luxury(normalised, translator)
+    if luxury_detail:
+        details.append(luxury_detail)
 
     income_total = sum(item.get("gross_income", 0.0) for item in details)
     tax_total = sum(item.get("total_tax", 0.0) for item in details)

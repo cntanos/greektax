@@ -5,15 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
-from typing import (
-    Any,
-    Dict,
-    Iterable,
-    Mapping,
-    MutableMapping,
-    Optional,
-    Sequence,
-)
+from typing import Any, Dict, Iterable, Mapping, MutableMapping, Optional, Sequence
 
 import yaml
 
@@ -114,6 +106,25 @@ class InvestmentConfig:
 
 
 @dataclass(frozen=True)
+class DeductionHint:
+    """Hint metadata for user-facing deduction inputs."""
+
+    id: str
+    applies_to: Sequence[str]
+    label_key: str
+    description_key: Optional[str]
+    input_id: Optional[str]
+    validation: Dict[str, Any]
+
+
+@dataclass(frozen=True)
+class DeductionConfig:
+    """Container for deduction metadata hints."""
+
+    hints: Sequence[DeductionHint]
+
+
+@dataclass(frozen=True)
 class YearConfiguration:
     """Structured representation of a tax year configuration."""
 
@@ -124,6 +135,7 @@ class YearConfiguration:
     freelance: FreelanceConfig
     rental: RentalConfig
     investment: InvestmentConfig
+    deductions: DeductionConfig
 
 
 def _parse_tax_brackets(brackets: Iterable[Mapping[str, Any]]) -> Sequence[TaxBracket]:
@@ -263,6 +275,61 @@ def _parse_investment_config(raw: Mapping[str, Any]) -> InvestmentConfig:
     return InvestmentConfig(rates=rates)
 
 
+def _parse_deduction_hint(raw: Mapping[str, Any]) -> DeductionHint:
+    hint_id = raw.get("id")
+    if not hint_id or not isinstance(hint_id, str):
+        raise ConfigurationError("Deduction hints require a string 'id'")
+
+    applies_to_raw = raw.get("applies_to", [])
+    if not isinstance(applies_to_raw, Iterable):
+        raise ConfigurationError("'applies_to' must be an iterable of strings")
+    applies_to = [str(entry) for entry in applies_to_raw]
+
+    label_key_raw = raw.get("label_key")
+    if not label_key_raw or not isinstance(label_key_raw, str):
+        raise ConfigurationError("Deduction hints require a 'label_key' string")
+
+    description_key_raw = raw.get("description_key")
+    if description_key_raw is not None and not isinstance(description_key_raw, str):
+        raise ConfigurationError("'description_key' must be a string when provided")
+
+    input_id_raw = raw.get("input_id")
+    if input_id_raw is not None and not isinstance(input_id_raw, str):
+        raise ConfigurationError("'input_id' must be a string when provided")
+
+    validation_raw = raw.get("validation", {})
+    if validation_raw is None:
+        validation_raw = {}
+    if not isinstance(validation_raw, Mapping):
+        raise ConfigurationError("'validation' must be a mapping when provided")
+
+    return DeductionHint(
+        id=str(hint_id),
+        applies_to=tuple(applies_to),
+        label_key=label_key_raw,
+        description_key=description_key_raw,
+        input_id=input_id_raw,
+        validation=dict(validation_raw),
+    )
+
+
+def _parse_deductions_config(raw: Optional[Mapping[str, Any]]) -> DeductionConfig:
+    if raw is None:
+        return DeductionConfig(hints=tuple())
+
+    if not isinstance(raw, Mapping):
+        raise ConfigurationError("'deductions' section must be a mapping")
+
+    hints_raw = raw.get("hints", [])
+    if hints_raw is None:
+        hints_raw = []
+    if not isinstance(hints_raw, Iterable):
+        raise ConfigurationError("'hints' must be an iterable of hint definitions")
+
+    hints = tuple(_parse_deduction_hint(hint) for hint in hints_raw)
+    return DeductionConfig(hints=hints)
+
+
 def _parse_year_configuration(year: int, raw: Mapping[str, Any]) -> YearConfiguration:
     income_section = raw.get("income")
     if not isinstance(income_section, Mapping):
@@ -310,6 +377,7 @@ def _parse_year_configuration(year: int, raw: Mapping[str, Any]) -> YearConfigur
         freelance=_parse_freelance_config(freelance_raw),
         rental=_parse_rental_config(rental_raw),
         investment=_parse_investment_config(investment_raw),
+        deductions=_parse_deductions_config(raw.get("deductions")),
     )
 
 
