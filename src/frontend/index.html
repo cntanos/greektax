@@ -23,6 +23,26 @@
           storage. Please consult a professional accountant for formal filings.
         </p>
       </section>
+
+      <section id="language-preview" aria-labelledby="language-preview-title">
+        <h2 id="language-preview-title">Preview localisation</h2>
+        <p>
+          Choose your preferred language and request a sample calculation to see
+          the backend translations in action. The preview uses demo data only.
+        </p>
+        <form id="locale-form">
+          <label for="locale-select">Language</label>
+          <select id="locale-select" name="locale">
+            <option value="en">English</option>
+            <option value="el">Ελληνικά</option>
+          </select>
+          <button type="button" id="preview-button">Preview calculation</button>
+        </form>
+        <div class="preview-output" aria-live="polite">
+          <p id="preview-status">No preview requested yet.</p>
+          <pre id="preview-json" hidden></pre>
+        </div>
+      </section>
     </main>
 
     <script src="./assets/scripts/main.js" defer></script>

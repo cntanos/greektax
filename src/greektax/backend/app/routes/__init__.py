@@ -1,9 +1,11 @@
 """Blueprint registrations for application routes."""
 
-from flask import Blueprint
+from flask import Flask
 
-api_blueprint = Blueprint("api", __name__)
+from .calculations import blueprint as calculations_blueprint
 
-# TODO: Implement endpoints for tax calculation, configuration metadata, and
-# localization resources. They should delegate heavy-lifting to dedicated
-# service modules within ``greektax.backend.app.services``.
+
+def register_routes(app: Flask) -> None:
+    """Register all Flask blueprints with the provided application."""
+
+    app.register_blueprint(calculations_blueprint)
