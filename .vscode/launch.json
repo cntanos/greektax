@@ -1,0 +1,92 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Backend API (Flask)",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "flask",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "FLASK_APP": "greektax.backend.app:create_app",
+                "FLASK_DEBUG": "1",
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+            "envFile": "${workspaceFolder}/.env",
+            "args": [
+                "run",
+                "--host",
+                "127.0.0.1",
+                "--port",
+                "5000",
+                "--no-debugger",
+                "--no-reload"
+            ],
+            "jinja": true,
+            "justMyCode": true,
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen"
+        },
+        {
+            "name": "API Tests (pytest - all)",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pytest",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "tests"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+            "envFile": "${workspaceFolder}/.env",
+            "internalConsoleOptions": "neverOpen",
+            "purpose": [
+                "debug-test"
+            ]
+        },
+        {
+            "name": "API Tests (pytest - focused)",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pytest",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "tests",
+                "-k",
+                "${input:pytestFilter}"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+            "envFile": "${workspaceFolder}/.env",
+            "internalConsoleOptions": "neverOpen"
+        },
+        {
+            "name": "Python: Current File",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+            "envFile": "${workspaceFolder}/.env",
+            "internalConsoleOptions": "neverOpen"
+        }
+    ],
+    "inputs": [
+        {
+            "id": "pytestFilter",
+            "type": "promptString",
+            "description": "pytest -k expression to filter tests",
+            "default": "integration"
+        }
+    ]
+}
