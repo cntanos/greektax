@@ -34,6 +34,8 @@ class _NormalisedPayload:
     rental_gross_income: float
     rental_deductible_expenses: float
     investment_amounts: Mapping[str, float]
+    vat_due: float
+    enfia_due: float
 
     @property
     def freelance_taxable_income(self) -> float:
@@ -72,6 +74,14 @@ class _NormalisedPayload:
     @property
     def has_investment_income(self) -> bool:
         return any(amount > 0 for amount in self.investment_amounts.values())
+
+    @property
+    def has_vat_obligation(self) -> bool:
+        return self.vat_due > 0
+
+    @property
+    def has_enfia_obligation(self) -> bool:
+        return self.enfia_due > 0
 
 
 def _to_float(value: Any, field_name: str) -> float:
@@ -181,6 +191,10 @@ def _normalise_payload(payload: Mapping[str, Any]) -> _NormalisedPayload:
     for key, value in investment_section.items():
         investment_amounts[str(key)] = _to_float(value, f"investment.{key}")
 
+    obligations_section = _extract_section(payload, "obligations")
+    vat_due = _to_float(obligations_section.get("vat", 0.0), "obligations.vat")
+    enfia_due = _to_float(obligations_section.get("enfia", 0.0), "obligations.enfia")
+
     return _NormalisedPayload(
         year=year,
         locale=locale,
@@ -193,6 +207,8 @@ def _normalise_payload(payload: Mapping[str, Any]) -> _NormalisedPayload:
         rental_gross_income=rental_gross,
         rental_deductible_expenses=rental_expenses,
         investment_amounts=MappingProxyType(investment_amounts),
+        vat_due=vat_due,
+        enfia_due=enfia_due,
     )
 
 
@@ -390,6 +406,36 @@ def _round_currency(value: float) -> float:
     return round(value, 2)
 
 
+def _calculate_vat(payload: _NormalisedPayload, translator: Translator) -> Optional[Dict[str, Any]]:
+    if not payload.has_vat_obligation:
+        return None
+
+    amount = payload.vat_due
+    rounded = _round_currency(amount)
+    return {
+        "category": "vat",
+        "label": translator("details.vat"),
+        "tax": rounded,
+        "total_tax": rounded,
+        "net_income": _round_currency(-amount),
+    }
+
+
+def _calculate_enfia(payload: _NormalisedPayload, translator: Translator) -> Optional[Dict[str, Any]]:
+    if not payload.has_enfia_obligation:
+        return None
+
+    amount = payload.enfia_due
+    rounded = _round_currency(amount)
+    return {
+        "category": "enfia",
+        "label": translator("details.enfia"),
+        "tax": rounded,
+        "total_tax": rounded,
+        "net_income": _round_currency(-amount),
+    }
+
+
 def calculate_tax(payload: Dict[str, Any]) -> Dict[str, Any]:
     """Compute tax summary for the provided payload."""
 
@@ -417,6 +463,14 @@ def calculate_tax(payload: Dict[str, Any]) -> Dict[str, Any]:
     investment_detail = _calculate_investment(normalised, config.investment, translator)
     if investment_detail:
         details.append(investment_detail)
+
+    vat_detail = _calculate_vat(normalised, translator)
+    if vat_detail:
+        details.append(vat_detail)
+
+    enfia_detail = _calculate_enfia(normalised, translator)
+    if enfia_detail:
+        details.append(enfia_detail)
 
     income_total = sum(item.get("gross_income", 0.0) for item in details)
     tax_total = sum(item.get("total_tax", 0.0) for item in details)

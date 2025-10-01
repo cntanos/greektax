@@ -328,3 +328,16 @@ def load_year_configuration(year: int) -> YearConfiguration:
         raise ConfigurationError("Configuration file must define a mapping at the top level")
 
     return _parse_year_configuration(year, raw_config)
+
+
+def available_years() -> Sequence[int]:
+    """Return a sorted collection of tax years with configuration files."""
+
+    years: set[int] = set()
+    for path in CONFIG_DIRECTORY.glob("*.yaml"):
+        try:
+            years.add(int(path.stem))
+        except ValueError:  # pragma: no cover - non-numeric filenames are ignored defensively
+            continue
+
+    return tuple(sorted(years))

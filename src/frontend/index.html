@@ -13,10 +13,13 @@
     </header>
 
     <main>
-      <section id="app-intro">
+      <section id="app-intro" class="card">
+        <h2>Overview</h2>
         <p>
-          TODO: Build bilingual interface components with year selection,
-          income category inputs, and summarised outputs.
+          Estimate annual income taxes for Greece across employment, freelance,
+          rental, and investment categories. Select a tax year, choose your
+          language, and provide the income figures relevant to your situation to
+          receive a bilingual breakdown of obligations.
         </p>
         <p class="disclaimer">
           Disclaimer: This tool is unofficial and provided as-is without data
@@ -24,24 +27,218 @@
         </p>
       </section>
 
-      <section id="language-preview" aria-labelledby="language-preview-title">
+      <section
+        id="language-preview"
+        class="card"
+        aria-labelledby="language-preview-title"
+      >
         <h2 id="language-preview-title">Preview localisation</h2>
         <p>
           Choose your preferred language and request a sample calculation to see
           the backend translations in action. The preview uses demo data only.
         </p>
-        <form id="locale-form">
-          <label for="locale-select">Language</label>
-          <select id="locale-select" name="locale">
-            <option value="en">English</option>
-            <option value="el">Ελληνικά</option>
-          </select>
-          <button type="button" id="preview-button">Preview calculation</button>
+        <form id="locale-form" class="stack" novalidate>
+          <div class="form-control">
+            <label for="locale-select">Language</label>
+            <select id="locale-select" name="locale">
+              <option value="en">English</option>
+              <option value="el">Ελληνικά</option>
+            </select>
+          </div>
+          <button type="button" id="preview-button" class="button">
+            Preview calculation
+          </button>
         </form>
         <div class="preview-output" aria-live="polite">
           <p id="preview-status">No preview requested yet.</p>
           <pre id="preview-json" hidden></pre>
         </div>
+      </section>
+
+      <section id="calculator" class="card" aria-labelledby="calculator-title">
+        <h2 id="calculator-title">Tax calculator</h2>
+        <form id="calculator-form" novalidate>
+          <fieldset class="fieldset">
+            <legend>Year and household</legend>
+            <div class="form-grid double">
+              <div class="form-control">
+                <label for="year-select">Tax year</label>
+                <select id="year-select" name="year"></select>
+              </div>
+              <div class="form-control">
+                <label for="children-input">Dependent children</label>
+                <input
+                  id="children-input"
+                  name="dependents.children"
+                  type="number"
+                  min="0"
+                  step="1"
+                  value="0"
+                />
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset class="fieldset">
+            <legend>Employment &amp; pension income</legend>
+            <div class="form-grid double">
+              <div class="form-control">
+                <label for="employment-income">Employment gross income (€)</label>
+                <input
+                  id="employment-income"
+                  name="employment.gross_income"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value="0"
+                />
+              </div>
+              <div class="form-control">
+                <label for="pension-income">Pension gross income (€)</label>
+                <input
+                  id="pension-income"
+                  name="pension.gross_income"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value="0"
+                />
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset class="fieldset">
+            <legend>Freelance income</legend>
+            <div class="form-grid double">
+              <div class="form-control">
+                <label for="freelance-revenue">Gross revenue (€)</label>
+                <input
+                  id="freelance-revenue"
+                  name="freelance.gross_revenue"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value="0"
+                />
+              </div>
+              <div class="form-control">
+                <label for="freelance-expenses">Deductible expenses (€)</label>
+                <input
+                  id="freelance-expenses"
+                  name="freelance.deductible_expenses"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value="0"
+                />
+              </div>
+              <div class="form-control">
+                <label for="freelance-contributions">
+                  Mandatory social contributions (€)
+                </label>
+                <input
+                  id="freelance-contributions"
+                  name="freelance.mandatory_contributions"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value="0"
+                />
+              </div>
+              <div class="form-control">
+                <span class="inline-field">
+                  <input
+                    id="trade-fee-toggle"
+                    type="checkbox"
+                    name="freelance.include_trade_fee"
+                    checked
+                  />
+                  <label for="trade-fee-toggle">Include business activity fee</label>
+                </span>
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset class="fieldset">
+            <legend>Rental income</legend>
+            <div class="form-grid double">
+              <div class="form-control">
+                <label for="rental-income">Gross rental income (€)</label>
+                <input
+                  id="rental-income"
+                  name="rental.gross_income"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value="0"
+                />
+              </div>
+              <div class="form-control">
+                <label for="rental-expenses">Deductible expenses (€)</label>
+                <input
+                  id="rental-expenses"
+                  name="rental.deductible_expenses"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value="0"
+                />
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset class="fieldset">
+            <legend>Investment income</legend>
+            <div id="investment-fields" class="form-grid double"></div>
+          </fieldset>
+
+          <fieldset class="fieldset">
+            <legend>Additional obligations</legend>
+            <div class="form-grid double">
+              <div class="form-control">
+                <label for="vat-due">VAT due (€)</label>
+                <input
+                  id="vat-due"
+                  name="obligations.vat"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value="0"
+                />
+              </div>
+              <div class="form-control">
+                <label for="enfia-due">ENFIA amount (€)</label>
+                <input
+                  id="enfia-due"
+                  name="obligations.enfia"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value="0"
+                />
+              </div>
+            </div>
+          </fieldset>
+
+          <div class="actions">
+            <button type="submit" class="button" id="calculate-button">
+              Calculate taxes
+            </button>
+            <button type="button" class="button secondary" id="download-button" disabled>
+              Download summary (JSON)
+            </button>
+            <button type="button" class="button ghost" id="print-button" disabled>
+              Print summary
+            </button>
+          </div>
+          <p id="calculator-status" aria-live="polite"></p>
+        </form>
+
+        <section id="calculation-results" hidden aria-live="polite">
+          <h3>Results</h3>
+          <div class="summary-grid" id="summary-grid"></div>
+          <div class="details-list" id="details-list"></div>
+        </section>
       </section>
     </main>
 

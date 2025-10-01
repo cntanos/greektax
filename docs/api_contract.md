@@ -4,7 +4,7 @@ The tax calculation service accepts JSON payloads describing an individual's
 annual financial data and produces a bilingual breakdown of taxes, credits, and
 net income per category.
 
-## Endpoint
+## Endpoints
 
 ```
 POST /api/v1/calculations
@@ -15,6 +15,17 @@ Successful requests return `200 OK` with the calculation payload described
 below. Validation issues produce a `400 Bad Request` response with a JSON body
 containing `error` and `message` fields. When invalid field values are
 detected, the API returns `{"error": "validation_error", "message": "..."}`.
+
+Metadata endpoints support the front-end in building dynamic forms:
+
+```
+GET /api/v1/config/years
+GET /api/v1/config/<year>/investment-categories?locale=<locale>
+```
+
+The first returns all configured tax years plus a suggested default. The second
+exposes investment income categories (identifier, rate, locale-aware label) for
+the requested year.
 
 ## Request Body
 
@@ -33,6 +44,8 @@ detected, the API returns `{"error": "validation_error", "message": "..."}`.
 | `rental.gross_income` | number | ❌ | Rental revenue for the year. |
 | `rental.deductible_expenses` | number | ❌ | Deductible rental expenses. |
 | `investment.*` | number | ❌ | Amounts for each configured investment category (e.g. `dividends`, `interest`, `capital_gains`, `royalties`). |
+| `obligations.vat` | number | ❌ | Value Added Tax due for the year. Included in totals without further calculation. |
+| `obligations.enfia` | number | ❌ | ENFIA property tax amount to include in the summary. |
 
 All numeric fields must be non-negative. Boolean fields accept `true`, `false`,
 and equivalent string toggles (`"yes"`, `"no"`, `"1"`, `"0"`, etc.). Missing
@@ -50,8 +63,8 @@ API layers should translate these exceptions into `400 Bad Request` responses.
 {
   "summary": {
     "income_total": 33000.0,
-    "tax_total": 3910.0,
-    "net_income": 29090.0,
+    "tax_total": 4830.0,
+    "net_income": 28170.0,
     "labels": {
       "income_total": "Total income",
       "tax_total": "Total taxes",
@@ -98,6 +111,20 @@ API layers should translate these exceptions into `400 Bad Request` responses.
           "tax": 50.0
         }
       ]
+    },
+    {
+      "category": "vat",
+      "label": "Value Added Tax",
+      "tax": 600.0,
+      "total_tax": 600.0,
+      "net_income": -600.0
+    },
+    {
+      "category": "enfia",
+      "label": "ENFIA property tax",
+      "tax": 320.0,
+      "total_tax": 320.0,
+      "net_income": -320.0
     }
   ],
   "meta": {
@@ -111,7 +138,9 @@ The response always includes:
 
 - `summary`: Aggregated totals with localized labels.
 - `details`: Per-category breakdowns. Additional fields appear depending on the
-  income type (e.g., `trade_fee_label`, investment `items`).
+  income type (e.g., `trade_fee_label`, investment `items`). Flat obligations
+  such as VAT and ENFIA are returned as simple line items with negative
+  `net_income` values to reflect their impact on take-home amounts.
 - `meta`: Echoes the tax `year` and the resolved `locale` used for labels.
 
 All currency values are rounded to two decimals.

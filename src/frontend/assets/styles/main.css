@@ -11,10 +11,10 @@ body {
 }
 
 main {
-  max-width: 720px;
+  max-width: 960px;
   margin: 0 auto;
   display: grid;
-  gap: 2rem;
+  gap: 2.5rem;
 }
 
 header {
@@ -33,11 +33,21 @@ header {
   color: #a33;
 }
 
-#language-preview {
+.card {
   background: #fff;
   border-radius: 0.75rem;
   padding: 1.5rem;
   box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.08);
+}
+
+.card h2 {
+  margin-top: 0;
+}
+
+.stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 #locale-form {
@@ -84,6 +94,193 @@ header {
   max-height: 18rem;
   overflow: auto;
   margin: 0;
+}
+
+#calculator {
+  display: grid;
+  gap: 1.5rem;
+}
+
+#calculator-form {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.fieldset {
+  border: 1px solid #dee2e6;
+  border-radius: 0.75rem;
+  padding: 1rem;
+}
+
+.fieldset legend {
+  padding: 0 0.5rem;
+  font-weight: 600;
+}
+
+.form-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.form-grid.double {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.form-control {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.form-control label {
+  font-weight: 600;
+}
+
+.form-control input,
+.form-control select {
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid #ced4da;
+  font-size: 1rem;
+}
+
+.form-control input[type="number"] {
+  text-align: right;
+}
+
+.form-control input:focus,
+.form-control select:focus {
+  outline: 2px solid #0d6efd;
+  outline-offset: 2px;
+}
+
+.inline-field {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.button {
+  background: #0d6efd;
+  color: #fff;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.button.secondary {
+  background: #495057;
+}
+
+.button.ghost {
+  background: transparent;
+  color: #0d6efd;
+  border: 1px solid #0d6efd;
+}
+
+.button:hover,
+.button:focus {
+  background: #0b5ed7;
+}
+
+.button.secondary:hover,
+.button.secondary:focus {
+  background: #343a40;
+}
+
+.button.ghost:hover,
+.button.ghost:focus {
+  background: rgba(13, 110, 253, 0.1);
+}
+
+#calculator-status[data-status="error"] {
+  color: #b02a37;
+  font-weight: 600;
+}
+
+#calculation-results {
+  background: #f8f9fa;
+  border-radius: 0.75rem;
+  border: 1px solid #dee2e6;
+  padding: 1.5rem;
+}
+
+.summary-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+.summary-item {
+  background: #fff;
+  border-radius: 0.5rem;
+  border: 1px solid #e9ecef;
+  padding: 0.75rem;
+}
+
+.summary-item dt {
+  font-size: 0.9rem;
+  color: #495057;
+}
+
+.summary-item dd {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.details-list {
+  margin-top: 1.5rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.detail-card {
+  background: #fff;
+  border-radius: 0.5rem;
+  border: 1px solid #e9ecef;
+  padding: 1rem;
+}
+
+.detail-card h3 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+}
+
+.detail-card dl {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  margin: 0;
+}
+
+.detail-card dt {
+  font-size: 0.85rem;
+  color: #495057;
+}
+
+.detail-card dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  body {
+    padding: 1.5rem;
+  }
+
+  .form-grid.double {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* TODO: Implement responsive layout, bilingual typography adjustments, and
