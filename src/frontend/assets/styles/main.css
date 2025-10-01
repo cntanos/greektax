@@ -266,6 +266,8 @@ header {
 }
 
 #calculation-results {
+  display: grid;
+  gap: 1.5rem;
   background: #f8f9fa;
   border-radius: 0.75rem;
   border: 1px solid #dee2e6;
@@ -274,15 +276,35 @@ header {
 
 .summary-grid {
   display: grid;
-  gap: 0.75rem;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
 }
 
 .summary-item {
   background: #fff;
   border-radius: 0.5rem;
   border: 1px solid #e9ecef;
-  padding: 0.75rem;
+  padding: 0.9rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.summary-item:hover,
+.summary-item:focus-within {
+  transform: translateY(-2px);
+  box-shadow: 0 0.75rem 1.5rem rgba(15, 23, 42, 0.1);
+}
+
+.summary-item--primary {
+  border-color: rgba(13, 110, 253, 0.35);
+  background: linear-gradient(135deg, rgba(13, 110, 253, 0.12), rgba(13, 110, 253, 0.05));
+}
+
+.summary-item--accent {
+  border-color: rgba(220, 53, 69, 0.35);
+  background: linear-gradient(135deg, rgba(220, 53, 69, 0.12), rgba(220, 53, 69, 0.05));
 }
 
 .summary-item dt {
@@ -306,7 +328,8 @@ header {
   background: #fff;
   border-radius: 0.5rem;
   border: 1px solid #e9ecef;
-  padding: 1rem;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 0.5rem 1.25rem rgba(15, 23, 42, 0.06);
 }
 
 .detail-card h3 {
@@ -316,8 +339,8 @@ header {
 
 .detail-card dl {
   display: grid;
-  gap: 0.5rem;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.65rem;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   margin: 0;
 }
 
@@ -329,6 +352,28 @@ header {
 .detail-card dd {
   margin: 0;
   font-weight: 600;
+  font-size: 1.05rem;
+}
+
+.summary-item dd[data-field="net_income"],
+.detail-card dd[data-field="net_income"],
+.detail-card dd[data-field="net_income_per_payment"] {
+  color: #0f5132;
+}
+
+.summary-item dd[data-field="tax_total"],
+.detail-card dd[data-field="tax"],
+.detail-card dd[data-field="total_tax"] {
+  color: #b02a37;
+}
+
+.detail-card dd[data-field="deductible_contributions"],
+.detail-card dd[data-field="deductible_expenses"] {
+  color: #0d6efd;
+}
+
+.detail-card dd[data-field="payments_per_year"] {
+  color: #495057;
 }
 
 .no-print {

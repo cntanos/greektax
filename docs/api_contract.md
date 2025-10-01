@@ -79,6 +79,7 @@ API layers should translate these exceptions into `400 Bad Request` responses.
       "tax_total": "Total taxes",
       "net_income": "Net income",
       "net_monthly_income": "Net income per month",
+      "average_monthly_tax": "Average tax per month",
       "effective_tax_rate": "Effective tax rate"
     }
   },
@@ -89,6 +90,7 @@ API layers should translate these exceptions into `400 Bad Request` responses.
       "gross_income": 30000.0,
       "monthly_gross_income": 2142.86,
       "payments_per_year": 14,
+      "gross_income_per_payment": 2142.86,
       "taxable_income": 30000.0,
       "tax_before_credits": 5900.0,
       "credits": 810.0,

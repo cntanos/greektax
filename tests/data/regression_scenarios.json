@@ -16,7 +16,8 @@
       "summary": {
         "income_total": 34000.0,
         "tax_total": 6133.0,
-        "net_income": 24867.0
+        "net_income": 24867.0,
+        "average_monthly_tax": 511.08
       },
       "details": {
         "employment": {
@@ -53,7 +54,8 @@
       "summary": {
         "income_total": 38100.0,
         "tax_total": 6705.0,
-        "net_income": 29395.0
+        "net_income": 29395.0,
+        "average_monthly_tax": 558.75
       },
       "details": {
         "pension": {
@@ -91,7 +93,8 @@
       "summary": {
         "income_total": 0.0,
         "tax_total": 1775.0,
-        "net_income": -1775.0
+        "net_income": -1775.0,
+        "average_monthly_tax": 147.92
       },
       "details": {
         "vat": {
@@ -117,12 +120,94 @@
       "summary": {
         "income_total": 0.0,
         "tax_total": 925.75,
-        "net_income": -925.75
+        "net_income": -925.75,
+        "average_monthly_tax": 77.15
       },
       "details": {
         "luxury": {
           "total_tax": 925.75,
           "net_income": -925.75
+        }
+      }
+    }
+  },
+  {
+    "name": "employment_monthly_payments_distribution",
+    "payload": {
+      "year": 2024,
+      "locale": "en",
+      "employment": {
+        "monthly_income": 1850,
+        "payments_per_year": 14
+      }
+    },
+    "expectations": {
+      "summary": {
+        "income_total": 25900.0,
+        "tax_total": 3975.0,
+        "net_income": 21925.0,
+        "average_monthly_tax": 331.25
+      },
+      "details": {
+        "employment": {
+          "tax_before_credits": 4752.0,
+          "credits": 777.0,
+          "total_tax": 3975.0,
+          "payments_per_year": 14,
+          "gross_income_per_payment": 1850.0,
+          "net_income_per_payment": 1566.07
+        }
+      }
+    }
+  },
+  {
+    "name": "employment_large_family_credit_allocation",
+    "payload": {
+      "year": 2024,
+      "dependents": {"children": 3},
+      "employment": {"gross_income": 42000}
+    },
+    "expectations": {
+      "summary": {
+        "income_total": 42000.0,
+        "tax_total": 9260.0,
+        "net_income": 32740.0,
+        "average_monthly_tax": 771.67
+      },
+      "details": {
+        "employment": {
+          "tax_before_credits": 10380.0,
+          "credits": 1120.0,
+          "total_tax": 9260.0
+        }
+      }
+    }
+  },
+  {
+    "name": "employment_pension_credit_share",
+    "payload": {
+      "year": 2024,
+      "dependents": {"children": 1},
+      "employment": {"gross_income": 22000},
+      "pension": {"gross_income": 8000}
+    },
+    "expectations": {
+      "summary": {
+        "income_total": 30000.0,
+        "tax_total": 5090.0,
+        "net_income": 24910.0,
+        "average_monthly_tax": 424.17
+      },
+      "details": {
+        "employment": {
+          "tax_before_credits": 4326.67,
+          "credits": 594.0,
+          "total_tax": 3732.67
+        },
+        "pension": {
+          "tax_before_credits": 1573.33,
+          "credits": 216.0,
+          "total_tax": 1357.33
         }
       }
     }
