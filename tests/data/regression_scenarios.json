@@ -229,5 +229,85 @@
         }
       }
     }
+  },
+  {
+    "name": "employment_partial_year_payments",
+    "payload": {
+      "year": 2024,
+      "employment": {
+        "gross_income": 18000,
+        "payments_per_year": 10
+      }
+    },
+    "expectations": {
+      "summary": {
+        "income_total": 18000.0,
+        "tax_total": 1883.0,
+        "net_income": 13620.4,
+        "average_monthly_tax": 156.92
+      },
+      "details": {
+        "employment": {
+          "payments_per_year": 10,
+          "gross_income_per_payment": 1800.0,
+          "net_income_per_payment": 1362.04,
+          "total_tax": 1883.0
+        }
+      }
+    }
+  },
+  {
+    "name": "freelance_trade_fee_exempt_2025",
+    "payload": {
+      "year": 2025,
+      "freelance": {
+        "gross_revenue": 25000,
+        "deductible_expenses": 6000,
+        "mandatory_contributions": 3200,
+        "include_trade_fee": false
+      }
+    },
+    "expectations": {
+      "summary": {
+        "income_total": 19000.0,
+        "tax_total": 2176.0,
+        "net_income": 13624.0,
+        "average_monthly_tax": 181.33
+      },
+      "details": {
+        "freelance": {
+          "taxable_income": 15800.0,
+          "deductible_contributions": 3200.0,
+          "trade_fee": 0.0,
+          "total_tax": 2176.0
+        }
+      }
+    }
+  },
+  {
+    "name": "pension_partial_payment_frequency",
+    "payload": {
+      "year": 2024,
+      "pension": {
+        "gross_income": 12000,
+        "payments_per_year": 12
+      }
+    },
+    "expectations": {
+      "summary": {
+        "income_total": 12000.0,
+        "tax_total": 563.0,
+        "net_income": 11437.0,
+        "average_monthly_tax": 46.92
+      },
+      "details": {
+        "pension": {
+          "payments_per_year": 12,
+          "gross_income_per_payment": 1000.0,
+          "net_income_per_payment": 953.08,
+          "total_tax": 563.0
+        }
+      }
+    }
   }
 ]

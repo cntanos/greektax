@@ -131,6 +131,7 @@ const UI_MESSAGES = {
       "freelance-years-active": "Years self-employed",
       "freelance-newly-self-employed": "Newly self-employed",
       "trade-fee-toggle": "Include business activity fee",
+      "toggle-employment": "Include salary income",
       "toggle-freelance": "Include freelance income",
       "toggle-agricultural": "Include agricultural income",
       "toggle-other": "Include other income",
@@ -172,6 +173,36 @@ const UI_MESSAGES = {
       "freelance-efka-category-auxiliary": "Auxiliary fund contribution: {{amount}} per month.",
       "freelance-trade-fee": "Trade fee applied: {{amount}}.",
       "freelance-trade-fee-new": "Reduced rate applies for the first {{years}} years of activity.",
+      "freelance-trade-fee-sunset":
+        "The trade fee is scheduled to change from {{year}} (status: {{status}}). Confirm any exemptions with your accountant.",
+    },
+    warnings: {
+      learn_more: "Learn more",
+      employment: {
+        partial_year_review:
+          "Partial-year payroll scenarios may require manual EFKA and tax credit adjustments. Validate the figures for {{year}} if your contract ended early.",
+      },
+      freelance: {
+        trade_fee_sunset:
+          "Legislated trade-fee changes are pending final confirmation. Verify whether the business activity fee applies for {{year}} before filing.",
+      },
+      configuration: {
+        pending_deductions_2025:
+          "Some deduction thresholds for {{year}} are under review by tax authorities. Double-check deductible amounts before submitting returns.",
+      },
+      links: {
+        partial_year_review: "Guidance on partial-year payroll",
+        pending_deductions: "AADE deduction guidance",
+      },
+    },
+    links: {
+      trade_fee_sunset: "AADE trade fee update",
+    },
+    statuses: {
+      trade_fee: {
+        scheduled: "scheduled",
+        proposed: "proposed",
+      },
     },
     actions: {
       calculate: "Calculate taxes",
@@ -292,6 +323,7 @@ const UI_MESSAGES = {
       "freelance-years-active": "Έτη ως ελεύθερος επαγγελματίας",
       "freelance-newly-self-employed": "Νεοσύστατος επαγγελματίας",
       "trade-fee-toggle": "Συμπερίληψη τέλους επιτηδεύματος",
+      "toggle-employment": "Συμπερίληψη μισθολογικού εισοδήματος",
       "toggle-freelance": "Συμπερίληψη εισοδήματος ελευθέρων επαγγελματιών",
       "toggle-agricultural": "Συμπερίληψη αγροτικού εισοδήματος",
       "toggle-other": "Συμπερίληψη λοιπών εισοδημάτων",
@@ -333,6 +365,36 @@ const UI_MESSAGES = {
       "freelance-efka-category-auxiliary": "Εισφορά επικουρικού ταμείου: {{amount}} ανά μήνα.",
       "freelance-trade-fee": "Εφαρμοζόμενο τέλος επιτηδεύματος: {{amount}}.",
       "freelance-trade-fee-new": "Ισχύει μειωμένο ποσό για τα πρώτα {{years}} έτη δραστηριότητας.",
+      "freelance-trade-fee-sunset":
+        "Το τέλος επιτηδεύματος αναμένεται να αλλάξει από {{year}} (κατάσταση: {{status}}). Επιβεβαιώστε τυχόν απαλλαγές με τον λογιστή σας.",
+    },
+    warnings: {
+      learn_more: "Μάθετε περισσότερα",
+      employment: {
+        partial_year_review:
+          "Τα σενάρια με μερική απασχόληση ενδέχεται να απαιτούν χειροκίνητη προσαρμογή εισφορών και πιστώσεων. Επαληθεύστε τα ποσά για το {{year}} αν η σύμβασή σας έληξε νωρίτερα.",
+      },
+      freelance: {
+        trade_fee_sunset:
+          "Οι αλλαγές στο τέλος επιτηδεύματος εκκρεμούν για οριστικοποίηση. Βεβαιωθείτε ότι ισχύει για το {{year}} πριν από την υποβολή.",
+      },
+      configuration: {
+        pending_deductions_2025:
+          "Ορισμένα όρια εκπτώσεων για το {{year}} βρίσκονται υπό επανεξέταση. Ελέγξτε ξανά τα ποσά πριν τα δηλώσετε.",
+      },
+      links: {
+        partial_year_review: "Οδηγίες για μερική απασχόληση",
+        pending_deductions: "Οδηγός εκπτώσεων ΑΑΔΕ",
+      },
+    },
+    links: {
+      trade_fee_sunset: "Ενημέρωση ΑΑΔΕ για τέλος επιτηδεύματος",
+    },
+    statuses: {
+      trade_fee: {
+        scheduled: "προγραμματισμένο",
+        proposed: "υπό πρόταση",
+      },
     },
     actions: {
       calculate: "Υπολογισμός φόρων",
@@ -376,6 +438,7 @@ const employmentNetMonthlyIncomeInput = document.getElementById(
   "employment-net-monthly-income",
 );
 const employmentPaymentsInput = document.getElementById("employment-payments");
+const yearAlertsContainer = document.getElementById("year-alerts");
 const pensionModeSelect = document.getElementById("pension-mode");
 const pensionPaymentsInput = document.getElementById("pension-payments");
 const pensionIncomeInput = document.getElementById("pension-income");
@@ -424,6 +487,7 @@ const investmentSection = document.getElementById("investment-section");
 const deductionsSection = document.getElementById("deductions-section");
 const obligationsSection = document.getElementById("obligations-section");
 const toggleFreelance = document.getElementById("toggle-freelance");
+const toggleEmployment = document.getElementById("toggle-employment");
 const toggleAgricultural = document.getElementById("toggle-agricultural");
 const toggleOther = document.getElementById("toggle-other");
 const toggleRental = document.getElementById("toggle-rental");
@@ -785,7 +849,14 @@ function resetSectionInputs(section) {
     if (!select) {
       return;
     }
-    select.selectedIndex = 0;
+    const defaultValue = select.dataset.defaultValue;
+    if (defaultValue !== undefined) {
+      select.value = defaultValue;
+    } else if (select.options.length > 0) {
+      select.selectedIndex = 0;
+    } else {
+      select.value = "";
+    }
   });
 }
 
@@ -811,6 +882,7 @@ function handleSectionToggle(toggle) {
 
 function initialiseSectionToggles() {
   const toggles = [
+    toggleEmployment,
     toggleFreelance,
     toggleAgricultural,
     toggleOther,
@@ -902,6 +974,7 @@ function applyPendingCalculatorState() {
   }
 
   const toggles = [
+    toggleEmployment,
     toggleFreelance,
     toggleAgricultural,
     toggleOther,
@@ -989,6 +1062,7 @@ function populatePayrollSelect(select, payrollConfig) {
 
   const defaultValue = fallback || allowed[allowed.length - 1];
   select.value = String(defaultValue);
+  select.dataset.defaultValue = String(defaultValue);
   select.disabled = false;
 }
 
@@ -1015,8 +1089,71 @@ function resolvePaymentsValue(select, section) {
   return typeof fallback === "number" && fallback > 0 ? fallback : undefined;
 }
 
+function renderYearWarnings(metadata) {
+  if (!yearAlertsContainer) {
+    return;
+  }
+
+  yearAlertsContainer.innerHTML = "";
+  const warnings = Array.isArray(metadata?.warnings) ? metadata.warnings : [];
+  if (!warnings.length) {
+    yearAlertsContainer.hidden = true;
+    return;
+  }
+
+  warnings.forEach((warning) => {
+    if (!warning) {
+      return;
+    }
+
+    const severity = String(warning.severity || "info").toLowerCase();
+    const classes = ["alert"];
+    if (severity === "warning") {
+      classes.push("alert--warning");
+    } else if (severity === "error") {
+      classes.push("alert--error");
+    }
+
+    const alert = document.createElement("div");
+    alert.className = classes.join(" ");
+
+    const message = document.createElement("p");
+    message.className = "alert__message";
+    const replacements = {};
+    if (metadata?.year) {
+      replacements.year = metadata.year;
+    }
+    if (Array.isArray(warning.applies_to) && warning.applies_to.length) {
+      replacements.scope = warning.applies_to.join(", ");
+    }
+    const text = warning.message_key
+      ? t(warning.message_key, replacements)
+      : "";
+    message.textContent = text || warning.message_key || "";
+    alert.appendChild(message);
+
+    if (warning.documentation_url) {
+      const actions = document.createElement("div");
+      actions.className = "alert__actions";
+      const link = document.createElement("a");
+      link.href = warning.documentation_url;
+      link.target = "_blank";
+      link.rel = "noreferrer noopener";
+      const labelKey = warning.documentation_key || "warnings.learn_more";
+      link.textContent = t(labelKey);
+      actions.appendChild(link);
+      alert.appendChild(actions);
+    }
+
+    yearAlertsContainer.appendChild(alert);
+  });
+
+  yearAlertsContainer.hidden = false;
+}
+
 function applyYearMetadata(year) {
   currentYearMetadata = yearMetadataByYear.get(year) || null;
+  renderYearWarnings(currentYearMetadata);
   populatePayrollSelect(
     employmentPaymentsInput,
     currentYearMetadata?.employment?.payroll || null,
@@ -1352,6 +1489,17 @@ function updateTradeFeeHint() {
         years: tradeFee.newly_self_employed_reduction_years,
       }),
     );
+  }
+
+  if (tradeFee.sunset?.description_key) {
+    const replacements = {};
+    if (tradeFee.sunset.year) {
+      replacements.year = tradeFee.sunset.year;
+    }
+    if (tradeFee.sunset.status_key) {
+      replacements.status = t(tradeFee.sunset.status_key);
+    }
+    messages.push(t(tradeFee.sunset.description_key, replacements));
   }
 
   freelanceTradeFeeHint.textContent = messages.join(" ");

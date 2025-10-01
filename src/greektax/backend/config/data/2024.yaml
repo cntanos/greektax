@@ -9,6 +9,7 @@ income:
       allowed_payments_per_year:
         - 14
         - 12
+        - 10
       default_payments_per_year: 14
     contributions:
       employee_rate: 0.1387
@@ -34,6 +35,8 @@ income:
     payroll:
       allowed_payments_per_year:
         - 14
+        - 12
+        - 10
       default_payments_per_year: 14
     contributions:
       employee_rate: 0.0
@@ -63,6 +66,12 @@ income:
       standard_amount: 650
       reduced_amount: 325
       newly_self_employed_reduction_years: 5
+      sunset:
+        status_key: statuses.trade_fee.scheduled
+        year: 2025
+        description_key: hints.freelance-trade-fee-sunset
+        documentation_key: links.trade_fee_sunset
+        documentation_url: https://www.aade.gr/epiheiriseis/telos-epitidevmatos
     efka_categories:
       - id: general_a
         label_key: forms.freelance.efka.category.general_a
@@ -219,3 +228,19 @@ deductions:
       validation:
         type: currency
         min: 0
+warnings:
+  - id: employment.partial_year_review
+    severity: warning
+    applies_to:
+      - employment
+      - pension
+    message_key: warnings.employment.partial_year_review
+    documentation_key: warnings.links.partial_year_review
+    documentation_url: https://www.sepenet.gr/el/library/content/apolysi-symvasi-ergasias
+  - id: freelance.trade_fee_sunset
+    severity: info
+    applies_to:
+      - freelance
+    message_key: warnings.freelance.trade_fee_sunset
+    documentation_key: links.trade_fee_sunset
+    documentation_url: https://www.aade.gr/epiheiriseis/telos-epitidevmatos

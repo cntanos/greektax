@@ -174,33 +174,44 @@ deliver user value in incremental, testable slices.
   with validation, configuration, and localisation priorities captured for the
   team.
 
-## Sprint 14 (Current)
+## Sprint 14 (Completed)
+
+**Highlights**
+- Expanded the year configuration schema with trade-fee sunset metadata,
+  structured warnings, and richer payroll options surfaced through the API and
+  UI alerts.
+- Delivered front-end affordances for year-specific guidance, including toggleable
+  employment inputs, contextual alerts, and localisation updates spanning copy
+  and validation hints.
+- Broadened automated coverage with regression scenarios focused on partial-year
+  employment, exemption handling, and pension payment frequencies alongside new
+  integration tests for configuration warnings.
+
+## Sprint 15 (Current)
 
 **Objectives**
-- Validate the delivered payroll, EFKA, and deduction flows with domain
-  specialists while broadening regression coverage for partial-year and
-  exemption scenarios.【F:docs/ui_improvement_plan.md†L13-L73】
-- Extend configuration coverage for anticipated legislative changes—such as
-  trade-fee sunsets—and surface alerts when year data is incomplete or
-  inconsistent.【F:docs/ui_improvement_plan.md†L75-L118】
-- Strengthen localisation guidance and contextual education so users can
-  navigate the expanded data-entry workload confidently.【F:docs/ui_improvement_plan.md†L13-L73】
-
-**Planned Deliverables**
-- Regression scenario updates capturing partial-year, exempt-profession, and
-  payroll edge cases reviewed with subject-matter experts.
-- Configuration schema enhancements to represent trade-fee sunsets and
-  incomplete-data warnings wired into the API contract and UI.
-- Localised guidance assets (tooltips, documentation hooks, telemetry checkpoints)
-  that highlight deduction rules and contribution expectations.
-
-**Next Steps (Preview of Sprint 15)**
 - Prototype automated configuration validation pipelines and contributor alerts
   to keep annual updates reliable.
 - Explore lightweight, privacy-preserving scenario exports that build on the
-  new local persistence capability without introducing server storage.
+  local persistence capability without introducing server storage.
 - Prepare usability test scripts focusing on the enriched localisation guidance
   to feed into post-Sprint-14 refinements.
+
+**Planned Deliverables**
+- Command-line tooling and automated checks that validate configuration files
+  before acceptance into the codebase.
+- Design notes or prototypes demonstrating how saved scenarios could be exported
+  without server-side storage while maintaining privacy guarantees.
+- Usability test scripts and localisation checklists ready for stakeholder
+  sessions covering the refreshed calculator flows.
+
+**Next Steps (Preview of Sprint 16)**
+- Integrate configuration validation into continuous integration and contributor
+  onboarding materials, capturing remediation guidance for common issues.
+- Iterate on scenario export concepts with accessibility and offline-use
+  considerations informed by Sprint 15 learnings.
+- Run moderated usability sessions and translate findings into backlog items for
+  post-Sprint-15 refinements.
 
 > _This plan is updated at the end of each sprint to capture accomplishments_
 > _and upcoming milestones._

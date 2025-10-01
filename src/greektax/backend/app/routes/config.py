@@ -14,6 +14,7 @@ from greektax.backend.config.year_config import (
     EFKACategoryConfig,
     PayrollConfig,
     TradeFeeConfig,
+    YearWarning,
     available_years,
     load_year_configuration,
 )
@@ -36,11 +37,20 @@ def _serialise_contributions(contributions: ContributionRates) -> Dict[str, Any]
 
 
 def _serialise_trade_fee(config: TradeFeeConfig) -> Dict[str, Any]:
-    return {
+    payload: Dict[str, Any] = {
         "standard_amount": config.standard_amount,
         "reduced_amount": config.reduced_amount,
         "newly_self_employed_reduction_years": config.newly_self_employed_reduction_years,
     }
+    if config.sunset:
+        payload["sunset"] = {
+            "status_key": config.sunset.status_key,
+            "year": config.sunset.year,
+            "description_key": config.sunset.description_key,
+            "documentation_key": config.sunset.documentation_key,
+            "documentation_url": config.sunset.documentation_url,
+        }
+    return payload
 
 
 def _serialise_efka_categories(
@@ -58,6 +68,17 @@ def _serialise_efka_categories(
             }
         )
     return serialised
+
+
+def _serialise_warning(entry: YearWarning) -> Dict[str, Any]:
+    return {
+        "id": entry.id,
+        "message_key": entry.message_key,
+        "severity": entry.severity,
+        "applies_to": list(entry.applies_to),
+        "documentation_key": entry.documentation_key,
+        "documentation_url": entry.documentation_url,
+    }
 
 
 def _serialise_year(year: int) -> Dict[str, Any]:
@@ -79,6 +100,7 @@ def _serialise_year(year: int) -> Dict[str, Any]:
                 config.freelance.efka_categories
             ),
         },
+        "warnings": [_serialise_warning(entry) for entry in config.warnings],
     }
 
 

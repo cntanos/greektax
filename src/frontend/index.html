@@ -104,13 +104,37 @@
                 />
               </div>
             </div>
+            <div
+              id="year-alerts"
+              class="alert-list"
+              aria-live="polite"
+              hidden
+            ></div>
           </fieldset>
 
           <fieldset class="fieldset">
             <legend data-i18n-key="calculator.legends.employment_pension">
               Employment &amp; pension income
             </legend>
-            <div class="form-grid double">
+            <div class="section-toggle">
+              <input
+                type="checkbox"
+                id="toggle-employment"
+                data-toggle-target="employment-section"
+              />
+              <label
+                for="toggle-employment"
+                data-i18n-key="fields.toggle-employment"
+              >
+                Include salary income
+              </label>
+            </div>
+            <div
+              class="form-grid double"
+              id="employment-section"
+              hidden
+              aria-hidden="true"
+            >
               <div class="form-control">
                 <label
                   for="employment-mode"
@@ -236,6 +260,8 @@
                   value="0"
                 />
               </div>
+            </div>
+            <div class="form-grid double">
               <div class="form-control">
                 <label
                   for="pension-mode"

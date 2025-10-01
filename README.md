@@ -49,6 +49,12 @@ Run the placeholder tests to validate the scaffold:
 pytest
 ```
 
+Validate configuration files to surface contributor-facing alerts:
+
+```bash
+python -m greektax.backend.config.validator
+```
+
 Additional tooling configured for future sprints:
 
 - `ruff` for linting (`ruff check src tests`)
