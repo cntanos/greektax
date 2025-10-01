@@ -399,8 +399,9 @@ header {
 
 .detail-card dl {
   display: grid;
-  gap: 0.65rem;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  column-gap: 1.25rem;
+  row-gap: 0.65rem;
+  grid-template-columns: minmax(12rem, 1fr) minmax(8rem, 1fr);
   margin: 0;
 }
 
@@ -446,6 +447,10 @@ header {
   }
 
   .form-grid.double {
+    grid-template-columns: 1fr;
+  }
+
+  .detail-card dl {
     grid-template-columns: 1fr;
   }
 }
