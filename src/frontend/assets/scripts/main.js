@@ -1,10 +1,9 @@
-/* Entry point for the GreekTax front-end.
+/**
+ * Front-end logic for the GreekTax prototype calculator.
  *
- * TODO: Implement SPA-style interactions or progressive enhancement to connect
- * to the backend API for tax computations. Initial features will include:
- * - Fetching year configuration metadata
- * - Managing bilingual labels and locale switching
- * - Handling form inputs and displaying calculation results
+ * The script bootstraps localisation-aware metadata retrieval, provides client
+ * validation for numeric fields, and renders interactive calculation results
+ * returned by the Flask back-end.
  */
 
 const API_BASE = "/api/v1";
@@ -14,7 +13,145 @@ const CONFIG_INVESTMENT_ENDPOINT = (year, locale) =>
   `${API_BASE}/config/${year}/investment-categories?locale=${encodeURIComponent(
     locale,
   )}`;
+const CONFIG_DEDUCTIONS_ENDPOINT = (year, locale) =>
+  `${API_BASE}/config/${year}/deductions?locale=${encodeURIComponent(locale)}`;
 const STORAGE_KEY = "greektax.locale";
+
+const UI_MESSAGES = {
+  en: {
+    preview: {
+      idle: "No preview requested yet.",
+      requesting: "Requesting preview from the API…",
+      success: "Preview updated using backend localisation.",
+      error: "Unable to fetch preview. Is the backend running?",
+    },
+    status: {
+      loading_years: "Loading tax years…",
+      ready: "Configuration loaded. Enter your details to calculate.",
+      year_error: "Unable to load tax year configuration metadata.",
+      select_year: "Please select a tax year before calculating.",
+      calculating: "Calculating tax breakdown…",
+      calculation_complete: "Calculation complete.",
+      validation_errors: "Please fix the highlighted fields and try again.",
+      calculation_failed: "Unable to process calculation.",
+    },
+    errors: {
+      invalid_number: "Please enter a valid number for {{field}}.",
+      negative_number: "{{field}} cannot be negative.",
+      min_number: "{{field}} must be at least {{min}}.",
+      max_number: "{{field}} must be at most {{max}}.",
+      non_integer: "{{field}} must be a whole number.",
+    },
+    forms: {
+      no_investment_categories: "No investment categories configured for this year.",
+      share_title: "GreekTax summary",
+      share_heading: "Tax summary",
+      summary_heading: "Overview",
+      detail_heading: "Detailed breakdown",
+    },
+    detailFields: {
+      gross_income: "Gross income",
+      deductible_contributions: "Mandatory contributions",
+      deductible_expenses: "Deductible expenses",
+      taxable_income: "Taxable income",
+      tax_before_credits: "Tax before credits",
+      credits: "Credits",
+      tax: "Tax",
+      trade_fee: "Business activity fee",
+      total_tax: "Total tax",
+      net_income: "Net impact",
+      breakdown: "Breakdown",
+    },
+    fields: {
+      year: "Tax year",
+      "children-input": "Dependent children",
+      "employment-income": "Employment gross income",
+      "pension-income": "Pension gross income",
+      "freelance-revenue": "Freelance gross revenue",
+      "freelance-expenses": "Freelance deductible expenses",
+      "freelance-contributions": "Mandatory social contributions",
+      "rental-income": "Rental gross income",
+      "rental-expenses": "Rental deductible expenses",
+      "vat-due": "VAT due",
+      "enfia-due": "ENFIA amount",
+      "luxury-due": "Luxury living tax",
+    },
+    share: {
+      open_failed: "Popup blocked. Please allow pop-ups to view the summary.",
+    },
+  },
+  el: {
+    preview: {
+      idle: "Δεν έχει ζητηθεί προεπισκόπηση ακόμη.",
+      requesting: "Αίτημα προεπισκόπησης προς το API…",
+      success: "Η προεπισκόπηση ενημερώθηκε με τις μεταφράσεις του διακομιστή.",
+      error: "Δεν ήταν δυνατή η λήψη της προεπισκόπησης. Εκτελείται ο διακομιστής;",
+    },
+    status: {
+      loading_years: "Φόρτωση διαθέσιμων φορολογικών ετών…",
+      ready: "Η διαμόρφωση ολοκληρώθηκε. Συμπληρώστε τα στοιχεία σας για υπολογισμό.",
+      year_error: "Αδυναμία φόρτωσης των δεδομένων φορολογικού έτους.",
+      select_year: "Επιλέξτε φορολογικό έτος πριν από τον υπολογισμό.",
+      calculating: "Υπολογισμός ανάλυσης φόρου…",
+      calculation_complete: "Ο υπολογισμός ολοκληρώθηκε.",
+      validation_errors: "Διορθώστε τα επισημασμένα πεδία και προσπαθήστε ξανά.",
+      calculation_failed: "Δεν ήταν δυνατή η επεξεργασία του υπολογισμού.",
+    },
+    errors: {
+      invalid_number: "Εισαγάγετε έγκυρο αριθμό για {{field}}.",
+      negative_number: "{{field}} δεν μπορεί να είναι αρνητικό.",
+      min_number: "{{field}} πρέπει να είναι τουλάχιστον {{min}}.",
+      max_number: "{{field}} πρέπει να είναι το πολύ {{max}}.",
+      non_integer: "{{field}} πρέπει να είναι ακέραιος αριθμός.",
+    },
+    forms: {
+      no_investment_categories:
+        "Δεν έχουν οριστεί επενδυτικές κατηγορίες για αυτό το έτος.",
+      share_title: "Σύνοψη GreekTax",
+      share_heading: "Σύνοψη φόρων",
+      summary_heading: "Επισκόπηση",
+      detail_heading: "Αναλυτική παρουσίαση",
+    },
+    detailFields: {
+      gross_income: "Ακαθάριστο εισόδημα",
+      deductible_contributions: "Υποχρεωτικές εισφορές",
+      deductible_expenses: "Εκπιπτόμενες δαπάνες",
+      taxable_income: "Φορολογητέο εισόδημα",
+      tax_before_credits: "Φόρος πριν τις εκπτώσεις",
+      credits: "Εκπτώσεις",
+      tax: "Φόρος",
+      trade_fee: "Τέλος επιτηδεύματος",
+      total_tax: "Συνολικός φόρος",
+      net_income: "Καθαρή επίδραση",
+      breakdown: "Ανάλυση",
+    },
+    fields: {
+      year: "Φορολογικό έτος",
+      "children-input": "Εξαρτώμενα τέκνα",
+      "employment-income": "Ακαθάριστο εισόδημα μισθωτών",
+      "pension-income": "Ακαθάριστο εισόδημα συντάξεων",
+      "freelance-revenue": "Ακαθάριστα έσοδα ελευθέρου επαγγελματία",
+      "freelance-expenses": "Εκπιπτόμενες δαπάνες ελευθέρου επαγγελματία",
+      "freelance-contributions": "Υποχρεωτικές εισφορές",
+      "rental-income": "Ακαθάριστα έσοδα ενοικίων",
+      "rental-expenses": "Εκπιπτόμενες δαπάνες ενοικίων",
+      "vat-due": "Οφειλόμενος ΦΠΑ",
+      "enfia-due": "Ποσό ΕΝΦΙΑ",
+      "luxury-due": "Φόρος πολυτελούς διαβίωσης",
+    },
+    share: {
+      open_failed:
+        "Το αναδυόμενο παράθυρο μπλοκαρίστηκε. Επιτρέψτε τα αναδυόμενα για να δείτε τη σύνοψη.",
+    },
+  },
+};
+
+let currentLocale = "en";
+let currentInvestmentCategories = [];
+let currentDeductionHints = [];
+let dynamicFieldLabels = {};
+let deductionValidationByInput = {};
+let lastCalculation = null;
 
 const localeSelect = document.getElementById("locale-select");
 const previewButton = document.getElementById("preview-button");
@@ -36,17 +173,15 @@ const rentalExpensesInput = document.getElementById("rental-expenses");
 const investmentFieldsContainer = document.getElementById("investment-fields");
 const vatInput = document.getElementById("vat-due");
 const enfiaInput = document.getElementById("enfia-due");
+const luxuryInput = document.getElementById("luxury-due");
 const calculatorForm = document.getElementById("calculator-form");
 const calculatorStatus = document.getElementById("calculator-status");
 const resultsSection = document.getElementById("calculation-results");
 const summaryGrid = document.getElementById("summary-grid");
 const detailsList = document.getElementById("details-list");
 const downloadButton = document.getElementById("download-button");
+const shareButton = document.getElementById("share-button");
 const printButton = document.getElementById("print-button");
-
-let currentLocale = "en";
-let currentInvestmentCategories = [];
-let lastCalculation = null;
 
 const demoPayload = {
   year: 2024,
@@ -58,6 +193,38 @@ const demoPayload = {
     mandatory_contributions: 2500,
   },
 };
+
+function lookupMessage(locale, keyParts) {
+  let cursor = UI_MESSAGES[locale];
+  for (const part of keyParts) {
+    if (cursor && typeof cursor === "object" && part in cursor) {
+      cursor = cursor[part];
+    } else {
+      return undefined;
+    }
+  }
+  return cursor;
+}
+
+function formatTemplate(template, replacements) {
+  return Object.entries(replacements).reduce((accumulator, [key, value]) => {
+    const pattern = new RegExp(`{{\\s*${key}\\s*}}`, "g");
+    return accumulator.replace(pattern, String(value));
+  }, template);
+}
+
+function t(key, replacements = {}, locale = currentLocale) {
+  const keyParts = key.split(".");
+  const primary = lookupMessage(locale, keyParts);
+  const fallback = locale === "en" ? undefined : lookupMessage("en", keyParts);
+  const template =
+    typeof primary === "string"
+      ? primary
+      : typeof fallback === "string"
+      ? fallback
+      : key;
+  return formatTemplate(template, replacements);
+}
 
 function resolveStoredLocale(defaultLocale = "en") {
   try {
@@ -77,26 +244,42 @@ function persistLocale(locale) {
   }
 }
 
+function resolveLocaleTag(locale) {
+  if (locale === "el") {
+    return "el-GR";
+  }
+  if (locale === "en") {
+    return "en-GB";
+  }
+  return locale || "en-GB";
+}
+
 function applyLocale(locale) {
+  currentLocale = locale;
+  persistLocale(locale);
+  document.documentElement.lang = locale === "el" ? "el" : "en";
   if (localeSelect) {
     localeSelect.value = locale;
   }
-  const htmlLocale = locale === "el" ? "el" : "en";
-  document.documentElement.lang = htmlLocale;
-  currentLocale = locale;
-  persistLocale(locale);
+  if (previewStatus && previewStatus.dataset.initialised) {
+    previewStatus.textContent = t("preview.idle");
+  }
   refreshInvestmentCategories();
+  refreshDeductionHints();
+}
+
+function updatePreviewIdleMessage() {
+  if (previewStatus) {
+    previewStatus.textContent = t("preview.idle");
+    previewStatus.dataset.initialised = "true";
+  }
 }
 
 function setPreviewStatus(message, { isError = false, showJson = false } = {}) {
   if (previewStatus) {
     previewStatus.textContent = message;
-    previewStatus.setAttribute(
-      "data-status",
-      isError ? "error" : "info",
-    );
+    previewStatus.setAttribute("data-status", isError ? "error" : "info");
   }
-
   if (previewJson) {
     previewJson.hidden = !showJson;
   }
@@ -104,7 +287,7 @@ function setPreviewStatus(message, { isError = false, showJson = false } = {}) {
 
 async function requestPreview(locale) {
   const payload = { ...demoPayload, locale };
-  setPreviewStatus("Requesting preview from the API…");
+  setPreviewStatus(t("preview.requesting"));
 
   try {
     const response = await fetch(CALCULATIONS_ENDPOINT, {
@@ -122,65 +305,31 @@ async function requestPreview(locale) {
     }
 
     const result = await response.json();
-    setPreviewStatus("Preview updated using backend localisation.", {
-      showJson: true,
-    });
+    setPreviewStatus(t("preview.success"), { showJson: true });
     if (previewJson) {
       previewJson.textContent = JSON.stringify(result, null, 2);
     }
   } catch (error) {
     console.error("Failed to load preview", error);
-    setPreviewStatus("Unable to fetch preview. Is the backend running?", {
-      isError: true,
-    });
+    setPreviewStatus(t("preview.error"), { isError: true });
   }
-}
-
-function bootstrap() {
-  const initialLocale = resolveStoredLocale();
-  applyLocale(initialLocale);
-
-  initialisePreviewControls();
-  initialiseCalculator();
-
-  console.info("GreekTax interface initialised");
-}
-
-function initialisePreviewControls() {
-  if (!localeSelect || !previewButton || !previewStatus || !previewJson) {
-    console.warn("Preview controls missing from DOM");
-    return;
-  }
-
-  localeSelect.addEventListener("change", (event) => {
-    const target = event.target;
-    const locale = typeof target?.value === "string" ? target.value : "en";
-    applyLocale(locale);
-  });
-
-  previewButton.addEventListener("click", () => {
-    const locale = localeSelect.value || "en";
-    requestPreview(locale);
-  });
 }
 
 function setCalculatorStatus(message, { isError = false } = {}) {
   if (!calculatorStatus) {
     return;
   }
-
   calculatorStatus.textContent = message;
   calculatorStatus.setAttribute("data-status", isError ? "error" : "info");
 }
 
-function resolveLocaleTag(locale) {
-  if (locale === "el") {
-    return "el-GR";
-  }
-  if (locale === "en") {
-    return "en-GB";
-  }
-  return locale || "en-GB";
+function formatNumber(value) {
+  const formatter = new Intl.NumberFormat(resolveLocaleTag(currentLocale), {
+    style: "decimal",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  });
+  return formatter.format(value || 0);
 }
 
 function formatCurrency(value) {
@@ -202,19 +351,55 @@ function formatPercent(value) {
   return formatter.format(value);
 }
 
-function resetResults() {
-  if (resultsSection) {
-    resultsSection.hidden = true;
+function clearFormHints() {
+  document.querySelectorAll(".form-control .form-hint").forEach((element) => {
+    element.remove();
+  });
+}
+
+function applyHintToField(hint) {
+  if (!hint || !hint.input_id) {
+    return;
   }
-  if (summaryGrid) {
-    summaryGrid.innerHTML = "";
+
+  const input = document.getElementById(hint.input_id);
+  if (!input) {
+    return;
   }
-  if (detailsList) {
-    detailsList.innerHTML = "";
+
+  const container = input.closest(".form-control");
+  if (!container) {
+    return;
   }
-  downloadButton?.setAttribute("disabled", "true");
-  printButton?.setAttribute("disabled", "true");
-  lastCalculation = null;
+
+  let hintElement = container.querySelector(".form-hint");
+  if (!hintElement) {
+    hintElement = document.createElement("p");
+    hintElement.className = "form-hint";
+    container.appendChild(hintElement);
+  }
+
+  if (hint.description) {
+    hintElement.textContent = hint.description;
+    hintElement.hidden = false;
+  } else {
+    hintElement.textContent = "";
+    hintElement.hidden = true;
+  }
+
+  const validation = hint.validation || {};
+  if (validation.type === "integer") {
+    input.setAttribute("step", "1");
+  }
+  if (validation.type === "currency" && !input.getAttribute("step")) {
+    input.setAttribute("step", "0.01");
+  }
+  if (validation.min !== undefined) {
+    input.setAttribute("min", String(validation.min));
+  }
+  if (validation.max !== undefined) {
+    input.setAttribute("max", String(validation.max));
+  }
 }
 
 async function loadYearOptions() {
@@ -222,7 +407,7 @@ async function loadYearOptions() {
     return;
   }
 
-  setCalculatorStatus("Loading tax years…");
+  setCalculatorStatus(t("status.loading_years"));
   try {
     const response = await fetch(CONFIG_YEARS_ENDPOINT);
     if (!response.ok) {
@@ -244,12 +429,10 @@ async function loadYearOptions() {
       yearSelect.value = String(payload.default_year);
     }
 
-    setCalculatorStatus("Configuration loaded. Enter your details to calculate.");
+    setCalculatorStatus(t("status.ready"));
   } catch (error) {
     console.error("Failed to load year metadata", error);
-    setCalculatorStatus("Unable to load tax year configuration metadata.", {
-      isError: true,
-    });
+    setCalculatorStatus(t("status.year_error"), { isError: true });
   }
 }
 
@@ -261,7 +444,7 @@ function renderInvestmentFields(categories) {
   investmentFieldsContainer.innerHTML = "";
   if (!categories.length) {
     const message = document.createElement("p");
-    message.textContent = "No investment categories configured for this year.";
+    message.textContent = t("forms.no_investment_categories");
     investmentFieldsContainer.appendChild(message);
     return;
   }
@@ -319,11 +502,216 @@ async function refreshInvestmentCategories() {
   }
 }
 
+async function refreshDeductionHints() {
+  if (!yearSelect) {
+    return;
+  }
+
+  const year = Number.parseInt(yearSelect.value, 10);
+  if (!Number.isFinite(year)) {
+    clearFormHints();
+    currentDeductionHints = [];
+    dynamicFieldLabels = {};
+    deductionValidationByInput = {};
+    return;
+  }
+
+  try {
+    const response = await fetch(
+      CONFIG_DEDUCTIONS_ENDPOINT(year, currentLocale || "en"),
+    );
+    if (!response.ok) {
+      throw new Error(`Unable to load deduction hints (${response.status})`);
+    }
+
+    const payload = await response.json();
+    currentDeductionHints = Array.isArray(payload.hints) ? payload.hints : [];
+    dynamicFieldLabels = {};
+    deductionValidationByInput = {};
+    clearFormHints();
+
+    currentDeductionHints.forEach((hint) => {
+      if (hint && hint.input_id) {
+        dynamicFieldLabels[hint.input_id] = hint.label;
+        deductionValidationByInput[hint.input_id] = hint.validation || {};
+      }
+      applyHintToField(hint);
+    });
+  } catch (error) {
+    console.error("Failed to load deduction hints", error);
+    currentDeductionHints = [];
+    dynamicFieldLabels = {};
+    deductionValidationByInput = {};
+    clearFormHints();
+  }
+}
+
+function getFieldLabel(input) {
+  if (!input) {
+    return "";
+  }
+
+  if (dynamicFieldLabels[input.id]) {
+    return dynamicFieldLabels[input.id];
+  }
+
+  const messages = UI_MESSAGES[currentLocale]?.fields || {};
+  if (messages[input.id]) {
+    return messages[input.id];
+  }
+
+  const fallbackMessages = UI_MESSAGES.en.fields || {};
+  if (fallbackMessages[input.id]) {
+    return fallbackMessages[input.id];
+  }
+
+  const label = input.labels && input.labels[0];
+  if (label) {
+    return label.textContent.trim();
+  }
+
+  return input.name || input.id;
+}
+
+function clearFieldError(input) {
+  if (!input) {
+    return;
+  }
+
+  const container = input.closest(".form-control");
+  if (!container) {
+    return;
+  }
+
+  container.classList.remove("has-error");
+  input.removeAttribute("aria-invalid");
+
+  const errorElement = container.querySelector(".form-error");
+  if (errorElement) {
+    errorElement.remove();
+  }
+}
+
+function setFieldError(input, message) {
+  if (!input) {
+    return;
+  }
+
+  const container = input.closest(".form-control");
+  if (!container) {
+    return;
+  }
+
+  container.classList.add("has-error");
+  input.setAttribute("aria-invalid", "true");
+
+  let errorElement = container.querySelector(".form-error");
+  if (!errorElement) {
+    errorElement = document.createElement("p");
+    errorElement.className = "form-error";
+    container.appendChild(errorElement);
+  }
+  errorElement.textContent = message;
+}
+
+function validateNumberInput(input) {
+  if (!input) {
+    return true;
+  }
+
+  clearFieldError(input);
+
+  const rawValue = (input.value ?? "").trim();
+  if (rawValue === "") {
+    input.value = "0";
+    return true;
+  }
+
+  const normalised = rawValue.replace(",", ".");
+  const number = Number.parseFloat(normalised);
+  const fieldLabel = getFieldLabel(input);
+
+  if (!Number.isFinite(number)) {
+    setFieldError(input, t("errors.invalid_number", { field: fieldLabel }));
+    return false;
+  }
+
+  if (number < 0) {
+    setFieldError(input, t("errors.negative_number", { field: fieldLabel }));
+    return false;
+  }
+
+  const minAttr = input.getAttribute("min");
+  if (minAttr !== null) {
+    const minValue = Number.parseFloat(minAttr);
+    if (Number.isFinite(minValue) && number < minValue) {
+      setFieldError(
+        input,
+        t("errors.min_number", { field: fieldLabel, min: formatNumber(minValue) }),
+      );
+      return false;
+    }
+  }
+
+  const maxAttr = input.getAttribute("max");
+  if (maxAttr !== null) {
+    const maxValue = Number.parseFloat(maxAttr);
+    if (Number.isFinite(maxValue) && number > maxValue) {
+      setFieldError(
+        input,
+        t("errors.max_number", { field: fieldLabel, max: formatNumber(maxValue) }),
+      );
+      return false;
+    }
+  }
+
+  const validation = deductionValidationByInput[input.id] || {};
+  if (validation.type === "integer" && !Number.isInteger(number)) {
+    setFieldError(input, t("errors.non_integer", { field: fieldLabel }));
+    return false;
+  }
+
+  input.value = String(number);
+  return true;
+}
+
+function validateForm() {
+  if (!calculatorForm) {
+    return true;
+  }
+
+  const inputs = calculatorForm.querySelectorAll('input[type="number"]');
+  let isValid = true;
+  inputs.forEach((input) => {
+    if (!validateNumberInput(input)) {
+      isValid = false;
+    }
+  });
+  return isValid;
+}
+
+function attachValidationHandlers() {
+  if (!calculatorForm) {
+    return;
+  }
+
+  const inputs = calculatorForm.querySelectorAll('input[type="number"]');
+  inputs.forEach((input) => {
+    input.addEventListener("input", () => {
+      clearFieldError(input);
+    });
+    input.addEventListener("blur", () => {
+      validateNumberInput(input);
+    });
+  });
+}
+
 function readNumber(input) {
   if (!input) {
     return 0;
   }
-  const value = Number.parseFloat(input.value ?? "0");
+  const normalised = (input.value ?? "0").toString().replace(",", ".");
+  const value = Number.parseFloat(normalised);
   if (!Number.isFinite(value) || value < 0) {
     return 0;
   }
@@ -384,6 +772,7 @@ function buildCalculationPayload() {
   payload.obligations = {
     vat: readNumber(vatInput),
     enfia: readNumber(enfiaInput),
+    luxury: readNumber(luxuryInput),
   };
 
   return payload;
@@ -423,6 +812,9 @@ function renderDetailCard(detail) {
   title.textContent = detail.label || detail.category;
   card.appendChild(title);
 
+  const detailLabels =
+    UI_MESSAGES[currentLocale]?.detailFields || UI_MESSAGES.en.detailFields || {};
+
   const dl = document.createElement("dl");
   const fieldOrder = [
     "gross_income",
@@ -437,16 +829,19 @@ function renderDetailCard(detail) {
     "net_income",
   ];
   const labels = {
-    gross_income: "Gross income",
-    deductible_contributions: "Mandatory contributions",
-    deductible_expenses: "Deductible expenses",
-    taxable_income: "Taxable income",
-    tax_before_credits: "Tax before credits",
-    credits: "Credits",
-    tax: "Tax",
-    trade_fee: detail.trade_fee_label || "Business activity fee",
-    total_tax: "Total tax",
-    net_income: "Net impact",
+    gross_income: detailLabels.gross_income || "Gross income",
+    deductible_contributions:
+      detailLabels.deductible_contributions || "Mandatory contributions",
+    deductible_expenses:
+      detailLabels.deductible_expenses || "Deductible expenses",
+    taxable_income: detailLabels.taxable_income || "Taxable income",
+    tax_before_credits: detailLabels.tax_before_credits || "Tax before credits",
+    credits: detailLabels.credits || "Credits",
+    tax: detailLabels.tax || "Tax",
+    trade_fee:
+      detail.trade_fee_label || detailLabels.trade_fee || "Business activity fee",
+    total_tax: detailLabels.total_tax || "Total tax",
+    net_income: detailLabels.net_income || "Net impact",
   };
 
   fieldOrder.forEach((key) => {
@@ -479,7 +874,7 @@ function renderDetailCard(detail) {
       list.appendChild(entry);
     });
     const dt = document.createElement("dt");
-    dt.textContent = "Breakdown";
+    dt.textContent = detailLabels.breakdown || "Breakdown";
     const dd = document.createElement("dd");
     dd.appendChild(list);
     dl.appendChild(dt);
@@ -514,6 +909,7 @@ function renderCalculation(result) {
 
   lastCalculation = result;
   downloadButton?.removeAttribute("disabled");
+  shareButton?.removeAttribute("disabled");
   printButton?.removeAttribute("disabled");
 
   renderSummary(result.summary || {});
@@ -524,6 +920,22 @@ function renderCalculation(result) {
   }
 }
 
+function resetResults() {
+  if (resultsSection) {
+    resultsSection.hidden = true;
+  }
+  if (summaryGrid) {
+    summaryGrid.innerHTML = "";
+  }
+  if (detailsList) {
+    detailsList.innerHTML = "";
+  }
+  downloadButton?.setAttribute("disabled", "true");
+  shareButton?.setAttribute("disabled", "true");
+  printButton?.setAttribute("disabled", "true");
+  lastCalculation = null;
+}
+
 async function submitCalculation(event) {
   event.preventDefault();
   resetResults();
@@ -532,15 +944,18 @@ async function submitCalculation(event) {
     return;
   }
 
-  const payload = buildCalculationPayload();
-  if (!payload.year) {
-    setCalculatorStatus("Please select a tax year before calculating.", {
-      isError: true,
-    });
+  if (!validateForm()) {
+    setCalculatorStatus(t("status.validation_errors"), { isError: true });
     return;
   }
 
-  setCalculatorStatus("Calculating tax breakdown…");
+  const payload = buildCalculationPayload();
+  if (!payload.year) {
+    setCalculatorStatus(t("status.select_year"), { isError: true });
+    return;
+  }
+
+  setCalculatorStatus(t("status.calculating"));
 
   try {
     const response = await fetch(CALCULATIONS_ENDPOINT, {
@@ -559,11 +974,11 @@ async function submitCalculation(event) {
 
     const result = await response.json();
     renderCalculation(result);
-    setCalculatorStatus("Calculation complete.");
+    setCalculatorStatus(t("status.calculation_complete"));
   } catch (error) {
     console.error("Calculation request failed", error);
     setCalculatorStatus(
-      error instanceof Error ? error.message : "Unable to process calculation.",
+      error instanceof Error ? error.message : t("status.calculation_failed"),
       { isError: true },
     );
   }
@@ -591,11 +1006,169 @@ function downloadSummary() {
   URL.revokeObjectURL(url);
 }
 
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function buildShareableSummaryHtml(result) {
+  const summary = result.summary || {};
+  const details = Array.isArray(result.details) ? result.details : [];
+  const summaryLabels = summary.labels || {};
+  const localeTag = resolveLocaleTag(currentLocale);
+  const formsMessages = UI_MESSAGES[currentLocale]?.forms || UI_MESSAGES.en.forms;
+  const detailLabels =
+    UI_MESSAGES[currentLocale]?.detailFields || UI_MESSAGES.en.detailFields;
+
+  const summaryRows = ["income_total", "tax_total", "net_income"]
+    .filter((key) => key in summary)
+    .map(
+      (key) =>
+        `<tr><th>${escapeHtml(summaryLabels[key] || key)}</th><td>${escapeHtml(
+          formatCurrency(summary[key]),
+        )}</td></tr>`,
+    )
+    .join("\n");
+
+  const detailCards = details
+    .map((detail) => {
+      const cardRows = [];
+      const mapping = {
+        gross_income: detailLabels.gross_income || "Gross income",
+        deductible_contributions:
+          detailLabels.deductible_contributions || "Mandatory contributions",
+        deductible_expenses:
+          detailLabels.deductible_expenses || "Deductible expenses",
+        taxable_income: detailLabels.taxable_income || "Taxable income",
+        tax_before_credits: detailLabels.tax_before_credits || "Tax before credits",
+        credits: detailLabels.credits || "Credits",
+        tax: detailLabels.tax || "Tax",
+        trade_fee:
+          detail.trade_fee_label || detailLabels.trade_fee || "Business activity fee",
+        total_tax: detailLabels.total_tax || "Total tax",
+        net_income: detailLabels.net_income || "Net impact",
+      };
+      Object.entries(mapping).forEach(([key, label]) => {
+        if (detail[key] !== undefined && detail[key] !== null) {
+          cardRows.push(
+            `<tr><th>${escapeHtml(label)}</th><td>${escapeHtml(
+              formatCurrency(detail[key]),
+            )}</td></tr>`,
+          );
+        }
+      });
+
+      let breakdownHtml = "";
+      if (detail.items && Array.isArray(detail.items) && detail.items.length) {
+        const items = detail.items
+          .map(
+            (item) =>
+              `<li>${escapeHtml(item.label)}: ${escapeHtml(
+                formatCurrency(item.amount),
+              )} → ${escapeHtml(formatCurrency(item.tax))} (${escapeHtml(
+                formatPercent(item.rate),
+              )})</li>`,
+          )
+          .join("\n");
+        breakdownHtml = `<section class="breakdown"><h4>${escapeHtml(
+          detailLabels.breakdown || "Breakdown",
+        )}</h4><ul>${items}</ul></section>`;
+      }
+
+      return `<article class="detail-card"><h3>${escapeHtml(
+        detail.label || detail.category,
+      )}</h3><table>${cardRows.join("\n")}</table>${breakdownHtml}</article>`;
+    })
+    .join("\n");
+
+  const generatedAt = new Date().toLocaleString(localeTag);
+
+  return `<!DOCTYPE html>
+<html lang="${escapeHtml(currentLocale === "el" ? "el" : "en")}">
+  <head>
+    <meta charset="utf-8" />
+    <title>${escapeHtml(formsMessages.share_title || "GreekTax summary")}</title>
+    <style>
+      body { font-family: "Segoe UI", sans-serif; margin: 0; padding: 2rem; color: #212529; background: #f8f9fa; }
+      h1, h2, h3, h4 { margin-top: 0; }
+      header { margin-bottom: 1.5rem; }
+      table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; }
+      th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #dee2e6; }
+      .summary-table th { width: 50%; }
+      .detail-card { background: #fff; border: 1px solid #dee2e6; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem; }
+      .detail-card table { margin-bottom: 0; }
+      .breakdown ul { margin: 0.5rem 0 0 1.25rem; }
+      footer { margin-top: 2rem; font-size: 0.9rem; color: #6c757d; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>${escapeHtml(formsMessages.share_heading || "Tax summary")}</h1>
+      <p>${escapeHtml(generatedAt)}</p>
+    </header>
+    <section>
+      <h2>${escapeHtml(formsMessages.summary_heading || "Overview")}</h2>
+      <table class="summary-table">
+        <tbody>
+          ${summaryRows}
+        </tbody>
+      </table>
+    </section>
+    <section>
+      <h2>${escapeHtml(formsMessages.detail_heading || "Detailed breakdown")}</h2>
+      ${detailCards}
+    </section>
+    <footer>
+      <p>${escapeHtml("Generated with the unofficial GreekTax calculator.")}</p>
+    </footer>
+  </body>
+</html>`;
+}
+
+function openShareableSummary() {
+  if (!lastCalculation) {
+    return;
+  }
+
+  const html = buildShareableSummaryHtml(lastCalculation);
+  const summaryWindow = window.open("", "_blank", "noopener");
+  if (!summaryWindow) {
+    setCalculatorStatus(t("share.open_failed"), { isError: true });
+    return;
+  }
+
+  summaryWindow.document.open();
+  summaryWindow.document.write(html);
+  summaryWindow.document.close();
+}
+
 function printSummary() {
   if (!lastCalculation) {
     return;
   }
   window.print();
+}
+
+function initialisePreviewControls() {
+  if (!localeSelect || !previewButton || !previewStatus || !previewJson) {
+    console.warn("Preview controls missing from DOM");
+    return;
+  }
+
+  localeSelect.addEventListener("change", (event) => {
+    const target = event.target;
+    const locale = typeof target?.value === "string" ? target.value : "en";
+    applyLocale(locale);
+  });
+
+  previewButton.addEventListener("click", () => {
+    const locale = localeSelect.value || "en";
+    requestPreview(locale);
+  });
 }
 
 function initialiseCalculator() {
@@ -606,14 +1179,30 @@ function initialiseCalculator() {
   calculatorForm.addEventListener("submit", submitCalculation);
   yearSelect.addEventListener("change", () => {
     refreshInvestmentCategories();
+    refreshDeductionHints();
   });
 
   downloadButton?.addEventListener("click", downloadSummary);
+  shareButton?.addEventListener("click", openShareableSummary);
   printButton?.addEventListener("click", printSummary);
+
+  attachValidationHandlers();
 
   loadYearOptions().then(() => {
     refreshInvestmentCategories();
+    refreshDeductionHints();
   });
+}
+
+function bootstrap() {
+  const initialLocale = resolveStoredLocale();
+  updatePreviewIdleMessage();
+  applyLocale(initialLocale);
+
+  initialisePreviewControls();
+  initialiseCalculator();
+
+  console.info("GreekTax interface initialised");
 }
 
 document.addEventListener("DOMContentLoaded", bootstrap);

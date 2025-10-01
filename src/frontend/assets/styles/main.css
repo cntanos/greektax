@@ -136,6 +136,29 @@ header {
   font-weight: 600;
 }
 
+.form-hint {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #6c757d;
+}
+
+.form-error {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #b02a37;
+  font-weight: 600;
+}
+
+.form-control.has-error label {
+  color: #b02a37;
+}
+
+.form-control.has-error input,
+.form-control.has-error select {
+  border-color: #b02a37;
+  box-shadow: 0 0 0 1px rgba(176, 42, 55, 0.2);
+}
+
 .form-control input,
 .form-control select {
   padding: 0.5rem 0.75rem;
@@ -273,6 +296,10 @@ header {
   font-weight: 600;
 }
 
+.no-print {
+  /* Utility class to hide sections in print layout */
+}
+
 @media (max-width: 640px) {
   body {
     padding: 1.5rem;
@@ -285,3 +312,45 @@ header {
 
 /* TODO: Implement responsive layout, bilingual typography adjustments, and
    accessible form styling for the full application UI. */
+
+@media print {
+  body {
+    padding: 1rem;
+    background: #fff;
+    color: #000;
+  }
+
+  header,
+  #language-preview,
+  #calculator-form,
+  #preview-status,
+  #preview-json,
+  .actions,
+  .disclaimer,
+  .no-print {
+    display: none !important;
+  }
+
+  #calculation-results {
+    display: block !important;
+    border: none;
+    background: transparent;
+    padding: 0;
+  }
+
+  .summary-item,
+  .detail-card {
+    border: 1px solid #dee2e6;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .detail-card h3 {
+    border-bottom: 1px solid #dee2e6;
+    padding-bottom: 0.5rem;
+  }
+
+  #calculation-results h3 {
+    margin-top: 0;
+  }
+}

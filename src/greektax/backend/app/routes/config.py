@@ -52,3 +52,33 @@ def get_investment_categories(year: int) -> tuple[Any, int]:
 
     payload = {"year": year, "locale": translator.locale, "categories": categories}
     return jsonify(payload), 200
+
+
+@blueprint.get("/<int:year>/deductions")
+def get_deduction_hints(year: int) -> tuple[Any, int]:
+    """Expose deduction hint metadata with locale-aware labelling."""
+
+    try:
+        config = load_year_configuration(year)
+    except FileNotFoundError as exc:  # pragma: no cover - defensive routing
+        return jsonify({"error": "not_found", "message": str(exc)}), 404
+
+    locale_hint = request.args.get("locale")
+    locale = normalise_locale(locale_hint)
+    translator = get_translator(locale)
+
+    hints: list[Dict[str, Any]] = []
+    for hint in config.deductions.hints:
+        entry: Dict[str, Any] = {
+            "id": hint.id,
+            "applies_to": list(hint.applies_to),
+            "label": translator(hint.label_key),
+            "input_id": hint.input_id,
+            "validation": dict(hint.validation),
+        }
+        if hint.description_key:
+            entry["description"] = translator(hint.description_key)
+        hints.append(entry)
+
+    payload = {"year": year, "locale": translator.locale, "hints": hints}
+    return jsonify(payload), 200
