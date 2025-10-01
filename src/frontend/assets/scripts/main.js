@@ -20,6 +20,13 @@ const CALCULATOR_STORAGE_KEY = "greektax.calculator.v1";
 const CALCULATOR_STORAGE_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours
 const THEME_STORAGE_KEY = "greektax.theme";
 const DEFAULT_THEME = "light";
+const PLOTLY_SDK_URL = "https://cdn.plot.ly/plotly-2.26.0.min.js";
+const PLOTLY_SDK_ATTRIBUTE = "data-plotly-sdk";
+
+let plotlyLoaderPromise = null;
+let sankeyRenderSequence = 0;
+let hasAppliedThemeOnce = false;
+let themeTransitionHandle = null;
 
 const UI_MESSAGES = {
   en: {
@@ -651,6 +658,57 @@ function colorWithAlpha(color, alpha, fallback) {
   return fallback;
 }
 
+function ensurePlotlyLoaded() {
+  if (typeof Plotly !== "undefined") {
+    return Promise.resolve(Plotly);
+  }
+
+  if (plotlyLoaderPromise) {
+    return plotlyLoaderPromise;
+  }
+
+  plotlyLoaderPromise = new Promise((resolve, reject) => {
+    const selector = `script[${PLOTLY_SDK_ATTRIBUTE}]`;
+    const existingScript = document.querySelector(selector);
+
+    if (existingScript?.dataset.loaded === "true" && typeof Plotly !== "undefined") {
+      resolve(Plotly);
+      return;
+    }
+
+    const script = existingScript || document.createElement("script");
+    script.src = PLOTLY_SDK_URL;
+    script.async = true;
+    script.setAttribute(PLOTLY_SDK_ATTRIBUTE, "true");
+
+    const handleLoad = () => {
+      script.dataset.loaded = "true";
+      if (typeof Plotly !== "undefined") {
+        resolve(Plotly);
+      } else {
+        reject(new Error("Plotly loaded without exposing a global"));
+      }
+    };
+
+    const handleError = () => {
+      reject(new Error("Failed to load the Plotly visualisation library"));
+    };
+
+    script.addEventListener("load", handleLoad, { once: true });
+    script.addEventListener("error", handleError, { once: true });
+
+    if (!existingScript) {
+      document.head.appendChild(script);
+    }
+  })
+    .catch((error) => {
+      plotlyLoaderPromise = null;
+      throw error;
+    });
+
+  return plotlyLoaderPromise;
+}
+
 function resolveStoredLocale(defaultLocale = "en") {
   try {
     const stored = window.localStorage.getItem(STORAGE_KEY);
@@ -863,9 +921,21 @@ function updateThemeButtonState(theme) {
 function applyTheme(theme) {
   const normalized = theme === "dark" ? "dark" : DEFAULT_THEME;
   currentTheme = normalized;
-  document.documentElement.setAttribute("data-theme", normalized);
+  const root = document.documentElement;
+  if (hasAppliedThemeOnce) {
+    root.classList.add("theme-transition");
+    if (themeTransitionHandle) {
+      window.clearTimeout(themeTransitionHandle);
+    }
+    themeTransitionHandle = window.setTimeout(() => {
+      root.classList.remove("theme-transition");
+      themeTransitionHandle = null;
+    }, 280);
+  }
+  root.setAttribute("data-theme", normalized);
   updateThemeButtonState(normalized);
   persistTheme(normalized);
+  hasAppliedThemeOnce = true;
   if (lastCalculation) {
     renderCalculation(lastCalculation);
   }
@@ -2208,12 +2278,8 @@ function renderSankey(result) {
     return;
   }
 
-  if (typeof Plotly === "undefined") {
-    sankeyWrapper.hidden = true;
-    return;
-  }
-
   const details = Array.isArray(result?.details) ? result.details : [];
+  const renderToken = ++sankeyRenderSequence;
   const nodeLabels = [];
   const nodeIndex = new Map();
   const sources = [];
@@ -2395,7 +2461,9 @@ function renderSankey(result) {
     sankeyWrapper.hidden = false;
     sankeyChart.setAttribute("aria-hidden", "true");
     sankeyChart.removeAttribute("aria-label");
-    Plotly.purge(sankeyChart);
+    if (typeof Plotly !== "undefined") {
+      Plotly.purge(sankeyChart);
+    }
     return;
   }
 
@@ -2410,8 +2478,6 @@ function renderSankey(result) {
 
   const containerWidth = sankeyChart.clientWidth || sankeyWrapper.clientWidth || 640;
   const chartHeight = Math.max(320, Math.min(480, Math.round(containerWidth * 0.55)));
-  sankeyChart.style.minHeight = `${chartHeight}px`;
-  sankeyChart.style.height = `${chartHeight}px`;
 
   const data = [
     {
@@ -2448,10 +2514,26 @@ function renderSankey(result) {
     height: chartHeight,
   };
 
-  Plotly.react(sankeyChart, data, layout, { displayModeBar: false, responsive: true });
-  sankeyWrapper.hidden = false;
-  sankeyChart.setAttribute("aria-hidden", "false");
-  sankeyChart.setAttribute("aria-label", t("sankey.aria_label"));
+  ensurePlotlyLoaded()
+    .then((plotly) => {
+      if (renderToken !== sankeyRenderSequence) {
+        return;
+      }
+      sankeyChart.style.minHeight = `${chartHeight}px`;
+      sankeyChart.style.height = `${chartHeight}px`;
+      plotly.react(sankeyChart, data, layout, { displayModeBar: false, responsive: true });
+      sankeyWrapper.hidden = false;
+      sankeyChart.setAttribute("aria-hidden", "false");
+      sankeyChart.setAttribute("aria-label", t("sankey.aria_label"));
+    })
+    .catch((error) => {
+      console.error("Unable to initialise the Sankey diagram", error);
+      if (renderToken === sankeyRenderSequence) {
+        sankeyWrapper.hidden = true;
+        sankeyChart.setAttribute("aria-hidden", "true");
+        sankeyChart.removeAttribute("aria-label");
+      }
+    });
 }
 
 function renderSummary(summary) {
