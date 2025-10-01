@@ -138,6 +138,7 @@ const UI_MESSAGES = {
       gross_income_per_payment: "Gross per payment",
       net_income_per_payment: "Net per payment",
       employee_contributions: "Employee contributions",
+      employee_contributions_manual: "Additional employee contributions",
       employer_contributions: "Employer contributions",
       employee_contributions_per_payment: "Employee contributions per payment",
       employer_contributions_per_payment: "Employer contributions per payment",
@@ -150,11 +151,8 @@ const UI_MESSAGES = {
       "employment-income": "Employment gross income (€)",
       "employment-monthly-income": "Monthly gross income (€)",
       "employment-payments": "Salary payments per year",
-      "employment-mode": "Salary input type",
-      "employment-mode-gross": "Enter gross amounts",
-      "employment-mode-net": "Enter net amounts",
-      "employment-net-income": "Annual net income (€)",
-      "employment-net-monthly-income": "Net income per payment (€)",
+      "employment-employee-contributions":
+        "Employee EFKA contributions (€)",
       "pension-income": "Pension gross income (€)",
       "pension-mode": "Pension input type",
       "pension-mode-gross": "Enter gross amounts",
@@ -225,6 +223,8 @@ const UI_MESSAGES = {
     hints: {
       "employment-payments":
         "Most salaried roles use 14 payments (12 monthly plus bonuses). Adjust if your contract pays a different number of times per year.",
+      "employment-employee-contributions":
+        "Add EFKA amounts you pay directly (for example, voluntary top-ups). Leave blank if contributions are only withheld from payslips.",
       "freelance-efka-category": "Select a contribution class to prefill mandatory EFKA payments.",
       "freelance-efka-summary-empty":
         "Select a contribution class to view monthly pension, health, and auxiliary amounts.",
@@ -391,6 +391,7 @@ const UI_MESSAGES = {
       gross_income_per_payment: "Ακαθάριστο ανά καταβολή",
       net_income_per_payment: "Καθαρό ανά καταβολή",
       employee_contributions: "Εισφορές εργαζομένου",
+      employee_contributions_manual: "Πρόσθετες εισφορές εργαζομένου",
       employer_contributions: "Εισφορές εργοδότη",
       employee_contributions_per_payment: "Εισφορές εργαζομένου ανά καταβολή",
       employer_contributions_per_payment: "Εισφορές εργοδότη ανά καταβολή",
@@ -403,11 +404,8 @@ const UI_MESSAGES = {
       "employment-income": "Ακαθάριστο εισόδημα μισθωτών (€)",
       "employment-monthly-income": "Μηνιαίο ακαθάριστο εισόδημα (€)",
       "employment-payments": "Μισθολογικές καταβολές ανά έτος",
-      "employment-mode": "Τύπος εισαγωγής μισθού",
-      "employment-mode-gross": "Καταχώρηση ακαθάριστων ποσών",
-      "employment-mode-net": "Καταχώρηση καθαρών ποσών",
-      "employment-net-income": "Ετήσιο καθαρό εισόδημα (€)",
-      "employment-net-monthly-income": "Καθαρό ποσό ανά καταβολή (€)",
+      "employment-employee-contributions":
+        "Εισφορές ΕΦΚΑ εργαζομένου (€)",
       "pension-income": "Ακαθάριστο εισόδημα συντάξεων (€)",
       "pension-mode": "Τύπος εισαγωγής σύνταξης",
       "pension-mode-gross": "Καταχώρηση ακαθάριστων ποσών",
@@ -478,6 +476,8 @@ const UI_MESSAGES = {
     hints: {
       "employment-payments":
         "Συνήθως καταβάλλονται 14 μισθοί (12 μηνιαίοι και 2 δώρα). Προσαρμόστε τον αριθμό αν η σύμβασή σας προβλέπει διαφορετικές καταβολές ανά έτος.",
+      "employment-employee-contributions":
+        "Προσθέστε εισφορές ΕΦΚΑ που καταβάλλετε απευθείας (π.χ. προαιρετικές συμπληρωματικές). Αφήστε κενό αν οι εισφορές παρακρατούνται μόνο μέσω μισθοδοσίας.",
       "freelance-efka-category": "Επιλέξτε κατηγορία εισφορών για αυτόματη συμπλήρωση των υποχρεωτικών ποσών.",
       "freelance-efka-summary-empty":
         "Επιλέξτε κατηγορία για να εμφανιστούν τα μηνιαία ποσά κύριας, υγειονομικής και επικουρικής ασφάλισης.",
@@ -541,7 +541,6 @@ let currentLocale = "en";
 let currentTheme = DEFAULT_THEME;
 const yearMetadataByYear = new Map();
 let currentYearMetadata = null;
-let currentEmploymentMode = "gross";
 let currentPensionMode = "gross";
 let currentInvestmentCategories = [];
 let currentDeductionHints = [];
@@ -564,16 +563,12 @@ const themeButtons = Array.from(
 
 const yearSelect = document.getElementById("year-select");
 const childrenInput = document.getElementById("children-input");
-const employmentModeSelect = document.getElementById("employment-mode");
 const employmentIncomeInput = document.getElementById("employment-income");
 const employmentMonthlyIncomeInput = document.getElementById(
   "employment-monthly-income",
 );
-const employmentNetIncomeInput = document.getElementById(
-  "employment-net-income",
-);
-const employmentNetMonthlyIncomeInput = document.getElementById(
-  "employment-net-monthly-income",
+const employmentEmployeeContributionsInput = document.getElementById(
+  "employment-employee-contributions",
 );
 const employmentPaymentsInput = document.getElementById("employment-payments");
 const yearAlertsContainer = document.getElementById("year-alerts");
@@ -1314,9 +1309,6 @@ function applyPendingCalculatorState() {
     }
   }
 
-  if (employmentModeSelect) {
-    updateEmploymentMode(employmentModeSelect.value || "gross");
-  }
   if (pensionModeSelect) {
     updatePensionMode(pensionModeSelect.value || "gross");
   }
@@ -1363,14 +1355,6 @@ function updateSectionMode(section, mode) {
         }
       }
     });
-}
-
-function updateEmploymentMode(mode) {
-  currentEmploymentMode = mode === "net" ? "net" : "gross";
-  if (employmentModeSelect) {
-    employmentModeSelect.value = currentEmploymentMode;
-  }
-  updateSectionMode("employment", currentEmploymentMode);
 }
 
 function updatePensionMode(mode) {
@@ -1517,7 +1501,6 @@ function applyYearMetadata(year) {
       currentYearMetadata?.pension?.payroll || null,
     );
 
-    updateEmploymentMode(currentEmploymentMode);
     updatePensionMode(currentPensionMode);
     populateFreelanceMetadata(currentYearMetadata?.freelance || null);
     applyPendingCalculatorState();
@@ -2307,39 +2290,32 @@ function buildCalculationPayload() {
   }
 
   const employmentPayload = {};
-  const employmentMode = employmentModeSelect?.value || currentEmploymentMode;
-  if (employmentMode === "net") {
-    const netIncome = readNumber(employmentNetIncomeInput);
-    if (netIncome > 0) {
-      employmentPayload.net_income = netIncome;
-    }
-    const netMonthly = readNumber(employmentNetMonthlyIncomeInput);
-    if (netMonthly > 0) {
-      employmentPayload.net_monthly_income = netMonthly;
-    }
-  } else {
-    const grossIncome = readNumber(employmentIncomeInput);
-    if (grossIncome > 0) {
-      employmentPayload.gross_income = grossIncome;
-    }
+  const grossIncome = readNumber(employmentIncomeInput);
+  if (grossIncome > 0) {
+    employmentPayload.gross_income = grossIncome;
+  }
 
-    const monthlyIncome = readNumber(employmentMonthlyIncomeInput);
-    if (monthlyIncome > 0) {
-      employmentPayload.monthly_income = monthlyIncome;
-    }
+  const monthlyIncome = readNumber(employmentMonthlyIncomeInput);
+  if (monthlyIncome > 0) {
+    employmentPayload.monthly_income = monthlyIncome;
+  }
+
+  const manualEmployeeContributions = readNumber(
+    employmentEmployeeContributionsInput,
+  );
+  if (manualEmployeeContributions > 0) {
+    employmentPayload.employee_contributions = manualEmployeeContributions;
   }
 
   const employmentPayments = resolvePaymentsValue(
     employmentPaymentsInput,
     "employment",
   );
-  if (
-    employmentPayments &&
-    (employmentPayload.net_income !== undefined ||
-      employmentPayload.net_monthly_income !== undefined ||
-      employmentPayload.gross_income !== undefined ||
-      employmentPayload.monthly_income !== undefined)
-  ) {
+  const hasEmploymentIncome =
+    employmentPayload.gross_income !== undefined ||
+    employmentPayload.monthly_income !== undefined;
+
+  if (employmentPayments && hasEmploymentIncome) {
     employmentPayload.payments_per_year = employmentPayments;
   }
 
@@ -2853,6 +2829,7 @@ function renderDetailCard(detail) {
     "auxiliary_contributions",
     "lump_sum_contributions",
     "employee_contributions",
+    "employee_contributions_manual",
     "employee_contributions_per_payment",
     "employer_contributions",
     "employer_contributions_per_payment",
@@ -2885,6 +2862,9 @@ function renderDetailCard(detail) {
       detailLabels.lump_sum_contributions || "Lump-sum contributions",
     employee_contributions:
       detailLabels.employee_contributions || "Employee contributions",
+    employee_contributions_manual:
+      detailLabels.employee_contributions_manual ||
+      "Additional employee contributions",
     employee_contributions_per_payment:
       detailLabels.employee_contributions_per_payment ||
       "Employee contributions per payment",
@@ -3223,11 +3203,6 @@ function initialiseCalculator() {
   pendingCalculatorState = loadStoredCalculatorState();
   applyPendingCalculatorState();
 
-  if (employmentModeSelect) {
-    currentEmploymentMode = employmentModeSelect.value || "gross";
-    updateEmploymentMode(currentEmploymentMode);
-  }
-
   if (pensionModeSelect) {
     currentPensionMode = pensionModeSelect.value || "gross";
     updatePensionMode(currentPensionMode);
@@ -3259,12 +3234,6 @@ function initialiseCalculator() {
     syncFreelanceActivityDerivedState();
     updateFreelanceCategoryHint();
     updateTradeFeeHint();
-  });
-
-  employmentModeSelect?.addEventListener("change", (event) => {
-    const target = event.target;
-    const value = typeof target?.value === "string" ? target.value : "gross";
-    updateEmploymentMode(value);
   });
 
   pensionModeSelect?.addEventListener("change", (event) => {

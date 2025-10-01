@@ -59,7 +59,7 @@ class _NormalisedPayload:
     employment_income: float
     employment_monthly_income: Optional[float]
     employment_payments_per_year: Optional[int]
-    employment_net_target_income: Optional[float]
+    employment_manual_contributions: float
     pension_income: float
     pension_monthly_income: Optional[float]
     pension_payments_per_year: Optional[int]
@@ -194,6 +194,7 @@ class _GeneralIncomeComponent:
     payments_per_year: Optional[int] = None
     monthly_gross_income: Optional[float] = None
     employee_contributions: float = 0.0
+    employee_manual_contributions: float = 0.0
     employer_contributions: float = 0.0
     category_contributions: float = 0.0
     additional_contributions: float = 0.0
@@ -329,7 +330,29 @@ def _normalise_payload(
 
     employment_monthly_income: Optional[float] = None
     employment_income = 0.0
-    employment_net_target: Optional[float] = None
+
+    employment_manual_contributions = _to_float(
+        employment_section.get("employee_contributions", 0.0),
+        "employment.employee_contributions",
+    )
+
+    net_income_value = employment_section.get("net_income")
+    if net_income_value not in {None, "", 0, 0.0}:
+        net_amount = _to_float(net_income_value, "employment.net_income")
+        if net_amount > 0:
+            raise ValueError(
+                "Employment net income inputs are no longer supported; provide gross amounts instead"
+            )
+
+    net_monthly_value = employment_section.get("net_monthly_income")
+    if net_monthly_value not in {None, "", 0, 0.0}:
+        net_monthly = _to_float(
+            net_monthly_value, "employment.net_monthly_income"
+        )
+        if net_monthly > 0:
+            raise ValueError(
+                "Employment net income inputs are no longer supported; provide gross amounts instead"
+            )
 
     monthly_input = employment_section.get("monthly_income")
     if monthly_input is not None:
@@ -341,22 +364,6 @@ def _normalise_payload(
         employment_section.get("gross_income", 0.0), "employment.gross_income"
     )
 
-    net_income_value = employment_section.get("net_income")
-    if net_income_value is not None:
-        net_income = _to_float(net_income_value, "employment.net_income")
-        if net_income > 0:
-            employment_net_target = net_income
-
-    net_monthly_value = employment_section.get("net_monthly_income")
-    if net_monthly_value is not None:
-        net_monthly = _to_float(
-            net_monthly_value, "employment.net_monthly_income"
-        )
-        if net_monthly > 0:
-            payments = employment_payments or employment_payroll.default_payments_per_year
-            employment_payments = payments
-            employment_net_target = net_monthly * payments
-
     if employment_monthly_income is not None:
         payments = employment_payments or employment_payroll.default_payments_per_year
         employment_payments = payments
@@ -366,16 +373,6 @@ def _normalise_payload(
         employment_income = gross_income
         if employment_payments and employment_monthly_income is None:
             employment_monthly_income = employment_income / employment_payments
-
-    if employment_net_target is not None:
-        if employment_income > 0 or (employment_monthly_income and employment_monthly_income > 0):
-            raise ValueError(
-                "Provide either gross or net employment income, not both"
-            )
-        if employment_payments is None:
-            employment_payments = employment_payroll.default_payments_per_year
-        employment_monthly_income = None
-        employment_income = 0.0
 
     freelance_section = _extract_section(payload, "freelance")
     profit_value: Optional[Any] = freelance_section.get("profit")
@@ -564,7 +561,7 @@ def _normalise_payload(
         employment_income=employment_income,
         employment_monthly_income=employment_monthly_income,
         employment_payments_per_year=employment_payments,
-        employment_net_target_income=employment_net_target,
+        employment_manual_contributions=employment_manual_contributions,
         pension_income=pension_income,
         pension_monthly_income=pension_monthly_income,
         pension_payments_per_year=pension_payments,
@@ -602,14 +599,6 @@ def _apply_net_targets(
     payload: _NormalisedPayload, config: YearConfiguration
 ) -> _NormalisedPayload:
     adjusted = payload
-
-    if payload.employment_net_target_income:
-        adjusted = _solve_net_target(
-            adjusted,
-            config,
-            category="employment",
-            target=payload.employment_net_target_income,
-        )
 
     if adjusted.pension_net_target_income:
         adjusted = _solve_net_target(
@@ -652,14 +641,10 @@ def _solve_net_target(
     category: str,
     target: float,
 ) -> _NormalisedPayload:
+    if category == "employment":
+        raise ValueError("Employment net income inputs are not supported")
+
     if target <= 0:
-        if category == "employment":
-            return replace(
-                payload,
-                employment_income=0.0,
-                employment_monthly_income=None,
-                employment_net_target_income=None,
-            )
         return replace(
             payload,
             pension_income=0.0,
@@ -667,12 +652,11 @@ def _solve_net_target(
             pension_net_target_income=None,
         )
 
-    if category == "employment":
-        payments = payload.employment_payments_per_year or config.employment.payroll.default_payments_per_year
-        contribution_rate = config.employment.contributions.employee_rate
-    else:
-        payments = payload.pension_payments_per_year or config.pension.payroll.default_payments_per_year
-        contribution_rate = config.pension.contributions.employee_rate
+    payments = (
+        payload.pension_payments_per_year
+        or config.pension.payroll.default_payments_per_year
+    )
+    contribution_rate = config.pension.contributions.employee_rate
 
     highest_rate = max(bracket.rate for bracket in config.employment.brackets)
 
@@ -712,9 +696,6 @@ def _solve_net_target(
             upper = mid
         else:
             lower = mid
-
-    if category == "employment":
-        return replace(best_payload, employment_net_target_income=None)
 
     return replace(best_payload, pension_net_target_income=None)
 
@@ -800,9 +781,11 @@ def _build_general_income_components(
     components: list[_GeneralIncomeComponent] = []
 
     if payload.has_employment_income:
-        employee_contrib = (
+        auto_employee_contrib = (
             payload.employment_income * config.employment.contributions.employee_rate
         )
+        employee_manual_contrib = payload.employment_manual_contributions
+        employee_contrib = auto_employee_contrib + employee_manual_contrib
         employer_contrib = (
             payload.employment_income * config.employment.contributions.employer_rate
         )
@@ -824,6 +807,7 @@ def _build_general_income_components(
                 payments_per_year=payload.employment_payments_per_year,
                 monthly_gross_income=monthly_income,
                 employee_contributions=employee_contrib,
+                employee_manual_contributions=employee_manual_contrib,
                 employer_contributions=employer_contrib,
             )
         )
@@ -996,6 +980,10 @@ def _calculate_general_income_details(
                 detail["employee_contributions"] = _round_currency(
                     component.employee_contributions
                 )
+                if component.employee_manual_contributions:
+                    detail["employee_contributions_manual"] = _round_currency(
+                        component.employee_manual_contributions
+                    )
                 if component.payments_per_year:
                     detail["employee_contributions_per_payment"] = _round_currency(
                         component.employee_contributions / component.payments_per_year

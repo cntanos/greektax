@@ -82,22 +82,27 @@ def test_calculate_tax_accepts_monthly_employment_income() -> None:
     assert employment_detail["employer_contributions_per_payment"] == pytest.approx(336.45, rel=1e-4)
 
 
-def test_calculate_tax_supports_net_monthly_income_input() -> None:
-    """Net monthly inputs should reverse-calculate the required gross amount."""
+def test_calculate_tax_supports_manual_employee_contributions() -> None:
+    """Extra EFKA payments reduce net income and appear in the breakdown."""
 
     payload = {
         "year": 2024,
-        "employment": {"net_monthly_income": 1_200, "payments_per_year": 14},
+        "employment": {
+            "monthly_income": 1_500,
+            "payments_per_year": 14,
+            "employee_contributions": 500,
+        },
     }
 
     result = calculate_tax(payload)
 
+    summary = result["summary"]
+    assert summary["income_total"] == pytest.approx(21_000.0)
+    assert summary["net_income"] == pytest.approx(14_984.3, rel=1e-4)
+
     employment_detail = result["details"][0]
-    assert employment_detail["gross_income"] == pytest.approx(23_263.37, rel=1e-4)
-    assert employment_detail["gross_income_per_payment"] == pytest.approx(1_661.67, rel=1e-4)
-    assert employment_detail["net_income_per_payment"] == pytest.approx(1_200.0)
-    assert employment_detail["employee_contributions_per_payment"] == pytest.approx(230.47, rel=1e-4)
-    assert employment_detail["total_tax"] == pytest.approx(3_236.74, rel=1e-4)
+    assert employment_detail["employee_contributions"] == pytest.approx(3_412.7, rel=1e-4)
+    assert employment_detail["employee_contributions_manual"] == pytest.approx(500.0)
 
 
 def test_calculate_tax_with_freelance_income() -> None:

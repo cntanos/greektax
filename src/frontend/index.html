@@ -206,28 +206,6 @@
             <div class="form-grid double">
               <div class="form-control">
                 <label
-                  for="employment-mode"
-                  data-i18n-key="fields.employment-mode"
-                >
-                  Salary input type
-                </label>
-                <select id="employment-mode">
-                  <option
-                    value="gross"
-                    data-i18n-key="fields.employment-mode-gross"
-                  >
-                    Enter gross amounts
-                  </option>
-                  <option
-                    value="net"
-                    data-i18n-key="fields.employment-mode-net"
-                  >
-                    Enter net amounts
-                  </option>
-                </select>
-              </div>
-              <div class="form-control">
-                <label
                   for="employment-payments"
                   data-i18n-key="fields.employment-payments"
                 >
@@ -247,11 +225,31 @@
                   Most salaried roles use 14 payments (12 monthly + bonuses).
                 </p>
               </div>
-              <div
-                class="form-control"
-                data-section="employment"
-                data-mode="gross"
-              >
+              <div class="form-control">
+                <label
+                  for="employment-employee-contributions"
+                  data-i18n-key="fields.employment-employee-contributions"
+                >
+                  Employee EFKA contributions (€)
+                </label>
+                <input
+                  id="employment-employee-contributions"
+                  name="employment.employee_contributions"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value="0"
+                  aria-describedby="employment-employee-contributions-hint"
+                />
+                <p
+                  id="employment-employee-contributions-hint"
+                  class="form-hint"
+                  data-i18n-key="hints.employment-employee-contributions"
+                >
+                  Include any EFKA payments you cover outside payroll (optional).
+                </p>
+              </div>
+              <div class="form-control">
                 <label
                   for="employment-income"
                   data-i18n-key="fields.employment-income"
@@ -267,11 +265,7 @@
                   value="0"
                 />
               </div>
-              <div
-                class="form-control"
-                data-section="employment"
-                data-mode="gross"
-              >
+              <div class="form-control">
                 <label
                   for="employment-monthly-income"
                   data-i18n-key="fields.employment-monthly-income"
@@ -281,48 +275,6 @@
                 <input
                   id="employment-monthly-income"
                   name="employment.monthly_income"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value="0"
-                />
-              </div>
-              <div
-                class="form-control"
-                data-section="employment"
-                data-mode="net"
-                hidden
-              >
-                <label
-                  for="employment-net-income"
-                  data-i18n-key="fields.employment-net-income"
-                >
-                  Annual net income (€)
-                </label>
-                <input
-                  id="employment-net-income"
-                  name="employment.net_income"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value="0"
-                />
-              </div>
-              <div
-                class="form-control"
-                data-section="employment"
-                data-mode="net"
-                hidden
-              >
-                <label
-                  for="employment-net-monthly-income"
-                  data-i18n-key="fields.employment-net-monthly-income"
-                >
-                  Net income per payment (€)
-                </label>
-                <input
-                  id="employment-net-monthly-income"
-                  name="employment.net_monthly_income"
                   type="number"
                   min="0"
                   step="0.01"
