@@ -1,7 +1,39 @@
-# TODO: Populate 2024 configuration with official tax brackets, credits, and
-# localized labels. Each section should align with the domain models defined in
-# ``greektax.backend.app.models`` once implemented.
+year: 2024
 meta:
-  version: 0
+  version: 1
   status: draft
-  notes: "Placeholder configuration for initial scaffolding"
+  notes: "Initial 2024 configuration with employment and freelance coverage"
+income:
+  employment:
+    tax_brackets:
+      - upper: 10000
+        rate: 0.09
+      - upper: 20000
+        rate: 0.22
+      - upper: 30000
+        rate: 0.28
+      - upper: 40000
+        rate: 0.36
+      - rate: 0.44
+    tax_credit:
+      amounts_by_children:
+        "0": 777
+        "1": 810
+        "2": 900
+        "3": 1120
+      incremental_amount_per_child: 220
+  freelance:
+    tax_brackets:
+      - upper: 10000
+        rate: 0.09
+      - upper: 20000
+        rate: 0.22
+      - upper: 30000
+        rate: 0.28
+      - upper: 40000
+        rate: 0.36
+      - rate: 0.44
+    trade_fee:
+      standard_amount: 650
+      reduced_amount: 325
+      newly_self_employed_reduction_years: 5
