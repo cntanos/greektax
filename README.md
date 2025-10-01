@@ -78,9 +78,10 @@ for guidance on interpreting the output.
 
 The front-end automatically selects which API base URL to use:
 
-- `https://cntanos.pythonanywhere.com/api/v1` for production-style deployments.
-- `/api/v1` when the calculator is served from a loopback or private network
-  host (e.g. `localhost`, `127.0.0.1`, `192.168.x.x`).
+- `/api/v1` for same-origin deployments (including loopback, private network,
+  or custom domains).
+- `https://cntanos.pythonanywhere.com/api/v1` when hosted directly from the
+  PythonAnywhere environment.
 
 When embedding the calculator in a CMS or iframe, you can override the detected
 endpoint without rebuilding the assets. The lookup order is:
