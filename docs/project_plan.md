@@ -31,26 +31,38 @@ deliver user value in incremental, testable slices.
    - Provide deployment guides, observability hooks, and maintenance playbooks.
    - Facilitate contributor onboarding with comprehensive documentation.
 
-## Sprint 0 (Current)
+## Sprint 0 (Completed)
+
+**Highlights**
+- Repository scaffolding for the Flask back-end, static front-end, and shared
+  configuration assets.
+- Development tooling (pytest, linting, VS Code configuration) verified via
+  placeholder tests.
+- Delivery roadmap documented to onboard contributors.
+
+## Sprint 1 (Current)
 
 **Objectives**
-- Establish repository structure for front-end, back-end, and configuration
-  assets.
-- Configure development tooling (Python, Flask, pytest, linting) for use in
-  Visual Studio Code.
-- Document the iterative delivery plan and placeholder TODOs for upcoming work.
+- Provide validated, structured configuration for 2024 tax rules.
+- Deliver the first slice of the tax engine covering employment and freelance
+  income, including statutory credits and the trade fee.
+- Introduce localization plumbing to support bilingual responses.
 
 **Deliverables**
-- Source tree scaffold with TODO markers for pending implementation items.
-- Initial automated test placeholders to verify wiring and enable CI pipelines.
-- Documentation updates (this plan, README references) enabling new
-  contributors to understand the roadmap.
+- Dataclass-backed configuration loader with schema validation and caching.
+- 2024 YAML configuration featuring progressive brackets, tax credits, and
+  trade-fee parameters.
+- Calculation service producing bilingual summaries for employment and
+  freelance scenarios with unit test coverage.
+- Localization catalogue supporting English and Greek labels for backend
+  responses.
 
-**Next Steps (Preview of Sprint 1)**
-- Flesh out year-configuration schema and validation logic.
-- Implement foundational tax calculation routines for employment and freelance
-  income, backed by unit tests.
-- Begin localization groundwork (resource files, language toggle strategy).
+**Next Steps (Preview of Sprint 2)**
+- Extend the calculation engine to cover rental, investment, and pension
+  categories with aggregation logic.
+- Expand localization resources and begin wiring front-end language toggles.
+- Add payload validation errors suitable for API responses and document the
+  request/response contract.
 
-> _This plan will be updated at the conclusion of each sprint to reflect
-> completed work and upcoming milestones._
+> _This plan is updated at the end of each sprint to capture accomplishments_
+> _and upcoming milestones._
