@@ -225,6 +225,20 @@ body {
   gap: 1rem;
 }
 
+.site-branding__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 1rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+.site-branding__link:focus-visible {
+  outline: 3px solid var(--button-focus-outline);
+  outline-offset: 4px;
+  border-radius: 0.75rem;
+}
+
 .site-logo {
   width: 160px;
   max-width: 40vw;
@@ -258,6 +272,17 @@ body {
   margin: 0;
   font-size: 2.75rem;
   letter-spacing: -0.02em;
+}
+
+.site-footer {
+  padding: 2rem 1.5rem 3rem;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.site-footer a {
+  color: inherit;
 }
 
 .tagline {

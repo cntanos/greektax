@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -11,16 +11,18 @@
       <div class="site-header__inner">
         <div class="site-header__topbar">
           <div class="site-branding">
-            <img
-              src="https://www.cognisys.gr/wp-content/uploads/2023/12/CogniSys-Logo-Black.png"
-              alt="CogniSys logo"
-              class="site-logo"
-              loading="lazy"
-            />
-            <div class="site-title-group">
-              <span class="site-eyebrow">Prototype</span>
-              <h1>GreekTax</h1>
-            </div>
+            <a href="https://www.cognisys.gr/" class="site-branding__link">
+              <img
+                src="https://www.cognisys.gr/wp-content/uploads/2023/12/CogniSys-Logo-Black.png"
+                alt="CogniSys logo"
+                class="site-logo"
+                loading="lazy"
+              />
+              <div class="site-title-group">
+                <span class="site-eyebrow">Prototype</span>
+                <h1>GreekTax</h1>
+              </div>
+            </a>
           </div>
           <div class="preference-bar" aria-label="Display preferences">
             <nav
@@ -48,19 +50,19 @@
             <nav class="preference-switch" role="group" aria-label="Theme">
               <button
                 type="button"
-                class="preference-switch__button is-active"
+                class="preference-switch__button"
                 data-theme-option="light"
                 data-i18n-key="ui.theme_option_light"
-                aria-pressed="true"
+                aria-pressed="false"
               >
                 Light
               </button>
               <button
                 type="button"
-                class="preference-switch__button"
+                class="preference-switch__button is-active"
                 data-theme-option="dark"
                 data-i18n-key="ui.theme_option_dark"
-                aria-pressed="false"
+                aria-pressed="true"
               >
                 Dark
               </button>
@@ -972,6 +974,13 @@
         </section>
       </section>
     </main>
+
+    <footer class="site-footer">
+      <p>
+        &copy; 2024 Christos Ntanos for CogniSys. Released under the GNU GPL v3
+        License.
+      </p>
+    </footer>
 
     <script src="./assets/scripts/main.js" defer></script>
   </body>

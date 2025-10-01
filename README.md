@@ -92,3 +92,9 @@ be documented in the project plan. Key focus areas for upcoming sprints include:
 
 Contributions are welcome via pull requests. Please consult the project plan and
 TODO markers across the codebase for the current priorities.
+
+## License
+
+GreekTax is released under the [GNU General Public License v3.0](LICENSE).
+
+&copy; 2024 Christos Ntanos for CogniSys. Released under the GNU GPL v3.

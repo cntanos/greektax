@@ -19,7 +19,7 @@ const STORAGE_KEY = "greektax.locale";
 const CALCULATOR_STORAGE_KEY = "greektax.calculator.v1";
 const CALCULATOR_STORAGE_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours
 const THEME_STORAGE_KEY = "greektax.theme";
-const DEFAULT_THEME = "light";
+const DEFAULT_THEME = "dark";
 const PLOTLY_SDK_URL = "https://cdn.plot.ly/plotly-2.26.0.min.js";
 const PLOTLY_SDK_ATTRIBUTE = "data-plotly-sdk";
 
