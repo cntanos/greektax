@@ -16,6 +16,8 @@ const CONFIG_INVESTMENT_ENDPOINT = (year, locale) =>
 const CONFIG_DEDUCTIONS_ENDPOINT = (year, locale) =>
   `${API_BASE}/config/${year}/deductions?locale=${encodeURIComponent(locale)}`;
 const STORAGE_KEY = "greektax.locale";
+const CALCULATOR_STORAGE_KEY = "greektax.calculator.v1";
+const CALCULATOR_STORAGE_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours
 
 const UI_MESSAGES = {
   en: {
@@ -25,7 +27,7 @@ const UI_MESSAGES = {
       overview_description:
         "Estimate annual income taxes for Greece across employment, freelance, rental, and investment categories. Select a tax year, choose your language, and provide the income figures relevant to your situation to receive a bilingual breakdown of obligations.",
       disclaimer:
-        "Disclaimer: This tool is unofficial and provided as-is without data storage. Please consult a professional accountant for formal filings.",
+        "Disclaimer: This tool is unofficial and provided as-is. Inputs are stored locally on your device for up to two hours and are never sent to a server. Please consult a professional accountant for formal filings.",
     },
     preview: {
       heading: "Preview localisation",
@@ -185,7 +187,7 @@ const UI_MESSAGES = {
       overview_description:
         "Υπολογίστε ετήσιες φορολογικές υποχρεώσεις στην Ελλάδα για μισθωτούς, ελεύθερους επαγγελματίες, ενοίκια και επενδύσεις. Επιλέξτε φορολογικό έτος, γλώσσα και εισάγετε τα ποσά για να λάβετε δίγλωσση ανάλυση.",
       disclaimer:
-        "Αποποίηση ευθύνης: Το εργαλείο είναι ανεπίσημο και παρέχεται ως έχει χωρίς αποθήκευση δεδομένων. Συμβουλευτείτε λογιστή για επίσημες δηλώσεις.",
+        "Αποποίηση ευθύνης: Το εργαλείο είναι ανεπίσημο και παρέχεται ως έχει. Τα δεδομένα εισόδου αποθηκεύονται τοπικά στη συσκευή σας για έως δύο ώρες και δεν αποστέλλονται σε διακομιστή. Συμβουλευτείτε λογιστή για επίσημες δηλώσεις.",
     },
     preview: {
       heading: "Προεπισκόπηση εντοπισμού",
@@ -352,6 +354,8 @@ let currentFreelanceMetadata = null;
 let dynamicFieldLabels = {};
 let deductionValidationByInput = {};
 let lastCalculation = null;
+let pendingCalculatorState = null;
+let calculatorStatePersistHandle = null;
 
 const localeSelect = document.getElementById("locale-select");
 const previewButton = document.getElementById("preview-button");
@@ -493,6 +497,119 @@ function persistLocale(locale) {
     window.localStorage.setItem(STORAGE_KEY, locale);
   } catch (error) {
     console.warn("Unable to persist locale preference", error);
+  }
+}
+
+function loadStoredCalculatorState() {
+  try {
+    const raw = window.localStorage.getItem(CALCULATOR_STORAGE_KEY);
+    if (!raw) {
+      return null;
+    }
+
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") {
+      window.localStorage.removeItem(CALCULATOR_STORAGE_KEY);
+      return null;
+    }
+
+    const timestamp = Number(parsed.timestamp);
+    if (!Number.isFinite(timestamp)) {
+      window.localStorage.removeItem(CALCULATOR_STORAGE_KEY);
+      return null;
+    }
+
+    if (Date.now() - timestamp > CALCULATOR_STORAGE_TTL_MS) {
+      window.localStorage.removeItem(CALCULATOR_STORAGE_KEY);
+      return null;
+    }
+
+    const values = parsed.values;
+    if (!values || typeof values !== "object") {
+      window.localStorage.removeItem(CALCULATOR_STORAGE_KEY);
+      return null;
+    }
+
+    return values;
+  } catch (error) {
+    console.warn("Unable to load calculator state", error);
+    return null;
+  }
+}
+
+function captureElementValue(element) {
+  if (!element || !element.id) {
+    return undefined;
+  }
+
+  if (element instanceof HTMLInputElement) {
+    if (element.type === "checkbox") {
+      return Boolean(element.checked);
+    }
+    if (element.type === "radio") {
+      return element.checked ? element.value : undefined;
+    }
+    return element.value ?? "";
+  }
+
+  if (element instanceof HTMLSelectElement || element instanceof HTMLTextAreaElement) {
+    return element.value ?? "";
+  }
+
+  return undefined;
+}
+
+function captureCalculatorState() {
+  if (!calculatorForm) {
+    return {};
+  }
+
+  const values = {};
+  const elements = Array.from(calculatorForm.elements || []);
+  elements.forEach((element) => {
+    const value = captureElementValue(element);
+    if (value === undefined) {
+      return;
+    }
+    values[element.id] = value;
+  });
+  return values;
+}
+
+function persistCalculatorState() {
+  if (!calculatorForm) {
+    return;
+  }
+
+  try {
+    const payload = {
+      timestamp: Date.now(),
+      values: captureCalculatorState(),
+    };
+    window.localStorage.setItem(
+      CALCULATOR_STORAGE_KEY,
+      JSON.stringify(payload),
+    );
+  } catch (error) {
+    console.warn("Unable to persist calculator state", error);
+  } finally {
+    if (calculatorStatePersistHandle) {
+      window.clearTimeout(calculatorStatePersistHandle);
+      calculatorStatePersistHandle = null;
+    }
+  }
+}
+
+function schedulePersistCalculatorState() {
+  try {
+    if (calculatorStatePersistHandle) {
+      window.clearTimeout(calculatorStatePersistHandle);
+    }
+    calculatorStatePersistHandle = window.setTimeout(() => {
+      persistCalculatorState();
+    }, 150);
+  } catch (error) {
+    console.warn("Unable to schedule calculator state persistence", error);
   }
 }
 
@@ -711,6 +828,102 @@ function initialiseSectionToggles() {
   });
 }
 
+function applyValueToElement(element, value) {
+  if (!element) {
+    return false;
+  }
+
+  if (element instanceof HTMLInputElement) {
+    if (element.type === "checkbox") {
+      const desired = Boolean(value);
+      element.checked = desired;
+      return element.checked === desired;
+    }
+    const stringValue = value === null || value === undefined ? "" : String(value);
+    element.value = stringValue;
+    return element.value === stringValue;
+  }
+
+  if (element instanceof HTMLSelectElement || element instanceof HTMLTextAreaElement) {
+    const stringValue = value === null || value === undefined ? "" : String(value);
+    const previousValue = element.value;
+    element.value = stringValue;
+    if (element.value !== stringValue) {
+      // Restore the previous value when the desired option is unavailable.
+      element.value = previousValue;
+      return false;
+    }
+    return true;
+  }
+
+  return false;
+}
+
+function applyPendingCalculatorState() {
+  if (!pendingCalculatorState) {
+    return;
+  }
+
+  const remaining = {};
+  let yearUpdated = false;
+
+  Object.entries(pendingCalculatorState).forEach(([id, storedValue]) => {
+    const element = document.getElementById(id);
+    if (!element) {
+      remaining[id] = storedValue;
+      return;
+    }
+
+    const applied = applyValueToElement(element, storedValue);
+    if (!applied) {
+      remaining[id] = storedValue;
+      return;
+    }
+
+    if (id === "year-select") {
+      yearUpdated = true;
+    }
+  });
+
+  pendingCalculatorState = Object.keys(remaining).length ? remaining : null;
+
+  if (yearUpdated) {
+    const selectedYear = Number.parseInt(yearSelect?.value ?? "", 10);
+    if (Number.isFinite(selectedYear)) {
+      applyYearMetadata(selectedYear);
+    }
+  }
+
+  if (employmentModeSelect) {
+    updateEmploymentMode(employmentModeSelect.value || "gross");
+  }
+  if (pensionModeSelect) {
+    updatePensionMode(pensionModeSelect.value || "gross");
+  }
+
+  const toggles = [
+    toggleFreelance,
+    toggleAgricultural,
+    toggleOther,
+    toggleRental,
+    toggleInvestment,
+    toggleDeductions,
+    toggleObligations,
+  ];
+  toggles.forEach((toggle) => {
+    if (toggle && toggle.hasAttribute("data-toggle-target")) {
+      handleSectionToggle(toggle);
+    }
+  });
+
+  updateFreelanceCategoryHint();
+  updateTradeFeeHint();
+}
+
+function handleCalculatorStateChange() {
+  schedulePersistCalculatorState();
+}
+
 function updateSectionMode(section, mode) {
   const desiredMode = mode === "net" ? "net" : "gross";
   document
@@ -816,6 +1029,7 @@ function applyYearMetadata(year) {
   updateEmploymentMode(currentEmploymentMode);
   updatePensionMode(currentPensionMode);
   populateFreelanceMetadata(currentYearMetadata?.freelance || null);
+  applyPendingCalculatorState();
 }
 
 function buildDownloadFilename(extension) {
@@ -1018,6 +1232,8 @@ function renderInvestmentFields(categories) {
     wrapper.appendChild(input);
     investmentFieldsContainer.appendChild(wrapper);
   });
+
+  applyPendingCalculatorState();
 }
 
 async function refreshInvestmentCategories() {
@@ -1213,6 +1429,7 @@ function populateFreelanceMetadata(metadata) {
 
   updateFreelanceCategoryHint();
   updateTradeFeeHint();
+  applyPendingCalculatorState();
 }
 
 async function refreshDeductionHints() {
@@ -2091,6 +2308,9 @@ function initialiseCalculator() {
     return;
   }
 
+  pendingCalculatorState = loadStoredCalculatorState();
+  applyPendingCalculatorState();
+
   if (employmentModeSelect) {
     currentEmploymentMode = employmentModeSelect.value || "gross";
     updateEmploymentMode(currentEmploymentMode);
@@ -2102,6 +2322,7 @@ function initialiseCalculator() {
   }
 
   initialiseSectionToggles();
+  applyPendingCalculatorState();
   freelanceEfkaSelect?.addEventListener("change", updateFreelanceCategoryHint);
   freelanceTradeFeeLocationSelect?.addEventListener(
     "change",
@@ -2109,6 +2330,8 @@ function initialiseCalculator() {
   );
 
   calculatorForm.addEventListener("submit", submitCalculation);
+  calculatorForm.addEventListener("input", handleCalculatorStateChange);
+  calculatorForm.addEventListener("change", handleCalculatorStateChange);
   yearSelect.addEventListener("change", () => {
     const selectedYear = Number.parseInt(yearSelect.value ?? "", 10);
     if (Number.isFinite(selectedYear)) {
@@ -2136,9 +2359,12 @@ function initialiseCalculator() {
 
   attachValidationHandlers();
 
-  loadYearOptions().then(() => {
-    refreshInvestmentCategories();
-    refreshDeductionHints();
+  loadYearOptions().then(async () => {
+    applyPendingCalculatorState();
+    await refreshInvestmentCategories();
+    applyPendingCalculatorState();
+    await refreshDeductionHints();
+    applyPendingCalculatorState();
   });
 }
 

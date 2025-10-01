@@ -162,34 +162,45 @@ deliver user value in incremental, testable slices.
 - Closed responsive and accessibility gaps through targeted layout tokens,
   focus-order fixes, and automated axe verification documented for future QA.
 
-## Sprint 13 (Current)
+## Sprint 13 (Completed)
+
+**Highlights**
+- Implemented client-side persistence for calculator inputs with a two-hour
+  expiry so refreshes within that window keep user data without transmitting it
+  to the server.【F:src/frontend/assets/scripts/main.js†L503-L614】【F:src/frontend/assets/scripts/main.js†L831-L924】
+- Updated the bilingual disclaimer copy to explain the local-storage behaviour
+  and reinforce the project's privacy stance.【F:src/frontend/index.html†L24-L31】【F:src/frontend/assets/scripts/main.js†L20-L36】
+- Refreshed the delivery roadmap to transition Sprint 14 into active execution
+  with validation, configuration, and localisation priorities captured for the
+  team.
+
+## Sprint 14 (Current)
 
 **Objectives**
-- Align the calculator experience with documented Greek payroll and social
-  security rules, including fixed payroll frequencies and automatic EFKA
-  contribution handling.【F:docs/ui_improvement_plan.md†L13-L36】
-- Expand inputs and summaries to support gross-to-net and net-to-gross flows,
-  deductions, dependent children, and additional income categories called for in
-  the requirements.【F:docs/ui_improvement_plan.md†L38-L73】
-- Establish configuration-driven year management, trade-fee parameters, and
-  extensibility hooks so annual updates require minimal code churn.【F:docs/ui_improvement_plan.md†L75-L118】
+- Validate the delivered payroll, EFKA, and deduction flows with domain
+  specialists while broadening regression coverage for partial-year and
+  exemption scenarios.【F:docs/ui_improvement_plan.md†L13-L73】
+- Extend configuration coverage for anticipated legislative changes—such as
+  trade-fee sunsets—and surface alerts when year data is incomplete or
+  inconsistent.【F:docs/ui_improvement_plan.md†L75-L118】
+- Strengthen localisation guidance and contextual education so users can
+  navigate the expanded data-entry workload confidently.【F:docs/ui_improvement_plan.md†L13-L73】
 
 **Planned Deliverables**
-- Employment and pension UI slices with payroll-frequency selectors, gross/net
-  toggles, and EFKA breakdown displays wired to backend calculation changes.
-- Freelance and deductions experiences that capture EFKA category selections,
-  trade-fee modifiers, and legally recognised deduction inputs with validation.
-- Dynamic section toggles, agricultural/other income capture, and year-aware
-  configuration plumbing surfaced throughout the interface and API contract.
+- Regression scenario updates capturing partial-year, exempt-profession, and
+  payroll edge cases reviewed with subject-matter experts.
+- Configuration schema enhancements to represent trade-fee sunsets and
+  incomplete-data warnings wired into the API contract and UI.
+- Localised guidance assets (tooltips, documentation hooks, telemetry checkpoints)
+  that highlight deduction rules and contribution expectations.
 
-**Next Steps (Preview of Sprint 14)**
-- Validate implemented EFKA, deduction, and payroll features with domain
-  specialists and update regression scenarios for edge cases (e.g., partial
-  years, exempt professions).
-- Explore extending configuration coverage to planned legislative changes (e.g.,
-  trade-fee sunset) and prototype alerts for missing configuration data.
-- Investigate localisation refinements and guidance assets (videos, tooltips) to
-  reinforce the expanded data-entry workload introduced in Sprint 13.
+**Next Steps (Preview of Sprint 15)**
+- Prototype automated configuration validation pipelines and contributor alerts
+  to keep annual updates reliable.
+- Explore lightweight, privacy-preserving scenario exports that build on the
+  new local persistence capability without introducing server storage.
+- Prepare usability test scripts focusing on the enriched localisation guidance
+  to feed into post-Sprint-14 refinements.
 
 > _This plan is updated at the end of each sprint to capture accomplishments_
 > _and upcoming milestones._
