@@ -74,6 +74,22 @@ const UI_MESSAGES = {
     },
     forms: {
       no_investment_categories: "No investment categories configured for this year.",
+      freelance: {
+        efka: {
+          category: {
+            general_a: "Category A (standard tier)",
+            general_a_description:
+              "Includes base EFKA contributions plus small auxiliary fund coverage.",
+            general_b: "Category B (enhanced tier)",
+            reduced: "Reduced contributions",
+            reduced_description:
+              "Available to eligible professionals with reduced EFKA obligations.",
+          },
+        },
+        mandatory_contributions: "Mandatory social contributions",
+        mandatory_contributions_hint:
+          "Deductible EFKA and auxiliary fund payments.",
+      },
     },
     detailFields: {
       gross_income: "Gross income",
@@ -266,6 +282,22 @@ const UI_MESSAGES = {
     forms: {
       no_investment_categories:
         "Δεν έχουν οριστεί επενδυτικές κατηγορίες για αυτό το έτος.",
+      freelance: {
+        efka: {
+          category: {
+            general_a: "Κατηγορία Α (τυπική)",
+            general_a_description:
+              "Περιλαμβάνει βασικές εισφορές ΕΦΚΑ και μικρή επικουρική κάλυψη.",
+            general_b: "Κατηγορία Β (ενισχυμένη)",
+            reduced: "Μειωμένες εισφορές",
+            reduced_description:
+              "Διαθέσιμη σε επαγγελματίες με δικαίωμα μειωμένων εισφορών.",
+          },
+        },
+        mandatory_contributions: "Υποχρεωτικές εισφορές",
+        mandatory_contributions_hint:
+          "Εκπιπτόμενες καταβολές ΕΦΚΑ και επικουρικών ταμείων.",
+      },
     },
     detailFields: {
       gross_income: "Ακαθάριστο εισόδημα",
@@ -2144,6 +2176,15 @@ function renderDetailCard(detail) {
 
     const value = detail[key];
     if (value === null || value === undefined) {
+      return;
+    }
+
+    if (
+      typeof value === "number" &&
+      Number.isFinite(value) &&
+      key !== "payments_per_year" &&
+      Math.abs(value) < 0.005
+    ) {
       return;
     }
 

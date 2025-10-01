@@ -187,31 +187,34 @@ deliver user value in incremental, testable slices.
   employment, exemption handling, and pension payment frequencies alongside new
   integration tests for configuration warnings.
 
-## Sprint 15 (Current)
+## Sprint 15 (Completed)
+
+**Highlights**
+- Localised EFKA category metadata on the calculator form so contributor-facing
+  keys are replaced with translated labels and descriptive hints across
+  languages.【F:src/frontend/assets/scripts/main.js†L70-L118】【F:src/frontend/assets/scripts/main.js†L1422-L1464】
+- Filtered zero-value rows from detail cards to emphasise meaningful tax and
+  contribution figures within each calculation component.【F:src/frontend/assets/scripts/main.js†L2056-L2116】
+- Reworked the detail grid layout for consistent label/value pairing and better
+  readability on narrow screens.【F:src/frontend/assets/styles/main.css†L400-L432】
+
+## Sprint 16 (Current)
 
 **Objectives**
-- Prototype automated configuration validation pipelines and contributor alerts
-  to keep annual updates reliable.
-- Explore lightweight, privacy-preserving scenario exports that build on the
-  local persistence capability without introducing server storage.
-- Prepare usability test scripts focusing on the enriched localisation guidance
-  to feed into post-Sprint-14 refinements.
+- Integrate the configuration validation tooling into contributor workflows and
+  continuous integration to surface actionable feedback early.
+- Refine lightweight, privacy-preserving scenario export concepts that extend
+  local persistence without introducing server storage.
+- Plan moderated usability reviews focused on localisation guidance and the
+  refreshed summary layout to drive the next wave of refinements.
 
 **Planned Deliverables**
-- Command-line tooling and automated checks that validate configuration files
-  before acceptance into the codebase.
-- Design notes or prototypes demonstrating how saved scenarios could be exported
-  without server-side storage while maintaining privacy guarantees.
+- CI-ready configuration validation checks plus contributor documentation on
+  interpreting and fixing failures.
+- Updated prototypes or design notes detailing offline-friendly scenario export
+  flows and accessibility considerations.
 - Usability test scripts and localisation checklists ready for stakeholder
-  sessions covering the refreshed calculator flows.
-
-**Next Steps (Preview of Sprint 16)**
-- Integrate configuration validation into continuous integration and contributor
-  onboarding materials, capturing remediation guidance for common issues.
-- Iterate on scenario export concepts with accessibility and offline-use
-  considerations informed by Sprint 15 learnings.
-- Run moderated usability sessions and translate findings into backlog items for
-  post-Sprint-15 refinements.
+  sessions covering the enhanced calculator experiences.
 
 > _This plan is updated at the end of each sprint to capture accomplishments_
 > _and upcoming milestones._
