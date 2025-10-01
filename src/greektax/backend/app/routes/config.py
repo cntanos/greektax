@@ -7,14 +7,44 @@ from typing import Any, Dict
 from flask import Blueprint, jsonify, request
 
 from greektax.backend.app.localization import get_translator, normalise_locale
-from greektax.backend.config.year_config import available_years, load_year_configuration
+from greektax.backend.config.year_config import (
+    available_years,
+    load_year_configuration,
+    PayrollConfig,
+    ContributionRates,
+)
 
 blueprint = Blueprint("config", __name__, url_prefix="/api/v1/config")
 
 
+def _serialise_payroll_config(config: PayrollConfig) -> Dict[str, Any]:
+    return {
+        "allowed_payments_per_year": list(config.allowed_payments_per_year),
+        "default_payments_per_year": config.default_payments_per_year,
+    }
+
+
+def _serialise_contributions(contributions: ContributionRates) -> Dict[str, Any]:
+    return {
+        "employee_rate": contributions.employee_rate,
+        "employer_rate": contributions.employer_rate,
+    }
+
+
 def _serialise_year(year: int) -> Dict[str, Any]:
     config = load_year_configuration(year)
-    return {"year": year, "meta": dict(config.meta)}
+    return {
+        "year": year,
+        "meta": dict(config.meta),
+        "employment": {
+            "payroll": _serialise_payroll_config(config.employment.payroll),
+            "contributions": _serialise_contributions(config.employment.contributions),
+        },
+        "pension": {
+            "payroll": _serialise_payroll_config(config.pension.payroll),
+            "contributions": _serialise_contributions(config.pension.contributions),
+        },
+    }
 
 
 @blueprint.get("/years")

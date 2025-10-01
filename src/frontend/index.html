@@ -111,6 +111,53 @@
             <div class="form-grid double">
               <div class="form-control">
                 <label
+                  for="employment-mode"
+                  data-i18n-key="fields.employment-mode"
+                >
+                  Salary input type
+                </label>
+                <select id="employment-mode">
+                  <option
+                    value="gross"
+                    data-i18n-key="fields.employment-mode-gross"
+                  >
+                    Enter gross amounts
+                  </option>
+                  <option
+                    value="net"
+                    data-i18n-key="fields.employment-mode-net"
+                  >
+                    Enter net amounts
+                  </option>
+                </select>
+              </div>
+              <div class="form-control">
+                <label
+                  for="employment-payments"
+                  data-i18n-key="fields.employment-payments"
+                >
+                  Salary payments per year
+                </label>
+                <select
+                  id="employment-payments"
+                  name="employment.payments_per_year"
+                  aria-describedby="employment-payments-hint"
+                ></select>
+                <p
+                  id="employment-payments-hint"
+                  class="form-hint"
+                  data-static-hint="true"
+                  data-i18n-key="hints.employment-payments"
+                >
+                  Most salaried roles use 14 payments (12 monthly + bonuses).
+                </p>
+              </div>
+              <div
+                class="form-control"
+                data-section="employment"
+                data-mode="gross"
+              >
+                <label
                   for="employment-income"
                   data-i18n-key="fields.employment-income"
                 >
@@ -125,7 +172,11 @@
                   value="0"
                 />
               </div>
-              <div class="form-control">
+              <div
+                class="form-control"
+                data-section="employment"
+                data-mode="gross"
+              >
                 <label
                   for="employment-monthly-income"
                   data-i18n-key="fields.employment-monthly-income"
@@ -141,33 +192,87 @@
                   value="0"
                 />
               </div>
-              <div class="form-control">
+              <div
+                class="form-control"
+                data-section="employment"
+                data-mode="net"
+                hidden
+              >
                 <label
-                  for="employment-payments"
-                  data-i18n-key="fields.employment-payments"
+                  for="employment-net-income"
+                  data-i18n-key="fields.employment-net-income"
                 >
-                  Salary payments per year
+                  Annual net income (€)
                 </label>
                 <input
-                  id="employment-payments"
-                  name="employment.payments_per_year"
+                  id="employment-net-income"
+                  name="employment.net_income"
                   type="number"
-                  min="1"
-                  max="24"
-                  step="1"
-                  value="14"
-                  aria-describedby="employment-payments-hint"
+                  min="0"
+                  step="0.01"
+                  value="0"
                 />
-                <p
-                  id="employment-payments-hint"
-                  class="form-hint"
-                  data-static-hint="true"
-                  data-i18n-key="hints.employment-payments"
+              </div>
+              <div
+                class="form-control"
+                data-section="employment"
+                data-mode="net"
+                hidden
+              >
+                <label
+                  for="employment-net-monthly-income"
+                  data-i18n-key="fields.employment-net-monthly-income"
                 >
-                  Most salaried roles use 14 payments (12 monthly + bonuses).
-                </p>
+                  Net income per payment (€)
+                </label>
+                <input
+                  id="employment-net-monthly-income"
+                  name="employment.net_monthly_income"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value="0"
+                />
               </div>
               <div class="form-control">
+                <label
+                  for="pension-mode"
+                  data-i18n-key="fields.pension-mode"
+                >
+                  Pension input type
+                </label>
+                <select id="pension-mode">
+                  <option
+                    value="gross"
+                    data-i18n-key="fields.pension-mode-gross"
+                  >
+                    Enter gross amounts
+                  </option>
+                  <option
+                    value="net"
+                    data-i18n-key="fields.pension-mode-net"
+                  >
+                    Enter net amounts
+                  </option>
+                </select>
+              </div>
+              <div class="form-control">
+                <label
+                  for="pension-payments"
+                  data-i18n-key="fields.pension-payments"
+                >
+                  Pension payments per year
+                </label>
+                <select
+                  id="pension-payments"
+                  name="pension.payments_per_year"
+                ></select>
+              </div>
+              <div
+                class="form-control"
+                data-section="pension"
+                data-mode="gross"
+              >
                 <label
                   for="pension-income"
                   data-i18n-key="fields.pension-income"
@@ -177,6 +282,48 @@
                 <input
                   id="pension-income"
                   name="pension.gross_income"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value="0"
+                />
+              </div>
+              <div
+                class="form-control"
+                data-section="pension"
+                data-mode="net"
+                hidden
+              >
+                <label
+                  for="pension-net-income"
+                  data-i18n-key="fields.pension-net-income"
+                >
+                  Annual net pension (€)
+                </label>
+                <input
+                  id="pension-net-income"
+                  name="pension.net_income"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value="0"
+                />
+              </div>
+              <div
+                class="form-control"
+                data-section="pension"
+                data-mode="net"
+                hidden
+              >
+                <label
+                  for="pension-net-monthly-income"
+                  data-i18n-key="fields.pension-net-monthly-income"
+                >
+                  Net pension per payment (€)
+                </label>
+                <input
+                  id="pension-net-monthly-income"
+                  name="pension.net_monthly_income"
                   type="number"
                   min="0"
                   step="0.01"

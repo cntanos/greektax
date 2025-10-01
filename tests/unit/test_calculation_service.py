@@ -37,8 +37,8 @@ def test_calculate_tax_employment_only() -> None:
     summary = result["summary"]
     assert summary["income_total"] == pytest.approx(30_000.0)
     assert summary["tax_total"] == pytest.approx(5_090.0)
-    assert summary["net_income"] == pytest.approx(24_910.0)
-    assert summary["net_monthly_income"] == pytest.approx(2_075.83, rel=1e-4)
+    assert summary["net_income"] == pytest.approx(20_749.0)
+    assert summary["net_monthly_income"] == pytest.approx(1_729.08, rel=1e-4)
     assert summary["average_monthly_tax"] == pytest.approx(424.17, rel=1e-4)
     assert summary["effective_tax_rate"] == pytest.approx(0.1697, rel=1e-4)
 
@@ -49,6 +49,8 @@ def test_calculate_tax_employment_only() -> None:
     assert employment_detail["tax_before_credits"] == pytest.approx(5_900.0)
     assert employment_detail["credits"] == pytest.approx(810.0)
     assert employment_detail["total_tax"] == pytest.approx(5_090.0)
+    assert employment_detail["employee_contributions"] == pytest.approx(4_161.0)
+    assert employment_detail["employer_contributions"] == pytest.approx(6_729.0)
 
 
 def test_calculate_tax_accepts_monthly_employment_income() -> None:
@@ -64,8 +66,8 @@ def test_calculate_tax_accepts_monthly_employment_income() -> None:
     summary = result["summary"]
     assert summary["income_total"] == pytest.approx(21_000.0)
     assert summary["tax_total"] == pytest.approx(2_603.0)
-    assert summary["net_income"] == pytest.approx(18_397.0)
-    assert summary["net_monthly_income"] == pytest.approx(1_533.08, rel=1e-4)
+    assert summary["net_income"] == pytest.approx(15_484.3, rel=1e-4)
+    assert summary["net_monthly_income"] == pytest.approx(1_290.36, rel=1e-4)
     assert summary["average_monthly_tax"] == pytest.approx(216.92, rel=1e-4)
     assert summary["effective_tax_rate"] == pytest.approx(0.124, rel=1e-4)
 
@@ -74,7 +76,27 @@ def test_calculate_tax_accepts_monthly_employment_income() -> None:
     assert employment_detail["monthly_gross_income"] == pytest.approx(1_500.0)
     assert employment_detail["payments_per_year"] == 14
     assert employment_detail["gross_income_per_payment"] == pytest.approx(1_500.0)
-    assert employment_detail["net_income_per_payment"] == pytest.approx(1_314.07, rel=1e-4)
+    assert employment_detail["net_income_per_payment"] == pytest.approx(1_106.02, rel=1e-4)
+    assert employment_detail["employee_contributions_per_payment"] == pytest.approx(208.05, rel=1e-4)
+    assert employment_detail["employer_contributions_per_payment"] == pytest.approx(336.45, rel=1e-4)
+
+
+def test_calculate_tax_supports_net_monthly_income_input() -> None:
+    """Net monthly inputs should reverse-calculate the required gross amount."""
+
+    payload = {
+        "year": 2024,
+        "employment": {"net_monthly_income": 1_200, "payments_per_year": 14},
+    }
+
+    result = calculate_tax(payload)
+
+    employment_detail = result["details"][0]
+    assert employment_detail["gross_income"] == pytest.approx(23_263.37, rel=1e-4)
+    assert employment_detail["gross_income_per_payment"] == pytest.approx(1_661.67, rel=1e-4)
+    assert employment_detail["net_income_per_payment"] == pytest.approx(1_200.0)
+    assert employment_detail["employee_contributions_per_payment"] == pytest.approx(230.47, rel=1e-4)
+    assert employment_detail["total_tax"] == pytest.approx(3_236.74, rel=1e-4)
 
 
 def test_calculate_tax_with_freelance_income() -> None:
@@ -96,7 +118,7 @@ def test_calculate_tax_with_freelance_income() -> None:
 
     assert result["summary"]["income_total"] == pytest.approx(34_000.0)
     assert result["summary"]["tax_total"] == pytest.approx(6_133.0)
-    assert result["summary"]["net_income"] == pytest.approx(24_867.0)
+    assert result["summary"]["net_income"] == pytest.approx(22_093.0)
 
     assert len(result["details"]) == 2
     employment_detail = next(
@@ -109,6 +131,7 @@ def test_calculate_tax_with_freelance_income() -> None:
     assert employment_detail["tax_before_credits"] == pytest.approx(4_038.71)
     assert employment_detail["credits"] == pytest.approx(777.0)
     assert employment_detail["total_tax"] == pytest.approx(3_261.71)
+    assert employment_detail["employee_contributions"] == pytest.approx(2_774.0)
 
     assert freelance_detail["taxable_income"] == pytest.approx(11_000.0)
     assert freelance_detail["tax"] == pytest.approx(2_221.29)
@@ -142,6 +165,7 @@ def test_calculate_tax_combines_employment_and_pension_credit() -> None:
     result = calculate_tax(payload)
 
     assert result["summary"]["tax_total"] == pytest.approx(2_290.0)
+    assert result["summary"]["net_income"] == pytest.approx(16_323.0)
 
     employment_detail = next(
         detail for detail in result["details"] if detail["category"] == "employment"
@@ -158,6 +182,7 @@ def test_calculate_tax_combines_employment_and_pension_credit() -> None:
 
     assert employment_detail["total_tax"] == pytest.approx(1_145.0)
     assert pension_detail["total_tax"] == pytest.approx(1_145.0)
+    assert employment_detail["employee_contributions"] == pytest.approx(1_387.0)
 
 
 def test_calculate_tax_with_pension_and_rental_income() -> None:

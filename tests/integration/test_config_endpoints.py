@@ -15,6 +15,16 @@ def test_list_years_endpoint(client: FlaskClient) -> None:
     assert any(entry["year"] == 2025 for entry in years)
     assert payload["default_year"] == 2025
 
+    current_year = next(entry for entry in years if entry["year"] == 2025)
+    employment_meta = current_year["employment"]
+    assert employment_meta["payroll"]["default_payments_per_year"] == 14
+    assert 12 in employment_meta["payroll"]["allowed_payments_per_year"]
+    assert employment_meta["contributions"]["employee_rate"] >= 0
+
+    pension_meta = current_year["pension"]
+    assert pension_meta["payroll"]["allowed_payments_per_year"]
+    assert pension_meta["contributions"]["employer_rate"] >= 0
+
 
 def test_investment_categories_endpoint(client: FlaskClient) -> None:
     response = client.get("/api/v1/config/2024/investment-categories?locale=el")

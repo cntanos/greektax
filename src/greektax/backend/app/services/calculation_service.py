@@ -2,14 +2,16 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from types import MappingProxyType
-from typing import Any, Dict, Mapping, Optional, Sequence
+from typing import Any, Dict, Iterable, Mapping, Optional, Sequence
 
 from greektax.backend.app.localization import Translator, get_translator
 from greektax.backend.config.year_config import (
+    ContributionRates,
     FreelanceConfig,
     InvestmentConfig,
+    PayrollConfig,
     RentalConfig,
     TaxBracket,
     YearConfiguration,
@@ -27,9 +29,11 @@ class _NormalisedPayload:
     employment_income: float
     employment_monthly_income: Optional[float]
     employment_payments_per_year: Optional[int]
+    employment_net_target_income: Optional[float]
     pension_income: float
     pension_monthly_income: Optional[float]
     pension_payments_per_year: Optional[int]
+    pension_net_target_income: Optional[float]
     freelance_profit: float
     freelance_contributions: float
     include_trade_fee: bool
@@ -107,6 +111,8 @@ class _GeneralIncomeComponent:
     tax_after_credit: float = 0.0
     payments_per_year: Optional[int] = None
     monthly_gross_income: Optional[float] = None
+    employee_contributions: float = 0.0
+    employer_contributions: float = 0.0
 
     def total_tax(self) -> float:
         total = self.tax_after_credit
@@ -118,6 +124,8 @@ class _GeneralIncomeComponent:
         net = self.gross_income - self.tax_after_credit
         if self.category == "freelance":
             net -= self.contributions + self.trade_fee
+        if self.category in {"employment", "pension"}:
+            net -= self.employee_contributions
         return net
 
     def net_income_per_payment(self) -> Optional[float]:
@@ -179,50 +187,89 @@ def _extract_section(payload: Mapping[str, Any], key: str) -> Mapping[str, Any]:
     return section
 
 
-def _normalise_payload(payload: Mapping[str, Any]) -> _NormalisedPayload:
+def _validate_payments(
+    value: Any, payroll: PayrollConfig, field_name: str
+) -> Optional[int]:
+    if value is None:
+        return None
+
+    payments = _to_int(value, field_name)
+    if payments not in payroll.allowed_payments_per_year:
+        allowed = ", ".join(str(entry) for entry in payroll.allowed_payments_per_year)
+        raise ValueError(
+            f"Field '{field_name}' must match an allowed payroll frequency ({allowed})"
+        )
+    return payments
+
+
+def _normalise_payload(
+    payload: Mapping[str, Any], year: int, config: YearConfiguration
+) -> _NormalisedPayload:
     if not isinstance(payload, Mapping):
         raise ValueError("Payload must be a mapping")
 
-    if "year" not in payload:
-        raise ValueError("Payload must include a tax year")
-
-    year = _to_int(payload["year"], "year")
     locale = str(payload.get("locale", "en"))
 
     dependants_section = _extract_section(payload, "dependents")
     children = _to_int(dependants_section.get("children", 0), "dependents.children")
 
     employment_section = _extract_section(payload, "employment")
-    employment_payments: Optional[int] = None
+    employment_payroll = config.employment.payroll
+    employment_payments = _validate_payments(
+        employment_section.get("payments_per_year"),
+        employment_payroll,
+        "employment.payments_per_year",
+    )
+
     employment_monthly_income: Optional[float] = None
+    employment_income = 0.0
+    employment_net_target: Optional[float] = None
 
-    if "payments_per_year" in employment_section:
-        payments = _to_int(
-            employment_section.get("payments_per_year"),
-            "employment.payments_per_year",
-        )
-        if payments <= 0:
-            raise ValueError("Field 'employment.payments_per_year' must be positive")
-        employment_payments = payments
-
-    if "monthly_income" in employment_section:
-        monthly = _to_float(
-            employment_section.get("monthly_income", 0.0),
-            "employment.monthly_income",
-        )
+    monthly_input = employment_section.get("monthly_income")
+    if monthly_input is not None:
+        monthly = _to_float(monthly_input, "employment.monthly_income")
         if monthly > 0:
             employment_monthly_income = monthly
 
-    employment_income = _to_float(
+    gross_income = _to_float(
         employment_section.get("gross_income", 0.0), "employment.gross_income"
     )
 
+    net_income_value = employment_section.get("net_income")
+    if net_income_value is not None:
+        net_income = _to_float(net_income_value, "employment.net_income")
+        if net_income > 0:
+            employment_net_target = net_income
+
+    net_monthly_value = employment_section.get("net_monthly_income")
+    if net_monthly_value is not None:
+        net_monthly = _to_float(
+            net_monthly_value, "employment.net_monthly_income"
+        )
+        if net_monthly > 0:
+            payments = employment_payments or employment_payroll.default_payments_per_year
+            employment_payments = payments
+            employment_net_target = net_monthly * payments
+
     if employment_monthly_income is not None:
-        payments = employment_payments or 14
+        payments = employment_payments or employment_payroll.default_payments_per_year
         employment_payments = payments
         employment_income = employment_monthly_income * payments
-    elif employment_income > 0 and employment_payments:
-        employment_monthly_income = employment_income / employment_payments
+
+    if gross_income > 0:
+        employment_income = gross_income
+        if employment_payments and employment_monthly_income is None:
+            employment_monthly_income = employment_income / employment_payments
+
+    if employment_net_target is not None:
+        if employment_income > 0 or (employment_monthly_income and employment_monthly_income > 0):
+            raise ValueError(
+                "Provide either gross or net employment income, not both"
+            )
+        if employment_payments is None:
+            employment_payments = employment_payroll.default_payments_per_year
+        employment_monthly_income = None
+        employment_income = 0.0
 
     freelance_section = _extract_section(payload, "freelance")
     profit_value: Optional[Any] = freelance_section.get("profit")
@@ -247,34 +294,60 @@ def _normalise_payload(payload: Mapping[str, Any]) -> _NormalisedPayload:
     include_trade_fee = _to_bool(freelance_section.get("include_trade_fee"), True)
 
     pension_section = _extract_section(payload, "pension")
-    pension_payments: Optional[int] = None
+    pension_payroll = config.pension.payroll
+    pension_payments = _validate_payments(
+        pension_section.get("payments_per_year"),
+        pension_payroll,
+        "pension.payments_per_year",
+    )
+
     pension_monthly_income: Optional[float] = None
+    pension_income = 0.0
+    pension_net_target: Optional[float] = None
 
-    if "payments_per_year" in pension_section:
-        payments = _to_int(
-            pension_section.get("payments_per_year"), "pension.payments_per_year"
-        )
-        if payments <= 0:
-            raise ValueError("Field 'pension.payments_per_year' must be positive")
-        pension_payments = payments
-
-    if "monthly_income" in pension_section:
-        monthly = _to_float(
-            pension_section.get("monthly_income", 0.0), "pension.monthly_income"
-        )
+    pension_monthly_input = pension_section.get("monthly_income")
+    if pension_monthly_input is not None:
+        monthly = _to_float(pension_monthly_input, "pension.monthly_income")
         if monthly > 0:
             pension_monthly_income = monthly
 
-    pension_income = _to_float(
+    pension_gross = _to_float(
         pension_section.get("gross_income", 0.0), "pension.gross_income"
     )
 
+    pension_net_input = pension_section.get("net_income")
+    if pension_net_input is not None:
+        net_income = _to_float(pension_net_input, "pension.net_income")
+        if net_income > 0:
+            pension_net_target = net_income
+
+    pension_net_monthly_input = pension_section.get("net_monthly_income")
+    if pension_net_monthly_input is not None:
+        net_monthly = _to_float(
+            pension_net_monthly_input, "pension.net_monthly_income"
+        )
+        if net_monthly > 0:
+            payments = pension_payments or pension_payroll.default_payments_per_year
+            pension_payments = payments
+            pension_net_target = net_monthly * payments
+
     if pension_monthly_income is not None:
-        payments = pension_payments or 14
+        payments = pension_payments or pension_payroll.default_payments_per_year
         pension_payments = payments
         pension_income = pension_monthly_income * payments
-    elif pension_income > 0 and pension_payments:
-        pension_monthly_income = pension_income / pension_payments
+
+    if pension_gross > 0:
+        pension_income = pension_gross
+        if pension_payments and pension_monthly_income is None:
+            pension_monthly_income = pension_income / pension_payments
+
+    if pension_net_target is not None:
+        if pension_income > 0 or (pension_monthly_income and pension_monthly_income > 0):
+            raise ValueError("Provide either gross or net pension income, not both")
+        if pension_payments is None:
+            pension_payments = pension_payroll.default_payments_per_year
+        pension_monthly_income = None
+        pension_income = 0.0
 
     rental_section = _extract_section(payload, "rental")
     rental_gross = _to_float(
@@ -297,16 +370,18 @@ def _normalise_payload(payload: Mapping[str, Any]) -> _NormalisedPayload:
         obligations_section.get("luxury", 0.0), "obligations.luxury"
     )
 
-    return _NormalisedPayload(
+    normalised = _NormalisedPayload(
         year=year,
         locale=locale,
         children=children,
         employment_income=employment_income,
         employment_monthly_income=employment_monthly_income,
         employment_payments_per_year=employment_payments,
+        employment_net_target_income=employment_net_target,
         pension_income=pension_income,
         pension_monthly_income=pension_monthly_income,
         pension_payments_per_year=pension_payments,
+        pension_net_target_income=pension_net_target,
         freelance_profit=profit,
         freelance_contributions=contributions,
         include_trade_fee=include_trade_fee,
@@ -317,6 +392,129 @@ def _normalise_payload(payload: Mapping[str, Any]) -> _NormalisedPayload:
         enfia_due=enfia_due,
         luxury_due=luxury_due,
     )
+
+    return _apply_net_targets(normalised, config)
+
+
+def _apply_net_targets(
+    payload: _NormalisedPayload, config: YearConfiguration
+) -> _NormalisedPayload:
+    adjusted = payload
+
+    if payload.employment_net_target_income:
+        adjusted = _solve_net_target(
+            adjusted,
+            config,
+            category="employment",
+            target=payload.employment_net_target_income,
+        )
+
+    if adjusted.pension_net_target_income:
+        adjusted = _solve_net_target(
+            adjusted,
+            config,
+            category="pension",
+            target=adjusted.pension_net_target_income,
+        )
+
+    return adjusted
+
+
+def _set_component_income(
+    payload: _NormalisedPayload, category: str, gross_income: float, payments: int
+) -> _NormalisedPayload:
+    monthly_income = gross_income / payments if payments > 0 else None
+    if category == "employment":
+        return replace(
+            payload,
+            employment_income=gross_income,
+            employment_monthly_income=monthly_income,
+            employment_payments_per_year=payments,
+        )
+
+    if category == "pension":
+        return replace(
+            payload,
+            pension_income=gross_income,
+            pension_monthly_income=monthly_income,
+            pension_payments_per_year=payments,
+        )
+
+    raise ValueError(f"Unsupported category for net target resolution: {category}")
+
+
+def _solve_net_target(
+    payload: _NormalisedPayload,
+    config: YearConfiguration,
+    *,
+    category: str,
+    target: float,
+) -> _NormalisedPayload:
+    if target <= 0:
+        if category == "employment":
+            return replace(
+                payload,
+                employment_income=0.0,
+                employment_monthly_income=None,
+                employment_net_target_income=None,
+            )
+        return replace(
+            payload,
+            pension_income=0.0,
+            pension_monthly_income=None,
+            pension_net_target_income=None,
+        )
+
+    if category == "employment":
+        payments = payload.employment_payments_per_year or config.employment.payroll.default_payments_per_year
+        contribution_rate = config.employment.contributions.employee_rate
+    else:
+        payments = payload.pension_payments_per_year or config.pension.payroll.default_payments_per_year
+        contribution_rate = config.pension.contributions.employee_rate
+
+    highest_rate = max(bracket.rate for bracket in config.employment.brackets)
+
+    denominator = 1.0 - contribution_rate - highest_rate
+    if denominator <= 0:
+        upper = target * 5 if target > 0 else 1.0
+    else:
+        upper = target / denominator
+    upper = max(upper, target + 1.0)
+
+    lower = max(target, 0.01)
+    best_payload = payload
+    best_difference = float("inf")
+
+    for _ in range(50):
+        mid = (lower + upper) / 2
+        candidate = _set_component_income(payload, category, mid, payments)
+        components = _build_general_income_components(candidate, config)
+        _apply_progressive_tax(components, candidate, config)
+
+        component = next(
+            (entry for entry in components if entry.category == category), None
+        )
+        if component is None:
+            break
+
+        net_income = component.net_income()
+        difference = abs(net_income - target)
+        if difference < best_difference:
+            best_difference = difference
+            best_payload = candidate
+
+        if difference <= 0.01:
+            break
+
+        if net_income > target:
+            upper = mid
+        else:
+            lower = mid
+
+    if category == "employment":
+        return replace(best_payload, employment_net_target_income=None)
+
+    return replace(best_payload, pension_net_target_income=None)
 
 
 def _calculate_progressive_tax(amount: float, brackets: Sequence[TaxBracket]) -> float:
@@ -346,14 +544,26 @@ def _calculate_trade_fee(payload: _NormalisedPayload, config: FreelanceConfig) -
     return config.trade_fee.standard_amount
 
 
-def _calculate_general_income_details(
-    payload: _NormalisedPayload,
-    config: YearConfiguration,
-    translator: Translator,
-) -> list[Dict[str, Any]]:
+def _build_general_income_components(
+    payload: _NormalisedPayload, config: YearConfiguration
+) -> list[_GeneralIncomeComponent]:
     components: list[_GeneralIncomeComponent] = []
 
     if payload.has_employment_income:
+        employee_contrib = (
+            payload.employment_income * config.employment.contributions.employee_rate
+        )
+        employer_contrib = (
+            payload.employment_income * config.employment.contributions.employer_rate
+        )
+        monthly_income = payload.employment_monthly_income
+        if (
+            monthly_income is None
+            and payload.employment_payments_per_year
+            and payload.employment_payments_per_year > 0
+        ):
+            monthly_income = payload.employment_income / payload.employment_payments_per_year
+
         components.append(
             _GeneralIncomeComponent(
                 category="employment",
@@ -362,11 +572,27 @@ def _calculate_general_income_details(
                 taxable_income=payload.employment_income,
                 credit_eligible=True,
                 payments_per_year=payload.employment_payments_per_year,
-                monthly_gross_income=payload.employment_monthly_income,
+                monthly_gross_income=monthly_income,
+                employee_contributions=employee_contrib,
+                employer_contributions=employer_contrib,
             )
         )
 
     if payload.has_pension_income:
+        employee_contrib = (
+            payload.pension_income * config.pension.contributions.employee_rate
+        )
+        employer_contrib = (
+            payload.pension_income * config.pension.contributions.employer_rate
+        )
+        monthly_income = payload.pension_monthly_income
+        if (
+            monthly_income is None
+            and payload.pension_payments_per_year
+            and payload.pension_payments_per_year > 0
+        ):
+            monthly_income = payload.pension_income / payload.pension_payments_per_year
+
         components.append(
             _GeneralIncomeComponent(
                 category="pension",
@@ -375,7 +601,9 @@ def _calculate_general_income_details(
                 taxable_income=payload.pension_income,
                 credit_eligible=True,
                 payments_per_year=payload.pension_payments_per_year,
-                monthly_gross_income=payload.pension_monthly_income,
+                monthly_gross_income=monthly_income,
+                employee_contributions=employee_contrib,
+                employer_contributions=employer_contrib,
             )
         )
 
@@ -393,24 +621,32 @@ def _calculate_general_income_details(
             )
         )
 
+    return components
+
+
+def _apply_progressive_tax(
+    components: Sequence[_GeneralIncomeComponent],
+    payload: _NormalisedPayload,
+    config: YearConfiguration,
+) -> None:
     if not components:
-        return []
+        return
 
     total_taxable = sum(component.taxable_income for component in components)
-    brackets = config.employment.brackets
-    tax_before_credit = (
-        _calculate_progressive_tax(total_taxable, brackets) if total_taxable > 0 else 0.0
+    tax_before_credit = _calculate_progressive_tax(
+        total_taxable, config.employment.brackets
     )
 
     credit_candidates: list[float] = []
-    if payload.has_employment_income:
+    if any(component.category == "employment" for component in components):
         credit_candidates.append(
             config.employment.tax_credit.amount_for_children(payload.children)
         )
-    if payload.has_pension_income:
+    if any(component.category == "pension" for component in components):
         credit_candidates.append(
             config.pension.tax_credit.amount_for_children(payload.children)
         )
+
     credit_requested = max(credit_candidates) if credit_candidates else 0.0
     credit_applied = min(credit_requested, tax_before_credit)
 
@@ -434,7 +670,21 @@ def _calculate_general_income_details(
             component.credit = credit_applied * share
         else:
             component.credit = 0.0
-        component.tax_after_credit = max(component.tax_before_credit - component.credit, 0.0)
+        component.tax_after_credit = max(
+            component.tax_before_credit - component.credit, 0.0
+        )
+
+
+def _calculate_general_income_details(
+    payload: _NormalisedPayload,
+    config: YearConfiguration,
+    translator: Translator,
+) -> list[Dict[str, Any]]:
+    components = _build_general_income_components(payload, config)
+    if not components:
+        return []
+
+    _apply_progressive_tax(components, payload, config)
 
     details: list[Dict[str, Any]] = []
     for component in components:
@@ -451,6 +701,22 @@ def _calculate_general_income_details(
         if component.category in {"employment", "pension"}:
             detail["tax_before_credits"] = _round_currency(component.tax_before_credit)
             detail["credits"] = _round_currency(component.credit)
+            if component.employee_contributions:
+                detail["employee_contributions"] = _round_currency(
+                    component.employee_contributions
+                )
+                if component.payments_per_year:
+                    detail["employee_contributions_per_payment"] = _round_currency(
+                        component.employee_contributions / component.payments_per_year
+                    )
+            if component.employer_contributions:
+                detail["employer_contributions"] = _round_currency(
+                    component.employer_contributions
+                )
+                if component.payments_per_year:
+                    detail["employer_contributions_per_payment"] = _round_currency(
+                        component.employer_contributions / component.payments_per_year
+                    )
 
         if component.category == "freelance":
             detail["deductible_contributions"] = _round_currency(component.contributions)
@@ -603,8 +869,15 @@ def _calculate_luxury(payload: _NormalisedPayload, translator: Translator) -> Op
 def calculate_tax(payload: Dict[str, Any]) -> Dict[str, Any]:
     """Compute tax summary for the provided payload."""
 
-    normalised = _normalise_payload(payload)
-    config: YearConfiguration = load_year_configuration(normalised.year)
+    if not isinstance(payload, Mapping):
+        raise ValueError("Payload must be a mapping")
+
+    if "year" not in payload:
+        raise ValueError("Payload must include a tax year")
+
+    year = _to_int(payload["year"], "year")
+    config: YearConfiguration = load_year_configuration(year)
+    normalised = _normalise_payload(payload, year, config)
     translator = get_translator(normalised.locale)
 
     details: list[Dict[str, Any]] = []

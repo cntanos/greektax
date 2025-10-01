@@ -59,11 +59,29 @@ class EmploymentTaxCredit:
 
 
 @dataclass(frozen=True)
+class PayrollConfig:
+    """Supported payroll frequencies for an income category."""
+
+    allowed_payments_per_year: Sequence[int]
+    default_payments_per_year: int
+
+
+@dataclass(frozen=True)
+class ContributionRates:
+    """Employee and employer contribution rates for an income category."""
+
+    employee_rate: float
+    employer_rate: float
+
+
+@dataclass(frozen=True)
 class EmploymentConfig:
     """Configuration for salaried/pension income."""
 
     brackets: Sequence[TaxBracket]
     tax_credit: EmploymentTaxCredit
+    payroll: PayrollConfig
+    contributions: ContributionRates
 
 
 @dataclass(frozen=True)
@@ -72,6 +90,8 @@ class PensionConfig:
 
     brackets: Sequence[TaxBracket]
     tax_credit: EmploymentTaxCredit
+    payroll: PayrollConfig
+    contributions: ContributionRates
 
 
 @dataclass(frozen=True)
@@ -205,6 +225,64 @@ def _parse_tax_credit(raw: Mapping[str, Any]) -> EmploymentTaxCredit:
     )
 
 
+def _parse_payroll_config(raw: Mapping[str, Any], context: str) -> PayrollConfig:
+    if not isinstance(raw, Mapping):
+        raise ConfigurationError(f"{context} payroll settings must be a mapping")
+
+    allowed_raw = raw.get("allowed_payments_per_year")
+    if not isinstance(allowed_raw, Iterable):
+        raise ConfigurationError(
+            f"{context} payroll must define 'allowed_payments_per_year' as an iterable"
+        )
+
+    allowed: list[int] = []
+    for entry in allowed_raw:
+        payments = int(entry)
+        if payments <= 0:
+            raise ConfigurationError("Allowed payroll frequencies must be positive integers")
+        if payments not in allowed:
+            allowed.append(payments)
+
+    if not allowed:
+        raise ConfigurationError("At least one payroll frequency must be provided")
+
+    allowed.sort()
+
+    default_raw = raw.get("default_payments_per_year")
+    if default_raw is None:
+        default = allowed[-1]
+    else:
+        default = int(default_raw)
+        if default <= 0:
+            raise ConfigurationError("Default payroll frequency must be a positive integer")
+
+    if default not in allowed:
+        raise ConfigurationError("Default payroll frequency must be listed in the allowed set")
+
+    return PayrollConfig(
+        allowed_payments_per_year=tuple(allowed),
+        default_payments_per_year=default,
+    )
+
+
+def _parse_contribution_rates(
+    raw: Optional[Mapping[str, Any]], context: str
+) -> ContributionRates:
+    if raw is None:
+        return ContributionRates(employee_rate=0.0, employer_rate=0.0)
+
+    if not isinstance(raw, Mapping):
+        raise ConfigurationError(f"{context} contributions must be defined using a mapping")
+
+    employee = float(raw.get("employee_rate", 0.0))
+    employer = float(raw.get("employer_rate", 0.0))
+
+    if employee < 0 or employer < 0:
+        raise ConfigurationError("Contribution rates must be non-negative")
+
+    return ContributionRates(employee_rate=employee, employer_rate=employer)
+
+
 def _parse_employment_config(raw: Mapping[str, Any]) -> EmploymentConfig:
     brackets_raw = raw.get("tax_brackets")
     if not isinstance(brackets_raw, Iterable):
@@ -214,14 +292,24 @@ def _parse_employment_config(raw: Mapping[str, Any]) -> EmploymentConfig:
     if not isinstance(credit_raw, Mapping):
         raise ConfigurationError("Employment configuration must include 'tax_credit'")
 
+    payroll_raw = raw.get("payroll")
+    if payroll_raw is None:
+        raise ConfigurationError("Employment configuration must define payroll settings")
+
+    contributions_raw = raw.get("contributions")
+
     return EmploymentConfig(
         brackets=_parse_tax_brackets(brackets_raw),
         tax_credit=_parse_tax_credit(credit_raw),
+        payroll=_parse_payroll_config(payroll_raw, "Employment"),
+        contributions=_parse_contribution_rates(contributions_raw, "Employment"),
     )
 
 
 def _parse_pension_config(
-    raw: Mapping[str, Any], fallback_credit: EmploymentTaxCredit
+    raw: Mapping[str, Any],
+    fallback_credit: EmploymentTaxCredit,
+    fallback_payroll: PayrollConfig,
 ) -> PensionConfig:
     brackets_raw = raw.get("tax_brackets")
     if not isinstance(brackets_raw, Iterable):
@@ -235,9 +323,19 @@ def _parse_pension_config(
             raise ConfigurationError("Pension tax credit must be a mapping")
         credit = _parse_tax_credit(credit_raw)
 
+    payroll_raw = raw.get("payroll")
+    if payroll_raw is None:
+        payroll = fallback_payroll
+    else:
+        payroll = _parse_payroll_config(payroll_raw, "Pension")
+
+    contributions = _parse_contribution_rates(raw.get("contributions"), "Pension")
+
     return PensionConfig(
         brackets=_parse_tax_brackets(brackets_raw),
         tax_credit=credit,
+        payroll=payroll,
+        contributions=contributions,
     )
 
 
@@ -467,7 +565,9 @@ def _parse_year_configuration(year: int, raw: Mapping[str, Any]) -> YearConfigur
         year=year,
         meta=dict(meta),
         employment=employment_config,
-        pension=_parse_pension_config(pension_raw, employment_config.tax_credit),
+        pension=_parse_pension_config(
+            pension_raw, employment_config.tax_credit, employment_config.payroll
+        ),
         freelance=_parse_freelance_config(freelance_raw),
         rental=_parse_rental_config(rental_raw),
         investment=_parse_investment_config(investment_raw),
