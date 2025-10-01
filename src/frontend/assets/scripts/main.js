@@ -473,6 +473,7 @@ let deductionValidationByInput = {};
 let lastCalculation = null;
 let pendingCalculatorState = null;
 let calculatorStatePersistHandle = null;
+let isApplyingYearMetadata = false;
 
 const localeButtons = Array.from(
   document.querySelectorAll("[data-locale-option]"),
@@ -1325,21 +1326,30 @@ function renderYearWarnings(metadata) {
 }
 
 function applyYearMetadata(year) {
-  currentYearMetadata = yearMetadataByYear.get(year) || null;
-  renderYearWarnings(currentYearMetadata);
-  populatePayrollSelect(
-    employmentPaymentsInput,
-    currentYearMetadata?.employment?.payroll || null,
-  );
-  populatePayrollSelect(
-    pensionPaymentsInput,
-    currentYearMetadata?.pension?.payroll || null,
-  );
+  if (isApplyingYearMetadata) {
+    return;
+  }
 
-  updateEmploymentMode(currentEmploymentMode);
-  updatePensionMode(currentPensionMode);
-  populateFreelanceMetadata(currentYearMetadata?.freelance || null);
-  applyPendingCalculatorState();
+  isApplyingYearMetadata = true;
+  try {
+    currentYearMetadata = yearMetadataByYear.get(year) || null;
+    renderYearWarnings(currentYearMetadata);
+    populatePayrollSelect(
+      employmentPaymentsInput,
+      currentYearMetadata?.employment?.payroll || null,
+    );
+    populatePayrollSelect(
+      pensionPaymentsInput,
+      currentYearMetadata?.pension?.payroll || null,
+    );
+
+    updateEmploymentMode(currentEmploymentMode);
+    updatePensionMode(currentPensionMode);
+    populateFreelanceMetadata(currentYearMetadata?.freelance || null);
+    applyPendingCalculatorState();
+  } finally {
+    isApplyingYearMetadata = false;
+  }
 }
 
 function buildDownloadFilename(extension) {
