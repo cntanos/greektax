@@ -39,6 +39,8 @@ or numeric type) to apply on the client.
 | `locale` | string | ❌ | BCP-47 locale code (`"en"` by default, `"el"` supported). |
 | `dependents.children` | integer | ❌ | Number of dependant children. Used to derive employment/pension credits. |
 | `employment.gross_income` | number | ❌ | Annual gross salary subject to the progressive employment scale. |
+| `employment.monthly_income` | number | ❌ | Monthly gross salary (optional). When provided it is multiplied by `employment.payments_per_year`. |
+| `employment.payments_per_year` | integer | ❌ | Salary payments per year (e.g. 12 or 14). Defaults to 14 when paired with a monthly input. |
 | `pension.gross_income` | number | ❌ | Annual pension income. Shares the employment scale and credits. |
 | `freelance.profit` | number | ❌ | Declared freelance profit. Optional alternative: provide `gross_revenue` and `deductible_expenses`. |
 | `freelance.gross_revenue` | number | ❌ | Total freelance revenue (used if `profit` omitted). |
@@ -70,10 +72,14 @@ API layers should translate these exceptions into `400 Bad Request` responses.
     "income_total": 33000.0,
     "tax_total": 4830.0,
     "net_income": 28170.0,
+    "net_monthly_income": 2347.5,
+    "effective_tax_rate": 0.1464,
     "labels": {
       "income_total": "Total income",
       "tax_total": "Total taxes",
-      "net_income": "Net income"
+      "net_income": "Net income",
+      "net_monthly_income": "Net income per month",
+      "effective_tax_rate": "Effective tax rate"
     }
   },
   "details": [
@@ -81,12 +87,15 @@ API layers should translate these exceptions into `400 Bad Request` responses.
       "category": "employment",
       "label": "Employment income",
       "gross_income": 30000.0,
+      "monthly_gross_income": 2142.86,
+      "payments_per_year": 14,
       "taxable_income": 30000.0,
       "tax_before_credits": 5900.0,
       "credits": 810.0,
       "tax": 5090.0,
       "total_tax": 5090.0,
-      "net_income": 24910.0
+      "net_income": 24910.0,
+      "net_income_per_payment": 1786.43
     },
     {
       "category": "freelance",
@@ -141,9 +150,11 @@ API layers should translate these exceptions into `400 Bad Request` responses.
 
 The response always includes:
 
-- `summary`: Aggregated totals with localized labels.
+- `summary`: Aggregated totals with localized labels, including monthly net income
+  and the effective tax rate.
 - `details`: Per-category breakdowns. Additional fields appear depending on the
-  income type (e.g., `trade_fee_label`, investment `items`). Flat obligations
+  income type (e.g., `monthly_gross_income`, `payments_per_year`, `trade_fee_label`,
+  investment `items`). Flat obligations
   such as VAT and ENFIA are returned as simple line items with negative
   `net_income` values to reflect their impact on take-home amounts.
 - `meta`: Echoes the tax `year` and the resolved `locale` used for labels.

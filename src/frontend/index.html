@@ -127,6 +127,39 @@
               </div>
               <div class="form-control">
                 <label
+                  for="employment-monthly-income"
+                  data-i18n-key="fields.employment-monthly-income"
+                >
+                  Monthly gross income (€)
+                </label>
+                <input
+                  id="employment-monthly-income"
+                  name="employment.monthly_income"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value="0"
+                />
+              </div>
+              <div class="form-control">
+                <label
+                  for="employment-payments"
+                  data-i18n-key="fields.employment-payments"
+                >
+                  Salary payments per year
+                </label>
+                <input
+                  id="employment-payments"
+                  name="employment.payments_per_year"
+                  type="number"
+                  min="1"
+                  max="24"
+                  step="1"
+                  value="14"
+                />
+              </div>
+              <div class="form-control">
+                <label
                   for="pension-income"
                   data-i18n-key="fields.pension-income"
                 >
@@ -339,24 +372,6 @@
             </button>
             <button
               type="button"
-              class="button secondary"
-              id="download-pdf-button"
-              data-i18n-key="actions.download_pdf"
-              disabled
-            >
-              Download summary (PDF)
-            </button>
-            <button
-              type="button"
-              class="button ghost"
-              id="share-button"
-              data-i18n-key="actions.share"
-              disabled
-            >
-              Open shareable summary
-            </button>
-            <button
-              type="button"
               class="button ghost"
               id="print-button"
               data-i18n-key="actions.print"
@@ -365,75 +380,6 @@
               Print summary
             </button>
           </div>
-          <div class="share-output no-print">
-            <label for="share-link" data-i18n-key="share.link_label">
-              Shareable link
-            </label>
-            <div class="share-link-row">
-              <input
-                id="share-link"
-                type="text"
-                readonly
-                placeholder="https://example.com/share/..."
-                data-i18n-placeholder="share.link_placeholder"
-              />
-              <button
-                type="button"
-                class="button ghost"
-                id="copy-share-link-button"
-                data-i18n-key="share.copy"
-                disabled
-              >
-                Copy link
-              </button>
-            </div>
-          <p
-            class="share-expiry"
-            id="share-expiry"
-            data-i18n-key="share.expiry_notice"
-          >
-            Share links remain available for 24 hours.
-          </p>
-          <div class="share-feedback" id="share-feedback" hidden>
-            <p data-i18n-key="share.feedback_prompt">Was the expiry message clear?</p>
-            <div class="share-feedback-actions" role="group">
-              <button
-                type="button"
-                class="button ghost"
-                data-feedback="clear"
-                data-i18n-key="share.feedback_clear"
-              >
-                Yes, it was clear
-              </button>
-              <button
-                type="button"
-                class="button ghost"
-                data-feedback="unclear"
-                data-i18n-key="share.feedback_unclear"
-              >
-                No, it needs work
-              </button>
-            </div>
-            <label for="share-feedback-notes" data-i18n-key="share.feedback_notes_label">
-              Optional feedback
-            </label>
-            <textarea
-              id="share-feedback-notes"
-              rows="2"
-              data-i18n-placeholder="share.feedback_notes_placeholder"
-            ></textarea>
-            <button
-              type="button"
-              class="button ghost"
-              id="share-feedback-submit"
-              data-i18n-key="share.feedback_submit"
-              disabled
-            >
-              Send feedback
-            </button>
-            <p class="share-feedback-status" id="share-feedback-status" aria-live="polite"></p>
-          </div>
-        </div>
         <p id="calculator-status" aria-live="polite"></p>
       </form>
 

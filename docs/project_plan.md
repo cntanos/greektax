@@ -106,30 +106,51 @@ deliver user value in incremental, testable slices.
 - Added regression and unit coverage validating repository expiration,
   capacity limits, and end-to-end summary expiry handling.
 
-## Sprint 8 (Current)
+## Sprint 8 (Completed)
+
+**Highlights**
+- Consolidated the calculation engine architecture in preparation for upcoming
+  accuracy improvements and UI refinements.
+- Captured lessons learned from the initial share/export experiment to inform a
+  leaner delivery scope focused on core tax functionality.
+- Maintained localisation coverage and testing infrastructure to support rapid
+  iteration in future sprints.
+
+## Sprint 9 (Completed)
+
+**Highlights**
+- Removed the experimental sharing and PDF export surface area across the stack
+  to simplify maintenance and reinforce the privacy stance.
+- Normalised monthly salary handling in the calculation engine, yielding richer
+  gross-versus-net summaries and per-payment insights.
+- Refined the web UI to foreground key totals, accept monthly payment inputs,
+  and keep CSV exports client-side for leaner usability.
+
+## Sprint 10 (Current)
 
 **Objectives**
-- Provide a persistent storage option for shareable summaries that survives
-  process restarts while remaining thread-safe under concurrent access.
-- Improve PDF export fidelity for Greek locale output, including reliable font
-  rendering and support for multi-page summaries.
-- Gather structured user feedback on expiry messaging to refine UI cues and
-  accessibility copy.
+- Fortify the tax computation pipeline with broader scenario coverage and
+  cross-checks against official guidance.
+- Elevate the clarity and usability of the refreshed UI, ensuring the new
+  monthly input model is intuitive for 12-, 14-, or custom-payment schedules.
+- Document and validate the expanded gross/net breakdowns to sustain
+  stakeholder confidence in calculation correctness.
 
-**Deliverables (to date)**
-- Introduced a SQLite-backed share repository selectable via configuration and
-  validated through concurrency-focused unit and integration tests.
-- Embedded a Unicode-capable font pipeline for PDF generation with enhanced
-  layout to better support Greek labels and multi-page detail sections.
-- Added front-end feedback prompts and a backend collection endpoint capturing
-  expiry clarity responses for iterative UI improvements.
+**Planned Deliverables**
+- Add high-fidelity regression cases for diverse employment arrangements,
+  verifying allowances, credits, and edge conditions in the tax engine.
+- Improve UI content hierarchy and labelling so gross, net, tax, and deduction
+  figures remain immediately legible across locales and screen sizes.
+- Extend API and front-end validation copy to clarify payment-per-year entry and
+  surface additional derived metrics where helpful for decision-making.
 
-**Next Steps (Preview of Sprint 9)**
-- Analyse collected expiry feedback to refine localisation copy and visual
-  cues.
-- Prototype persistent share export cleanup jobs and operational dashboards.
-- Expand PDF exports with richer tables, pagination cues, and locale-aware
-  typography tuning.
+**Next Steps (Preview of Sprint 11)**
+- Broaden localisation QA with accessibility-focused audits and user testing of
+  the revised summaries.
+- Explore deeper support for supplementary income categories (e.g., bonuses or
+  deferred compensation) informed by Sprint 10 findings.
+- Monitor analytics and feedback channels to prioritise further usability or
+  accuracy enhancements.
 
 > _This plan is updated at the end of each sprint to capture accomplishments_
 > _and upcoming milestones._
