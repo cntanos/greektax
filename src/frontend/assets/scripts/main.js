@@ -6,7 +6,36 @@
  * returned by the Flask back-end.
  */
 
-const API_BASE = "https://cntanos.pythonanywhere.com/api/v1";
+const LOCAL_API_BASE = "http://127.0.0.1:5000/api/v1";
+const DEPLOYED_API_BASE = "https://cntanos.pythonanywhere.com/api/v1";
+const API_BASE = (() => {
+  if (typeof window === "undefined") {
+    return DEPLOYED_API_BASE;
+  }
+
+  const host = window.location.hostname || "";
+
+  const LOCAL_HOSTS = new Set([
+    "",
+    "localhost",
+    "127.0.0.1",
+    "0.0.0.0",
+    "[::1]",
+  ]);
+
+  const isPrivateNetwork = /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(host);
+
+  if (
+    window.location.protocol === "file:" ||
+    LOCAL_HOSTS.has(host) ||
+    host.endsWith(".local") ||
+    isPrivateNetwork
+  ) {
+    return LOCAL_API_BASE;
+  }
+
+  return DEPLOYED_API_BASE;
+})();
 const CALCULATIONS_ENDPOINT = `${API_BASE}/calculations`;
 const CONFIG_YEARS_ENDPOINT = `${API_BASE}/config/years`;
 const CONFIG_INVESTMENT_ENDPOINT = (year, locale) =>
@@ -1009,7 +1038,8 @@ function updateThemeButtonState(theme) {
 }
 
 function applyTheme(theme) {
-  const normalized = theme === "dark" ? "dark" : DEFAULT_THEME;
+  const normalized =
+    theme === "dark" || theme === "light" ? theme : DEFAULT_THEME;
   currentTheme = normalized;
   const root = document.documentElement;
   if (hasAppliedThemeOnce) {
