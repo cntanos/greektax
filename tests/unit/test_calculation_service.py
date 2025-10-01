@@ -63,8 +63,8 @@ def test_calculate_tax_with_freelance_income() -> None:
     result = calculate_tax(payload)
 
     assert result["summary"]["income_total"] == pytest.approx(34_000.0)
-    assert result["summary"]["tax_total"] == pytest.approx(4_093.0)
-    assert result["summary"]["net_income"] == pytest.approx(26_907.0)
+    assert result["summary"]["tax_total"] == pytest.approx(6_133.0)
+    assert result["summary"]["net_income"] == pytest.approx(24_867.0)
 
     assert len(result["details"]) == 2
     employment_detail = next(
@@ -74,12 +74,15 @@ def test_calculate_tax_with_freelance_income() -> None:
         detail for detail in result["details"] if detail["category"] == "freelance"
     )
 
-    assert employment_detail["total_tax"] == pytest.approx(2_323.0)
+    assert employment_detail["tax_before_credits"] == pytest.approx(4_038.71)
+    assert employment_detail["credits"] == pytest.approx(777.0)
+    assert employment_detail["total_tax"] == pytest.approx(3_261.71)
+
     assert freelance_detail["taxable_income"] == pytest.approx(11_000.0)
-    assert freelance_detail["tax"] == pytest.approx(1_120.0)
+    assert freelance_detail["tax"] == pytest.approx(2_221.29)
     assert freelance_detail["trade_fee"] == pytest.approx(650.0)
-    assert freelance_detail["total_tax"] == pytest.approx(1_770.0)
-    assert freelance_detail["net_income"] == pytest.approx(9_230.0)
+    assert freelance_detail["total_tax"] == pytest.approx(2_871.29)
+    assert freelance_detail["net_income"] == pytest.approx(8_128.71)
 
 
 def test_calculate_tax_respects_locale_toggle() -> None:
@@ -92,6 +95,37 @@ def test_calculate_tax_respects_locale_toggle() -> None:
     assert result["meta"]["locale"] == "el"
     assert result["details"][0]["label"] == "Εισόδημα μισθωτών"
     assert result["summary"]["labels"]["income_total"] == "Συνολικό εισόδημα"
+
+
+def test_calculate_tax_combines_employment_and_pension_credit() -> None:
+    """Salary and pension income share a single tax credit."""
+
+    payload = {
+        "year": 2024,
+        "dependents": {"children": 1},
+        "employment": {"gross_income": 10_000},
+        "pension": {"gross_income": 10_000},
+    }
+
+    result = calculate_tax(payload)
+
+    assert result["summary"]["tax_total"] == pytest.approx(2_290.0)
+
+    employment_detail = next(
+        detail for detail in result["details"] if detail["category"] == "employment"
+    )
+    pension_detail = next(
+        detail for detail in result["details"] if detail["category"] == "pension"
+    )
+
+    assert employment_detail["tax_before_credits"] == pytest.approx(1_550.0)
+    assert pension_detail["tax_before_credits"] == pytest.approx(1_550.0)
+
+    assert employment_detail["credits"] == pytest.approx(405.0)
+    assert pension_detail["credits"] == pytest.approx(405.0)
+
+    assert employment_detail["total_tax"] == pytest.approx(1_145.0)
+    assert pension_detail["total_tax"] == pytest.approx(1_145.0)
 
 
 def test_calculate_tax_with_pension_and_rental_income() -> None:
