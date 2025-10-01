@@ -124,6 +124,9 @@ class EFKACategoryConfig:
     monthly_amount: float
     auxiliary_monthly_amount: Optional[float] = None
     description_key: Optional[str] = None
+    pension_monthly_amount: Optional[float] = None
+    health_monthly_amount: Optional[float] = None
+    lump_sum_monthly_amount: Optional[float] = None
 
 
 @dataclass(frozen=True)
@@ -497,6 +500,29 @@ def _parse_efka_categories(raw: Optional[Iterable[Mapping[str, Any]]]) -> Sequen
                 "EFKA 'auxiliary_monthly_amount' must be non-negative when provided"
             )
 
+        pension_amount = entry.get("pension_monthly_amount")
+        pension_value = float(pension_amount) if pension_amount is not None else None
+        if pension_value is not None and pension_value < 0:
+            raise ConfigurationError(
+                "EFKA 'pension_monthly_amount' must be non-negative when provided"
+            )
+
+        health_amount = entry.get("health_monthly_amount")
+        health_value = float(health_amount) if health_amount is not None else None
+        if health_value is not None and health_value < 0:
+            raise ConfigurationError(
+                "EFKA 'health_monthly_amount' must be non-negative when provided"
+            )
+
+        lump_sum_amount = entry.get("lump_sum_monthly_amount")
+        lump_sum_value = (
+            float(lump_sum_amount) if lump_sum_amount is not None else None
+        )
+        if lump_sum_value is not None and lump_sum_value < 0:
+            raise ConfigurationError(
+                "EFKA 'lump_sum_monthly_amount' must be non-negative when provided"
+            )
+
         description_key = entry.get("description_key")
         if description_key is not None and not isinstance(description_key, str):
             raise ConfigurationError(
@@ -510,6 +536,9 @@ def _parse_efka_categories(raw: Optional[Iterable[Mapping[str, Any]]]) -> Sequen
                 monthly_amount=monthly_value,
                 auxiliary_monthly_amount=auxiliary_value,
                 description_key=description_key,
+                pension_monthly_amount=pension_value,
+                health_monthly_amount=health_value,
+                lump_sum_monthly_amount=lump_sum_value,
             )
         )
 

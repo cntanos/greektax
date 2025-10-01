@@ -237,24 +237,37 @@ deliver user value in incremental, testable slices.
   teams can track minimum, maximum, and average calculation durations alongside
   accessibility metadata.【F:scripts/performance_snapshot.py†L38-L88】
 
-## Sprint 19 (Current)
+## Sprint 19 (Completed)
+
+**Highlights**
+- Published 2024 and 2025 EFKA contribution classes for both general freelancers
+  and engineers, exposing pension, health, auxiliary, and lump-sum breakdowns
+  through the configuration APIs and localisation catalogues.【F:src/greektax/backend/config/data/2024.yaml†L118-L135】【F:src/greektax/backend/app/localization/catalog.py†L54-L63】
+- Reworked the freelance form to surface category summaries, trade-fee guidance,
+  and a guided activity-start workflow that automatically determines reduced
+  trade-fee eligibility.【F:src/frontend/index.html†L460-L541】【F:src/frontend/assets/scripts/main.js†L1788-L1897】
+- Extended calculation and integration tests to cover engineer-specific
+  auxiliary and lump-sum contributions while aligning expected values with the
+  richer configuration metadata.【F:tests/unit/test_calculation_service.py†L292-L347】【F:tests/integration/test_config_endpoints.py†L26-L35】
+
+## Sprint 20 (Current)
 
 **Objectives**
-- Expand calculation regression coverage for multi-income households, ensuring
-  deductions, trade-fee rules, and credits align with published requirements
-  ahead of annual configuration updates.【F:Requirements.md†L96-L152】
-- Formalise a scenario catalogue and contributor checklist describing expected
-  gross-to-net flows so reviewers can validate accuracy changes quickly.
-- Audit UI validation copy and localisation hooks to reduce ambiguity when
-  users combine monthly and annual inputs across income categories.
+- Capture end-to-end scenarios that combine engineer EFKA tiers with manual
+  overrides so regressions cover auxiliary and lump-sum adjustments.
+- Document contribution guidance for onboarding materials, including references
+  to official EFKA tables and the calculator's auto-filled values.
+- Review persistence and accessibility states for the restructured freelance
+  section to ensure hints, summaries, and manual overrides behave consistently
+  across locales and stored sessions.
 
 **Planned Deliverables**
-- Additional regression fixtures exercising agricultural, freelance, and rental
-  interactions with deduction caps and trade-fee toggles.
-- Contributor documentation outlining scenario expectations, acceptance
-  criteria, and review steps for multi-income submissions.
-- Localisation and validation refinements across calculator controls informed
-  by the expanded scenario catalogue.
+- Scenario fixtures and validator notes covering mixed EFKA inputs (automatic
+  category totals plus manual overrides) for both general and engineer profiles.
+- Contributor-facing documentation summarising EFKA category logic, start-year
+  handling, and manual contribution workflows introduced in Sprint 19.
+- Accessibility and localisation checklists verifying hint updates, summary
+  text, and persistence after locale switches within the freelance section.
 
 > _This plan is updated at the end of each sprint to capture accomplishments_
 > _and upcoming milestones._

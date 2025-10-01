@@ -65,6 +65,9 @@ def _serialise_efka_categories(
                 "monthly_amount": category.monthly_amount,
                 "auxiliary_monthly_amount": category.auxiliary_monthly_amount,
                 "description_key": category.description_key,
+                "pension_monthly_amount": category.pension_monthly_amount,
+                "health_monthly_amount": category.health_monthly_amount,
+                "lump_sum_monthly_amount": category.lump_sum_monthly_amount,
             }
         )
     return serialised

@@ -477,12 +477,14 @@
                   value="0"
                 />
               </div>
+            </div>
+            <div class="form-grid double">
               <div class="form-control">
                 <label
                   for="freelance-efka-category"
                   data-i18n-key="fields.freelance-efka-category"
                 >
-                  EFKA category
+                  EFKA contribution class
                 </label>
                 <select id="freelance-efka-category"></select>
                 <p
@@ -510,36 +512,95 @@
               </div>
               <div class="form-control">
                 <label
-                  for="freelance-contributions"
-                  data-i18n-key="fields.freelance-contributions"
+                  for="freelance-activity-start-year"
+                  data-i18n-key="fields.freelance-activity-start-year"
                 >
-                  Additional mandatory contributions (€)
+                  Year freelance activity started
                 </label>
                 <input
-                  id="freelance-contributions"
-                  name="freelance.mandatory_contributions"
+                  id="freelance-activity-start-year"
                   type="number"
-                  min="0"
-                  step="0.01"
-                  value="0"
+                  min="1900"
+                  max="2100"
+                  step="1"
                 />
+                <p
+                  class="form-hint"
+                  data-i18n-key="fields.freelance-activity-start-year-hint"
+                ></p>
               </div>
-              <div class="form-control">
-                <label
-                  for="freelance-auxiliary-contributions"
-                  data-i18n-key="fields.freelance-auxiliary-contributions"
-                >
-                  Auxiliary fund contributions (€)
-                </label>
-                <input
-                  id="freelance-auxiliary-contributions"
-                  name="freelance.auxiliary_contributions"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value="0"
-                />
-              </div>
+            </div>
+            <input
+              id="freelance-years-active"
+              name="freelance.years_active"
+              type="hidden"
+              value="0"
+            />
+            <p
+              id="freelance-efka-summary"
+              class="form-hint"
+              data-static-hint="true"
+            ></p>
+            <div class="form-control">
+              <details id="freelance-manual-contributions">
+                <summary data-i18n-key="fields.freelance-manual-contributions"></summary>
+                <p
+                  class="form-hint"
+                  data-i18n-key="fields.freelance-manual-contributions-hint"
+                ></p>
+                <div class="form-grid double">
+                  <div class="form-control">
+                    <label
+                      for="freelance-contributions"
+                      data-i18n-key="fields.freelance-contributions"
+                    >
+                      Manual EFKA contributions (€)
+                    </label>
+                    <input
+                      id="freelance-contributions"
+                      name="freelance.mandatory_contributions"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value="0"
+                    />
+                  </div>
+                  <div class="form-control">
+                    <label
+                      for="freelance-auxiliary-contributions"
+                      data-i18n-key="fields.freelance-auxiliary-contributions"
+                    >
+                      Manual auxiliary fund contributions (€)
+                    </label>
+                    <input
+                      id="freelance-auxiliary-contributions"
+                      name="freelance.auxiliary_contributions"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value="0"
+                    />
+                  </div>
+                  <div class="form-control">
+                    <label
+                      for="freelance-lump-sum-contributions"
+                      data-i18n-key="fields.freelance-lump-sum-contributions"
+                    >
+                      Manual lump-sum fund contributions (€)
+                    </label>
+                    <input
+                      id="freelance-lump-sum-contributions"
+                      name="freelance.lump_sum_contributions"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value="0"
+                    />
+                  </div>
+                </div>
+              </details>
+            </div>
+            <div class="form-grid double">
               <div class="form-control">
                 <label
                   for="freelance-trade-fee-location"
@@ -553,37 +614,6 @@
                   class="form-hint"
                   data-static-hint="true"
                 ></p>
-              </div>
-              <div class="form-control">
-                <label
-                  for="freelance-years-active"
-                  data-i18n-key="fields.freelance-years-active"
-                >
-                  Years as self-employed
-                </label>
-                <input
-                  id="freelance-years-active"
-                  name="freelance.years_active"
-                  type="number"
-                  min="0"
-                  step="1"
-                  value="0"
-                />
-              </div>
-              <div class="form-control">
-                <span class="inline-field">
-                  <input
-                    id="freelance-newly-self-employed"
-                    type="checkbox"
-                    name="freelance.newly_self_employed"
-                  />
-                  <label
-                    for="freelance-newly-self-employed"
-                    data-i18n-key="fields.freelance-newly-self-employed"
-                  >
-                    Newly self-employed
-                  </label>
-                </span>
               </div>
               <div class="form-control">
                 <span class="inline-field">

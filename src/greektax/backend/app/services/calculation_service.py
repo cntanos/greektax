@@ -70,6 +70,7 @@ class _NormalisedPayload:
     freelance_category_contribution: float
     freelance_additional_contributions: float
     freelance_auxiliary_contributions: float
+    freelance_lump_sum_contributions: float
     include_trade_fee: bool
     freelance_trade_fee_location: str
     freelance_years_active: Optional[int]
@@ -99,6 +100,7 @@ class _NormalisedPayload:
             self.freelance_category_contribution
             + self.freelance_additional_contributions
             + self.freelance_auxiliary_contributions
+            + self.freelance_lump_sum_contributions
         )
 
     @property
@@ -196,6 +198,7 @@ class _GeneralIncomeComponent:
     category_contributions: float = 0.0
     additional_contributions: float = 0.0
     auxiliary_contributions: float = 0.0
+    lump_sum_contributions: float = 0.0
     deductions_applied: float = 0.0
 
     def total_tax(self) -> float:
@@ -424,6 +427,11 @@ def _normalise_payload(
         "freelance.auxiliary_contributions",
     )
 
+    lump_sum_contributions = _to_float(
+        freelance_section.get("lump_sum_contributions", 0.0),
+        "freelance.lump_sum_contributions",
+    )
+
     include_trade_fee = _to_bool(freelance_section.get("include_trade_fee"), True)
 
     trade_fee_location_raw = freelance_section.get("trade_fee_location")
@@ -567,6 +575,7 @@ def _normalise_payload(
         freelance_category_contribution=category_contribution,
         freelance_additional_contributions=additional_contributions,
         freelance_auxiliary_contributions=auxiliary_contributions,
+        freelance_lump_sum_contributions=lump_sum_contributions,
         include_trade_fee=include_trade_fee,
         freelance_trade_fee_location=trade_fee_location,
         freelance_years_active=years_active,
@@ -861,6 +870,7 @@ def _build_general_income_components(
                 category_contributions=payload.freelance_category_contribution,
                 additional_contributions=payload.freelance_additional_contributions,
                 auxiliary_contributions=payload.freelance_auxiliary_contributions,
+                lump_sum_contributions=payload.freelance_lump_sum_contributions,
                 trade_fee=trade_fee,
             )
         )
@@ -1015,6 +1025,10 @@ def _calculate_general_income_details(
             if component.auxiliary_contributions:
                 detail["auxiliary_contributions"] = _round_currency(
                     component.auxiliary_contributions
+                )
+            if component.lump_sum_contributions:
+                detail["lump_sum_contributions"] = _round_currency(
+                    component.lump_sum_contributions
                 )
 
         if component.monthly_gross_income is not None:
