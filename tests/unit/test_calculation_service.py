@@ -149,3 +149,23 @@ def test_calculate_tax_with_investment_income_breakdown() -> None:
         "interest",
         "capital_gains",
     }
+
+
+def test_calculate_tax_includes_additional_obligations() -> None:
+    payload = {
+        "year": 2024,
+        "obligations": {"vat": 1_250, "enfia": 320},
+    }
+
+    result = calculate_tax(payload)
+
+    summary = result["summary"]
+    assert summary["income_total"] == 0.0
+    assert summary["tax_total"] == pytest.approx(1_570.0)
+    assert summary["net_income"] == pytest.approx(-1_570.0)
+
+    details = {detail["category"]: detail for detail in result["details"]}
+    assert details["vat"]["total_tax"] == pytest.approx(1_250.0)
+    assert details["vat"]["net_income"] == pytest.approx(-1_250.0)
+    assert details["enfia"]["total_tax"] == pytest.approx(320.0)
+    assert details["enfia"]["net_income"] == pytest.approx(-320.0)

@@ -58,30 +58,39 @@ deliver user value in incremental, testable slices.
   supported languages.
 - API contract published with explicit validation guidance for future clients.
 
-## Sprint 3 (Current)
+## Sprint 3 (Completed)
+
+**Highlights**
+- REST endpoint for tax calculations with structured error responses and
+  localisation support.
+- Locale-aware preview controls on the front-end persisting user preferences.
+- Regression scenario catalogue underpinning integration coverage.
+
+## Sprint 4 (Current)
 
 **Objectives**
-- Expose the calculation engine through a REST endpoint with structured error
-  handling.
-- Provide a language toggle on the front-end that propagates the selected
-  locale to the API.
-- Establish regression fixtures that exercise representative taxpayer profiles.
+- Surface configuration metadata (available years, investment categories) for
+  dynamic UI rendering.
+- Wire the primary calculator form to the API, including printable/exportable
+  summaries.
+- Expand automated coverage to VAT and ENFIA obligations alongside existing
+  income scenarios.
 
 **Deliverables (to date)**
-- Flask blueprint serving `POST /api/v1/calculations` with localisation-aware
-  responses and JSON error envelopes.
-- Front-end preview controls that persist locale preference and request
-  translated summaries from the backend.
-- Regression scenario catalogue consumed by integration tests for ongoing
-  validation.
+- REST endpoints exposing available tax years and locale-aware investment
+  categories.
+- Interactive calculator UI tied to the backend with download and print helpers
+  plus investment metadata hydration.
+- Regression scenarios and unit tests validating VAT/ENFIA obligations within
+  the calculation engine.
 
-**Next Steps (Preview of Sprint 4)**
-- Add REST endpoints for configuration metadata (available years, investment
-  categories) to support dynamic UI elements.
-- Connect core form inputs on the front-end to the API and render the returned
-  breakdown.
-- Provide printable/exportable summaries and broaden scenario coverage to VAT
-  and ENFIA inputs.
+**Next Steps (Preview of Sprint 5)**
+- Introduce endpoints for year metadata beyond investment categories (e.g.
+  deductible catalogues) to power richer UI hints.
+- Implement client-side validation and localisation for the expanded form
+  fields.
+- Deliver shareable/print-ready summary layouts (PDF or HTML) and broaden
+  regression coverage to luxury tax and VAT edge cases.
 
 > _This plan is updated at the end of each sprint to capture accomplishments_
 > _and upcoming milestones._

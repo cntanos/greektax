@@ -30,7 +30,7 @@
     }
   },
   {
-    "name": "pension_rental_investment",
+    "name": "pension_rental_investment_obligations",
     "payload": {
       "year": 2024,
       "dependents": {"children": 2},
@@ -43,13 +43,17 @@
         "dividends": 1200,
         "interest": 400,
         "capital_gains": 3500
+      },
+      "obligations": {
+        "vat": 1800,
+        "enfia": 350
       }
     },
     "expectations": {
       "summary": {
         "income_total": 38100.0,
-        "tax_total": 4555.0,
-        "net_income": 31545.0
+        "tax_total": 6705.0,
+        "net_income": 29395.0
       },
       "details": {
         "pension": {
@@ -62,6 +66,41 @@
         "investment": {
           "gross_income": 5100.0,
           "total_tax": 645.0
+        },
+        "vat": {
+          "total_tax": 1800.0,
+          "net_income": -1800.0
+        },
+        "enfia": {
+          "total_tax": 350.0,
+          "net_income": -350.0
+        }
+      }
+    }
+  },
+  {
+    "name": "obligations_only",
+    "payload": {
+      "year": 2024,
+      "obligations": {
+        "vat": 1500,
+        "enfia": 275
+      }
+    },
+    "expectations": {
+      "summary": {
+        "income_total": 0.0,
+        "tax_total": 1775.0,
+        "net_income": -1775.0
+      },
+      "details": {
+        "vat": {
+          "total_tax": 1500.0,
+          "net_income": -1500.0
+        },
+        "enfia": {
+          "total_tax": 275.0,
+          "net_income": -275.0
         }
       }
     }
