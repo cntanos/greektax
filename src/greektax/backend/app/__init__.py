@@ -3,6 +3,7 @@
 from pathlib import Path
 
 from flask import Flask, jsonify, send_from_directory
+from flask_cors import CORS
 from werkzeug.exceptions import BadRequest
 
 from .routes import register_routes
@@ -17,6 +18,14 @@ def create_app() -> Flask:
     """Create and configure the Flask application instance."""
 
     app = Flask(__name__)
+
+    CORS(
+        app,
+        resources={r"/api/*": {"origins": "*"}},
+        supports_credentials=False,
+        methods=["GET", "OPTIONS", "POST"],
+        allow_headers=["Content-Type"],
+    )
 
     register_routes(app)
 
