@@ -105,6 +105,15 @@ const API_BASE = (() => {
     return REMOTE_API_BASE;
   }
 
+  // When the widget is embedded on a public domain (e.g. WordPress iframe),
+  // there is no same-origin API. Default to the remote API unless we can
+  // confidently detect a local development hostname.
+  const isLikelyHostedEnvironment =
+    Boolean(normalizedHost) && !isLocalHostname && protocol !== "file:";
+  if (isLikelyHostedEnvironment) {
+    return REMOTE_API_BASE;
+  }
+
   return LOCAL_API_BASE;
 })();
 const CALCULATIONS_ENDPOINT = `${API_BASE}/calculations`;
