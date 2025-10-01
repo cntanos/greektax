@@ -74,6 +74,35 @@ average durations), bundle sizes for the key front-end assets, and ARIA usage in
 the HTML shell. See [`docs/performance_baseline.md`](docs/performance_baseline.md)
 for guidance on interpreting the output.
 
+## Configuring the API endpoint
+
+The front-end automatically selects which API base URL to use:
+
+- `https://cntanos.pythonanywhere.com/api/v1` for production-style deployments.
+- `/api/v1` when the calculator is served from a loopback or private network
+  host (e.g. `localhost`, `127.0.0.1`, `192.168.x.x`).
+
+When embedding the calculator in a CMS or iframe, you can override the detected
+endpoint without rebuilding the assets. The lookup order is:
+
+1. A global variable defined before `assets/scripts/main.js` runs:
+   ```html
+   <script>
+     window.__GREEKTAX_API_BASE__ = "https://example.com/custom/api";
+   </script>
+   ```
+2. A `<meta>` tag in the document head:
+   ```html
+   <meta name="greektax:api-base" content="https://example.com/custom/api" />
+   ```
+3. A `data-api-base` attribute on the loader script tag:
+   ```html
+   <script src="./assets/scripts/main.js" data-api-base="https://example.com/custom/api"></script>
+   ```
+
+The chosen value is normalised to remove trailing slashes before being used in
+requests.
+
 ## Brand & Media Assets
 
 Binary media files are intentionally not stored in this repository. When UI work

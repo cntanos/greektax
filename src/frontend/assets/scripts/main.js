@@ -8,14 +8,82 @@
 
 const REMOTE_API_BASE = "https://cntanos.pythonanywhere.com/api/v1";
 const LOCAL_API_BASE = "/api/v1";
+
+const sanitizeApiBase = (candidate) => {
+  if (typeof candidate !== "string") {
+    return null;
+  }
+
+  const trimmed = candidate.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  return trimmed.replace(/\/+$/, "");
+};
+
+const readConfiguredApiBase = () => {
+  const globalOverride =
+    window.__GREEKTAX_API_BASE__ ?? window.GREEKTAX_API_BASE ?? null;
+  const metaOverride = (() => {
+    if (typeof document === "undefined") {
+      return null;
+    }
+
+    const metaTag = document.querySelector('meta[name="greektax:api-base"]');
+    return metaTag?.getAttribute("content") ?? null;
+  })();
+
+  const scriptOverride = (() => {
+    if (typeof document === "undefined") {
+      return null;
+    }
+
+    const extractAttribute = (element) => {
+      if (!element) {
+        return null;
+      }
+
+      return (
+        element.getAttribute("data-api-base") ??
+        element.getAttribute("data-greektax-api-base") ??
+        null
+      );
+    };
+
+    const currentScriptCandidate = extractAttribute(document.currentScript);
+    if (currentScriptCandidate) {
+      return currentScriptCandidate;
+    }
+
+    const taggedScript = document.querySelector(
+      "script[data-api-base], script[data-greektax-api-base]",
+    );
+
+    return extractAttribute(taggedScript);
+  })();
+
+  return (
+    sanitizeApiBase(globalOverride) ??
+    sanitizeApiBase(metaOverride) ??
+    sanitizeApiBase(scriptOverride)
+  );
+};
+
 const API_BASE = (() => {
+  const configuredBase = readConfiguredApiBase();
+  if (configuredBase) {
+    return configuredBase;
+  }
+
   const { protocol, hostname } = window.location;
   const normalizedHost = (hostname || "").toLowerCase();
 
   const isLoopbackHost =
     normalizedHost === "localhost" ||
     normalizedHost === "127.0.0.1" ||
-    normalizedHost === "0.0.0.0";
+    normalizedHost === "0.0.0.0" ||
+    normalizedHost === "[::1]";
 
   const isPrivateNetworkIp =
     /^10\./.test(normalizedHost) ||
@@ -36,8 +104,6 @@ const API_BASE = (() => {
     return REMOTE_API_BASE;
   }
 
-  // NOTE: Preserve automatic switching between the local API during development
-  // and the deployed remote backend at https://cntanos.pythonanywhere.com/api/v1.
   return REMOTE_API_BASE;
 })();
 const CALCULATIONS_ENDPOINT = `${API_BASE}/calculations`;
