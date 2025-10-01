@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -103,6 +103,19 @@
             <select id="locale-select" name="locale">
               <option value="en">English</option>
               <option value="el">Ελληνικά</option>
+            </select>
+          </div>
+          <div class="form-control">
+            <label for="theme-select" data-i18n-key="ui.theme_label">
+              Theme
+            </label>
+            <select id="theme-select" name="theme">
+              <option value="light" data-i18n-key="ui.theme_option_light">
+                Light
+              </option>
+              <option value="dark" data-i18n-key="ui.theme_option_dark">
+                Dark
+              </option>
             </select>
           </div>
           <button

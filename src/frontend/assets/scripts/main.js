@@ -18,6 +18,8 @@ const CONFIG_DEDUCTIONS_ENDPOINT = (year, locale) =>
 const STORAGE_KEY = "greektax.locale";
 const CALCULATOR_STORAGE_KEY = "greektax.calculator.v1";
 const CALCULATOR_STORAGE_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours
+const THEME_STORAGE_KEY = "greektax.theme";
+const DEFAULT_THEME = "light";
 
 const UI_MESSAGES = {
   en: {
@@ -37,6 +39,9 @@ const UI_MESSAGES = {
       highlight_visual_title: "Visual income breakdown",
       highlight_visual_copy:
         "Track taxes, contributions, and take-home pay through a colour-coded Sankey diagram.",
+      theme_label: "Theme",
+      theme_option_light: "Light",
+      theme_option_dark: "Dark",
     },
     preview: {
       heading: "Preview localisation",
@@ -263,6 +268,9 @@ const UI_MESSAGES = {
       highlight_visual_title: "Οπτική απεικόνιση εισοδήματος",
       highlight_visual_copy:
         "Παρακολουθήστε φόρους, εισφορές και καθαρό ποσό σε διάγραμμα Sankey με χρωματική κωδικοποίηση.",
+      theme_label: "Θέμα",
+      theme_option_light: "Φωτεινό",
+      theme_option_dark: "Σκοτεινό",
     },
     preview: {
       heading: "Προεπισκόπηση εντοπισμού",
@@ -476,6 +484,7 @@ const UI_MESSAGES = {
 };
 
 let currentLocale = "en";
+let currentTheme = DEFAULT_THEME;
 const yearMetadataByYear = new Map();
 let currentYearMetadata = null;
 let currentEmploymentMode = "gross";
@@ -490,6 +499,7 @@ let pendingCalculatorState = null;
 let calculatorStatePersistHandle = null;
 
 const localeSelect = document.getElementById("locale-select");
+const themeSelect = document.getElementById("theme-select");
 const previewButton = document.getElementById("preview-button");
 const previewStatus = document.getElementById("preview-status");
 const previewJson = document.getElementById("preview-json");
@@ -619,6 +629,61 @@ function t(key, replacements = {}, locale = currentLocale) {
   return formatTemplate(template, replacements);
 }
 
+function getCssVariable(name, fallback = "") {
+  if (typeof window === "undefined") {
+    return fallback;
+  }
+  const styles = window.getComputedStyle(document.documentElement);
+  const value = styles.getPropertyValue(name);
+  return value ? value.trim() : fallback;
+}
+
+function colorWithAlpha(color, alpha, fallback) {
+  const trimmed = (color || "").trim();
+  if (!trimmed) {
+    return fallback;
+  }
+
+  if (trimmed.startsWith("#")) {
+    const hex = trimmed.slice(1);
+    let normalized = hex;
+    if (hex.length === 3) {
+      normalized = hex
+        .split("")
+        .map((char) => char + char)
+        .join("");
+    }
+    if (normalized.length !== 6) {
+      return fallback;
+    }
+    const value = Number.parseInt(normalized, 16);
+    if (!Number.isFinite(value)) {
+      return fallback;
+    }
+    const r = (value >> 16) & 255;
+    const g = (value >> 8) & 255;
+    const b = value & 255;
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  }
+
+  const rgbMatch = trimmed.match(/rgba?\(([^)]+)\)/i);
+  if (rgbMatch) {
+    const parts = rgbMatch[1]
+      .split(",")
+      .map((part) => Number.parseFloat(part.trim()))
+      .filter((value) => Number.isFinite(value));
+    if (parts.length >= 3) {
+      const [r, g, b] = parts;
+      return `rgba(${Math.max(0, Math.min(255, r))}, ${Math.max(
+        0,
+        Math.min(255, g),
+      )}, ${Math.max(0, Math.min(255, b))}, ${alpha})`;
+    }
+  }
+
+  return fallback;
+}
+
 function resolveStoredLocale(defaultLocale = "en") {
   try {
     const stored = window.localStorage.getItem(STORAGE_KEY);
@@ -634,6 +699,27 @@ function persistLocale(locale) {
     window.localStorage.setItem(STORAGE_KEY, locale);
   } catch (error) {
     console.warn("Unable to persist locale preference", error);
+  }
+}
+
+function resolveStoredTheme(defaultTheme = DEFAULT_THEME) {
+  try {
+    const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
+    if (stored === "dark" || stored === "light") {
+      return stored;
+    }
+    return defaultTheme;
+  } catch (error) {
+    console.warn("Unable to access theme preference", error);
+    return defaultTheme;
+  }
+}
+
+function persistTheme(theme) {
+  try {
+    window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+  } catch (error) {
+    console.warn("Unable to persist theme preference", error);
   }
 }
 
@@ -760,6 +846,19 @@ function resolveLocaleTag(locale) {
   return locale || "en-GB";
 }
 
+function applyTheme(theme) {
+  const normalized = theme === "dark" ? "dark" : DEFAULT_THEME;
+  currentTheme = normalized;
+  document.documentElement.setAttribute("data-theme", normalized);
+  if (themeSelect) {
+    themeSelect.value = normalized;
+  }
+  persistTheme(normalized);
+  if (lastCalculation) {
+    renderCalculation(lastCalculation);
+  }
+}
+
 function applyLocale(locale) {
   currentLocale = locale;
   persistLocale(locale);
@@ -819,6 +918,17 @@ function setPreviewStatus(message, { isError = false, showJson = false } = {}) {
   if (previewJson) {
     previewJson.hidden = !showJson;
   }
+}
+
+function initialiseThemeControls() {
+  if (!themeSelect) {
+    return;
+  }
+
+  themeSelect.addEventListener("change", (event) => {
+    const value = typeof event.target?.value === "string" ? event.target.value : DEFAULT_THEME;
+    applyTheme(value);
+  });
 }
 
 async function requestPreview(locale) {
@@ -2119,17 +2229,42 @@ function renderSankey(result) {
     net: t("sankey.net"),
   };
 
+  const flowTaxes = getCssVariable("--flow-taxes", "#d63384");
+  const flowContributions = getCssVariable("--flow-contributions", "#20c997");
+  const flowNet = getCssVariable("--flow-net", "#0d6efd");
+  const textColor = getCssVariable("--text-body", "#212529");
+  const subtleColor = getCssVariable("--text-subtle", "#495057");
+  const nodeLineColor = getCssVariable("--sankey-node-outline", "#adb5bd");
+  const linkOutlineColor = getCssVariable(
+    "--sankey-link-outline",
+    "rgba(255, 255, 255, 0.9)",
+  );
+  const tooltipBackground = getCssVariable("--tooltip-bg", "#212529");
+  const tooltipText = getCssVariable("--tooltip-text", "#ffffff");
+
   const linkColorPalette = {
-    taxes: "rgba(214, 51, 132, 0.72)",
-    contributions: "rgba(32, 201, 151, 0.72)",
-    net: "rgba(13, 110, 253, 0.72)",
-    default: "rgba(73, 80, 87, 0.6)",
+    taxes: colorWithAlpha(flowTaxes, 0.72, "rgba(214, 51, 132, 0.72)"),
+    contributions: colorWithAlpha(
+      flowContributions,
+      0.72,
+      "rgba(32, 201, 151, 0.72)",
+    ),
+    net: colorWithAlpha(flowNet, 0.72, "rgba(13, 110, 253, 0.72)"),
+    default: colorWithAlpha(subtleColor, 0.6, "rgba(73, 80, 87, 0.6)"),
   };
 
   const nodeAccentColors = {
-    [sankeyTotals.taxes]: "rgba(214, 51, 132, 0.18)",
-    [sankeyTotals.contributions]: "rgba(32, 201, 151, 0.18)",
-    [sankeyTotals.net]: "rgba(13, 110, 253, 0.18)",
+    [sankeyTotals.taxes]: colorWithAlpha(
+      flowTaxes,
+      0.18,
+      "rgba(214, 51, 132, 0.18)",
+    ),
+    [sankeyTotals.contributions]: colorWithAlpha(
+      flowContributions,
+      0.18,
+      "rgba(32, 201, 151, 0.18)",
+    ),
+    [sankeyTotals.net]: colorWithAlpha(flowNet, 0.18, "rgba(13, 110, 253, 0.18)"),
   };
 
   const ensureNode = (label) => {
@@ -2270,8 +2405,14 @@ function renderSankey(result) {
   }
 
   const nodeColors = nodeLabels.map(
-    (label) => nodeAccentColors[label] || "rgba(33, 37, 41, 0.08)",
+    (label) =>
+      nodeAccentColors[label] || colorWithAlpha(subtleColor, 0.12, "rgba(33, 37, 41, 0.08)"),
   );
+
+  const containerWidth = sankeyChart.clientWidth || sankeyWrapper.clientWidth || 640;
+  const chartHeight = Math.max(320, Math.min(480, Math.round(containerWidth * 0.55)));
+  sankeyChart.style.minHeight = `${chartHeight}px`;
+  sankeyChart.style.height = `${chartHeight}px`;
 
   const data = [
     {
@@ -2281,7 +2422,7 @@ function renderSankey(result) {
         pad: 18,
         thickness: 18,
         label: nodeLabels,
-        line: { color: "#adb5bd", width: 1 },
+        line: { color: nodeLineColor, width: 1 },
         color: nodeColors,
       },
       link: {
@@ -2290,12 +2431,12 @@ function renderSankey(result) {
         value: values,
         label: linkLabels,
         color: linkColors,
-        line: { color: "rgba(255, 255, 255, 0.9)", width: 1.2 },
+        line: { color: linkOutlineColor, width: 1.2 },
         hovertemplate: "%{label}<extra></extra>",
       },
       hoverlabel: {
-        bgcolor: "#212529",
-        font: { color: "#ffffff" },
+        bgcolor: tooltipBackground,
+        font: { color: tooltipText },
       },
     },
   ];
@@ -2304,7 +2445,8 @@ function renderSankey(result) {
     margin: { l: 10, r: 10, t: 10, b: 10 },
     paper_bgcolor: "rgba(0,0,0,0)",
     plot_bgcolor: "rgba(0,0,0,0)",
-    font: { size: 12, color: "#212529" },
+    font: { size: 12, color: textColor },
+    height: chartHeight,
   };
 
   Plotly.react(sankeyChart, data, layout, { displayModeBar: false, responsive: true });
@@ -2823,10 +2965,13 @@ function initialiseCalculator() {
 }
 
 function bootstrap() {
+  const initialTheme = resolveStoredTheme();
+  applyTheme(initialTheme);
   const initialLocale = resolveStoredLocale();
   updatePreviewIdleMessage();
   applyLocale(initialLocale);
 
+  initialiseThemeControls();
   initialisePreviewControls();
   initialiseCalculator();
 
