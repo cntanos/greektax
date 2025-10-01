@@ -95,12 +95,24 @@ class PensionConfig:
 
 
 @dataclass(frozen=True)
+class TradeFeeSunset:
+    """Represents a scheduled or proposed sunset for the trade fee."""
+
+    status_key: str
+    year: Optional[int]
+    description_key: Optional[str] = None
+    documentation_key: Optional[str] = None
+    documentation_url: Optional[str] = None
+
+
+@dataclass(frozen=True)
 class TradeFeeConfig:
     """Settings for the business activity fee (τέλος επιτηδεύματος)."""
 
     standard_amount: float
     reduced_amount: Optional[float] = None
     newly_self_employed_reduction_years: Optional[int] = None
+    sunset: Optional[TradeFeeSunset] = None
 
 
 @dataclass(frozen=True)
@@ -191,6 +203,18 @@ class DeductionConfig:
 
 
 @dataclass(frozen=True)
+class YearWarning:
+    """Structured warning surfaced for a configured tax year."""
+
+    id: str
+    message_key: str
+    severity: str
+    applies_to: Sequence[str]
+    documentation_key: Optional[str] = None
+    documentation_url: Optional[str] = None
+
+
+@dataclass(frozen=True)
 class YearConfiguration:
     """Structured representation of a tax year configuration."""
 
@@ -204,6 +228,7 @@ class YearConfiguration:
     rental: RentalConfig
     investment: InvestmentConfig
     deductions: DeductionConfig
+    warnings: Sequence[YearWarning]
 
 
 def _parse_tax_brackets(brackets: Iterable[Mapping[str, Any]]) -> Sequence[TaxBracket]:
@@ -371,15 +396,70 @@ def _parse_trade_fee(raw: Mapping[str, Any]) -> TradeFeeConfig:
     if "standard_amount" not in raw:
         raise ConfigurationError("Trade fee configuration requires 'standard_amount'")
 
-    standard = float(raw["standard_amount"])
-    reduced = raw.get("reduced_amount")
-    reduction_years = raw.get("newly_self_employed_reduction_years")
+    standard_amount = float(raw["standard_amount"])
+    if standard_amount < 0:
+        raise ConfigurationError("'standard_amount' must be a non-negative number")
+
+    reduced_raw = raw.get("reduced_amount")
+    reduced_amount = float(reduced_raw) if reduced_raw is not None else None
+    if reduced_amount is not None and reduced_amount < 0:
+        raise ConfigurationError("'reduced_amount' must be non-negative when provided")
+
+    reduction_years_raw = raw.get("newly_self_employed_reduction_years")
+    reduction_years = (
+        int(reduction_years_raw) if reduction_years_raw is not None else None
+    )
+    if reduction_years is not None and reduction_years <= 0:
+        raise ConfigurationError(
+            "'newly_self_employed_reduction_years' must be a positive integer"
+        )
+
+    sunset_raw = raw.get("sunset")
+    sunset: Optional[TradeFeeSunset] = None
+    if sunset_raw is not None:
+        if not isinstance(sunset_raw, Mapping):
+            raise ConfigurationError("'sunset' must be defined using a mapping when provided")
+
+        status_key_raw = sunset_raw.get("status_key")
+        if not status_key_raw or not isinstance(status_key_raw, str):
+            raise ConfigurationError("Trade fee sunset requires a 'status_key' string")
+
+        year_raw = sunset_raw.get("year")
+        sunset_year = int(year_raw) if year_raw is not None else None
+        if sunset_year is not None and sunset_year <= 0:
+            raise ConfigurationError("Trade fee sunset 'year' must be a positive integer")
+
+        description_key_raw = sunset_raw.get("description_key")
+        if description_key_raw is not None and not isinstance(description_key_raw, str):
+            raise ConfigurationError(
+                "Trade fee sunset 'description_key' must be a string when provided"
+            )
+
+        documentation_key_raw = sunset_raw.get("documentation_key")
+        if documentation_key_raw is not None and not isinstance(documentation_key_raw, str):
+            raise ConfigurationError(
+                "Trade fee sunset 'documentation_key' must be a string when provided"
+            )
+
+        documentation_url_raw = sunset_raw.get("documentation_url")
+        if documentation_url_raw is not None and not isinstance(documentation_url_raw, str):
+            raise ConfigurationError(
+                "Trade fee sunset 'documentation_url' must be a string when provided"
+            )
+
+        sunset = TradeFeeSunset(
+            status_key=status_key_raw,
+            year=sunset_year,
+            description_key=description_key_raw,
+            documentation_key=documentation_key_raw,
+            documentation_url=documentation_url_raw,
+        )
 
     return TradeFeeConfig(
-        standard_amount=standard,
-        reduced_amount=float(reduced) if reduced is not None else None,
-        newly_self_employed_reduction_years=
-        int(reduction_years) if reduction_years is not None else None,
+        standard_amount=standard_amount,
+        reduced_amount=reduced_amount,
+        newly_self_employed_reduction_years=reduction_years,
+        sunset=sunset,
     )
 
 
@@ -630,6 +710,68 @@ def _parse_deductions_config(raw: Optional[Mapping[str, Any]]) -> DeductionConfi
     return DeductionConfig(hints=hints)
 
 
+def _parse_year_warnings(raw: Optional[Iterable[Mapping[str, Any]]]) -> Sequence[YearWarning]:
+    if raw is None:
+        return tuple()
+
+    if not isinstance(raw, Iterable):
+        raise ConfigurationError("'warnings' must be defined as an iterable when provided")
+
+    warnings: list[YearWarning] = []
+    for entry in raw:
+        if not isinstance(entry, Mapping):
+            raise ConfigurationError("Each warning definition must be a mapping")
+
+        warning_id = entry.get("id")
+        if not warning_id or not isinstance(warning_id, str):
+            raise ConfigurationError("Warnings require a string 'id'")
+
+        message_key = entry.get("message_key")
+        if not message_key or not isinstance(message_key, str):
+            raise ConfigurationError("Warnings require a 'message_key' string")
+
+        severity_raw = entry.get("severity", "info")
+        severity = str(severity_raw).lower()
+        if severity not in {"info", "warning", "error"}:
+            raise ConfigurationError(
+                "Warning 'severity' must be one of: info, warning, error"
+            )
+
+        applies_to_raw = entry.get("applies_to", [])
+        if applies_to_raw is None:
+            applies_to_raw = []
+        if not isinstance(applies_to_raw, Iterable):
+            raise ConfigurationError(
+                "Warning 'applies_to' must be an iterable when provided"
+            )
+        applies_to = tuple(str(item) for item in applies_to_raw)
+
+        documentation_key_raw = entry.get("documentation_key")
+        if documentation_key_raw is not None and not isinstance(documentation_key_raw, str):
+            raise ConfigurationError(
+                "Warning 'documentation_key' must be a string when provided"
+            )
+
+        documentation_url_raw = entry.get("documentation_url")
+        if documentation_url_raw is not None and not isinstance(documentation_url_raw, str):
+            raise ConfigurationError(
+                "Warning 'documentation_url' must be a string when provided"
+            )
+
+        warnings.append(
+            YearWarning(
+                id=warning_id,
+                message_key=message_key,
+                severity=severity,
+                applies_to=applies_to,
+                documentation_key=documentation_key_raw,
+                documentation_url=documentation_url_raw,
+            )
+        )
+
+    return tuple(warnings)
+
+
 def _parse_year_configuration(year: int, raw: Mapping[str, Any]) -> YearConfiguration:
     income_section = raw.get("income")
     if not isinstance(income_section, Mapping):
@@ -688,6 +830,7 @@ def _parse_year_configuration(year: int, raw: Mapping[str, Any]) -> YearConfigur
         rental=_parse_rental_config(rental_raw),
         investment=_parse_investment_config(investment_raw),
         deductions=_parse_deductions_config(raw.get("deductions")),
+        warnings=_parse_year_warnings(raw.get("warnings")),
     )
 
 

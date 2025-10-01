@@ -28,9 +28,17 @@ def test_list_years_endpoint(client: FlaskClient) -> None:
     freelance_meta = current_year["freelance"]
     trade_fee = freelance_meta["trade_fee"]
     assert trade_fee["standard_amount"] > trade_fee.get("reduced_amount", 0)
+    assert "sunset" in trade_fee
+    sunset = trade_fee["sunset"]
+    assert sunset["status_key"].startswith("statuses.trade_fee")
+    assert sunset["documentation_url"].startswith("https://")
     categories = freelance_meta["efka_categories"]
     assert isinstance(categories, list)
     assert any(category["id"] == "general_a" for category in categories)
+
+    warnings = current_year["warnings"]
+    assert isinstance(warnings, list) and warnings
+    assert any(entry["id"] == "config.pending_deduction_updates" for entry in warnings)
 
 
 def test_investment_categories_endpoint(client: FlaskClient) -> None:
