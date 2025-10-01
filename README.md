@@ -60,6 +60,13 @@ Additional tooling configured for future sprints:
 - `ruff` for linting (`ruff check src tests`)
 - `mypy` for static type checks (`mypy src`)
 
+## Brand & Media Assets
+
+Binary media files are intentionally not stored in this repository. When UI work
+needs CogniSys-branded imagery or logos, reference the assets hosted on
+https://www.cognisys.gr/ or reproduce them with CSS/SVG so pull requests remain
+text-only.
+
 ## Roadmap
 
 Development follows iterative sprints grouped by epics. Each sprint update will
