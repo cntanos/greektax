@@ -105,6 +105,27 @@ endpoint without rebuilding the assets. The lookup order is:
 The chosen value is normalised to remove trailing slashes before being used in
 requests.
 
+If you cannot inject the override before the bundle executes, you can adjust
+the API base at runtime by either dispatching an event or calling the exposed
+helper:
+
+```html
+<script>
+  window.dispatchEvent(
+    new CustomEvent("greektax:set-api-base", {
+      detail: { apiBase: "https://example.com/custom/api" },
+    }),
+  );
+
+  // or use the helper attached to the global namespace
+  window.GreekTax?.setApiBase("https://example.com/custom/api");
+  console.log(window.GreekTax?.getApiBase());
+</script>
+```
+
+Both approaches update the active base immediately and store it for subsequent
+requests.
+
 ## Brand & Media Assets
 
 Binary media files are intentionally not stored in this repository. When UI work

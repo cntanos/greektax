@@ -70,8 +70,110 @@ const readConfiguredApiBase = () => {
   );
 };
 
-const CONFIGURED_API_BASE = readConfiguredApiBase();
-let resolvedApiBase = CONFIGURED_API_BASE ?? null;
+let configuredApiBase = readConfiguredApiBase();
+let resolvedApiBase = configuredApiBase ?? null;
+
+const applyResolvedApiBase = (base) => {
+  const sanitized = sanitizeApiBase(base);
+  resolvedApiBase = sanitized ?? null;
+
+  if (typeof window !== "undefined") {
+    if (resolvedApiBase) {
+      window.__GREEKTAX_ACTIVE_API_BASE__ = resolvedApiBase;
+    } else {
+      delete window.__GREEKTAX_ACTIVE_API_BASE__;
+    }
+  }
+};
+
+const getConfiguredApiBase = () => configuredApiBase ?? null;
+
+const setConfiguredApiBase = (candidate) => {
+  const sanitized = sanitizeApiBase(candidate);
+  configuredApiBase = sanitized ?? null;
+
+  if (sanitized) {
+    applyResolvedApiBase(sanitized);
+  }
+
+  return configuredApiBase;
+};
+
+applyResolvedApiBase(resolvedApiBase);
+
+const installApiBaseOverrideHooks = () => {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const applyOverride = (value, { ignoreUndefined } = {}) => {
+    if (value === undefined && ignoreUndefined) {
+      return;
+    }
+
+    setConfiguredApiBase(value);
+  };
+
+  const makeReactiveProperty = (property) => {
+    const descriptor = Object.getOwnPropertyDescriptor(window, property);
+    if (descriptor && descriptor.configurable === false) {
+      return;
+    }
+
+    let internalValue;
+    if (descriptor?.get || descriptor?.set) {
+      try {
+        internalValue = descriptor.get?.call(window);
+      } catch (error) {
+        console.warn(
+          `Unable to read existing value for ${property} override.`,
+          error,
+        );
+      }
+    } else if (descriptor) {
+      internalValue = descriptor.value;
+    } else {
+      internalValue = window[property];
+    }
+
+    if (internalValue !== undefined) {
+      applyOverride(internalValue, { ignoreUndefined: true });
+    }
+
+    Object.defineProperty(window, property, {
+      configurable: true,
+      enumerable: true,
+      get() {
+        return internalValue;
+      },
+      set(value) {
+        internalValue = value;
+        applyOverride(value, { ignoreUndefined: true });
+      },
+    });
+  };
+
+  ["__GREEKTAX_API_BASE__", "GREEKTAX_API_BASE"].forEach(makeReactiveProperty);
+
+  window.addEventListener("greektax:set-api-base", (event) => {
+    applyOverride(event?.detail?.apiBase);
+  });
+
+  const namespace = (window.GreekTax = window.GreekTax || {});
+  namespace.setApiBase = (value) => {
+    applyOverride(value);
+    return getConfiguredApiBase();
+  };
+  namespace.getApiBase = () => resolvedApiBase ?? getConfiguredApiBase();
+  namespace.clearApiBase = () => {
+    setConfiguredApiBase(null);
+    applyResolvedApiBase(null);
+    return getConfiguredApiBase();
+  };
+  namespace.getConfiguredApiBase = () => getConfiguredApiBase();
+};
+
+installApiBaseOverrideHooks();
 
 const dedupeApiBases = (candidates) => {
   const seen = new Set();
@@ -172,8 +274,9 @@ const computeDefaultApiBaseCandidates = () => {
 };
 
 const getApiBaseCandidates = () => {
-  if (CONFIGURED_API_BASE) {
-    return [CONFIGURED_API_BASE];
+  const configuredBase = getConfiguredApiBase();
+  if (configuredBase) {
+    return [configuredBase];
   }
 
   return computeDefaultApiBaseCandidates();
@@ -229,10 +332,7 @@ const fetchFromApi = async (path, options = {}) => {
         continue;
       }
 
-      resolvedApiBase = base;
-      if (typeof window !== "undefined") {
-        window.__GREEKTAX_ACTIVE_API_BASE__ = base;
-      }
+      applyResolvedApiBase(base);
 
       return response;
     } catch (error) {
