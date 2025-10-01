@@ -6,7 +6,7 @@
  * returned by the Flask back-end.
  */
 
-const API_BASE = "/api/v1";
+const API_BASE = "https://cntanos.pythonanywhere.com/api/v1";
 const CALCULATIONS_ENDPOINT = `${API_BASE}/calculations`;
 const CONFIG_YEARS_ENDPOINT = `${API_BASE}/config/years`;
 const CONFIG_INVESTMENT_ENDPOINT = (year, locale) =>
