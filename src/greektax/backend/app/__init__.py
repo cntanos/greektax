@@ -1,10 +1,25 @@
 """Application factory for GreekTax backend services."""
 
+from importlib import util as importlib_util
 from pathlib import Path
+from typing import TYPE_CHECKING, Callable
+from warnings import warn
 
-from flask import Flask, jsonify, send_from_directory
-from flask_cors import CORS
+from flask import Flask, jsonify, request, send_from_directory
+from flask.typing import ResponseReturnValue
 from werkzeug.exceptions import BadRequest
+
+if TYPE_CHECKING:  # pragma: no cover - only for static type checkers
+    from flask_cors import CORS as FlaskCorsFactory
+
+CORS: Callable[..., None] | None
+
+if importlib_util.find_spec("flask_cors") is not None:
+    from flask_cors import CORS as _cors
+
+    CORS = _cors
+else:  # pragma: no cover - executed only when optional dependency missing
+    CORS = None
 
 from .routes import register_routes
 
@@ -14,18 +29,59 @@ FRONTEND_ROOT = Path(__file__).resolve().parents[4] / "src" / "frontend"
 ASSETS_ROOT = FRONTEND_ROOT / "assets"
 
 
+def _apply_default_cors_headers(response: ResponseReturnValue) -> ResponseReturnValue:
+    """Attach permissive CORS headers when Flask-Cors is unavailable."""
+
+    if not hasattr(response, "headers"):
+        return response
+
+    origin = request.headers.get("Origin")
+    if origin:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers.setdefault("Vary", "Origin")
+        response.headers["Access-Control-Allow-Credentials"] = "false"
+        response.headers["Access-Control-Allow-Headers"] = request.headers.get(
+            "Access-Control-Request-Headers",
+            "Content-Type",
+        )
+        response.headers["Access-Control-Allow-Methods"] = request.headers.get(
+            "Access-Control-Request-Method",
+            request.method,
+        )
+
+    return response
+
+
 def create_app() -> Flask:
     """Create and configure the Flask application instance."""
 
     app = Flask(__name__)
 
-    CORS(
-        app,
-        resources={r"/api/*": {"origins": "*"}},
-        supports_credentials=False,
-        methods=["GET", "OPTIONS", "POST"],
-        allow_headers=["Content-Type"],
-    )
+    if CORS is not None:
+        CORS(
+            app,
+            resources={r"/api/*": {"origins": "*"}},
+            supports_credentials=False,
+            methods=["GET", "OPTIONS", "POST"],
+            allow_headers=["Content-Type"],
+        )
+    else:
+        warn(
+            "Flask-Cors is not installed; falling back to a minimal CORS implementation. "
+            "Install the 'Flask-Cors' extra for production use.",
+            stacklevel=1,
+        )
+
+        @app.before_request
+        def _handle_preflight() -> ResponseReturnValue | None:
+            if request.method == "OPTIONS":
+                response = app.make_default_options_response()
+                return _apply_default_cors_headers(response)
+            return None
+
+        @app.after_request
+        def _attach_cors_headers(response: ResponseReturnValue) -> ResponseReturnValue:
+            return _apply_default_cors_headers(response)
 
     register_routes(app)
 
