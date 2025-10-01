@@ -76,31 +76,60 @@ deliver user value in incremental, testable slices.
 - Regression scenarios and unit tests validating VAT/ENFIA obligations within
   the calculation engine.
 
-## Sprint 5 (Current)
+## Sprint 5 (Completed)
+
+**Highlights**
+- Extended configuration metadata endpoints with locale-aware deduction guidance
+  for form tooling.
+- Strengthened front-end localisation and validation across all calculator
+  controls.
+- Delivered the first iteration of shareable summaries with HTML exports and a
+  luxury-tax-focused regression scenario.
+
+## Sprint 6 (Completed)
+
+**Highlights**
+- Published richer deduction metadata, including allowance thresholds and a 2025
+  regression configuration.
+- Implemented share/export services supporting HTML, CSV, and PDF outputs with
+  bundled fonts and localized labels.
+- Enhanced the front-end with localized allowance rendering, share links, and
+  download controls alongside expanded test coverage.
+
+## Sprint 7 (Completed)
+
+**Highlights**
+- Hardened shareable summary storage with explicit expiry windows, capacity
+  safeguards, and regression tests for repository lifecycle behaviour.
+- Surfaced share-link expiry metadata through the API and localized UI
+  messaging to set user expectations.
+- Added regression and unit coverage validating repository expiration,
+  capacity limits, and end-to-end summary expiry handling.
+
+## Sprint 8 (Current)
 
 **Objectives**
-- Extend configuration metadata endpoints with deduction guidance for form
-  tooling.
-- Strengthen front-end localisation and validation across all calculator
-  controls.
-- Provide printable and shareable summaries while tightening regression coverage
-  around luxury-tax and VAT obligations.
+- Provide a persistent storage option for shareable summaries that survives
+  process restarts while remaining thread-safe under concurrent access.
+- Improve PDF export fidelity for Greek locale output, including reliable font
+  rendering and support for multi-page summaries.
+- Gather structured user feedback on expiry messaging to refine UI cues and
+  accessibility copy.
 
 **Deliverables (to date)**
-- `/api/v1/config/<year>/deductions` endpoint returning locale-aware deduction
-  hints with validation metadata.
-- Calculator interface that localises static copy, labels, and validation
-  feedback when switching locales.
-- Shareable HTML summary generator and expanded regression scenarios including a
-  luxury-tax-only edge case.
+- Introduced a SQLite-backed share repository selectable via configuration and
+  validated through concurrency-focused unit and integration tests.
+- Embedded a Unicode-capable font pipeline for PDF generation with enhanced
+  layout to better support Greek labels and multi-page detail sections.
+- Added front-end feedback prompts and a backend collection endpoint capturing
+  expiry clarity responses for iterative UI improvements.
 
-**Next Steps (Preview of Sprint 6)**
-- Publish richer deduction metadata (e.g., allowance thresholds) for enhanced UI
-  helpers and contextual education.
-- Explore downloadable PDF/CSV exports for summaries alongside persisted share
-  links.
-- Expand regression coverage to multi-year comparisons and printable export
-  rendering fidelity.
+**Next Steps (Preview of Sprint 9)**
+- Analyse collected expiry feedback to refine localisation copy and visual
+  cues.
+- Prototype persistent share export cleanup jobs and operational dashboards.
+- Expand PDF exports with richer tables, pagination cues, and locale-aware
+  typography tuning.
 
 > _This plan is updated at the end of each sprint to capture accomplishments_
 > _and upcoming milestones._

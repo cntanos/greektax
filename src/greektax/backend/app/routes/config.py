@@ -78,6 +78,32 @@ def get_deduction_hints(year: int) -> tuple[Any, int]:
         }
         if hint.description_key:
             entry["description"] = translator(hint.description_key)
+
+        allowances: list[Dict[str, Any]] = []
+        for allowance in hint.allowances:
+            allowance_entry: Dict[str, Any] = {
+                "label": translator(allowance.label_key),
+                "thresholds": [],
+            }
+            if allowance.description_key:
+                allowance_entry["description"] = translator(allowance.description_key)
+
+            for threshold in allowance.thresholds:
+                threshold_entry: Dict[str, Any] = {
+                    "label": translator(threshold.label_key),
+                }
+                if threshold.amount is not None:
+                    threshold_entry["amount"] = threshold.amount
+                if threshold.percentage is not None:
+                    threshold_entry["percentage"] = threshold.percentage
+                if threshold.notes_key:
+                    threshold_entry["notes"] = translator(threshold.notes_key)
+                allowance_entry["thresholds"].append(threshold_entry)
+
+            allowances.append(allowance_entry)
+
+        if allowances:
+            entry["allowances"] = allowances
         hints.append(entry)
 
     payload = {"year": year, "locale": translator.locale, "hints": hints}

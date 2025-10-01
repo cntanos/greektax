@@ -115,6 +115,26 @@ class DeductionHint:
     description_key: Optional[str]
     input_id: Optional[str]
     validation: Dict[str, Any]
+    allowances: Sequence["DeductionAllowance"]
+
+
+@dataclass(frozen=True)
+class DeductionThreshold:
+    """Specific allowance thresholds exposed for deduction hints."""
+
+    label_key: str
+    amount: Optional[float]
+    percentage: Optional[float]
+    notes_key: Optional[str]
+
+
+@dataclass(frozen=True)
+class DeductionAllowance:
+    """Structured allowance guidance for deduction hints."""
+
+    label_key: str
+    description_key: Optional[str]
+    thresholds: Sequence[DeductionThreshold]
 
 
 @dataclass(frozen=True)
@@ -275,6 +295,69 @@ def _parse_investment_config(raw: Mapping[str, Any]) -> InvestmentConfig:
     return InvestmentConfig(rates=rates)
 
 
+def _parse_deduction_threshold(raw: Mapping[str, Any]) -> DeductionThreshold:
+    label_key = raw.get("label_key")
+    if not label_key or not isinstance(label_key, str):
+        raise ConfigurationError("Deduction thresholds require a 'label_key' string")
+
+    amount_raw = raw.get("amount")
+    percentage_raw = raw.get("percentage")
+    notes_key_raw = raw.get("notes_key")
+
+    amount = float(amount_raw) if amount_raw is not None else None
+    percentage = float(percentage_raw) if percentage_raw is not None else None
+    if percentage is not None and not (0.0 <= percentage <= 1.0):
+        raise ConfigurationError("Allowance percentages must be between 0 and 1")
+
+    if (
+        amount is None
+        and percentage is None
+        and notes_key_raw is None
+    ):
+        raise ConfigurationError(
+            "Deduction thresholds require at least an amount, percentage, or notes"
+        )
+
+    if notes_key_raw is not None and not isinstance(notes_key_raw, str):
+        raise ConfigurationError("Threshold 'notes_key' must be a string when provided")
+
+    return DeductionThreshold(
+        label_key=label_key,
+        amount=amount,
+        percentage=percentage,
+        notes_key=notes_key_raw,
+    )
+
+
+def _parse_deduction_allowance(raw: Mapping[str, Any]) -> DeductionAllowance:
+    label_key = raw.get("label_key")
+    if not label_key or not isinstance(label_key, str):
+        raise ConfigurationError("Deduction allowances require a 'label_key' string")
+
+    description_key_raw = raw.get("description_key")
+    if description_key_raw is not None and not isinstance(description_key_raw, str):
+        raise ConfigurationError(
+            "Deduction allowance 'description_key' must be a string when provided"
+        )
+
+    thresholds_raw = raw.get("thresholds", [])
+    if thresholds_raw is None:
+        thresholds_raw = []
+    if not isinstance(thresholds_raw, Iterable):
+        raise ConfigurationError("Deduction allowance 'thresholds' must be an iterable")
+
+    thresholds = tuple(
+        _parse_deduction_threshold(threshold)
+        for threshold in thresholds_raw
+    )
+
+    return DeductionAllowance(
+        label_key=label_key,
+        description_key=description_key_raw,
+        thresholds=thresholds,
+    )
+
+
 def _parse_deduction_hint(raw: Mapping[str, Any]) -> DeductionHint:
     hint_id = raw.get("id")
     if not hint_id or not isinstance(hint_id, str):
@@ -303,6 +386,16 @@ def _parse_deduction_hint(raw: Mapping[str, Any]) -> DeductionHint:
     if not isinstance(validation_raw, Mapping):
         raise ConfigurationError("'validation' must be a mapping when provided")
 
+    allowances_raw = raw.get("allowances", [])
+    if allowances_raw is None:
+        allowances_raw = []
+    if not isinstance(allowances_raw, Iterable):
+        raise ConfigurationError("'allowances' must be an iterable when provided")
+
+    allowances = tuple(
+        _parse_deduction_allowance(allowance) for allowance in allowances_raw
+    )
+
     return DeductionHint(
         id=str(hint_id),
         applies_to=tuple(applies_to),
@@ -310,6 +403,7 @@ def _parse_deduction_hint(raw: Mapping[str, Any]) -> DeductionHint:
         description_key=description_key_raw,
         input_id=input_id_raw,
         validation=dict(validation_raw),
+        allowances=allowances,
     )
 
 

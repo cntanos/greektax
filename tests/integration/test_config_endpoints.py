@@ -12,7 +12,8 @@ def test_list_years_endpoint(client: FlaskClient) -> None:
     payload = response.get_json()
     years = payload["years"]
     assert any(entry["year"] == 2024 for entry in years)
-    assert payload["default_year"] == 2024
+    assert any(entry["year"] == 2025 for entry in years)
+    assert payload["default_year"] == 2025
 
 
 def test_investment_categories_endpoint(client: FlaskClient) -> None:
@@ -46,3 +47,6 @@ def test_deduction_hints_endpoint(client: FlaskClient) -> None:
     children_hint = hints["dependents.children"]
     assert children_hint["input_id"] == "children-input"
     assert children_hint["description"].startswith("Επηρεάζει")
+    assert children_hint["allowances"]
+    tier_labels = {threshold["label"] for threshold in children_hint["allowances"][0]["thresholds"]}
+    assert "3+ εξαρτώμενα τέκνα" in tier_labels
