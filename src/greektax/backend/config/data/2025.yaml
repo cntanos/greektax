@@ -63,6 +63,42 @@ income:
       standard_amount: 620
       reduced_amount: 310
       newly_self_employed_reduction_years: 5
+    efka_categories:
+      - id: general_a
+        label_key: forms.freelance.efka.category.general_a
+        monthly_amount: 225
+        auxiliary_monthly_amount: 10
+        description_key: forms.freelance.efka.category.general_a_description
+      - id: general_b
+        label_key: forms.freelance.efka.category.general_b
+        monthly_amount: 285
+        auxiliary_monthly_amount: 15
+      - id: reduced
+        label_key: forms.freelance.efka.category.reduced
+        monthly_amount: 160
+        description_key: forms.freelance.efka.category.reduced_description
+  agricultural:
+    tax_brackets:
+      - upper: 10000
+        rate: 0.09
+      - upper: 20000
+        rate: 0.22
+      - upper: 30000
+        rate: 0.28
+      - upper: 40000
+        rate: 0.36
+      - rate: 0.44
+  other:
+    tax_brackets:
+      - upper: 10000
+        rate: 0.09
+      - upper: 20000
+        rate: 0.22
+      - upper: 30000
+        rate: 0.28
+      - upper: 40000
+        rate: 0.36
+      - rate: 0.44
   rental:
     tax_brackets:
       - upper: 12000
@@ -147,3 +183,39 @@ deductions:
           thresholds:
             - label_key: forms.obligations.luxury_allowance.threshold.statement
               notes_key: forms.obligations.luxury_allowance.threshold.statement_note
+    - id: deductions.donations
+      applies_to:
+        - deductions
+      label_key: forms.deductions.donations
+      description_key: forms.deductions.donations_hint
+      input_id: deductions-donations
+      validation:
+        type: currency
+        min: 0
+    - id: deductions.medical
+      applies_to:
+        - deductions
+      label_key: forms.deductions.medical
+      description_key: forms.deductions.medical_hint
+      input_id: deductions-medical
+      validation:
+        type: currency
+        min: 0
+    - id: deductions.education
+      applies_to:
+        - deductions
+      label_key: forms.deductions.education
+      description_key: forms.deductions.education_hint
+      input_id: deductions-education
+      validation:
+        type: currency
+        min: 0
+    - id: deductions.insurance
+      applies_to:
+        - deductions
+      label_key: forms.deductions.insurance
+      description_key: forms.deductions.insurance_hint
+      input_id: deductions-insurance
+      validation:
+        type: currency
+        min: 0

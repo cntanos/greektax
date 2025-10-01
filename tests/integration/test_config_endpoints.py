@@ -25,6 +25,13 @@ def test_list_years_endpoint(client: FlaskClient) -> None:
     assert pension_meta["payroll"]["allowed_payments_per_year"]
     assert pension_meta["contributions"]["employer_rate"] >= 0
 
+    freelance_meta = current_year["freelance"]
+    trade_fee = freelance_meta["trade_fee"]
+    assert trade_fee["standard_amount"] > trade_fee.get("reduced_amount", 0)
+    categories = freelance_meta["efka_categories"]
+    assert isinstance(categories, list)
+    assert any(category["id"] == "general_a" for category in categories)
+
 
 def test_investment_categories_endpoint(client: FlaskClient) -> None:
     response = client.get("/api/v1/config/2024/investment-categories?locale=el")

@@ -35,19 +35,41 @@ class _NormalisedPayload:
     pension_payments_per_year: Optional[int]
     pension_net_target_income: Optional[float]
     freelance_profit: float
-    freelance_contributions: float
+    freelance_category_id: Optional[str]
+    freelance_category_months: Optional[int]
+    freelance_category_contribution: float
+    freelance_additional_contributions: float
+    freelance_auxiliary_contributions: float
     include_trade_fee: bool
+    freelance_trade_fee_location: str
+    freelance_years_active: Optional[int]
+    freelance_newly_self_employed: bool
     rental_gross_income: float
     rental_deductible_expenses: float
     investment_amounts: Mapping[str, float]
     vat_due: float
     enfia_due: float
     luxury_due: float
+    agricultural_gross_revenue: float
+    agricultural_deductible_expenses: float
+    other_taxable_income: float
+    deductions_donations: float
+    deductions_medical: float
+    deductions_education: float
+    deductions_insurance: float
 
     @property
     def freelance_taxable_income(self) -> float:
-        taxable = self.freelance_profit - self.freelance_contributions
+        taxable = self.freelance_profit - self.total_freelance_contributions
         return taxable if taxable > 0 else 0.0
+
+    @property
+    def total_freelance_contributions(self) -> float:
+        return (
+            self.freelance_category_contribution
+            + self.freelance_additional_contributions
+            + self.freelance_auxiliary_contributions
+        )
 
     @property
     def has_employment_income(self) -> bool:
@@ -61,9 +83,36 @@ class _NormalisedPayload:
     def has_freelance_activity(self) -> bool:
         return (
             self.freelance_profit > 0
-            or self.freelance_contributions > 0
+            or self.total_freelance_contributions > 0
             or self.freelance_taxable_income > 0
         )
+
+    @property
+    def agricultural_profit(self) -> float:
+        profit = self.agricultural_gross_revenue - self.agricultural_deductible_expenses
+        return profit if profit > 0 else 0.0
+
+    @property
+    def has_agricultural_income(self) -> bool:
+        return (
+            self.agricultural_gross_revenue > 0
+            or self.agricultural_deductible_expenses > 0
+            or self.agricultural_profit > 0
+        )
+
+    @property
+    def has_other_income(self) -> bool:
+        return self.other_taxable_income > 0
+
+    @property
+    def total_deductions(self) -> float:
+        total = (
+            self.deductions_donations
+            + self.deductions_medical
+            + self.deductions_education
+            + self.deductions_insurance
+        )
+        return total if total > 0 else 0.0
 
     @property
     def rental_taxable_income(self) -> float:
@@ -105,6 +154,7 @@ class _GeneralIncomeComponent:
     taxable_income: float
     credit_eligible: bool
     contributions: float = 0.0
+    deductible_expenses: float = 0.0
     trade_fee: float = 0.0
     tax_before_credit: float = 0.0
     credit: float = 0.0
@@ -113,6 +163,10 @@ class _GeneralIncomeComponent:
     monthly_gross_income: Optional[float] = None
     employee_contributions: float = 0.0
     employer_contributions: float = 0.0
+    category_contributions: float = 0.0
+    additional_contributions: float = 0.0
+    auxiliary_contributions: float = 0.0
+    deductions_applied: float = 0.0
 
     def total_tax(self) -> float:
         total = self.tax_after_credit
@@ -286,12 +340,59 @@ def _normalise_payload(
     else:
         profit = _to_float(profit_value, "freelance.profit")
 
-    contributions = _to_float(
+    category_id_raw = freelance_section.get("efka_category")
+    category_id = str(category_id_raw).strip() if category_id_raw else ""
+    category_config = None
+    if category_id:
+        category_config = next(
+            (entry for entry in config.freelance.efka_categories if entry.id == category_id),
+            None,
+        )
+        if category_config is None:
+            raise ValueError("Unknown EFKA category selection")
+
+    category_months_value = freelance_section.get("efka_months")
+    category_months = None
+    if category_months_value is not None:
+        months = _to_int(category_months_value, "freelance.efka_months")
+        if months > 0:
+            category_months = months
+
+    if category_months is None and category_config is not None:
+        category_months = 12
+
+    category_contribution = 0.0
+    if category_config is not None and category_months:
+        category_contribution = category_config.monthly_amount * category_months
+
+    additional_contributions = _to_float(
         freelance_section.get("mandatory_contributions", 0.0),
         "freelance.mandatory_contributions",
     )
 
+    auxiliary_contributions = _to_float(
+        freelance_section.get("auxiliary_contributions", 0.0),
+        "freelance.auxiliary_contributions",
+    )
+
     include_trade_fee = _to_bool(freelance_section.get("include_trade_fee"), True)
+
+    trade_fee_location_raw = freelance_section.get("trade_fee_location")
+    trade_fee_location = (
+        str(trade_fee_location_raw).strip().lower() if trade_fee_location_raw else ""
+    )
+    if trade_fee_location not in {"", "standard", "reduced"}:
+        raise ValueError("Invalid trade fee location selection")
+    trade_fee_location = trade_fee_location or "standard"
+
+    years_active_value = freelance_section.get("years_active")
+    years_active = None
+    if years_active_value is not None:
+        years_active = _to_int(years_active_value, "freelance.years_active")
+
+    newly_self_employed = _to_bool(
+        freelance_section.get("newly_self_employed"), False
+    )
 
     pension_section = _extract_section(payload, "pension")
     pension_payroll = config.pension.payroll
@@ -363,11 +464,40 @@ def _normalise_payload(
     for key, value in investment_section.items():
         investment_amounts[str(key)] = _to_float(value, f"investment.{key}")
 
+    agricultural_section = _extract_section(payload, "agricultural")
+    agricultural_revenue = _to_float(
+        agricultural_section.get("gross_revenue", 0.0),
+        "agricultural.gross_revenue",
+    )
+    agricultural_expenses = _to_float(
+        agricultural_section.get("deductible_expenses", 0.0),
+        "agricultural.deductible_expenses",
+    )
+
+    other_section = _extract_section(payload, "other")
+    other_income = _to_float(
+        other_section.get("taxable_income", 0.0), "other.taxable_income"
+    )
+
     obligations_section = _extract_section(payload, "obligations")
     vat_due = _to_float(obligations_section.get("vat", 0.0), "obligations.vat")
     enfia_due = _to_float(obligations_section.get("enfia", 0.0), "obligations.enfia")
     luxury_due = _to_float(
         obligations_section.get("luxury", 0.0), "obligations.luxury"
+    )
+
+    deductions_section = _extract_section(payload, "deductions")
+    deductions_donations = _to_float(
+        deductions_section.get("donations", 0.0), "deductions.donations"
+    )
+    deductions_medical = _to_float(
+        deductions_section.get("medical", 0.0), "deductions.medical"
+    )
+    deductions_education = _to_float(
+        deductions_section.get("education", 0.0), "deductions.education"
+    )
+    deductions_insurance = _to_float(
+        deductions_section.get("insurance", 0.0), "deductions.insurance"
     )
 
     normalised = _NormalisedPayload(
@@ -383,14 +513,28 @@ def _normalise_payload(
         pension_payments_per_year=pension_payments,
         pension_net_target_income=pension_net_target,
         freelance_profit=profit,
-        freelance_contributions=contributions,
+        freelance_category_id=category_config.id if category_config else None,
+        freelance_category_months=category_months,
+        freelance_category_contribution=category_contribution,
+        freelance_additional_contributions=additional_contributions,
+        freelance_auxiliary_contributions=auxiliary_contributions,
         include_trade_fee=include_trade_fee,
+        freelance_trade_fee_location=trade_fee_location,
+        freelance_years_active=years_active,
+        freelance_newly_self_employed=newly_self_employed,
         rental_gross_income=rental_gross,
         rental_deductible_expenses=rental_expenses,
         investment_amounts=MappingProxyType(investment_amounts),
         vat_due=vat_due,
         enfia_due=enfia_due,
         luxury_due=luxury_due,
+        agricultural_gross_revenue=agricultural_revenue,
+        agricultural_deductible_expenses=agricultural_expenses,
+        other_taxable_income=other_income,
+        deductions_donations=deductions_donations,
+        deductions_medical=deductions_medical,
+        deductions_education=deductions_education,
+        deductions_insurance=deductions_insurance,
     )
 
     return _apply_net_targets(normalised, config)
@@ -541,7 +685,55 @@ def _calculate_trade_fee(payload: _NormalisedPayload, config: FreelanceConfig) -
         return 0.0
     if payload.freelance_taxable_income <= 0:
         return 0.0
-    return config.trade_fee.standard_amount
+    amount = config.trade_fee.standard_amount
+
+    if (
+        payload.freelance_trade_fee_location == "reduced"
+        and config.trade_fee.reduced_amount is not None
+    ):
+        amount = config.trade_fee.reduced_amount
+
+    if payload.freelance_newly_self_employed:
+        years_active = payload.freelance_years_active or 0
+        reduction_years = config.trade_fee.newly_self_employed_reduction_years
+        if reduction_years is not None and years_active < reduction_years:
+            if config.trade_fee.reduced_amount is not None:
+                amount = min(amount, config.trade_fee.reduced_amount)
+            else:
+                amount = 0.0
+
+    return amount if amount > 0 else 0.0
+
+
+def _apply_deductions_to_components(
+    components: Sequence[_GeneralIncomeComponent],
+    deduction_total: float,
+) -> float:
+    if deduction_total <= 0:
+        return 0.0
+
+    applicable = [
+        component for component in components if component.taxable_income > 0
+    ]
+    total_taxable = sum(component.taxable_income for component in applicable)
+    if total_taxable <= 0:
+        return 0.0
+
+    applied_total = 0.0
+    remaining = min(deduction_total, total_taxable)
+
+    for component in applicable:
+        if remaining <= 0:
+            break
+        share = component.taxable_income / total_taxable if total_taxable > 0 else 0.0
+        reduction = remaining * share
+        if reduction > component.taxable_income:
+            reduction = component.taxable_income
+        component.taxable_income -= reduction
+        component.deductions_applied = reduction
+        applied_total += reduction
+
+    return applied_total
 
 
 def _build_general_income_components(
@@ -616,8 +808,34 @@ def _build_general_income_components(
                 gross_income=payload.freelance_profit,
                 taxable_income=payload.freelance_taxable_income,
                 credit_eligible=False,
-                contributions=payload.freelance_contributions,
+                contributions=payload.total_freelance_contributions,
+                category_contributions=payload.freelance_category_contribution,
+                additional_contributions=payload.freelance_additional_contributions,
+                auxiliary_contributions=payload.freelance_auxiliary_contributions,
                 trade_fee=trade_fee,
+            )
+        )
+
+    if payload.has_agricultural_income:
+        components.append(
+            _GeneralIncomeComponent(
+                category="agricultural",
+                label_key="details.agricultural",
+                gross_income=payload.agricultural_gross_revenue,
+                taxable_income=payload.agricultural_profit,
+                credit_eligible=False,
+                deductible_expenses=payload.agricultural_deductible_expenses,
+            )
+        )
+
+    if payload.has_other_income:
+        components.append(
+            _GeneralIncomeComponent(
+                category="other",
+                label_key="details.other",
+                gross_income=payload.other_taxable_income,
+                taxable_income=payload.other_taxable_income,
+                credit_eligible=False,
             )
         )
 
@@ -679,11 +897,14 @@ def _calculate_general_income_details(
     payload: _NormalisedPayload,
     config: YearConfiguration,
     translator: Translator,
-) -> list[Dict[str, Any]]:
+) -> tuple[list[Dict[str, Any]], float]:
     components = _build_general_income_components(payload, config)
     if not components:
-        return []
+        return [], 0.0
 
+    deductions_applied = _apply_deductions_to_components(
+        components, payload.total_deductions
+    )
     _apply_progressive_tax(components, payload, config)
 
     details: list[Dict[str, Any]] = []
@@ -697,6 +918,11 @@ def _calculate_general_income_details(
             "total_tax": _round_currency(component.total_tax()),
             "net_income": _round_currency(component.net_income()),
         }
+
+        if component.deductible_expenses:
+            detail["deductible_expenses"] = _round_currency(
+                component.deductible_expenses
+            )
 
         if component.category in {"employment", "pension"}:
             detail["tax_before_credits"] = _round_currency(component.tax_before_credit)
@@ -723,6 +949,18 @@ def _calculate_general_income_details(
             detail["trade_fee"] = _round_currency(component.trade_fee)
             if component.trade_fee:
                 detail["trade_fee_label"] = translator("details.trade_fee")
+            if component.category_contributions:
+                detail["category_contributions"] = _round_currency(
+                    component.category_contributions
+                )
+            if component.additional_contributions:
+                detail["additional_contributions"] = _round_currency(
+                    component.additional_contributions
+                )
+            if component.auxiliary_contributions:
+                detail["auxiliary_contributions"] = _round_currency(
+                    component.auxiliary_contributions
+                )
 
         if component.monthly_gross_income is not None:
             detail["monthly_gross_income"] = _round_currency(component.monthly_gross_income)
@@ -736,9 +974,14 @@ def _calculate_general_income_details(
             if net_per_payment is not None:
                 detail["net_income_per_payment"] = _round_currency(net_per_payment)
 
+        if component.deductions_applied:
+            detail["deductions_applied"] = _round_currency(
+                component.deductions_applied
+            )
+
         details.append(detail)
 
-    return details
+    return details, deductions_applied
 
 
 def _calculate_rental(
@@ -881,7 +1124,9 @@ def calculate_tax(payload: Dict[str, Any]) -> Dict[str, Any]:
     translator = get_translator(normalised.locale)
 
     details: list[Dict[str, Any]] = []
-    general_income_details = _calculate_general_income_details(normalised, config, translator)
+    general_income_details, deductions_applied = _calculate_general_income_details(
+        normalised, config, translator
+    )
     details.extend(general_income_details)
 
     rental_detail = _calculate_rental(normalised, config.rental, translator)
@@ -911,6 +1156,8 @@ def calculate_tax(payload: Dict[str, Any]) -> Dict[str, Any]:
     average_monthly_tax = tax_total / 12 if tax_total else 0.0
     effective_tax_rate = (tax_total / income_total) if income_total > 0 else 0.0
 
+    deductions_entered = normalised.total_deductions
+
     return {
         "summary": {
             "income_total": _round_currency(income_total),
@@ -919,6 +1166,8 @@ def calculate_tax(payload: Dict[str, Any]) -> Dict[str, Any]:
             "net_monthly_income": _round_currency(net_monthly_income),
             "average_monthly_tax": _round_currency(average_monthly_tax),
             "effective_tax_rate": _round_rate(effective_tax_rate),
+            "deductions_entered": _round_currency(deductions_entered),
+            "deductions_applied": _round_currency(deductions_applied),
             "labels": {
                 "income_total": translator("summary.income_total"),
                 "tax_total": translator("summary.tax_total"),
@@ -926,6 +1175,8 @@ def calculate_tax(payload: Dict[str, Any]) -> Dict[str, Any]:
                 "net_monthly_income": translator("summary.net_monthly_income"),
                 "average_monthly_tax": translator("summary.average_monthly_tax"),
                 "effective_tax_rate": translator("summary.effective_tax_rate"),
+                "deductions_entered": translator("summary.deductions_entered"),
+                "deductions_applied": translator("summary.deductions_applied"),
             },
         },
         "details": details,

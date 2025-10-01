@@ -126,6 +126,17 @@ header {
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 
+.section-toggle {
+  margin: 1.5rem 0 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.section-toggle label {
+  font-weight: 600;
+}
+
 .form-control {
   display: flex;
   flex-direction: column;

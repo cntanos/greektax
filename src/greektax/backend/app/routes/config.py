@@ -4,14 +4,18 @@ from __future__ import annotations
 
 from typing import Any, Dict
 
+from typing import Any, Dict, List, Sequence
+
 from flask import Blueprint, jsonify, request
 
 from greektax.backend.app.localization import get_translator, normalise_locale
 from greektax.backend.config.year_config import (
+    ContributionRates,
+    EFKACategoryConfig,
+    PayrollConfig,
+    TradeFeeConfig,
     available_years,
     load_year_configuration,
-    PayrollConfig,
-    ContributionRates,
 )
 
 blueprint = Blueprint("config", __name__, url_prefix="/api/v1/config")
@@ -31,6 +35,31 @@ def _serialise_contributions(contributions: ContributionRates) -> Dict[str, Any]
     }
 
 
+def _serialise_trade_fee(config: TradeFeeConfig) -> Dict[str, Any]:
+    return {
+        "standard_amount": config.standard_amount,
+        "reduced_amount": config.reduced_amount,
+        "newly_self_employed_reduction_years": config.newly_self_employed_reduction_years,
+    }
+
+
+def _serialise_efka_categories(
+    categories: Sequence[EFKACategoryConfig],
+) -> List[Dict[str, Any]]:
+    serialised: List[Dict[str, Any]] = []
+    for category in categories:
+        serialised.append(
+            {
+                "id": category.id,
+                "label_key": category.label_key,
+                "monthly_amount": category.monthly_amount,
+                "auxiliary_monthly_amount": category.auxiliary_monthly_amount,
+                "description_key": category.description_key,
+            }
+        )
+    return serialised
+
+
 def _serialise_year(year: int) -> Dict[str, Any]:
     config = load_year_configuration(year)
     return {
@@ -43,6 +72,12 @@ def _serialise_year(year: int) -> Dict[str, Any]:
         "pension": {
             "payroll": _serialise_payroll_config(config.pension.payroll),
             "contributions": _serialise_contributions(config.pension.contributions),
+        },
+        "freelance": {
+            "trade_fee": _serialise_trade_fee(config.freelance.trade_fee),
+            "efka_categories": _serialise_efka_categories(
+                config.freelance.efka_categories
+            ),
         },
     }
 
