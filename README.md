@@ -74,6 +74,49 @@ average durations), bundle sizes for the key front-end assets, and ARIA usage in
 the HTML shell. See [`docs/performance_baseline.md`](docs/performance_baseline.md)
 for guidance on interpreting the output.
 
+## Configuring the API endpoint
+
+The front-end maintains an ordered list of candidate API base URLs and falls
+back automatically when a host does not respond (for example, when a CMS proxy
+is unavailable or a remote API blocks cross-origin requests). By default the
+candidates are:
+
+1. Any explicitly configured override (see below).
+2. `/api/v1`, which keeps requests on the same origin as the static assets.
+3. `https://cntanos.pythonanywhere.com/api/v1`.
+
+When embedding the calculator in a CMS or iframe, you can override the first
+candidate without rebuilding the assets. The lookup order for explicit
+overrides is:
+
+1. A global variable defined before `assets/scripts/main.js` runs:
+   ```html
+   <script>
+     window.__GREEKTAX_API_BASE__ = "https://example.com/custom/api";
+   </script>
+   ```
+2. A `<meta>` tag in the document head:
+   ```html
+   <meta name="greektax:api-base" content="https://example.com/custom/api" />
+   ```
+3. A `data-api-base` attribute on the loader script tag:
+   ```html
+   <script src="./assets/scripts/main.js" data-api-base="https://example.com/custom/api"></script>
+   ```
+4. URL query parameters appended to the calculator entrypoint:
+   - `?greektax-api-base=…`
+   - `?greektax_api_base=…`
+   - `?apiBase=…`
+   - `?api_base=…`
+
+The chosen value is normalised to remove trailing slashes before being used in
+requests.
+
+If an override is unavailable (for example, a proxy path returns `404` or a
+remote API blocks the iframe origin with CORS), the next candidate in the list
+is attempted automatically. Successful responses pin the working base URL for
+the remainder of the session.
+
 ## Brand & Media Assets
 
 Binary media files are intentionally not stored in this repository. When UI work

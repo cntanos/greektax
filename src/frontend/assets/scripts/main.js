@@ -8,14 +8,120 @@
 
 const REMOTE_API_BASE = "https://cntanos.pythonanywhere.com/api/v1";
 const LOCAL_API_BASE = "/api/v1";
-const API_BASE = (() => {
+
+const sanitizeApiBase = (candidate) => {
+  if (typeof candidate !== "string") {
+    return null;
+  }
+
+  const trimmed = candidate.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  return trimmed.replace(/\/+$/, "");
+};
+
+const readConfiguredApiBase = () => {
+  const globalOverride =
+    window.__GREEKTAX_API_BASE__ ?? window.GREEKTAX_API_BASE ?? null;
+  const urlOverride = (() => {
+    if (typeof window === "undefined") {
+      return null;
+    }
+
+    try {
+      const params = new URLSearchParams(window.location.search);
+      return (
+        params.get("greektax-api-base") ??
+        params.get("greektax_api_base") ??
+        params.get("apiBase") ??
+        params.get("api_base") ??
+        null
+      );
+    } catch (error) {
+      console.warn("Unable to inspect URL parameters for API base override.", error);
+      return null;
+    }
+  })();
+  const metaOverride = (() => {
+    if (typeof document === "undefined") {
+      return null;
+    }
+
+    const metaTag = document.querySelector('meta[name="greektax:api-base"]');
+    return metaTag?.getAttribute("content") ?? null;
+  })();
+
+  const scriptOverride = (() => {
+    if (typeof document === "undefined") {
+      return null;
+    }
+
+    const extractAttribute = (element) => {
+      if (!element) {
+        return null;
+      }
+
+      return (
+        element.getAttribute("data-api-base") ??
+        element.getAttribute("data-greektax-api-base") ??
+        null
+      );
+    };
+
+    const currentScriptCandidate = extractAttribute(document.currentScript);
+    if (currentScriptCandidate) {
+      return currentScriptCandidate;
+    }
+
+    const taggedScript = document.querySelector(
+      "script[data-api-base], script[data-greektax-api-base]",
+    );
+
+    return extractAttribute(taggedScript);
+  })();
+
+  return (
+    sanitizeApiBase(globalOverride) ??
+    sanitizeApiBase(urlOverride) ??
+    sanitizeApiBase(metaOverride) ??
+    sanitizeApiBase(scriptOverride)
+  );
+};
+
+const uniqueValues = (values) => {
+  const seen = new Set();
+  const output = [];
+
+  values.forEach((value) => {
+    const sanitized = sanitizeApiBase(value);
+    if (!sanitized || seen.has(sanitized)) {
+      return;
+    }
+
+    seen.add(sanitized);
+    output.push(sanitized);
+  });
+
+  return output;
+};
+
+const buildApiBaseCandidates = () => {
+  const candidates = [];
+  const configuredBase = readConfiguredApiBase();
+  if (configuredBase) {
+    candidates.push(configuredBase);
+  }
+
   const { protocol, hostname } = window.location;
   const normalizedHost = (hostname || "").toLowerCase();
 
   const isLoopbackHost =
     normalizedHost === "localhost" ||
     normalizedHost === "127.0.0.1" ||
-    normalizedHost === "0.0.0.0";
+    normalizedHost === "0.0.0.0" ||
+    normalizedHost === "[::1]";
 
   const isPrivateNetworkIp =
     /^10\./.test(normalizedHost) ||
@@ -29,25 +135,174 @@ const API_BASE = (() => {
     protocol === "file:";
 
   if (isLocalHostname) {
-    return LOCAL_API_BASE;
+    candidates.push(LOCAL_API_BASE);
+    candidates.push(REMOTE_API_BASE);
+  } else {
+    candidates.push(LOCAL_API_BASE);
+    candidates.push(REMOTE_API_BASE);
   }
 
-  if (normalizedHost.endsWith("pythonanywhere.com")) {
-    return REMOTE_API_BASE;
+  return uniqueValues(candidates);
+};
+
+const API_BASE_CANDIDATES = buildApiBaseCandidates();
+let resolvedApiBase = null;
+const exhaustedApiBases = new Set();
+
+const normaliseApiPath = (path) => {
+  if (typeof path !== "string") {
+    throw new Error("API paths must be strings.");
   }
 
-  // NOTE: Preserve automatic switching between the local API during development
-  // and the deployed remote backend at https://cntanos.pythonanywhere.com/api/v1.
-  return REMOTE_API_BASE;
-})();
-const CALCULATIONS_ENDPOINT = `${API_BASE}/calculations`;
-const CONFIG_YEARS_ENDPOINT = `${API_BASE}/config/years`;
+  const trimmed = path.trim();
+  if (!trimmed) {
+    throw new Error("API paths cannot be empty.");
+  }
+
+  return `/${trimmed.replace(/^\/+/, "")}`;
+};
+
+const createApiUrl = (base, path) => {
+  const normalisedBase = sanitizeApiBase(base) ?? "";
+  const normalisedPath = normaliseApiPath(path);
+
+  if (!normalisedBase) {
+    return normalisedPath;
+  }
+
+  return `${normalisedBase}${normalisedPath}`;
+};
+
+const buildApiAttemptOrder = () => {
+  const filtered = API_BASE_CANDIDATES.filter(
+    (base) => !exhaustedApiBases.has(base),
+  );
+
+  if (!filtered.length) {
+    exhaustedApiBases.clear();
+    return API_BASE_CANDIDATES.slice();
+  }
+
+  if (!resolvedApiBase || exhaustedApiBases.has(resolvedApiBase)) {
+    return filtered;
+  }
+
+  return [
+    resolvedApiBase,
+    ...filtered.filter((base) => base !== resolvedApiBase),
+  ];
+};
+
+const shouldRetryResponse = (response) => {
+  if (!response) {
+    return false;
+  }
+
+  if (response.status === 0 || response.status === 404) {
+    return true;
+  }
+
+  if (response.status === 403) {
+    return true;
+  }
+
+  if (response.status >= 500) {
+    return true;
+  }
+
+  return false;
+};
+
+const apiFetch = async (path, options = {}) => {
+  const attempts = buildApiAttemptOrder();
+  const normalizedPath = normaliseApiPath(path);
+  let lastError = null;
+  let lastResponse = null;
+
+  for (const base of attempts) {
+    const url = createApiUrl(base, normalizedPath);
+
+    try {
+      const response = await fetch(url, options);
+
+      if (response.ok) {
+        if (resolvedApiBase !== base) {
+          console.info("Resolved API base", {
+            base,
+            previous: resolvedApiBase,
+          });
+        }
+
+        exhaustedApiBases.delete(base);
+        resolvedApiBase = base;
+        return response;
+      }
+
+      if (!shouldRetryResponse(response)) {
+        return response;
+      }
+
+      exhaustedApiBases.add(base);
+      lastResponse = response;
+      console.warn("API request failed, attempting fallback base", {
+        base,
+        status: response.status,
+        url,
+      });
+    } catch (error) {
+      exhaustedApiBases.add(base);
+      lastError = error;
+      console.warn("API request error, attempting fallback base", {
+        base,
+        error,
+        url,
+      });
+    }
+  }
+
+  if (lastResponse) {
+    return lastResponse;
+  }
+
+  if (lastError) {
+    throw lastError;
+  }
+
+  throw new Error("Unable to resolve an API base for the calculator.");
+};
+
+const fetchJson = async (path, options = {}) => {
+  const response = await apiFetch(path, options);
+
+  if (!response.ok) {
+    return {
+      ok: false,
+      response,
+    };
+  }
+
+  try {
+    const data = await response.json();
+    return {
+      ok: true,
+      data,
+    };
+  } catch (error) {
+    console.error("Failed to parse API response as JSON", error);
+    return {
+      ok: false,
+      response,
+      error,
+    };
+  }
+};
+
+const CALCULATIONS_ENDPOINT = "/calculations";
+const CONFIG_YEARS_ENDPOINT = "/config/years";
 const CONFIG_INVESTMENT_ENDPOINT = (year, locale) =>
-  `${API_BASE}/config/${year}/investment-categories?locale=${encodeURIComponent(
-    locale,
-  )}`;
+  `/config/${year}/investment-categories?locale=${encodeURIComponent(locale)}`;
 const CONFIG_DEDUCTIONS_ENDPOINT = (year, locale) =>
-  `${API_BASE}/config/${year}/deductions?locale=${encodeURIComponent(locale)}`;
+  `/config/${year}/deductions?locale=${encodeURIComponent(locale)}`;
 const STORAGE_KEY = "greektax.locale";
 const CALCULATOR_STORAGE_KEY = "greektax.calculator.v1";
 const CALCULATOR_STORAGE_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours
@@ -1674,12 +1929,17 @@ async function loadYearOptions() {
 
   setCalculatorStatus(t("status.loading_years"));
   try {
-    const response = await fetch(CONFIG_YEARS_ENDPOINT);
-    if (!response.ok) {
-      throw new Error(`Unable to load years (${response.status})`);
+    const { ok, data, response, error } = await fetchJson(CONFIG_YEARS_ENDPOINT);
+    if (!ok || !data) {
+      const status = response?.status;
+      const message =
+        error instanceof Error
+          ? error.message
+          : `Unable to load years${status ? ` (${status})` : ""}`;
+      throw new Error(message);
     }
 
-    const payload = await response.json();
+    const payload = data;
     const years = Array.isArray(payload.years) ? payload.years : [];
     yearSelect.innerHTML = "";
     yearMetadataByYear.clear();
@@ -1760,14 +2020,21 @@ async function refreshInvestmentCategories() {
   }
 
   try {
-    const response = await fetch(
+    const { ok, data, response, error } = await fetchJson(
       CONFIG_INVESTMENT_ENDPOINT(year, currentLocale || "en"),
     );
-    if (!response.ok) {
-      throw new Error(`Unable to load investment categories (${response.status})`);
+    if (!ok || !data) {
+      const status = response?.status;
+      const message =
+        error instanceof Error
+          ? error.message
+          : `Unable to load investment categories${
+              status ? ` (${status})` : ""
+            }`;
+      throw new Error(message);
     }
 
-    const payload = await response.json();
+    const payload = data;
     currentInvestmentCategories = Array.isArray(payload.categories)
       ? payload.categories
       : [];
@@ -2088,14 +2355,19 @@ async function refreshDeductionHints() {
   }
 
   try {
-    const response = await fetch(
+    const { ok, data, response, error } = await fetchJson(
       CONFIG_DEDUCTIONS_ENDPOINT(year, currentLocale || "en"),
     );
-    if (!response.ok) {
-      throw new Error(`Unable to load deduction hints (${response.status})`);
+    if (!ok || !data) {
+      const status = response?.status;
+      const message =
+        error instanceof Error
+          ? error.message
+          : `Unable to load deduction hints${status ? ` (${status})` : ""}`;
+      throw new Error(message);
     }
 
-    const payload = await response.json();
+    const payload = data;
     currentDeductionHints = Array.isArray(payload.hints) ? payload.hints : [];
     dynamicFieldLabels = {};
     deductionValidationByInput = {};
@@ -3053,7 +3325,7 @@ async function submitCalculation(event) {
   setCalculatorStatus(t("status.calculating"));
 
   try {
-    const response = await fetch(CALCULATIONS_ENDPOINT, {
+    const result = await fetchJson(CALCULATIONS_ENDPOINT, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -3062,13 +3334,27 @@ async function submitCalculation(event) {
       body: JSON.stringify(payload),
     });
 
-    if (!response.ok) {
-      const errorPayload = await response.json().catch(() => ({}));
-      throw new Error(errorPayload.message || response.statusText);
+    if (!result.ok) {
+      let message = t("status.calculation_failed");
+      if (result.response) {
+        const errorPayload = await result.response.json().catch(() => ({}));
+        message =
+          errorPayload?.message ||
+          errorPayload?.error ||
+          result.response.statusText ||
+          message;
+      } else if (result.error instanceof Error) {
+        message = result.error.message;
+      }
+
+      throw new Error(message);
     }
 
-    const result = await response.json();
-    renderCalculation(result);
+    if (!result.data) {
+      throw new Error("Empty calculation response received.");
+    }
+
+    renderCalculation(result.data);
     setCalculatorStatus(t("status.calculation_complete"));
   } catch (error) {
     console.error("Calculation request failed", error);
