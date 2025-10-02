@@ -2973,6 +2973,10 @@ function renderCalculation(result) {
     return;
   }
 
+  if (resultsSection) {
+    resultsSection.hidden = false;
+  }
+
   lastCalculation = result;
   downloadButton?.removeAttribute("disabled");
   downloadCsvButton?.removeAttribute("disabled");
@@ -2981,10 +2985,6 @@ function renderCalculation(result) {
   renderSankey(result);
   renderSummary(result.summary || {});
   renderDetails(result.details || []);
-
-  if (resultsSection) {
-    resultsSection.hidden = false;
-  }
 }
 
 function resetResults() {
