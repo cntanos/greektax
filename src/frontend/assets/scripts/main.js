@@ -2256,6 +2256,60 @@ function attachValidationHandlers() {
   });
 }
 
+function shouldAutoSelectValue(input) {
+  if (!input) {
+    return false;
+  }
+
+  if (!(input instanceof HTMLInputElement)) {
+    return false;
+  }
+
+  if (input.type !== "number") {
+    return false;
+  }
+
+  if (input.readOnly || input.disabled) {
+    return false;
+  }
+
+  const value = input.value ?? "";
+  return value.toString().length > 0;
+}
+
+function handleNumericFocus(event) {
+  const target = event.target;
+  if (!(target instanceof HTMLInputElement)) {
+    return;
+  }
+
+  if (!shouldAutoSelectValue(target)) {
+    return;
+  }
+
+  requestAnimationFrame(() => {
+    if (document.activeElement !== target) {
+      return;
+    }
+
+    try {
+      target.select();
+    } catch (error) {
+      if (typeof target.setSelectionRange === "function") {
+        target.setSelectionRange(0, target.value.length);
+      }
+    }
+  });
+}
+
+function initialiseNumericAutoSelect() {
+  if (!calculatorForm) {
+    return;
+  }
+
+  calculatorForm.addEventListener("focusin", handleNumericFocus);
+}
+
 function readNumber(input) {
   if (!input) {
     return 0;
@@ -2684,13 +2738,37 @@ function renderSankey(result) {
     sankeyEmptyState.hidden = true;
   }
 
+  if (sankeyWrapper.hidden) {
+    sankeyWrapper.hidden = false;
+  }
+
   const nodeColors = nodeLabels.map(
     (label) =>
       nodeAccentColors[label] || colorWithAlpha(subtleColor, 0.12, "rgba(33, 37, 41, 0.08)"),
   );
 
-  const containerWidth = sankeyChart.clientWidth || sankeyWrapper.clientWidth || 640;
-  const chartHeight = Math.max(320, Math.min(480, Math.round(containerWidth * 0.55)));
+  const measureSankeyWidth = () => {
+    const candidates = [
+      sankeyChart,
+      sankeyWrapper,
+      sankeyWrapper?.parentElement,
+      sankeyWrapper?.parentElement?.parentElement,
+    ];
+
+    return candidates.reduce((max, element) => {
+      if (!element) {
+        return max;
+      }
+
+      const rect = element.getBoundingClientRect?.();
+      const rectWidth = rect?.width || 0;
+      const clientWidth = element.clientWidth || 0;
+      return Math.max(max, rectWidth, clientWidth);
+    }, 0);
+  };
+
+  const resolvedWidth = Math.max(640, Math.round(measureSankeyWidth()));
+  const chartHeight = Math.max(320, Math.min(480, Math.round(resolvedWidth * 0.55)));
 
   const data = [
     {
@@ -2725,6 +2803,7 @@ function renderSankey(result) {
     plot_bgcolor: "rgba(0,0,0,0)",
     font: { size: 12, color: textColor },
     height: chartHeight,
+    width: resolvedWidth,
   };
 
   const executeRender = () => {
@@ -2735,7 +2814,19 @@ function renderSankey(result) {
         }
         sankeyChart.style.minHeight = `${chartHeight}px`;
         sankeyChart.style.height = `${chartHeight}px`;
+        sankeyChart.style.minWidth = `${resolvedWidth}px`;
+        sankeyChart.style.width = "100%";
         plotly.react(sankeyChart, data, layout, { displayModeBar: false, responsive: true });
+        const scheduleResize =
+          typeof requestAnimationFrame === "function"
+            ? requestAnimationFrame
+            : (callback) => setTimeout(callback, 16);
+
+        scheduleResize(() => {
+          if (renderToken === sankeyRenderSequence && plotly?.Plots?.resize) {
+            plotly.Plots.resize(sankeyChart);
+          }
+        });
         sankeyWrapper.hidden = false;
         sankeyChart.setAttribute("aria-hidden", "false");
         sankeyChart.setAttribute("aria-label", t("sankey.aria_label"));
@@ -2931,20 +3022,69 @@ function renderDetailCard(detail) {
   });
 
   if (detail.items && Array.isArray(detail.items) && detail.items.length) {
-    const list = document.createElement("ul");
-    detail.items.forEach((item) => {
-      const entry = document.createElement("li");
-      entry.textContent = `${item.label}: ${formatCurrency(item.amount)} → ${formatCurrency(
-        item.tax,
-      )} (${formatPercent(item.rate)})`;
-      list.appendChild(entry);
-    });
     const dt = document.createElement("dt");
     dt.textContent = detailLabels.breakdown || "Breakdown";
+    dt.dataset.field = "breakdown";
+
     const dd = document.createElement("dd");
-    dd.appendChild(list);
-    dl.appendChild(dt);
-    dl.appendChild(dd);
+    dd.dataset.field = "breakdown";
+
+    const breakdown = document.createElement("div");
+    breakdown.className = "detail-breakdown";
+
+    detail.items.forEach((item) => {
+      if (!item) {
+        return;
+      }
+
+      const entry = document.createElement("div");
+      entry.className = "detail-breakdown__item";
+
+      const label = document.createElement("span");
+      label.className = "detail-breakdown__label";
+      label.textContent = item.label || "";
+
+      const flow = document.createElement("span");
+      flow.className = "detail-breakdown__flow";
+
+      const amount = document.createElement("span");
+      amount.className = "detail-breakdown__amount";
+      amount.textContent = formatCurrency(item.amount);
+
+      const arrow = document.createElement("span");
+      arrow.className = "detail-breakdown__arrow";
+      arrow.textContent = "→";
+
+      const tax = document.createElement("span");
+      tax.className = "detail-breakdown__tax";
+      tax.textContent = formatCurrency(item.tax);
+
+      flow.appendChild(amount);
+      flow.appendChild(arrow);
+      flow.appendChild(tax);
+
+      entry.appendChild(label);
+      entry.appendChild(flow);
+
+      const rateValue = Number.parseFloat(item.rate);
+      if (Number.isFinite(rateValue)) {
+        const rate = document.createElement("span");
+        rate.className = "detail-breakdown__rate";
+        const formattedRate = formatPercent(rateValue);
+        rate.textContent = formattedRate;
+        rate.title = `${label.textContent} ${formattedRate}`.trim();
+        rate.setAttribute("aria-label", `${label.textContent} ${formattedRate}`.trim());
+        entry.appendChild(rate);
+      }
+
+      breakdown.appendChild(entry);
+    });
+
+    if (breakdown.childElementCount > 0) {
+      dd.appendChild(breakdown);
+      dl.appendChild(dt);
+      dl.appendChild(dd);
+    }
   }
 
   card.appendChild(dl);
@@ -3253,6 +3393,7 @@ function initialiseCalculator() {
   printButton?.addEventListener("click", printSummary);
 
   attachValidationHandlers();
+  initialiseNumericAutoSelect();
 
   loadYearOptions().then(async () => {
     applyPendingCalculatorState();

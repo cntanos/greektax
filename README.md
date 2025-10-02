@@ -123,8 +123,23 @@ be documented in the project plan. Key focus areas for upcoming sprints include:
 Contributions are welcome via pull requests. Please consult the project plan and
 TODO markers across the codebase for the current priorities.
 
+## Versioning
+
+GreekTax tracks releases with the semantic pattern **R.X.Y**:
+
+- **R** – release cycle number signifying major public milestones. This only
+  increments when a full release is declared.
+- **X** – sprint-level increments that bundle new features or significant UI
+  updates. Increase this when a sprint concludes with a packaged deliverable.
+- **Y** – fix iterations for hot-fixes or polish delivered within a sprint.
+  Increment this for follow-up patches within the same sprint.
+
+The current application version is **0.1.0**. When you bump the version, update
+the project metadata, footer copy, and documentation references together so the
+published UI and repository remain in sync.
+
 ## License
 
 GreekTax is released under the [GNU General Public License v3.0](LICENSE).
 
-&copy; 2024 Christos Ntanos for CogniSys. Released under the GNU GPL v3.
+&copy; 2025 Christos Ntanos for CogniSys. Released under the GNU GPL v3 License.
