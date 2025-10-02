@@ -134,7 +134,7 @@ GreekTax tracks releases with the semantic pattern **R.X.Y**:
 - **Y** – fix iterations for hot-fixes or polish delivered within a sprint.
   Increment this for follow-up patches within the same sprint.
 
-The current application version is **0.1.0**. When you bump the version, update
+The current application version is **0.1.1**. When you bump the version, update
 the project metadata, footer copy, and documentation references together so the
 published UI and repository remain in sync.
 

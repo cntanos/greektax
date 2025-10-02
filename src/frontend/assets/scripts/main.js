@@ -31,6 +31,9 @@ const PLOTLY_SDK_ATTRIBUTE = "data-plotly-sdk";
 let plotlyLoaderPromise = null;
 let pendingPlotlyJob = null;
 let sankeyRenderSequence = 0;
+let sankeyPlotlyRef = null;
+let sankeyResizeObserver = null;
+let sankeyWindowResizeHandler = null;
 let hasAppliedThemeOnce = false;
 let themeTransitionHandle = null;
 
@@ -733,6 +736,152 @@ function colorWithAlpha(color, alpha, fallback) {
   }
 
   return fallback;
+}
+
+function parseNumericValue(value) {
+  const number = Number.parseFloat(value);
+  return Number.isFinite(number) ? number : 0;
+}
+
+function getElementInnerWidth(element) {
+  if (!element) {
+    return 0;
+  }
+
+  const rect = element.getBoundingClientRect?.();
+  let width = Math.round(rect?.width || element.clientWidth || 0);
+
+  if (!width) {
+    return 0;
+  }
+
+  if (
+    element === sankeyWrapper &&
+    typeof window !== "undefined" &&
+    typeof window.getComputedStyle === "function"
+  ) {
+    const styles = window.getComputedStyle(element);
+    width -= Math.round(
+      parseNumericValue(styles.paddingLeft) +
+        parseNumericValue(styles.paddingRight),
+    );
+  }
+
+  return Math.max(0, width);
+}
+
+function measureSankeyAvailableWidth() {
+  const primary = [sankeyChart, sankeyWrapper];
+
+  for (const element of primary) {
+    const width = getElementInnerWidth(element);
+    if (width > 0) {
+      return width;
+    }
+  }
+
+  const fallbackElements = [];
+
+  if (sankeyWrapper?.parentElement) {
+    fallbackElements.push(sankeyWrapper.parentElement);
+    if (sankeyWrapper.parentElement.parentElement) {
+      fallbackElements.push(sankeyWrapper.parentElement.parentElement);
+    }
+  }
+
+  if (typeof document !== "undefined") {
+    if (document.documentElement) {
+      fallbackElements.push(document.documentElement);
+    }
+    if (document.body) {
+      fallbackElements.push(document.body);
+    }
+  }
+
+  for (const element of fallbackElements) {
+    const width = getElementInnerWidth(element);
+    if (width > 0) {
+      return width;
+    }
+  }
+
+  return 0;
+}
+
+function computeSankeyDimensions() {
+  const measuredWidth = Math.round(measureSankeyAvailableWidth());
+  const fallbackWidth =
+    typeof window !== "undefined" && Number.isFinite(window.innerWidth)
+      ? Math.round(window.innerWidth || 0)
+      : 0;
+  const resolvedWidth = Math.max(
+    320,
+    measuredWidth > 0 ? measuredWidth : fallbackWidth || 640,
+  );
+  const chartHeight = Math.max(
+    280,
+    Math.min(480, Math.round(resolvedWidth * 0.55)),
+  );
+
+  return { width: resolvedWidth, height: chartHeight };
+}
+
+function applySankeyDimensions(plotlyInstance = sankeyPlotlyRef) {
+  if (!sankeyChart) {
+    return;
+  }
+
+  const { width, height } = computeSankeyDimensions();
+
+  sankeyChart.style.minHeight = `${height}px`;
+  sankeyChart.style.height = `${height}px`;
+  sankeyChart.style.minWidth = "0";
+  sankeyChart.style.width = "100%";
+
+  if (plotlyInstance?.relayout && width > 0) {
+    const relayoutResult = plotlyInstance.relayout(sankeyChart, {
+      width,
+      height,
+    });
+
+    if (typeof relayoutResult?.catch === "function") {
+      relayoutResult.catch(() => {});
+    }
+  }
+
+  if (plotlyInstance?.Plots?.resize) {
+    plotlyInstance.Plots.resize(sankeyChart);
+  }
+}
+
+function ensureSankeyResizeHandlers() {
+  if (!sankeyChart || typeof window === "undefined") {
+    return;
+  }
+
+  const handleResize = () => {
+    if (!sankeyChart || sankeyWrapper?.hidden) {
+      return;
+    }
+    applySankeyDimensions();
+  };
+
+  if (!sankeyWindowResizeHandler) {
+    sankeyWindowResizeHandler = () => handleResize();
+    window.addEventListener("resize", sankeyWindowResizeHandler);
+  }
+
+  if (typeof ResizeObserver === "function") {
+    if (!sankeyResizeObserver) {
+      sankeyResizeObserver = new ResizeObserver(() => handleResize());
+    }
+
+    sankeyResizeObserver.disconnect();
+    const target = sankeyWrapper || sankeyChart;
+    if (target) {
+      sankeyResizeObserver.observe(target);
+    }
+  }
 }
 
 function ensurePlotlyLoaded() {
@@ -2747,43 +2896,7 @@ function renderSankey(result) {
       nodeAccentColors[label] || colorWithAlpha(subtleColor, 0.12, "rgba(33, 37, 41, 0.08)"),
   );
 
-  const measureSankeyWidth = () => {
-    const prefer = [sankeyWrapper, sankeyChart];
-    for (const element of prefer) {
-      if (!element) {
-        continue;
-      }
-      const rect = element.getBoundingClientRect?.();
-      const width = Math.round(rect?.width || element.clientWidth || 0);
-      if (width > 0) {
-        return width;
-      }
-    }
-
-    const fallbacks = [
-      sankeyWrapper?.parentElement,
-      sankeyWrapper?.parentElement?.parentElement,
-      document.documentElement,
-      document.body,
-    ];
-
-    for (const element of fallbacks) {
-      if (!element) {
-        continue;
-      }
-      const rect = element.getBoundingClientRect?.();
-      const width = Math.round(rect?.width || element.clientWidth || 0);
-      if (width > 0) {
-        return width;
-      }
-    }
-
-    return 0;
-  };
-
-  const measuredWidth = Math.round(measureSankeyWidth());
-  const resolvedWidth = measuredWidth > 0 ? measuredWidth : Math.round(window.innerWidth || 640);
-  const chartHeight = Math.max(280, Math.min(480, Math.round(resolvedWidth * 0.55)));
+  const { width: resolvedWidth, height: chartHeight } = computeSankeyDimensions();
 
   const data = [
     {
@@ -2821,25 +2934,28 @@ function renderSankey(result) {
     width: resolvedWidth,
   };
 
+  sankeyChart.style.minHeight = `${chartHeight}px`;
+  sankeyChart.style.height = `${chartHeight}px`;
+  sankeyChart.style.minWidth = "0";
+  sankeyChart.style.width = "100%";
+
   const executeRender = () => {
     ensurePlotlyLoaded()
       .then((plotly) => {
         if (renderToken !== sankeyRenderSequence) {
           return;
         }
-        sankeyChart.style.minHeight = `${chartHeight}px`;
-        sankeyChart.style.height = `${chartHeight}px`;
-        sankeyChart.style.minWidth = "0";
-        sankeyChart.style.width = "100%";
         plotly.react(sankeyChart, data, layout, { displayModeBar: false, responsive: true });
+        sankeyPlotlyRef = plotly;
+        ensureSankeyResizeHandlers();
         const scheduleResize =
           typeof requestAnimationFrame === "function"
             ? requestAnimationFrame
             : (callback) => setTimeout(callback, 16);
 
         scheduleResize(() => {
-          if (renderToken === sankeyRenderSequence && plotly?.Plots?.resize) {
-            plotly.Plots.resize(sankeyChart);
+          if (renderToken === sankeyRenderSequence) {
+            applySankeyDimensions(plotly);
           }
         });
         sankeyWrapper.hidden = false;
