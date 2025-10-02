@@ -2748,27 +2748,42 @@ function renderSankey(result) {
   );
 
   const measureSankeyWidth = () => {
-    const candidates = [
-      sankeyChart,
-      sankeyWrapper,
+    const prefer = [sankeyWrapper, sankeyChart];
+    for (const element of prefer) {
+      if (!element) {
+        continue;
+      }
+      const rect = element.getBoundingClientRect?.();
+      const width = Math.round(rect?.width || element.clientWidth || 0);
+      if (width > 0) {
+        return width;
+      }
+    }
+
+    const fallbacks = [
       sankeyWrapper?.parentElement,
       sankeyWrapper?.parentElement?.parentElement,
+      document.documentElement,
+      document.body,
     ];
 
-    return candidates.reduce((max, element) => {
+    for (const element of fallbacks) {
       if (!element) {
-        return max;
+        continue;
       }
-
       const rect = element.getBoundingClientRect?.();
-      const rectWidth = rect?.width || 0;
-      const clientWidth = element.clientWidth || 0;
-      return Math.max(max, rectWidth, clientWidth);
-    }, 0);
+      const width = Math.round(rect?.width || element.clientWidth || 0);
+      if (width > 0) {
+        return width;
+      }
+    }
+
+    return 0;
   };
 
-  const resolvedWidth = Math.max(640, Math.round(measureSankeyWidth()));
-  const chartHeight = Math.max(320, Math.min(480, Math.round(resolvedWidth * 0.55)));
+  const measuredWidth = Math.round(measureSankeyWidth());
+  const resolvedWidth = measuredWidth > 0 ? measuredWidth : Math.round(window.innerWidth || 640);
+  const chartHeight = Math.max(280, Math.min(480, Math.round(resolvedWidth * 0.55)));
 
   const data = [
     {
@@ -2814,7 +2829,7 @@ function renderSankey(result) {
         }
         sankeyChart.style.minHeight = `${chartHeight}px`;
         sankeyChart.style.height = `${chartHeight}px`;
-        sankeyChart.style.minWidth = `${resolvedWidth}px`;
+        sankeyChart.style.minWidth = "0";
         sankeyChart.style.width = "100%";
         plotly.react(sankeyChart, data, layout, { displayModeBar: false, responsive: true });
         const scheduleResize =
