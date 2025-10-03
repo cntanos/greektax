@@ -6,6 +6,7 @@ from typing import Any
 
 import pytest
 
+from greektax.backend.app.models import CalculationRequest
 from greektax.backend.app.services.calculation_service import calculate_tax
 from greektax.backend.config.year_config import load_year_configuration
 
@@ -65,19 +66,19 @@ def _employment_expectations(
     }
 
 
-def _freelance_expectations(payload: dict[str, Any]) -> dict[str, Any]:
+def _freelance_expectations(request: CalculationRequest) -> dict[str, Any]:
     """Return expected freelance and employment metrics for the mixed payload."""
 
-    config = load_year_configuration(payload["year"])
+    config = load_year_configuration(request.year)
 
-    employment_gross = payload["employment"]["gross_income"]
-    dependents = payload.get("dependents", {}).get("children", 0)
+    employment_gross = request.employment.gross_income
+    dependents = request.dependents.children
 
-    freelance_section = payload["freelance"]
+    freelance_section = request.freelance
     gross_after_expenses = (
-        freelance_section["gross_revenue"] - freelance_section["deductible_expenses"]
+        freelance_section.gross_revenue - freelance_section.deductible_expenses
     )
-    contributions = freelance_section["mandatory_contributions"]
+    contributions = freelance_section.mandatory_contributions
 
     employment_taxable = employment_gross
     freelance_taxable = gross_after_expenses - contributions
@@ -151,10 +152,36 @@ def _freelance_expectations(payload: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def test_calculate_tax_rejects_invalid_numbers() -> None:
+    """Payloads with invalid numeric data surface clear validation errors."""
+
+    with pytest.raises(ValueError) as error:
+        calculate_tax({"year": 2024, "employment": {"gross_income": -10}})
+
+    message = str(error.value)
+    assert "employment.gross_income" in message
+    assert "Invalid calculation payload" in message
+
+
+def test_calculate_tax_accepts_request_model_instance() -> None:
+    """The service can operate directly on a validated request model."""
+
+    request_model = CalculationRequest.model_validate(
+        {"year": 2024, "employment": {"gross_income": 12_000}}
+    )
+
+    result = calculate_tax(request_model)
+
+    assert result["meta"] == {"year": 2024, "locale": "en"}
+    assert result["summary"]["income_total"] == pytest.approx(12_000.0)
+
+
 def test_calculate_tax_defaults_to_zero_summary() -> None:
     """An empty payload (besides year) should produce zeroed totals."""
 
-    result = calculate_tax({"year": 2024})
+    request = CalculationRequest.model_validate({"year": 2024})
+
+    result = calculate_tax(request)
 
     assert result["summary"]["income_total"] == 0.0
     assert result["summary"]["tax_total"] == 0.0
@@ -169,17 +196,21 @@ def test_calculate_tax_defaults_to_zero_summary() -> None:
 def test_calculate_tax_employment_only() -> None:
     """Employment income uses progressive rates and tax credit."""
 
-    payload = {
-        "year": 2024,
-        "locale": "en",
-        "dependents": {"children": 1},
-        "employment": {"gross_income": 30_000},
-    }
+    request = CalculationRequest.model_validate(
+        {
+            "year": 2024,
+            "locale": "en",
+            "dependents": {"children": 1},
+            "employment": {"gross_income": 30_000},
+        }
+    )
 
-    result = calculate_tax(payload)
+    result = calculate_tax(request)
 
-    gross_income = payload["employment"]["gross_income"]
-    expected = _employment_expectations(2024, gross_income, children=1)
+    gross_income = request.employment.gross_income
+    expected = _employment_expectations(
+        request.year, gross_income, children=request.dependents.children
+    )
 
     summary = result["summary"]
     assert summary["income_total"] == pytest.approx(gross_income)
@@ -217,16 +248,18 @@ def test_calculate_tax_employment_only() -> None:
 def test_calculate_tax_with_withholding_tax_balance_due() -> None:
     """Withholding reduces the net tax payable and surfaces in the summary."""
 
-    payload = {
-        "year": 2024,
-        "employment": {"gross_income": 30_000},
-        "withholding_tax": 2_000,
-    }
+    request = CalculationRequest.model_validate(
+        {
+            "year": 2024,
+            "employment": {"gross_income": 30_000},
+            "withholding_tax": 2_000,
+        }
+    )
 
-    result = calculate_tax(payload)
+    result = calculate_tax(request)
 
-    expected = _employment_expectations(2024, 30_000)
-    withholding = payload["withholding_tax"]
+    expected = _employment_expectations(request.year, 30_000)
+    withholding = request.withholding_tax
     expected_balance_due = expected["tax"] - withholding
 
     summary = result["summary"]
@@ -241,16 +274,18 @@ def test_calculate_tax_with_withholding_tax_balance_due() -> None:
 def test_calculate_tax_with_withholding_tax_refund() -> None:
     """Withholding greater than tax due produces a refund summary."""
 
-    payload = {
-        "year": 2024,
-        "employment": {"gross_income": 30_000},
-        "withholding_tax": 6_000,
-    }
+    request = CalculationRequest.model_validate(
+        {
+            "year": 2024,
+            "employment": {"gross_income": 30_000},
+            "withholding_tax": 6_000,
+        }
+    )
 
-    result = calculate_tax(payload)
+    result = calculate_tax(request)
 
-    expected = _employment_expectations(2024, 30_000)
-    withholding = payload["withholding_tax"]
+    expected = _employment_expectations(request.year, 30_000)
+    withholding = request.withholding_tax
     expected_refund = abs(expected["tax"] - withholding)
 
     summary = result["summary"]
@@ -265,15 +300,17 @@ def test_calculate_tax_with_withholding_tax_refund() -> None:
 def test_calculate_tax_accepts_monthly_employment_income() -> None:
     """Monthly salary inputs convert to annual totals and per-payment nets."""
 
-    payload = {
-        "year": 2024,
-        "employment": {"monthly_income": 1_500, "payments_per_year": 14},
-    }
+    request = CalculationRequest.model_validate(
+        {
+            "year": 2024,
+            "employment": {"monthly_income": 1_500, "payments_per_year": 14},
+        }
+    )
 
-    result = calculate_tax(payload)
+    result = calculate_tax(request)
 
-    monthly_income = payload["employment"]["monthly_income"]
-    payments = payload["employment"]["payments_per_year"]
+    monthly_income = request.employment.monthly_income or 0.0
+    payments = request.employment.payments_per_year or 0
     gross_income = monthly_income * payments
     expected = _employment_expectations(2024, gross_income)
     expected_employee_per_payment = expected["employee_contrib"] / payments
@@ -315,20 +352,22 @@ def test_calculate_tax_accepts_monthly_employment_income() -> None:
 def test_calculate_tax_supports_manual_employee_contributions() -> None:
     """Extra EFKA payments reduce net income and appear in the breakdown."""
 
-    payload = {
-        "year": 2024,
-        "employment": {
-            "monthly_income": 1_500,
-            "payments_per_year": 14,
-            "employee_contributions": 500,
-        },
-    }
+    request = CalculationRequest.model_validate(
+        {
+            "year": 2024,
+            "employment": {
+                "monthly_income": 1_500,
+                "payments_per_year": 14,
+                "employee_contributions": 500,
+            },
+        }
+    )
 
-    result = calculate_tax(payload)
+    result = calculate_tax(request)
 
-    monthly_income = payload["employment"]["monthly_income"]
-    payments = payload["employment"]["payments_per_year"]
-    manual_contrib = payload["employment"]["employee_contributions"]
+    monthly_income = request.employment.monthly_income or 0.0
+    payments = request.employment.payments_per_year or 0
+    manual_contrib = request.employment.employee_contributions
     gross_income = monthly_income * payments
     base_expected = _employment_expectations(2024, gross_income)
     expected_total_employee = base_expected["employee_contrib"] + manual_contrib
@@ -353,20 +392,22 @@ def test_calculate_tax_supports_manual_employee_contributions() -> None:
 def test_calculate_tax_with_freelance_income() -> None:
     """Freelance profit combines progressive tax and trade fee."""
 
-    payload = {
-        "year": 2024,
-        "locale": "en",
-        "dependents": {"children": 0},
-        "employment": {"gross_income": 20_000},
-        "freelance": {
-            "gross_revenue": 18_000,
-            "deductible_expenses": 4_000,
-            "mandatory_contributions": 3_000,
-        },
-    }
+    request = CalculationRequest.model_validate(
+        {
+            "year": 2024,
+            "locale": "en",
+            "dependents": {"children": 0},
+            "employment": {"gross_income": 20_000},
+            "freelance": {
+                "gross_revenue": 18_000,
+                "deductible_expenses": 4_000,
+                "mandatory_contributions": 3_000,
+            },
+        }
+    )
 
-    result = calculate_tax(payload)
-    expected = _freelance_expectations(payload)
+    result = calculate_tax(request)
+    expected = _freelance_expectations(request)
 
     summary = result["summary"]
     assert summary["income_total"] == pytest.approx(expected["summary"]["income"])
@@ -449,9 +490,11 @@ def test_calculate_tax_with_freelance_income() -> None:
 def test_calculate_tax_respects_locale_toggle() -> None:
     """Locale toggle switches translation catalogue."""
 
-    payload = {"year": 2024, "locale": "el", "employment": {"gross_income": 10_000}}
+    request = CalculationRequest.model_validate(
+        {"year": 2024, "locale": "el", "employment": {"gross_income": 10_000}}
+    )
 
-    result = calculate_tax(payload)
+    result = calculate_tax(request)
 
     assert result["meta"]["locale"] == "el"
     assert result["details"][0]["label"] == "Εισόδημα μισθωτών"
@@ -461,14 +504,16 @@ def test_calculate_tax_respects_locale_toggle() -> None:
 def test_calculate_tax_combines_employment_and_pension_credit() -> None:
     """Salary and pension income share a single tax credit."""
 
-    payload = {
-        "year": 2024,
-        "dependents": {"children": 1},
-        "employment": {"gross_income": 10_000},
-        "pension": {"gross_income": 10_000},
-    }
+    request = CalculationRequest.model_validate(
+        {
+            "year": 2024,
+            "dependents": {"children": 1},
+            "employment": {"gross_income": 10_000},
+            "pension": {"gross_income": 10_000},
+        }
+    )
 
-    result = calculate_tax(payload)
+    result = calculate_tax(request)
 
     assert result["summary"]["tax_total"] == pytest.approx(2_290.0)
     assert result["summary"]["net_income"] == pytest.approx(16_323.0)
@@ -492,14 +537,16 @@ def test_calculate_tax_combines_employment_and_pension_credit() -> None:
 
 
 def test_calculate_tax_with_pension_and_rental_income() -> None:
-    payload = {
-        "year": 2024,
-        "dependents": {"children": 2},
-        "pension": {"gross_income": 18_000},
-        "rental": {"gross_income": 15_000, "deductible_expenses": 2_000},
-    }
+    request = CalculationRequest.model_validate(
+        {
+            "year": 2024,
+            "dependents": {"children": 2},
+            "pension": {"gross_income": 18_000},
+            "rental": {"gross_income": 15_000, "deductible_expenses": 2_000},
+        }
+    )
 
-    result = calculate_tax(payload)
+    result = calculate_tax(request)
 
     pension_detail = next(
         detail for detail in result["details"] if detail["category"] == "pension"
@@ -522,16 +569,18 @@ def test_calculate_tax_with_pension_and_rental_income() -> None:
 
 
 def test_calculate_tax_with_investment_income_breakdown() -> None:
-    payload = {
-        "year": 2024,
-        "investment": {
-            "dividends": 1_000,
-            "interest": 500,
-            "capital_gains": 2_000,
-        },
-    }
+    request = CalculationRequest.model_validate(
+        {
+            "year": 2024,
+            "investment": {
+                "dividends": 1_000,
+                "interest": 500,
+                "capital_gains": 2_000,
+            },
+        }
+    )
 
-    result = calculate_tax(payload)
+    result = calculate_tax(request)
 
     investment_detail = next(
         detail for detail in result["details"] if detail["category"] == "investment"
@@ -549,12 +598,14 @@ def test_calculate_tax_with_investment_income_breakdown() -> None:
 
 
 def test_calculate_tax_includes_additional_obligations() -> None:
-    payload = {
-        "year": 2024,
-        "obligations": {"vat": 1_250, "enfia": 320, "luxury": 880},
-    }
+    request = CalculationRequest.model_validate(
+        {
+            "year": 2024,
+            "obligations": {"vat": 1_250, "enfia": 320, "luxury": 880},
+        }
+    )
 
-    result = calculate_tax(payload)
+    result = calculate_tax(request)
 
     summary = result["summary"]
     assert summary["income_total"] == 0.0
@@ -578,32 +629,23 @@ def test_calculate_tax_multi_year_credit_difference() -> None:
         "employment": {"gross_income": 25_000},
     }
 
-    current_year_payload = {"year": 2024, **base_payload}
-    next_year_payload = {"year": 2025, **base_payload}
+    current_year_request = CalculationRequest.model_validate(
+        {"year": 2024, **base_payload}
+    )
+    next_year_request = CalculationRequest.model_validate({"year": 2025, **base_payload})
 
-    result_2024 = calculate_tax(current_year_payload)
-    result_2025 = calculate_tax(next_year_payload)
+    result_2024 = calculate_tax(current_year_request)
+    result_2025 = calculate_tax(next_year_request)
 
     tax_2024 = result_2024["summary"]["tax_total"]
     tax_2025 = result_2025["summary"]["tax_total"]
 
     assert tax_2025 < tax_2024
-    assert result_2025["meta"]["year"] == next_year_payload["year"]
+    assert result_2025["meta"]["year"] == next_year_request.year
 
 
 def test_calculate_tax_with_freelance_category_contributions() -> None:
     """EFKA category metadata populates contribution breakdowns."""
-
-    payload = {
-        "year": 2024,
-        "freelance": {
-            "profit": 30_000,
-            "efka_category": "general_class_1",
-            "efka_months": 6,
-            "mandatory_contributions": 500,
-            "auxiliary_contributions": 120,
-        },
-    }
 
     config = load_year_configuration(2024)
     category = next(
@@ -614,7 +656,20 @@ def test_calculate_tax_with_freelance_category_contributions() -> None:
     expected_category_contribution = category.monthly_amount * 6
     expected_deductible = expected_category_contribution + 500 + 120
 
-    result = calculate_tax(payload)
+    request = CalculationRequest.model_validate(
+        {
+            "year": 2024,
+            "freelance": {
+                "profit": 30_000,
+                "efka_category": "general_class_1",
+                "efka_months": 6,
+                "mandatory_contributions": 500,
+                "auxiliary_contributions": 120,
+            },
+        }
+    )
+
+    result = calculate_tax(request)
 
     freelance_detail = result["details"][0]
     assert freelance_detail["category"] == "freelance"
@@ -643,18 +698,20 @@ def test_calculate_tax_with_engineer_lump_sum_contributions() -> None:
     auxiliary_total = (category.auxiliary_monthly_amount or 0) * months
     lump_sum_total = (category.lump_sum_monthly_amount or 0) * months
 
-    payload = {
-        "year": 2024,
-        "freelance": {
-            "profit": 40_000,
-            "efka_category": "engineer_class_1",
-            "efka_months": months,
-            "auxiliary_contributions": auxiliary_total,
-            "lump_sum_contributions": lump_sum_total,
-        },
-    }
+    request = CalculationRequest.model_validate(
+        {
+            "year": 2024,
+            "freelance": {
+                "profit": 40_000,
+                "efka_category": "engineer_class_1",
+                "efka_months": months,
+                "auxiliary_contributions": auxiliary_total,
+                "lump_sum_contributions": lump_sum_total,
+            },
+        }
+    )
 
-    result = calculate_tax(payload)
+    result = calculate_tax(request)
     freelance_detail = result["details"][0]
 
     expected_category = category.monthly_amount * months
@@ -671,20 +728,22 @@ def test_calculate_tax_with_engineer_lump_sum_contributions() -> None:
 def test_calculate_tax_applies_deductions_across_components() -> None:
     """Itemised deductions now translate into capped tax credits."""
 
-    payload = {
-        "year": 2024,
-        "locale": "en",
-        "employment": {"gross_income": 30_000},
-        "agricultural": {"gross_revenue": 12_000, "deductible_expenses": 2_000},
-        "deductions": {
-            "donations": 2_000,
-            "medical": 1_000,
-            "education": 1_000,
-            "insurance": 1_000,
-        },
-    }
+    request = CalculationRequest.model_validate(
+        {
+            "year": 2024,
+            "locale": "en",
+            "employment": {"gross_income": 30_000},
+            "agricultural": {"gross_revenue": 12_000, "deductible_expenses": 2_000},
+            "deductions": {
+                "donations": 2_000,
+                "medical": 1_000,
+                "education": 1_000,
+                "insurance": 1_000,
+            },
+        }
+    )
 
-    result = calculate_tax(payload)
+    result = calculate_tax(request)
 
     employment_detail = next(
         detail for detail in result["details"] if detail["category"] == "employment"
@@ -713,14 +772,16 @@ def test_calculate_tax_applies_deductions_across_components() -> None:
 def test_calculate_tax_applies_donation_credit_to_freelance_tax() -> None:
     """Donation credits now reduce freelance progressive tax directly."""
 
-    base_payload = {
-        "year": 2024,
-        "freelance": {"profit": 20_000},
-    }
+    base_request = CalculationRequest.model_validate(
+        {
+            "year": 2024,
+            "freelance": {"profit": 20_000},
+        }
+    )
 
-    baseline = calculate_tax(base_payload)
+    baseline = calculate_tax(base_request)
     with_donation = calculate_tax(
-        {**base_payload, "deductions": {"donations": 100}}
+        base_request.model_copy(update={"deductions": {"donations": 100}})
     )
 
     baseline_tax = baseline["summary"]["tax_total"]
@@ -737,14 +798,16 @@ def test_calculate_tax_applies_donation_credit_to_freelance_tax() -> None:
 def test_calculate_tax_applies_medical_credit_threshold_for_freelance() -> None:
     """Medical credits apply the 5% threshold before reducing tax."""
 
-    base_payload = {
-        "year": 2024,
-        "freelance": {"profit": 20_000},
-    }
+    base_request = CalculationRequest.model_validate(
+        {
+            "year": 2024,
+            "freelance": {"profit": 20_000},
+        }
+    )
 
-    baseline = calculate_tax(base_payload)
+    baseline = calculate_tax(base_request)
     with_medical = calculate_tax(
-        {**base_payload, "deductions": {"medical": 2_500}}
+        base_request.model_copy(update={"deductions": {"medical": 2_500}})
     )
 
     baseline_tax = baseline["summary"]["tax_total"]
@@ -762,15 +825,19 @@ def test_calculate_tax_applies_medical_credit_threshold_for_freelance() -> None:
 def test_calculate_tax_trade_fee_auto_exemption_by_year() -> None:
     """Trade fee remains waived from 2024 onwards once the abolition takes effect."""
 
-    payload_2024 = {"year": 2024, "freelance": {"profit": 12_000}}
-    result_2024 = calculate_tax(payload_2024)
+    request_2024 = CalculationRequest.model_validate(
+        {"year": 2024, "freelance": {"profit": 12_000}}
+    )
+    result_2024 = calculate_tax(request_2024)
     freelance_2024 = next(
         detail for detail in result_2024["details"] if detail["category"] == "freelance"
     )
     assert freelance_2024["trade_fee"] == pytest.approx(0.0)
 
-    payload_2025 = {"year": 2025, "freelance": {"profit": 12_000}}
-    result_2025 = calculate_tax(payload_2025)
+    request_2025 = CalculationRequest.model_validate(
+        {"year": 2025, "freelance": {"profit": 12_000}}
+    )
+    result_2025 = calculate_tax(request_2025)
     freelance_2025 = next(
         detail for detail in result_2025["details"] if detail["category"] == "freelance"
     )
@@ -784,13 +851,15 @@ def test_calculate_tax_trade_fee_auto_exemption_by_year() -> None:
 def test_calculate_tax_with_agricultural_and_other_income() -> None:
     """Agricultural and other income categories produce dedicated details."""
 
-    payload = {
-        "year": 2024,
-        "agricultural": {"gross_revenue": 15_000, "deductible_expenses": 2_000},
-        "other": {"taxable_income": 5_000},
-    }
+    request = CalculationRequest.model_validate(
+        {
+            "year": 2024,
+            "agricultural": {"gross_revenue": 15_000, "deductible_expenses": 2_000},
+            "other": {"taxable_income": 5_000},
+        }
+    )
 
-    result = calculate_tax(payload)
+    result = calculate_tax(request)
 
     agricultural_detail = next(
         detail for detail in result["details"] if detail["category"] == "agricultural"
@@ -815,15 +884,17 @@ def test_agricultural_only_income_receives_tax_credit() -> None:
     config = load_year_configuration(2025)
     base_credit = config.employment.tax_credit.amount_for_children(0)
 
-    payload = {
-        "year": 2025,
-        "agricultural": {
-            "gross_revenue": 12_000,
-            "deductible_expenses": 2_000,
-        },
-    }
+    request = CalculationRequest.model_validate(
+        {
+            "year": 2025,
+            "agricultural": {
+                "gross_revenue": 12_000,
+                "deductible_expenses": 2_000,
+            },
+        }
+    )
 
-    result = calculate_tax(payload)
+    result = calculate_tax(request)
 
     agricultural_detail = next(
         detail for detail in result["details"] if detail["category"] == "agricultural"
@@ -862,18 +933,20 @@ def test_professional_farmer_receives_dependent_credit() -> None:
     config = load_year_configuration(2025)
     dependent_credit = config.employment.tax_credit.amount_for_children(2)
 
-    payload = {
-        "year": 2025,
-        "dependents": {"children": 2},
-        "agricultural": {
-            "gross_revenue": 28_000,
-            "deductible_expenses": 3_000,
-            "professional_farmer": True,
-        },
-        "other": {"taxable_income": 4_000},
-    }
+    request = CalculationRequest.model_validate(
+        {
+            "year": 2025,
+            "dependents": {"children": 2},
+            "agricultural": {
+                "gross_revenue": 28_000,
+                "deductible_expenses": 3_000,
+                "professional_farmer": True,
+            },
+            "other": {"taxable_income": 4_000},
+        }
+    )
 
-    result = calculate_tax(payload)
+    result = calculate_tax(request)
 
     agricultural_detail = next(
         detail for detail in result["details"] if detail["category"] == "agricultural"
@@ -893,31 +966,36 @@ def test_professional_farmer_receives_dependent_credit() -> None:
 def test_calculate_tax_trade_fee_reduction_rules() -> None:
     """Trade fee toggles keep the amount at zero after the abolition."""
 
-    base_payload = {
-        "year": 2025,
-        "freelance": {
-            "profit": 12_000,
-            "efka_category": "general_class_1",
-            "trade_fee_location": "standard",
-            "years_active": 2,
-            "newly_self_employed": True,
-        },
-    }
-
     config = load_year_configuration(2025)
     trade_fee_config = config.freelance.trade_fee
 
-    reduced_fee_result = calculate_tax(base_payload)
+    base_request = CalculationRequest.model_validate(
+        {
+            "year": 2025,
+            "freelance": {
+                "profit": 12_000,
+                "efka_category": "general_class_1",
+                "trade_fee_location": "standard",
+                "years_active": 2,
+                "newly_self_employed": True,
+            },
+        }
+    )
+
+    reduced_fee_result = calculate_tax(base_request)
     reduced_detail = reduced_fee_result["details"][0]
     assert reduced_detail["trade_fee"] == pytest.approx(
         trade_fee_config.reduced_amount or trade_fee_config.standard_amount
     )
 
-    no_fee_payload = {
-        "year": 2025,
-        "freelance": {**base_payload["freelance"], "include_trade_fee": False},
-    }
-    no_fee_result = calculate_tax(no_fee_payload)
+    no_fee_request = base_request.model_copy(
+        update={
+            "freelance": base_request.freelance.model_copy(
+                update={"include_trade_fee": False}
+            )
+        }
+    )
+    no_fee_result = calculate_tax(no_fee_request)
     no_fee_detail = no_fee_result["details"][0]
     assert no_fee_detail["trade_fee"] == pytest.approx(0.0)
     expected_difference = reduced_detail["trade_fee"]

@@ -12,16 +12,56 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass
 
+from pydantic import BaseModel, ConfigDict
+
+from .api import (
+    AgriculturalIncomeInput,
+    CalculationRequest,
+    CalculationResponse,
+    DeductionBreakdownEntry,
+    DeductionsInput,
+    DetailEntry,
+    DependentsInput,
+    EmploymentInput,
+    FreelanceInput,
+    PensionInput,
+    RentalInput,
+    ObligationsInput,
+    OtherIncomeInput,
+    ResponseMeta,
+    Summary,
+    SummaryLabels,
+    format_validation_error,
+)
+
 __all__ = [
     "CalculationInput",
     "GeneralIncomeComponent",
     "DetailTotals",
+    "CalculationRequest",
+    "CalculationResponse",
+    "DependentsInput",
+    "EmploymentInput",
+    "PensionInput",
+    "FreelanceInput",
+    "RentalInput",
+    "AgriculturalIncomeInput",
+    "OtherIncomeInput",
+    "ObligationsInput",
+    "DeductionsInput",
+    "DeductionBreakdownEntry",
+    "SummaryLabels",
+    "Summary",
+    "DetailEntry",
+    "ResponseMeta",
+    "format_validation_error",
 ]
 
 
-@dataclass(frozen=True, slots=True)
-class CalculationInput:
+class CalculationInput(BaseModel):
     """Validated and normalised user input for tax calculations."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
 
     year: int
     locale: str

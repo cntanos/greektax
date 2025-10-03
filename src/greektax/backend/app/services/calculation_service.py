@@ -6,17 +6,21 @@ import logging
 import os
 from collections.abc import Mapping, Sequence
 from contextlib import contextmanager
-from dataclasses import replace
 from numbers import Real
 from time import perf_counter
 from types import MappingProxyType
 from typing import Any
 
+from pydantic import ValidationError
+
 from greektax.backend.app.localization import Translator, get_translator
 from greektax.backend.app.models import (
     CalculationInput,
+    CalculationRequest,
+    CalculationResponse,
     DetailTotals,
     GeneralIncomeComponent,
+    format_validation_error,
 )
 from greektax.backend.config.year_config import (
     FreelanceConfig,
@@ -41,9 +45,6 @@ _MEDICAL_INCOME_THRESHOLD_RATE = 0.05
 _MEDICAL_MAX_CREDIT = 3_000.0
 _EDUCATION_CREDIT_RATE = 0.10
 _EDUCATION_MAX_ELIGIBLE_EXPENSE = 1_000.0
-_NET_INPUT_ERROR = (
-    "Employment net income inputs are no longer supported; provide gross amounts instead"
-)
 _INSURANCE_CREDIT_RATE = 0.10
 _INSURANCE_MAX_ELIGIBLE_EXPENSE = 1_200.0
 
@@ -72,84 +73,36 @@ def _profile_section(name: str, store: dict[str, float] | None):
 
 
 
-def _to_float(value: Any, field_name: str) -> float:
-    try:
-        number = float(value)
-    except (TypeError, ValueError) as exc:
-        raise ValueError(f"Field '{field_name}' must be numeric") from exc
-
-    if number < 0:
-        raise ValueError(f"Field '{field_name}' cannot be negative")
-
-    return number
-
-
-def _to_int(value: Any, field_name: str) -> int:
-    try:
-        number = int(value)
-    except (TypeError, ValueError) as exc:
-        raise ValueError(f"Field '{field_name}' must be an integer") from exc
-
-    if number < 0:
-        raise ValueError(f"Field '{field_name}' cannot be negative")
-
-    return number
-
-
-def _to_bool(value: Any, default: bool = True) -> bool:
-    if value is None:
-        return default
-    if isinstance(value, bool):
-        return value
-    if isinstance(value, str):
-        normalised = value.strip().lower()
-        if normalised in {"true", "1", "yes", "y"}:
-            return True
-        if normalised in {"false", "0", "no", "n"}:
-            return False
-
-    raise ValueError("Boolean fields accept true/false values only")
-
-
-def _extract_section(payload: Mapping[str, Any], key: str) -> Mapping[str, Any]:
-    section = payload.get(key, {})
-    if section is None:
-        return {}
-    if not isinstance(section, Mapping):
-        raise ValueError(f"Section '{key}' must be a mapping")
-    return section
-
-
 def _validate_payments(
-    value: Any, payroll: PayrollConfig, field_name: str
+    value: int | None, payroll: PayrollConfig, field_name: str
 ) -> int | None:
     if value is None:
         return None
 
-    payments = _to_int(value, field_name)
-    if payments not in payroll.allowed_payments_per_year:
+    if value < 0:
+        raise ValueError(f"Field '{field_name}' cannot be negative")
+
+    if value not in payroll.allowed_payments_per_year:
         allowed = ", ".join(str(entry) for entry in payroll.allowed_payments_per_year)
         raise ValueError(
             f"Field '{field_name}' must match an allowed payroll frequency ({allowed})"
         )
-    return payments
+    return value
+
+
 
 
 def _normalise_payload(
-    payload: Mapping[str, Any], year: int, config: YearConfiguration
+    request: CalculationRequest, config: YearConfiguration
 ) -> CalculationInput:
-    if not isinstance(payload, Mapping):
-        raise ValueError("Payload must be a mapping")
+    locale = request.locale or "en"
 
-    locale = str(payload.get("locale", "en"))
+    children = request.dependents.children
 
-    dependants_section = _extract_section(payload, "dependents")
-    children = _to_int(dependants_section.get("children", 0), "dependents.children")
-
-    employment_section = _extract_section(payload, "employment")
+    employment_input = request.employment
     employment_payroll = config.employment.payroll
     employment_payments = _validate_payments(
-        employment_section.get("payments_per_year"),
+        employment_input.payments_per_year,
         employment_payroll,
         "employment.payments_per_year",
     )
@@ -157,64 +110,30 @@ def _normalise_payload(
     employment_monthly_income: float | None = None
     employment_income = 0.0
 
-    employment_manual_contributions = _to_float(
-        employment_section.get("employee_contributions", 0.0),
-        "employment.employee_contributions",
-    )
-
-    withholding_tax = _to_float(payload.get("withholding_tax", 0.0), "withholding_tax")
-
-    net_income_value = employment_section.get("net_income")
-    if net_income_value not in {None, "", 0, 0.0}:
-        net_amount = _to_float(net_income_value, "employment.net_income")
-        if net_amount > 0:
-            raise ValueError(_NET_INPUT_ERROR)
-
-    net_monthly_value = employment_section.get("net_monthly_income")
-    if net_monthly_value not in {None, "", 0, 0.0}:
-        net_monthly = _to_float(
-            net_monthly_value, "employment.net_monthly_income"
-        )
-        if net_monthly > 0:
-            raise ValueError(_NET_INPUT_ERROR)
-
-    monthly_input = employment_section.get("monthly_income")
-    if monthly_input is not None:
-        monthly = _to_float(monthly_input, "employment.monthly_income")
-        if monthly > 0:
-            employment_monthly_income = monthly
-
-    gross_income = _to_float(
-        employment_section.get("gross_income", 0.0), "employment.gross_income"
-    )
-
-    if employment_monthly_income is not None:
+    if employment_input.monthly_income is not None and employment_input.monthly_income > 0:
         payments = employment_payments or employment_payroll.default_payments_per_year
         employment_payments = payments
+        employment_monthly_income = employment_input.monthly_income
         employment_income = employment_monthly_income * payments
 
-    if gross_income > 0:
-        employment_income = gross_income
+    if employment_input.gross_income > 0:
+        employment_income = employment_input.gross_income
         if employment_payments and employment_monthly_income is None:
             employment_monthly_income = employment_income / employment_payments
 
-    freelance_section = _extract_section(payload, "freelance")
-    profit_value: Any | None = freelance_section.get("profit")
-    if profit_value is None:
-        revenue = _to_float(
-            freelance_section.get("gross_revenue", 0.0), "freelance.gross_revenue"
-        )
-        expenses = _to_float(
-            freelance_section.get("deductible_expenses", 0.0),
-            "freelance.deductible_expenses",
-        )
-        profit = revenue - expenses
-        profit = profit if profit > 0 else 0.0
-    else:
-        profit = _to_float(profit_value, "freelance.profit")
+    employment_manual_contributions = employment_input.employee_contributions
 
-    category_id_raw = freelance_section.get("efka_category")
-    category_id = str(category_id_raw).strip() if category_id_raw else ""
+    withholding_tax = request.withholding_tax
+
+    freelance_input = request.freelance
+    if freelance_input.profit is None:
+        profit = freelance_input.gross_revenue - freelance_input.deductible_expenses
+        if profit < 0:
+            profit = 0.0
+    else:
+        profit = freelance_input.profit
+
+    category_id = (freelance_input.efka_category or "").strip()
     category_config = None
     if category_id:
         category_config = next(
@@ -228,13 +147,9 @@ def _normalise_payload(
         if category_config is None:
             raise ValueError("Unknown EFKA category selection")
 
-    category_months_value = freelance_section.get("efka_months")
-    category_months = None
-    if category_months_value is not None:
-        months = _to_int(category_months_value, "freelance.efka_months")
-        if months > 0:
-            category_months = months
-
+    category_months = freelance_input.efka_months
+    if category_months is not None and category_months <= 0:
+        category_months = None
     if category_months is None and category_config is not None:
         category_months = 12
 
@@ -242,44 +157,19 @@ def _normalise_payload(
     if category_config is not None and category_months:
         category_contribution = category_config.monthly_amount * category_months
 
-    additional_contributions = _to_float(
-        freelance_section.get("mandatory_contributions", 0.0),
-        "freelance.mandatory_contributions",
-    )
+    additional_contributions = freelance_input.mandatory_contributions
+    auxiliary_contributions = freelance_input.auxiliary_contributions
+    lump_sum_contributions = freelance_input.lump_sum_contributions
 
-    auxiliary_contributions = _to_float(
-        freelance_section.get("auxiliary_contributions", 0.0),
-        "freelance.auxiliary_contributions",
-    )
+    include_trade_fee = freelance_input.include_trade_fee
+    trade_fee_location = freelance_input.trade_fee_location
+    years_active = freelance_input.years_active
+    newly_self_employed = freelance_input.newly_self_employed
 
-    lump_sum_contributions = _to_float(
-        freelance_section.get("lump_sum_contributions", 0.0),
-        "freelance.lump_sum_contributions",
-    )
-
-    include_trade_fee = _to_bool(freelance_section.get("include_trade_fee"), True)
-
-    trade_fee_location_raw = freelance_section.get("trade_fee_location")
-    trade_fee_location = (
-        str(trade_fee_location_raw).strip().lower() if trade_fee_location_raw else ""
-    )
-    if trade_fee_location not in {"", "standard", "reduced"}:
-        raise ValueError("Invalid trade fee location selection")
-    trade_fee_location = trade_fee_location or "standard"
-
-    years_active_value = freelance_section.get("years_active")
-    years_active = None
-    if years_active_value is not None:
-        years_active = _to_int(years_active_value, "freelance.years_active")
-
-    newly_self_employed = _to_bool(
-        freelance_section.get("newly_self_employed"), False
-    )
-
-    pension_section = _extract_section(payload, "pension")
+    pension_input = request.pension
     pension_payroll = config.pension.payroll
     pension_payments = _validate_payments(
-        pension_section.get("payments_per_year"),
+        pension_input.payments_per_year,
         pension_payroll,
         "pension.payments_per_year",
     )
@@ -288,105 +178,61 @@ def _normalise_payload(
     pension_income = 0.0
     pension_net_target: float | None = None
 
-    pension_monthly_input = pension_section.get("monthly_income")
-    if pension_monthly_input is not None:
-        monthly = _to_float(pension_monthly_input, "pension.monthly_income")
-        if monthly > 0:
-            pension_monthly_income = monthly
-
-    pension_gross = _to_float(
-        pension_section.get("gross_income", 0.0), "pension.gross_income"
-    )
-
-    pension_net_input = pension_section.get("net_income")
-    if pension_net_input is not None:
-        net_income = _to_float(pension_net_input, "pension.net_income")
-        if net_income > 0:
-            pension_net_target = net_income
-
-    pension_net_monthly_input = pension_section.get("net_monthly_income")
-    if pension_net_monthly_input is not None:
-        net_monthly = _to_float(
-            pension_net_monthly_input, "pension.net_monthly_income"
-        )
-        if net_monthly > 0:
-            payments = pension_payments or pension_payroll.default_payments_per_year
-            pension_payments = payments
-            pension_net_target = net_monthly * payments
-
-    if pension_monthly_income is not None:
+    if pension_input.monthly_income is not None and pension_input.monthly_income > 0:
         payments = pension_payments or pension_payroll.default_payments_per_year
         pension_payments = payments
+        pension_monthly_income = pension_input.monthly_income
         pension_income = pension_monthly_income * payments
 
-    if pension_gross > 0:
-        pension_income = pension_gross
+    if pension_input.gross_income > 0:
+        pension_income = pension_input.gross_income
         if pension_payments and pension_monthly_income is None:
             pension_monthly_income = pension_income / pension_payments
 
+    if pension_input.net_income is not None and pension_input.net_income > 0:
+        pension_net_target = pension_input.net_income
+
+    if pension_input.net_monthly_income is not None and pension_input.net_monthly_income > 0:
+        payments = pension_payments or pension_payroll.default_payments_per_year
+        pension_payments = payments
+        pension_net_target = pension_input.net_monthly_income * payments
+
     if pension_net_target is not None:
-        if pension_income > 0 or (pension_monthly_income and pension_monthly_income > 0):
+        if pension_income > 0 or (
+            pension_monthly_income is not None and pension_monthly_income > 0
+        ):
             raise ValueError("Provide either gross or net pension income, not both")
         if pension_payments is None:
             pension_payments = pension_payroll.default_payments_per_year
         pension_monthly_income = None
         pension_income = 0.0
 
-    rental_section = _extract_section(payload, "rental")
-    rental_gross = _to_float(
-        rental_section.get("gross_income", 0.0), "rental.gross_income"
-    )
-    rental_expenses = _to_float(
-        rental_section.get("deductible_expenses", 0.0),
-        "rental.deductible_expenses",
-    )
+    rental_input = request.rental
+    rental_gross = rental_input.gross_income
+    rental_expenses = rental_input.deductible_expenses
 
-    investment_section = _extract_section(payload, "investment")
-    investment_amounts: dict[str, float] = {}
-    for key, value in investment_section.items():
-        investment_amounts[str(key)] = _to_float(value, f"investment.{key}")
+    investment_amounts = MappingProxyType(dict(request.investment))
 
-    agricultural_section = _extract_section(payload, "agricultural")
-    agricultural_revenue = _to_float(
-        agricultural_section.get("gross_revenue", 0.0),
-        "agricultural.gross_revenue",
-    )
-    agricultural_expenses = _to_float(
-        agricultural_section.get("deductible_expenses", 0.0),
-        "agricultural.deductible_expenses",
-    )
-    agricultural_professional = _to_bool(
-        agricultural_section.get("professional_farmer"), False
-    )
+    agricultural_input = request.agricultural
+    agricultural_revenue = agricultural_input.gross_revenue
+    agricultural_expenses = agricultural_input.deductible_expenses
+    agricultural_professional = agricultural_input.professional_farmer
 
-    other_section = _extract_section(payload, "other")
-    other_income = _to_float(
-        other_section.get("taxable_income", 0.0), "other.taxable_income"
-    )
+    other_income = request.other.taxable_income
 
-    obligations_section = _extract_section(payload, "obligations")
-    vat_due = _to_float(obligations_section.get("vat", 0.0), "obligations.vat")
-    enfia_due = _to_float(obligations_section.get("enfia", 0.0), "obligations.enfia")
-    luxury_due = _to_float(
-        obligations_section.get("luxury", 0.0), "obligations.luxury"
-    )
+    obligations = request.obligations
+    vat_due = obligations.vat
+    enfia_due = obligations.enfia
+    luxury_due = obligations.luxury
 
-    deductions_section = _extract_section(payload, "deductions")
-    deductions_donations = _to_float(
-        deductions_section.get("donations", 0.0), "deductions.donations"
-    )
-    deductions_medical = _to_float(
-        deductions_section.get("medical", 0.0), "deductions.medical"
-    )
-    deductions_education = _to_float(
-        deductions_section.get("education", 0.0), "deductions.education"
-    )
-    deductions_insurance = _to_float(
-        deductions_section.get("insurance", 0.0), "deductions.insurance"
-    )
+    deductions = request.deductions
+    deductions_donations = deductions.donations
+    deductions_medical = deductions.medical
+    deductions_education = deductions.education
+    deductions_insurance = deductions.insurance
 
     normalised = CalculationInput(
-        year=year,
+        year=request.year,
         locale=locale,
         children=children,
         employment_income=employment_income,
@@ -411,7 +257,7 @@ def _normalise_payload(
         freelance_newly_self_employed=newly_self_employed,
         rental_gross_income=rental_gross,
         rental_deductible_expenses=rental_expenses,
-        investment_amounts=MappingProxyType(investment_amounts),
+        investment_amounts=investment_amounts,
         vat_due=vat_due,
         enfia_due=enfia_due,
         luxury_due=luxury_due,
@@ -449,19 +295,21 @@ def _set_component_income(
 ) -> CalculationInput:
     monthly_income = gross_income / payments if payments > 0 else None
     if category == "employment":
-        return replace(
-            payload,
-            employment_income=gross_income,
-            employment_monthly_income=monthly_income,
-            employment_payments_per_year=payments,
+        return payload.model_copy(
+            update={
+                "employment_income": gross_income,
+                "employment_monthly_income": monthly_income,
+                "employment_payments_per_year": payments,
+            }
         )
 
     if category == "pension":
-        return replace(
-            payload,
-            pension_income=gross_income,
-            pension_monthly_income=monthly_income,
-            pension_payments_per_year=payments,
+        return payload.model_copy(
+            update={
+                "pension_income": gross_income,
+                "pension_monthly_income": monthly_income,
+                "pension_payments_per_year": payments,
+            }
         )
 
     raise ValueError(f"Unsupported category for net target resolution: {category}")
@@ -478,11 +326,12 @@ def _solve_net_target(
         raise ValueError("Employment net income inputs are not supported")
 
     if target <= 0:
-        return replace(
-            payload,
-            pension_income=0.0,
-            pension_monthly_income=None,
-            pension_net_target_income=None,
+        return payload.model_copy(
+            update={
+                "pension_income": 0.0,
+                "pension_monthly_income": None,
+                "pension_net_target_income": None,
+            }
         )
 
     payments = (
@@ -530,7 +379,7 @@ def _solve_net_target(
         else:
             lower = mid
 
-    return replace(best_payload, pension_net_target_income=None)
+    return best_payload.model_copy(update={"pension_net_target_income": None})
 
 
 def _calculate_progressive_tax(amount: float, brackets: Sequence[TaxBracket]) -> float:
@@ -1211,23 +1060,36 @@ def _update_totals_from_detail(
         totals.net += float(net)
 
 
-def calculate_tax(payload: dict[str, Any]) -> dict[str, Any]:
+def calculate_tax(
+    payload: Mapping[str, Any] | CalculationRequest,
+) -> dict[str, Any]:
     """Compute tax summary for the provided payload."""
 
-    if not isinstance(payload, Mapping):
-        raise ValueError("Payload must be a mapping")
-
-    if "year" not in payload:
-        raise ValueError("Payload must include a tax year")
+    if isinstance(payload, CalculationRequest):
+        try:
+            request_model = CalculationRequest.model_validate(
+                payload.model_dump(mode="python", serialize_as_any=True)
+            )
+        except ValidationError as exc:
+            raise ValueError(format_validation_error(exc)) from exc
+    else:
+        if not isinstance(payload, Mapping):
+            raise ValueError("Payload must be a mapping")
+        if "year" not in payload:
+            raise ValueError("Payload must include a tax year")
+        try:
+            request_model = CalculationRequest.model_validate(payload)
+        except ValidationError as exc:
+            raise ValueError(format_validation_error(exc)) from exc
 
     timings: dict[str, float] | None = {} if _profiling_enabled() else None
     overall_start = perf_counter() if timings is not None else None
 
-    year = _to_int(payload["year"], "year")
+    year = request_model.year
     config: YearConfiguration = load_year_configuration(year)
 
     with _profile_section("normalise_payload", timings):
-        normalised = _normalise_payload(payload, year, config)
+        normalised = _normalise_payload(request_model, config)
 
     translator = get_translator(normalised.locale)
 
@@ -1345,11 +1207,15 @@ def calculate_tax(payload: dict[str, Any]) -> dict[str, Any]:
             for entry in deduction_breakdown
         ]
 
-    return {
-        "summary": summary,
-        "details": details,
-        "meta": {
-            "year": normalised.year,
-            "locale": translator.locale,
-        },
-    }
+    response_model = CalculationResponse.model_validate(
+        {
+            "summary": summary,
+            "details": details,
+            "meta": {
+                "year": normalised.year,
+                "locale": translator.locale,
+            },
+        }
+    )
+
+    return response_model.model_dump(mode="json")
