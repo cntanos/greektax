@@ -74,6 +74,48 @@ average durations), bundle sizes for the key front-end assets, and ARIA usage in
 the HTML shell. See [`docs/performance_baseline.md`](docs/performance_baseline.md)
 for guidance on interpreting the output.
 
+## Tax Logic & Recent Updates
+
+- Charitable donations now yield a direct tax credit instead of reducing taxable
+  income. This aligns the calculator with the latest deduction engine updates
+  and validation tests.
+- As of the 2024 filing year, most individual scenarios no longer include a
+  trade fee by default. The simulator only surfaces the fee when a filing status
+  or profession explicitly requires it.
+
+### Highlights from the Last 15 Commits
+
+- Expanded automated coverage for new tax credit and trade fee branches to keep
+  regression risk low (802148a).
+- Improved inline guidance and bilingual copy across form steps to clarify data
+  entry expectations (1ac622b).
+- Sharpened employment and pension toggle wording for clearer user decisions
+  (e49d997).
+- Introduced an employment income mode toggle so contributors can model payroll
+  and pension flows separately (18944c7).
+- Reworked the deduction engine to support credit-based relief and consistent
+  calculations across income types (892a1af).
+- Delivered responsive Sankey sizing improvements so the allocation chart fits
+  small screens without clipping (7bc8935).
+- Patched Sankey overflow bugs that previously hid labels on dense datasets
+  (c02dc13).
+- Refined investment detail styling with better numeric emphasis for comparison
+  scanning (6543fce).
+- Ensured the results section is visible before the Sankey renders to avoid
+  layout shifts during loading (182b234).
+- Added a built-in fallback when `Flask-Cors` is unavailable to keep the API
+  responsive in minimal deployments (a5c9f61).
+- Streamlined API base detection logic so hosted deployments default to the
+  remote endpoint when appropriate (bbf5e84).
+- Simplified client-side base URL selection to reduce maintenance overhead
+  (7423a7a).
+- Enabled CORS across API endpoints, unblocking integrations with embedded
+  front-ends (56ccfd9).
+- Defaulted production builds to the same-origin API base for improved security
+  defaults (c621d8c).
+- Added explicit overrides for embedded deployments so CMS integrations can
+  point to bespoke API hosts (be1da47).
+
 ## Configuring the API endpoint
 
 The front-end automatically selects which API base URL to use:
