@@ -191,6 +191,15 @@
       "links": {
         "trade_fee_sunset": "Ενημέρωση ΑΑΔΕ για τέλος επιτηδεύματος"
       },
+      "distribution": {
+        "heading": "Κατανομή συνολικού εισοδήματος",
+        "description": "Δείτε πώς κατανέμεται το συνολικό εισόδημα μεταξύ κερδών, φόρων, ασφαλιστικών εισφορών και εκπιπτόμενων δαπανών.",
+        "empty": "Προσθέστε φορολογητέο εισόδημα για να εμφανιστεί η κατανομή σε όλες τις κατηγορίες.",
+        "profits": "Κέρδη",
+        "taxes": "Φόροι",
+        "insurance": "Ασφαλιστικές εισφορές",
+        "expenses": "Δαπάνες"
+      },
       "sankey": {
         "aria_label": "Διάγραμμα Sankey που δείχνει τη ροή του ακαθάριστου εισοδήματος σε φόρους, εισφορές και καθαρά ποσά.",
         "contributions": "Εισφορές & δαπάνες",
@@ -446,6 +455,15 @@
       },
       "links": {
         "trade_fee_sunset": "AADE trade fee update"
+      },
+      "distribution": {
+        "heading": "Income allocation summary",
+        "description": "See how your total income is split between profits, taxes, insurance contributions, and deductible expenses.",
+        "empty": "Add taxable income above to reveal the allocation across all categories.",
+        "profits": "Profits",
+        "taxes": "Taxes",
+        "insurance": "Insurance contributions",
+        "expenses": "Expenses"
       },
       "sankey": {
         "aria_label": "Sankey diagram showing how gross income flows into taxes, contributions, and net amounts.",

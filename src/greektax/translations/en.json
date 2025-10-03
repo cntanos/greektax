@@ -262,6 +262,15 @@
     "links": {
       "trade_fee_sunset": "AADE trade fee update"
     },
+    "distribution": {
+      "heading": "Income allocation summary",
+      "description": "See how your total income is split between profits, taxes, insurance contributions, and deductible expenses.",
+      "empty": "Add taxable income above to reveal the allocation across all categories.",
+      "profits": "Profits",
+      "taxes": "Taxes",
+      "insurance": "Insurance contributions",
+      "expenses": "Expenses"
+    },
     "sankey": {
       "aria_label": "Sankey diagram showing how gross income flows into taxes, contributions, and net amounts.",
       "contributions": "Contributions & expenses",
