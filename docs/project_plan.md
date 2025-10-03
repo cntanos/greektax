@@ -250,24 +250,36 @@ deliver user value in incremental, testable slices.
   auxiliary and lump-sum contributions while aligning expected values with the
   richer configuration metadata.【F:tests/unit/test_calculation_service.py†L292-L347】【F:tests/integration/test_config_endpoints.py†L26-L35】
 
-## Sprint 20 (Current)
+## Sprints 20-24 (Completed)
+
+**Highlights**
+- Codified mixed EFKA scenarios with manual overrides so engineer-specific
+  auxiliary and lump-sum contributions are exercised in unit coverage and
+  regression fixtures.【F:tests/unit/test_calculation_service.py†L667-L723】
+- Hardened configuration validation to flag payroll frequency gaps, EFKA data
+  regressions, and trade-fee metadata issues before they reach production
+  deployments.【F:src/greektax/backend/config/validator.py†L1-L156】
+- Maintained localisation and asset parity by re-embedding the bilingual
+  catalogues into the static bundle whenever translations change, keeping the
+  Flask responses and front-end shell aligned.【F:scripts/embed_translations.py†L1-L109】
+
+## Sprint 25 (Current)
 
 **Objectives**
-- Capture end-to-end scenarios that combine engineer EFKA tiers with manual
-  overrides so regressions cover auxiliary and lump-sum adjustments.
-- Document contribution guidance for onboarding materials, including references
-  to official EFKA tables and the calculator's auto-filled values.
-- Review persistence and accessibility states for the restructured freelance
-  section to ensure hints, summaries, and manual overrides behave consistently
-  across locales and stored sessions.
+- Update contributor-facing documentation to reflect the simplified Python/Flask
+  stack and the removal of legacy PHP references.
+- Refresh the project plan, requirements, and README to match the optimised code
+  paths and the current roadmap.
+- Consolidate redundant guidance so new contributors have a single up-to-date
+  source of truth for setup, testing, and localisation workflows.
 
 **Planned Deliverables**
-- Scenario fixtures and validator notes covering mixed EFKA inputs (automatic
-  category totals plus manual overrides) for both general and engineer profiles.
-- Contributor-facing documentation summarising EFKA category logic, start-year
-  handling, and manual contribution workflows introduced in Sprint 19.
-- Accessibility and localisation checklists verifying hint updates, summary
-  text, and persistence after locale switches within the freelance section.
+- Revised requirements and repository guide aligning with the present
+  architecture and calculation capabilities.【F:Requirements.md†L1-L118】
+- Updated README and ancillary docs describing the supported APIs, translation
+  pipeline, and calculation engine responsibilities.【F:README.md†L1-L140】
+- Captured Sprint 25 outcomes and future documentation follow-ups in the project
+  plan to keep the roadmap consistent with the cleaned codebase.
 
 > _This plan is updated at the end of each sprint to capture accomplishments_
 > _and upcoming milestones._

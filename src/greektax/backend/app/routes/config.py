@@ -1,4 +1,9 @@
-"""Metadata endpoints exposing configuration primitives to the front-end."""
+"""Expose configuration metadata consumed by the decoupled front-end.
+
+These endpoints bridge the YAML-backed year configuration and the SPA so that
+UI forms can populate payroll frequencies, trade fee settings, and warning
+messages without duplicating business rules.
+"""
 
 from __future__ import annotations
 
