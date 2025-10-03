@@ -299,6 +299,32 @@
                   Include any EFKA payments you cover outside payroll (optional).
                 </p>
               </div>
+              <div class="form-control">
+                <label
+                  for="employment-withholding"
+                  data-i18n-key="fields.employment-withholding"
+                >
+                  Tax already withheld (PAYE) (€)
+                </label>
+                <input
+                  id="employment-withholding"
+                  name="withholding_tax"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value="0"
+                  aria-describedby="employment-withholding-hint"
+                />
+                <p
+                  id="employment-withholding-hint"
+                  class="form-hint"
+                  data-static-hint="true"
+                  data-i18n-key="hints.employment-withholding"
+                >
+                  Enter PAYE income tax already withheld on payslips to offset the
+                  balance due.
+                </p>
+              </div>
               <div
                 class="form-control"
                 data-section="employment"
@@ -366,129 +392,143 @@
               Net-to-gross salary conversion isn't supported. Please enter gross
               amounts only.
             </p>
-            <div class="form-grid double">
-              <div class="form-control">
-                <label
-                  for="pension-mode"
-                  data-i18n-key="fields.pension-mode"
-                >
-                  Pension input type
+            <div class="form-control">
+              <span class="inline-field">
+                <input
+                  id="toggle-pension"
+                  type="checkbox"
+                  name="pension.enabled"
+                />
+                <label for="toggle-pension" data-i18n-key="fields.toggle-pension">
+                  Include pension income
                 </label>
-                <select id="pension-mode">
-                  <option
-                    value="gross"
-                    data-i18n-key="fields.pension-mode-gross"
+              </span>
+            </div>
+            <div id="pension-fields" hidden aria-hidden="true">
+              <div class="form-grid double">
+                <div class="form-control">
+                  <label
+                    for="pension-mode"
+                    data-i18n-key="fields.pension-mode"
                   >
-                    Enter gross amounts
-                  </option>
-                  <option
-                    value="net"
-                    data-i18n-key="fields.pension-mode-net"
+                    Pension input type
+                  </label>
+                  <select id="pension-mode">
+                    <option
+                      value="gross"
+                      data-i18n-key="fields.pension-mode-gross"
+                    >
+                      Enter gross amounts
+                    </option>
+                    <option
+                      value="net"
+                      data-i18n-key="fields.pension-mode-net"
+                    >
+                      Enter net amounts
+                    </option>
+                  </select>
+                </div>
+                <div class="form-control">
+                  <label
+                    for="pension-payments"
+                    data-i18n-key="fields.pension-payments"
                   >
-                    Enter net amounts
-                  </option>
-                </select>
-              </div>
-              <div class="form-control">
-                <label
-                  for="pension-payments"
-                  data-i18n-key="fields.pension-payments"
+                    Pension payments per year
+                  </label>
+                  <select
+                    id="pension-payments"
+                    name="pension.payments_per_year"
+                  ></select>
+                </div>
+                <div
+                  class="form-control"
+                  data-section="pension"
+                  data-mode="gross"
                 >
-                  Pension payments per year
-                </label>
-                <select
-                  id="pension-payments"
-                  name="pension.payments_per_year"
-                ></select>
-              </div>
-              <div
-                class="form-control"
-                data-section="pension"
-                data-mode="gross"
-              >
-                <label
-                  for="pension-income"
-                  data-i18n-key="fields.pension-income"
+                  <label
+                    for="pension-income"
+                    data-i18n-key="fields.pension-income"
+                  >
+                    Pension gross income (€)
+                  </label>
+                  <input
+                    id="pension-income"
+                    name="pension.gross_income"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value="0"
+                    aria-describedby="pension-income-hint"
+                  />
+                  <p
+                    id="pension-income-hint"
+                    class="form-hint"
+                    data-i18n-key="hints.pension-income-gross"
+                  >
+                    Use this when you know the annual gross pension before
+                    deductions.
+                  </p>
+                </div>
+                <div
+                  class="form-control"
+                  data-section="pension"
+                  data-mode="net"
+                  hidden
                 >
-                  Pension gross income (€)
-                </label>
-                <input
-                  id="pension-income"
-                  name="pension.gross_income"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value="0"
-                  aria-describedby="pension-income-hint"
-                />
-                <p
-                  id="pension-income-hint"
-                  class="form-hint"
-                  data-i18n-key="hints.pension-income-gross"
+                  <label
+                    for="pension-net-income"
+                    data-i18n-key="fields.pension-net-income"
+                  >
+                    Annual net pension (€)
+                  </label>
+                  <input
+                    id="pension-net-income"
+                    name="pension.net_income"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value="0"
+                    aria-describedby="pension-net-income-hint"
+                  />
+                  <p
+                    id="pension-net-income-hint"
+                    class="form-hint"
+                    data-i18n-key="hints.pension-income-net"
+                  >
+                    Enter the total net pension paid over the year when gross
+                    figures are not available.
+                  </p>
+                </div>
+                <div
+                  class="form-control"
+                  data-section="pension"
+                  data-mode="net"
+                  hidden
                 >
-                  Use this when you know the annual gross pension before
-                  deductions.
-                </p>
-              </div>
-              <div
-                class="form-control"
-                data-section="pension"
-                data-mode="net"
-                hidden
-              >
-                <label
-                  for="pension-net-income"
-                  data-i18n-key="fields.pension-net-income"
-                >
-                  Annual net pension (€)
-                </label>
-                <input
-                  id="pension-net-income"
-                  name="pension.net_income"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value="0"
-                  aria-describedby="pension-net-income-hint"
-                />
-                <p
-                  id="pension-net-income-hint"
-                  class="form-hint"
-                  data-i18n-key="hints.pension-income-net"
-                >
-                  Enter the total net pension paid over the year when gross
-                  figures are not available.
-                </p>
-              </div>
-              <div
-                class="form-control"
-                data-section="pension"
-                data-mode="net"
-                hidden
-              >
-                <label
-                  for="pension-net-monthly-income"
-                  data-i18n-key="fields.pension-net-monthly-income"
-                >
-                  Net pension per payment (€)
-                </label>
-                <input
-                  id="pension-net-monthly-income"
-                  name="pension.net_monthly_income"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value="0"
-                  aria-describedby="pension-net-monthly-income-hint"
-                />
-                <p
-                  id="pension-net-monthly-income-hint"
-                  class="form-hint"
-                  data-i18n-key="hints.pension-income-net-monthly"
-                >
-                  Provide the net amount per pension payment; it will be
-                  multiplied by the number of payments you selected.
-                </p>
+                  <label
+                    for="pension-net-monthly-income"
+                    data-i18n-key="fields.pension-net-monthly-income"
+                  >
+                    Net pension per payment (€)
+                  </label>
+                  <input
+                    id="pension-net-monthly-income"
+                    name="pension.net_monthly_income"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value="0"
+                    aria-describedby="pension-net-monthly-income-hint"
+                  />
+                  <p
+                    id="pension-net-monthly-income-hint"
+                    class="form-hint"
+                    data-i18n-key="hints.pension-income-net-monthly"
+                  >
+                    Provide the net amount per pension payment; it will be
+                    multiplied by the number of payments you selected.
+                  </p>
+                </div>
               </div>
             </div>
           </fieldset>
@@ -620,8 +660,11 @@
                 />
                 <p
                   class="form-hint"
-                  data-i18n-key="fields.freelance-activity-start-year-hint"
-                ></p>
+                  data-static-hint="true"
+                  data-i18n-key="hints.freelance-activity-start-year"
+                >
+                  Determines if the new-business 5-year fee exemption applies.
+                </p>
               </div>
             </div>
             <input
@@ -731,7 +774,11 @@
                   id="freelance-trade-fee-hint"
                   class="form-hint"
                   data-static-hint="true"
-                ></p>
+                  data-i18n-key="hints.freelance-trade-fee-location"
+                >
+                  Standard: full fee; Reduced: half fee for eligible small
+                  towns/islands.
+                </p>
               </div>
               <div class="form-control">
                 <span class="inline-field">

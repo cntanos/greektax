@@ -179,6 +179,7 @@ const UI_MESSAGES = {
       "employment-mode-monthly": "Enter gross salary per payment",
       "employment-employee-contributions":
         "Employee EFKA contributions (€)",
+      "employment-withholding": "Tax already withheld (PAYE) (€)",
       "pension-income": "Pension gross income (€)",
       "pension-mode": "Pension input type",
       "pension-mode-gross": "Enter gross amounts",
@@ -205,6 +206,7 @@ const UI_MESSAGES = {
       "freelance-trade-fee-reduced": "Reduced amount",
       "freelance-years-active": "Years self-employed",
       "trade-fee-toggle": "Include business activity fee",
+      "toggle-pension": "Include pension income",
       "toggle-employment": "Include salary/pension income",
       "toggle-freelance": "Include freelance income",
       "toggle-agricultural": "Include agricultural income",
@@ -253,6 +255,8 @@ const UI_MESSAGES = {
         "Most salaried roles use 14 payments (12 monthly plus bonuses). Adjust this to match the number of payslips you receive each year.",
       "employment-employee-contributions":
         "Add EFKA amounts you pay directly with receipts (for example, voluntary top-ups). Leave blank if contributions are only withheld from payslips.",
+      "employment-withholding":
+        "Enter PAYE income tax already withheld on your payslips to reduce the balance due.",
       "employment-net-note":
         "Net-to-gross salary conversion isn't supported. Choose annual or per-payment mode above and provide gross amounts only.",
       "employment-income":
@@ -282,8 +286,10 @@ const UI_MESSAGES = {
         "Report gross turnover before VAT or withholding taxes.",
       "freelance-expenses":
         "Claim only expenses backed by invoices (rent, utilities, professional fees, equipment, vehicle costs used for business).",
+      "freelance-trade-fee-location":
+        "Standard: full fee; Reduced: half fee for eligible small towns/islands.",
       "freelance-activity-start-year":
-        "Enter the year your freelance activity was first registered to check reduced trade-fee eligibility.",
+        "Determines if the new-business 5-year fee exemption applies.",
       "freelance-trade-fee": "Trade fee applied: {{amount}}.",
       "freelance-trade-fee-new": "Reduced rate applies for the first {{years}} years of activity.",
       "freelance-trade-fee-new-eligible":
@@ -470,6 +476,7 @@ const UI_MESSAGES = {
       "employment-mode-monthly": "Καταχώρηση ακαθάριστου ποσού ανά καταβολή",
       "employment-employee-contributions":
         "Εισφορές ΕΦΚΑ εργαζομένου (€)",
+      "employment-withholding": "Παρακρατηθείς φόρος μισθοδοσίας (PAYE) (€)",
       "pension-income": "Ακαθάριστο εισόδημα συντάξεων (€)",
       "pension-mode": "Τύπος εισαγωγής σύνταξης",
       "pension-mode-gross": "Καταχώρηση ακαθάριστων ποσών",
@@ -496,6 +503,7 @@ const UI_MESSAGES = {
       "freelance-trade-fee-reduced": "Μειωμένο ποσό",
       "freelance-years-active": "Έτη ως ελεύθερος επαγγελματίας",
       "trade-fee-toggle": "Συμπερίληψη τέλους επιτηδεύματος",
+      "toggle-pension": "Συμπερίληψη εισοδήματος συντάξεων",
       "toggle-employment": "Συμπερίληψη εισοδήματος μισθωτών/συντάξεων",
       "toggle-freelance": "Συμπερίληψη εισοδήματος ελευθέρων επαγγελματιών",
       "toggle-agricultural": "Συμπερίληψη αγροτικού εισοδήματος",
@@ -544,6 +552,8 @@ const UI_MESSAGES = {
         "Συνήθως καταβάλλονται 14 μισθοί (12 μηνιαίοι και 2 δώρα). Προσαρμόστε τον αριθμό ώστε να ταιριάζει με τις καταβολές μισθοδοσίας που λαμβάνετε ετησίως.",
       "employment-employee-contributions":
         "Προσθέστε εισφορές ΕΦΚΑ που καταβάλλετε απευθείας με αποδείξεις (π.χ. προαιρετικές συμπληρωματικές). Αφήστε κενό αν οι εισφορές παρακρατούνται μόνο μέσω μισθοδοσίας.",
+      "employment-withholding":
+        "Καταχωρήστε τον φόρο PAYE που έχει ήδη παρακρατηθεί στις μισθοδοσίες ώστε να μειωθεί το υπόλοιπο.",
       "employment-net-note":
         "Δεν υποστηρίζεται μετατροπή καθαρού μισθού σε ακαθάριστο. Επιλέξτε ετήσια ή ανά καταβολή εισαγωγή και συμπληρώστε μόνο ακαθάριστα ποσά.",
       "employment-income":
@@ -573,8 +583,10 @@ const UI_MESSAGES = {
         "Δηλώστε τον ακαθάριστο κύκλο εργασιών πριν από ΦΠΑ ή παρακρατήσεις.",
       "freelance-expenses":
         "Καταχωρήστε μόνο δαπάνες με νόμιμα παραστατικά (ενοίκιο, ΔΕΚΟ, επαγγελματικές αμοιβές, εξοπλισμός, επαγγελματική χρήση οχήματος).",
+      "freelance-trade-fee-location":
+        "Τυπικό: πλήρες τέλος· Μειωμένο: μισό τέλος για επιλέξιμες μικρές πόλεις/νησιά.",
       "freelance-activity-start-year":
-        "Δηλώστε το έτος έναρξης δραστηριότητας για να ελεγχθεί η επιλεξιμότητα μειωμένου τέλους επιτηδεύματος.",
+        "Καθορίζει αν ισχύει η 5ετής απαλλαγή νέας επιχείρησης.",
       "freelance-trade-fee": "Εφαρμοζόμενο τέλος επιτηδεύματος: {{amount}}.",
       "freelance-trade-fee-new": "Ισχύει μειωμένο ποσό για τα πρώτα {{years}} έτη δραστηριότητας.",
       "freelance-trade-fee-new-eligible":
@@ -638,6 +650,7 @@ let lastCalculation = null;
 let pendingCalculatorState = null;
 let calculatorStatePersistHandle = null;
 let isApplyingYearMetadata = false;
+let partialYearWarningActive = false;
 
 const localeButtons = Array.from(
   document.querySelectorAll("[data-locale-option]"),
@@ -656,6 +669,9 @@ const employmentEmployeeContributionsInput = document.getElementById(
   "employment-employee-contributions",
 );
 const employmentPaymentsInput = document.getElementById("employment-payments");
+const employmentWithholdingInput = document.getElementById(
+  "employment-withholding",
+);
 const employmentModeSelect = document.getElementById("employment-mode");
 const yearAlertsContainer = document.getElementById("year-alerts");
 const pensionModeSelect = document.getElementById("pension-mode");
@@ -709,8 +725,10 @@ const rentalSection = document.getElementById("rental-section");
 const investmentSection = document.getElementById("investment-section");
 const deductionsSection = document.getElementById("deductions-section");
 const obligationsSection = document.getElementById("obligations-section");
+const employmentSection = document.getElementById("employment-section");
 const toggleFreelance = document.getElementById("toggle-freelance");
 const toggleEmployment = document.getElementById("toggle-employment");
+const togglePension = document.getElementById("toggle-pension");
 const toggleAgricultural = document.getElementById("toggle-agricultural");
 const toggleOther = document.getElementById("toggle-other");
 const toggleRental = document.getElementById("toggle-rental");
@@ -728,6 +746,7 @@ const detailsList = document.getElementById("details-list");
 const downloadButton = document.getElementById("download-button");
 const downloadCsvButton = document.getElementById("download-csv-button");
 const printButton = document.getElementById("print-button");
+const pensionFieldsContainer = document.getElementById("pension-fields");
 
 function lookupMessage(locale, keyParts) {
   let cursor = UI_MESSAGES[locale];
@@ -1280,7 +1299,9 @@ function applyLocale(locale) {
   document.documentElement.lang = resolved;
   updateLocaleButtonState(resolved);
   localiseStaticText();
-  renderYearWarnings(currentYearMetadata);
+  renderYearWarnings(currentYearMetadata, {
+    showPartialYearWarning: partialYearWarningActive,
+  });
   preserveCurrentFormValues();
   refreshInvestmentCategories();
   refreshDeductionHints();
@@ -1393,6 +1414,12 @@ function isInputVisible(input) {
   if (input.hidden) {
     return false;
   }
+  if (input.closest("[hidden]")) {
+    return false;
+  }
+  if (input.closest('[aria-hidden="true"]')) {
+    return false;
+  }
   const control = input.closest(".form-control");
   if (control && control.hidden) {
     return false;
@@ -1436,6 +1463,62 @@ function resetSectionInputs(section) {
   });
 }
 
+function isPensionEnabled() {
+  return Boolean(togglePension && togglePension.checked);
+}
+
+function updatePensionFieldsVisibility() {
+  const enabled = isPensionEnabled();
+  if (pensionFieldsContainer) {
+    pensionFieldsContainer.hidden = !enabled;
+    pensionFieldsContainer.setAttribute("aria-hidden", String(!enabled));
+  }
+  if (enabled) {
+    updatePensionMode(pensionModeSelect?.value || currentPensionMode);
+  }
+  updatePartialYearWarningState();
+}
+
+function hasPartialYearSelection(select) {
+  if (!select || select.disabled) {
+    return false;
+  }
+  const defaultValueRaw = select.dataset.defaultValue;
+  if (!defaultValueRaw) {
+    return false;
+  }
+  const defaultValue = Number.parseInt(defaultValueRaw, 10);
+  const currentValue = Number.parseInt(select.value ?? "", 10);
+  if (!Number.isFinite(defaultValue) || defaultValue <= 0) {
+    return false;
+  }
+  if (!Number.isFinite(currentValue) || currentValue <= 0) {
+    return false;
+  }
+  return currentValue < defaultValue;
+}
+
+function shouldDisplayPartialYearWarning() {
+  if (!isSectionActive(employmentSection)) {
+    return false;
+  }
+  if (hasPartialYearSelection(employmentPaymentsInput)) {
+    return true;
+  }
+  if (!isPensionEnabled()) {
+    return false;
+  }
+  return hasPartialYearSelection(pensionPaymentsInput);
+}
+
+function updatePartialYearWarningState() {
+  const shouldShow = shouldDisplayPartialYearWarning();
+  partialYearWarningActive = shouldShow;
+  renderYearWarnings(currentYearMetadata, {
+    showPartialYearWarning: shouldShow,
+  });
+}
+
 function handleSectionToggle(toggle) {
   if (!toggle) {
     return;
@@ -1453,6 +1536,9 @@ function handleSectionToggle(toggle) {
   section.setAttribute("aria-hidden", String(!isChecked));
   if (!isChecked) {
     resetSectionInputs(section);
+  }
+  if (toggle === toggleEmployment) {
+    updatePartialYearWarningState();
   }
 }
 
@@ -1570,6 +1656,7 @@ function applyPendingCalculatorState() {
 
   updateFreelanceCategoryHint();
   updateTradeFeeHint();
+  updatePensionFieldsVisibility();
 }
 
 function handleCalculatorStateChange() {
@@ -1670,20 +1757,28 @@ function resolvePaymentsValue(select, section) {
   return typeof fallback === "number" && fallback > 0 ? fallback : undefined;
 }
 
-function renderYearWarnings(metadata) {
+function renderYearWarnings(metadata, options = {}) {
   if (!yearAlertsContainer) {
     return;
   }
 
   yearAlertsContainer.innerHTML = "";
   const warnings = Array.isArray(metadata?.warnings) ? metadata.warnings : [];
-  if (!warnings.length) {
-    yearAlertsContainer.hidden = true;
-    return;
-  }
+  const showPartialWarning =
+    options.showPartialYearWarning ?? partialYearWarningActive;
+
+  let renderedCount = 0;
 
   warnings.forEach((warning) => {
     if (!warning) {
+      return;
+    }
+
+    const warningId = typeof warning.id === "string" ? warning.id : "";
+    if (
+      warningId === "employment.partial_year_review" &&
+      !showPartialWarning
+    ) {
       return;
     }
 
@@ -1727,9 +1822,10 @@ function renderYearWarnings(metadata) {
     }
 
     yearAlertsContainer.appendChild(alert);
+    renderedCount += 1;
   });
 
-  yearAlertsContainer.hidden = false;
+  yearAlertsContainer.hidden = renderedCount === 0;
 }
 
 function applyYearMetadata(year) {
@@ -1740,7 +1836,9 @@ function applyYearMetadata(year) {
   isApplyingYearMetadata = true;
   try {
     currentYearMetadata = yearMetadataByYear.get(year) || null;
-    renderYearWarnings(currentYearMetadata);
+    renderYearWarnings(currentYearMetadata, {
+      showPartialYearWarning: partialYearWarningActive,
+    });
     populatePayrollSelect(
       employmentPaymentsInput,
       currentYearMetadata?.employment?.payroll || null,
@@ -1754,6 +1852,7 @@ function applyYearMetadata(year) {
     updatePensionMode(currentPensionMode);
     populateFreelanceMetadata(currentYearMetadata?.freelance || null);
     applyPendingCalculatorState();
+    updatePartialYearWarningState();
   } finally {
     isApplyingYearMetadata = false;
   }
@@ -2169,15 +2268,17 @@ function updateTradeFeeHint() {
     amount = tradeFee.reduced_amount;
   }
 
-  if (typeof amount !== "number" || Number.isNaN(amount)) {
-    freelanceTradeFeeHint.textContent = "";
-    freelanceTradeFeeHint.hidden = true;
-    return;
+  const messages = [];
+  const baseHint = t("hints.freelance-trade-fee-location");
+  if (baseHint) {
+    messages.push(baseHint);
   }
 
-  const messages = [
-    t("hints.freelance-trade-fee", { amount: formatCurrency(amount) }),
-  ];
+  if (typeof amount === "number" && Number.isFinite(amount)) {
+    messages.push(
+      t("hints.freelance-trade-fee", { amount: formatCurrency(amount) }),
+    );
+  }
 
   if (tradeFee.newly_self_employed_reduction_years) {
     const reductionYears = tradeFee.newly_self_employed_reduction_years;
@@ -2208,8 +2309,9 @@ function updateTradeFeeHint() {
     messages.push(t(tradeFee.sunset.description_key, replacements));
   }
 
-  freelanceTradeFeeHint.textContent = messages.join(" ");
-  freelanceTradeFeeHint.hidden = false;
+  const combined = messages.join(" ");
+  freelanceTradeFeeHint.textContent = combined;
+  freelanceTradeFeeHint.hidden = !combined;
 }
 
 function populateFreelanceMetadata(metadata) {
@@ -2627,36 +2729,46 @@ function buildCalculationPayload() {
     payload.employment = employmentPayload;
   }
 
-  const pensionPayload = {};
-  const pensionMode = pensionModeSelect?.value || currentPensionMode;
-  if (pensionMode === "net") {
-    const netIncome = readNumber(pensionNetIncomeInput);
-    if (netIncome > 0) {
-      pensionPayload.net_income = netIncome;
-    }
-    const netMonthly = readNumber(pensionNetMonthlyIncomeInput);
-    if (netMonthly > 0) {
-      pensionPayload.net_monthly_income = netMonthly;
-    }
-  } else {
-    const pensionGross = readNumber(pensionIncomeInput);
-    if (pensionGross > 0) {
-      pensionPayload.gross_income = pensionGross;
-    }
+  const withholdingTax = readNumber(employmentWithholdingInput);
+  if (withholdingTax > 0) {
+    payload.withholding_tax = withholdingTax;
   }
 
-  const pensionPayments = resolvePaymentsValue(pensionPaymentsInput, "pension");
-  if (
-    pensionPayments &&
-    (pensionPayload.net_income !== undefined ||
-      pensionPayload.net_monthly_income !== undefined ||
-      pensionPayload.gross_income !== undefined)
-  ) {
-    pensionPayload.payments_per_year = pensionPayments;
-  }
+  if (isSectionActive(employmentSection) && isPensionEnabled()) {
+    const pensionPayload = {};
+    const pensionMode = pensionModeSelect?.value || currentPensionMode;
+    if (pensionMode === "net") {
+      const netIncome = readNumber(pensionNetIncomeInput);
+      if (netIncome > 0) {
+        pensionPayload.net_income = netIncome;
+      }
+      const netMonthly = readNumber(pensionNetMonthlyIncomeInput);
+      if (netMonthly > 0) {
+        pensionPayload.net_monthly_income = netMonthly;
+      }
+    } else {
+      const pensionGross = readNumber(pensionIncomeInput);
+      if (pensionGross > 0) {
+        pensionPayload.gross_income = pensionGross;
+      }
+    }
 
-  if (Object.keys(pensionPayload).length > 0) {
-    payload.pension = pensionPayload;
+    const pensionPayments = resolvePaymentsValue(
+      pensionPaymentsInput,
+      "pension",
+    );
+    if (
+      pensionPayments &&
+      (pensionPayload.net_income !== undefined ||
+        pensionPayload.net_monthly_income !== undefined ||
+        pensionPayload.gross_income !== undefined)
+    ) {
+      pensionPayload.payments_per_year = pensionPayments;
+    }
+
+    if (Object.keys(pensionPayload).length > 0) {
+      payload.pension = pensionPayload;
+    }
   }
 
   if (isSectionActive(freelanceSection)) {
@@ -3095,6 +3207,8 @@ function renderSummary(summary) {
   const summaryFields = [
     { key: "net_income", formatter: formatCurrency, className: "primary" },
     { key: "tax_total", formatter: formatCurrency, className: "accent" },
+    { key: "withholding_tax", formatter: formatCurrency },
+    { key: "balance_due", formatter: formatCurrency, className: "accent" },
     { key: "deductions_applied", formatter: formatCurrency },
     { key: "deductions_entered", formatter: formatCurrency },
     { key: "net_monthly_income", formatter: formatCurrency },
@@ -3114,6 +3228,9 @@ function renderSummary(summary) {
     }
     wrapper.className = classes.join(" ");
     wrapper.dataset.field = key;
+    if (key === "balance_due") {
+      wrapper.dataset.variant = summary.balance_due_is_refund ? "refund" : "due";
+    }
 
     const dt = document.createElement("dt");
     dt.textContent = labels[key] || key;
@@ -3465,6 +3582,8 @@ function downloadCsvSummary() {
   const summaryFields = [
     { key: "net_income", formatter: formatCurrency },
     { key: "tax_total", formatter: formatCurrency },
+    { key: "withholding_tax", formatter: formatCurrency },
+    { key: "balance_due", formatter: formatCurrency },
     { key: "deductions_applied", formatter: formatCurrency },
     { key: "deductions_entered", formatter: formatCurrency },
     { key: "net_monthly_income", formatter: formatCurrency },
@@ -3574,6 +3693,7 @@ function initialiseCalculator() {
 
   pendingCalculatorState = loadStoredCalculatorState();
   applyPendingCalculatorState();
+  updatePensionFieldsVisibility();
 
   if (pensionModeSelect) {
     currentPensionMode = pensionModeSelect.value || "gross";
@@ -3589,6 +3709,7 @@ function initialiseCalculator() {
 
   initialiseSectionToggles();
   applyPendingCalculatorState();
+  updatePensionFieldsVisibility();
   freelanceEfkaSelect?.addEventListener("change", updateFreelanceCategoryHint);
   freelanceEfkaMonthsInput?.addEventListener("input", updateFreelanceCategoryHint);
   freelanceActivityStartInput?.addEventListener("input", () => {
@@ -3620,6 +3741,12 @@ function initialiseCalculator() {
     const value = typeof target?.value === "string" ? target.value : "gross";
     updatePensionMode(value);
   });
+  togglePension?.addEventListener("change", () => {
+    updatePensionFieldsVisibility();
+    handleCalculatorStateChange();
+  });
+  employmentPaymentsInput?.addEventListener("change", updatePartialYearWarningState);
+  pensionPaymentsInput?.addEventListener("change", updatePartialYearWarningState);
   employmentModeSelect?.addEventListener("change", (event) => {
     const target = event.target;
     const value = typeof target?.value === "string" ? target.value : "annual";
@@ -3632,6 +3759,7 @@ function initialiseCalculator() {
 
   attachValidationHandlers();
   initialiseNumericAutoSelect();
+  updatePartialYearWarningState();
 
   loadYearOptions().then(async () => {
     applyPendingCalculatorState();
