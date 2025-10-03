@@ -27,6 +27,20 @@ from greektax.backend.config.year_config import (
 _LOGGER = logging.getLogger(__name__)
 
 
+# Conservative approximations of statutory deduction rules. They can be
+# refined per tax-year configuration when more granular data becomes
+# available, but prevent over-application of relief in the meantime.
+_DONATIONS_CREDIT_RATE = 0.20
+_DONATIONS_INCOME_CAP_RATE = 0.10
+_MEDICAL_CREDIT_RATE = 0.10
+_MEDICAL_INCOME_THRESHOLD_RATE = 0.05
+_MEDICAL_MAX_CREDIT = 3_000.0
+_EDUCATION_CREDIT_RATE = 0.10
+_EDUCATION_MAX_ELIGIBLE_EXPENSE = 1_000.0
+_INSURANCE_CREDIT_RATE = 0.10
+_INSURANCE_MAX_ELIGIBLE_EXPENSE = 1_200.0
+
+
 def _profiling_enabled() -> bool:
     """Return ``True`` when calculation profiling should be captured."""
 
@@ -744,35 +758,164 @@ def _calculate_trade_fee(payload: _NormalisedPayload, config: FreelanceConfig) -
     return amount if amount > 0 else 0.0
 
 
-def _apply_deductions_to_components(
+def _apply_deduction_credits(
+    payload: _NormalisedPayload,
     components: Sequence[_GeneralIncomeComponent],
-    deduction_total: float,
-) -> float:
-    if deduction_total <= 0:
-        return 0.0
-
-    applicable = [
-        component for component in components if component.taxable_income > 0
+    translator: Translator,
+) -> tuple[float, list[Dict[str, Any]]]:
+    credit_eligible_components = [
+        component for component in components if component.credit_eligible
     ]
-    total_taxable = sum(component.taxable_income for component in applicable)
-    if total_taxable <= 0:
-        return 0.0
+    available_tax = sum(
+        component.tax_after_credit for component in credit_eligible_components
+    )
+    income_for_thresholds = sum(
+        component.gross_income for component in credit_eligible_components
+    )
 
-    applied_total = 0.0
-    remaining = min(deduction_total, total_taxable)
+    breakdown: list[Dict[str, Any]] = []
 
-    for component in applicable:
-        if remaining <= 0:
-            break
-        share = component.taxable_income / total_taxable if total_taxable > 0 else 0.0
-        reduction = remaining * share
-        if reduction > component.taxable_income:
-            reduction = component.taxable_income
-        component.taxable_income -= reduction
-        component.deductions_applied = reduction
-        applied_total += reduction
+    def _append_breakdown(
+        entry_type: str,
+        entered: float,
+        eligible: float,
+        rate: float,
+        requested: float,
+        note: Optional[str] = None,
+    ) -> None:
+        breakdown.append(
+            {
+                "type": entry_type,
+                "label": translator(f"forms.deductions.{entry_type}"),
+                "entered": entered,
+                "eligible": eligible,
+                "credit_rate": rate,
+                "credit_requested": requested,
+                "credit_applied": 0.0,
+                "notes": note,
+            }
+        )
 
-    return applied_total
+    donations = max(payload.deductions_donations, 0.0)
+    if donations > 0:
+        if income_for_thresholds > 0:
+            income_cap = income_for_thresholds * _DONATIONS_INCOME_CAP_RATE
+            eligible = min(donations, income_cap)
+            note = None
+            if donations > income_cap:
+                note = (
+                    "Only donations up to 10% of eligible income qualify for the 20% credit."
+                )
+        else:
+            eligible = 0.0
+            note = "Donations cannot generate a credit without taxable income."
+        requested = eligible * _DONATIONS_CREDIT_RATE
+        _append_breakdown("donations", donations, eligible, _DONATIONS_CREDIT_RATE, requested, note)
+
+    medical = max(payload.deductions_medical, 0.0)
+    if medical > 0:
+        if income_for_thresholds > 0:
+            threshold = income_for_thresholds * _MEDICAL_INCOME_THRESHOLD_RATE
+            eligible_expense = max(medical - threshold, 0.0)
+            note = None
+            if medical <= threshold:
+                note = "Medical expenses must exceed 5% of income before a credit is granted."
+        else:
+            eligible_expense = 0.0
+            note = "Medical credits require taxable income to satisfy the 5% threshold."
+        requested = eligible_expense * _MEDICAL_CREDIT_RATE
+        if requested > _MEDICAL_MAX_CREDIT:
+            requested = _MEDICAL_MAX_CREDIT
+            extra_note = (
+                "Medical expense credits are capped at €3,000 per taxpayer."
+            )
+            note = f"{note} {extra_note}".strip() if note else extra_note
+        _append_breakdown(
+            "medical",
+            medical,
+            eligible_expense,
+            _MEDICAL_CREDIT_RATE,
+            requested,
+            note,
+        )
+
+    education = max(payload.deductions_education, 0.0)
+    if education > 0:
+        eligible = min(education, _EDUCATION_MAX_ELIGIBLE_EXPENSE)
+        note = None
+        if education > _EDUCATION_MAX_ELIGIBLE_EXPENSE:
+            note = (
+                "Education expenses eligible for credits are capped; excess is ignored."
+            )
+        requested = eligible * _EDUCATION_CREDIT_RATE
+        _append_breakdown(
+            "education",
+            education,
+            eligible,
+            _EDUCATION_CREDIT_RATE,
+            requested,
+            note,
+        )
+
+    insurance = max(payload.deductions_insurance, 0.0)
+    if insurance > 0:
+        eligible = min(insurance, _INSURANCE_MAX_ELIGIBLE_EXPENSE)
+        note = None
+        if insurance > _INSURANCE_MAX_ELIGIBLE_EXPENSE:
+            note = (
+                "Life and health insurance premiums have a statutory ceiling for credits."
+            )
+        requested = eligible * _INSURANCE_CREDIT_RATE
+        _append_breakdown(
+            "insurance",
+            insurance,
+            eligible,
+            _INSURANCE_CREDIT_RATE,
+            requested,
+            note,
+        )
+
+    total_requested = sum(item["credit_requested"] for item in breakdown)
+    if total_requested <= 0:
+        return 0.0, breakdown
+
+    scaling_factor = 1.0
+    if total_requested > available_tax:
+        scaling_factor = available_tax / total_requested if total_requested > 0 else 0.0
+        for item in breakdown:
+            existing_note = item.get("notes")
+            limitation_note = (
+                "Credits were limited by the remaining tax liability."
+            )
+            item["notes"] = (
+                f"{existing_note} {limitation_note}".strip()
+                if existing_note
+                else limitation_note
+            )
+
+    total_applied = 0.0
+    for item in breakdown:
+        applied = item["credit_requested"] * scaling_factor
+        item["credit_applied"] = applied
+        total_applied += applied
+
+    if total_applied <= 0:
+        return 0.0, breakdown
+
+    if available_tax <= 0:
+        return 0.0, breakdown
+
+    for component in credit_eligible_components:
+        share = (
+            component.tax_after_credit / available_tax if available_tax > 0 else 0.0
+        )
+        credit_share = total_applied * share
+        if credit_share <= 0:
+            continue
+        component.deductions_applied = credit_share
+        component.tax_after_credit = max(component.tax_after_credit - credit_share, 0.0)
+
+    return total_applied, breakdown
 
 
 def _build_general_income_components(
@@ -940,15 +1083,15 @@ def _calculate_general_income_details(
     payload: _NormalisedPayload,
     config: YearConfiguration,
     translator: Translator,
-) -> tuple[list[Dict[str, Any]], float, _DetailTotals]:
+) -> tuple[list[Dict[str, Any]], float, _DetailTotals, list[Dict[str, Any]]]:
     components = _build_general_income_components(payload, config)
     if not components:
-        return [], 0.0, _DetailTotals()
+        return [], 0.0, _DetailTotals(), []
 
-    deductions_applied = _apply_deductions_to_components(
-        components, payload.total_deductions
-    )
     _apply_progressive_tax(components, payload, config)
+    deductions_applied, deduction_breakdown = _apply_deduction_credits(
+        payload, components, translator
+    )
 
     details: list[Dict[str, Any]] = []
     totals = _DetailTotals()
@@ -1039,7 +1182,7 @@ def _calculate_general_income_details(
         details.append(detail)
         totals.add(gross_income, total_tax, net_income)
 
-    return details, deductions_applied, totals
+    return details, deductions_applied, totals, deduction_breakdown
 
 
 def _calculate_rental(
@@ -1219,6 +1362,7 @@ def calculate_tax(payload: Dict[str, Any]) -> Dict[str, Any]:
             general_income_details,
             deductions_applied,
             general_totals,
+            deduction_breakdown,
         ) = _calculate_general_income_details(normalised, config, translator)
     details.extend(general_income_details)
     totals.merge(general_totals)
@@ -1266,27 +1410,44 @@ def calculate_tax(payload: Dict[str, Any]) -> Dict[str, Any]:
             {name: round(duration * 1000, 3) for name, duration in timings.items()},
         )
 
-    return {
-        "summary": {
-            "income_total": _round_currency(income_total),
-            "tax_total": _round_currency(tax_total),
-            "net_income": _round_currency(net_income),
-            "net_monthly_income": _round_currency(net_monthly_income),
-            "average_monthly_tax": _round_currency(average_monthly_tax),
-            "effective_tax_rate": _round_rate(effective_tax_rate),
-            "deductions_entered": _round_currency(deductions_entered),
-            "deductions_applied": _round_currency(deductions_applied),
-            "labels": {
-                "income_total": translator("summary.income_total"),
-                "tax_total": translator("summary.tax_total"),
-                "net_income": translator("summary.net_income"),
-                "net_monthly_income": translator("summary.net_monthly_income"),
-                "average_monthly_tax": translator("summary.average_monthly_tax"),
-                "effective_tax_rate": translator("summary.effective_tax_rate"),
-                "deductions_entered": translator("summary.deductions_entered"),
-                "deductions_applied": translator("summary.deductions_applied"),
-            },
+    summary: Dict[str, Any] = {
+        "income_total": _round_currency(income_total),
+        "tax_total": _round_currency(tax_total),
+        "net_income": _round_currency(net_income),
+        "net_monthly_income": _round_currency(net_monthly_income),
+        "average_monthly_tax": _round_currency(average_monthly_tax),
+        "effective_tax_rate": _round_rate(effective_tax_rate),
+        "deductions_entered": _round_currency(deductions_entered),
+        "deductions_applied": _round_currency(deductions_applied),
+        "labels": {
+            "income_total": translator("summary.income_total"),
+            "tax_total": translator("summary.tax_total"),
+            "net_income": translator("summary.net_income"),
+            "net_monthly_income": translator("summary.net_monthly_income"),
+            "average_monthly_tax": translator("summary.average_monthly_tax"),
+            "effective_tax_rate": translator("summary.effective_tax_rate"),
+            "deductions_entered": translator("summary.deductions_entered"),
+            "deductions_applied": translator("summary.deductions_applied"),
         },
+    }
+
+    if deduction_breakdown:
+        summary["deductions_breakdown"] = [
+            {
+                "type": entry["type"],
+                "label": entry["label"],
+                "entered": _round_currency(entry["entered"]),
+                "eligible": _round_currency(entry["eligible"]),
+                "credit_rate": entry["credit_rate"],
+                "credit_requested": _round_currency(entry["credit_requested"]),
+                "credit_applied": _round_currency(entry["credit_applied"]),
+                "notes": entry.get("notes"),
+            }
+            for entry in deduction_breakdown
+        ]
+
+    return {
+        "summary": summary,
         "details": details,
         "meta": {
             "year": normalised.year,
