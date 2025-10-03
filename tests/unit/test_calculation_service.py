@@ -123,8 +123,8 @@ def test_calculate_tax_with_freelance_income() -> None:
     result = calculate_tax(payload)
 
     assert result["summary"]["income_total"] == pytest.approx(34_000.0)
-    assert result["summary"]["tax_total"] == pytest.approx(6_133.0)
-    assert result["summary"]["net_income"] == pytest.approx(22_093.0)
+    assert result["summary"]["tax_total"] == pytest.approx(5_483.0)
+    assert result["summary"]["net_income"] == pytest.approx(22_743.0)
 
     assert len(result["details"]) == 2
     employment_detail = next(
@@ -135,15 +135,15 @@ def test_calculate_tax_with_freelance_income() -> None:
     )
 
     assert employment_detail["tax_before_credits"] == pytest.approx(4_038.71)
-    assert employment_detail["credits"] == pytest.approx(777.0)
-    assert employment_detail["total_tax"] == pytest.approx(3_261.71)
+    assert employment_detail["credits"] == pytest.approx(501.29, rel=1e-4)
+    assert employment_detail["total_tax"] == pytest.approx(3_537.42, rel=1e-4)
     assert employment_detail["employee_contributions"] == pytest.approx(2_774.0)
 
     assert freelance_detail["taxable_income"] == pytest.approx(11_000.0)
-    assert freelance_detail["tax"] == pytest.approx(2_221.29)
-    assert freelance_detail["trade_fee"] == pytest.approx(650.0)
-    assert freelance_detail["total_tax"] == pytest.approx(2_871.29)
-    assert freelance_detail["net_income"] == pytest.approx(8_128.71)
+    assert freelance_detail["tax"] == pytest.approx(1_945.58, rel=1e-4)
+    assert freelance_detail["trade_fee"] == pytest.approx(0.0)
+    assert freelance_detail["total_tax"] == pytest.approx(1_945.58, rel=1e-4)
+    assert freelance_detail["net_income"] == pytest.approx(9_054.42, rel=1e-4)
 
 
 def test_calculate_tax_respects_locale_toggle() -> None:
@@ -322,9 +322,7 @@ def test_calculate_tax_with_freelance_category_contributions() -> None:
     assert freelance_detail["additional_contributions"] == pytest.approx(500.0)
     assert freelance_detail["auxiliary_contributions"] == pytest.approx(120.0)
     assert "lump_sum_contributions" not in freelance_detail
-    assert freelance_detail["trade_fee"] == pytest.approx(
-        config.freelance.trade_fee.standard_amount
-    )
+    assert freelance_detail["trade_fee"] == pytest.approx(0.0)
 
 
 def test_calculate_tax_with_engineer_lump_sum_contributions() -> None:
@@ -403,6 +401,75 @@ def test_calculate_tax_applies_deductions_across_components() -> None:
     assert medical["credit_applied"] == pytest.approx(0.0)
 
 
+def test_calculate_tax_applies_donation_credit_to_freelance_tax() -> None:
+    """Donation credits now reduce freelance progressive tax directly."""
+
+    base_payload = {
+        "year": 2024,
+        "freelance": {"profit": 20_000},
+    }
+
+    baseline = calculate_tax(base_payload)
+    with_donation = calculate_tax(
+        {**base_payload, "deductions": {"donations": 100}}
+    )
+
+    baseline_tax = baseline["summary"]["tax_total"]
+    donation_tax = with_donation["summary"]["tax_total"]
+
+    assert baseline_tax - donation_tax == pytest.approx(20.0)
+
+    breakdown = with_donation["summary"].get("deductions_breakdown")
+    assert breakdown is not None
+    donation_entry = next(item for item in breakdown if item["type"] == "donations")
+    assert donation_entry["credit_applied"] == pytest.approx(20.0)
+
+
+def test_calculate_tax_applies_medical_credit_threshold_for_freelance() -> None:
+    """Medical credits apply the 5% threshold before reducing tax."""
+
+    base_payload = {
+        "year": 2024,
+        "freelance": {"profit": 20_000},
+    }
+
+    baseline = calculate_tax(base_payload)
+    with_medical = calculate_tax(
+        {**base_payload, "deductions": {"medical": 2_500}}
+    )
+
+    baseline_tax = baseline["summary"]["tax_total"]
+    medical_tax = with_medical["summary"]["tax_total"]
+
+    assert baseline_tax - medical_tax == pytest.approx(150.0)
+
+    breakdown = with_medical["summary"].get("deductions_breakdown")
+    assert breakdown is not None
+    medical_entry = next(item for item in breakdown if item["type"] == "medical")
+    assert medical_entry["eligible"] == pytest.approx(1_500.0)
+    assert medical_entry["credit_applied"] == pytest.approx(150.0)
+
+
+def test_calculate_tax_trade_fee_auto_exemption_by_year() -> None:
+    """2024 defaults to the sunset exemption while later years still charge it."""
+
+    payload_2024 = {"year": 2024, "freelance": {"profit": 12_000}}
+    result_2024 = calculate_tax(payload_2024)
+    freelance_2024 = next(
+        detail for detail in result_2024["details"] if detail["category"] == "freelance"
+    )
+    assert freelance_2024["trade_fee"] == pytest.approx(0.0)
+
+    payload_2025 = {"year": 2025, "freelance": {"profit": 12_000}}
+    result_2025 = calculate_tax(payload_2025)
+    freelance_2025 = next(
+        detail for detail in result_2025["details"] if detail["category"] == "freelance"
+    )
+    assert freelance_2025["trade_fee"] == pytest.approx(620.0)
+
+    assert result_2025["summary"]["tax_total"] > result_2024["summary"]["tax_total"]
+
+
 def test_calculate_tax_with_agricultural_and_other_income() -> None:
     """Agricultural and other income categories produce dedicated details."""
 
@@ -435,7 +502,7 @@ def test_calculate_tax_trade_fee_reduction_rules() -> None:
     """Trade fee respects optional inclusion and reduction toggles."""
 
     base_payload = {
-        "year": 2024,
+        "year": 2025,
         "freelance": {
             "profit": 12_000,
             "efka_category": "general_class_1",
@@ -445,7 +512,7 @@ def test_calculate_tax_trade_fee_reduction_rules() -> None:
         },
     }
 
-    config = load_year_configuration(2024)
+    config = load_year_configuration(2025)
     trade_fee_config = config.freelance.trade_fee
 
     reduced_fee_result = calculate_tax(base_payload)
@@ -454,7 +521,7 @@ def test_calculate_tax_trade_fee_reduction_rules() -> None:
         trade_fee_config.reduced_amount or trade_fee_config.standard_amount
     )
 
-    no_fee_payload = {"year": 2024, "freelance": {**base_payload["freelance"], "include_trade_fee": False}}
+    no_fee_payload = {"year": 2025, "freelance": {**base_payload["freelance"], "include_trade_fee": False}}
     no_fee_result = calculate_tax(no_fee_payload)
     no_fee_detail = no_fee_result["details"][0]
     assert no_fee_detail["trade_fee"] == pytest.approx(0.0)
