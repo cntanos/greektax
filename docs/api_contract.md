@@ -2,7 +2,9 @@
 
 The tax calculation service accepts JSON payloads describing an individual's
 annual financial data and produces a bilingual breakdown of taxes, credits, and
-net income per category.
+net income per category. Input and output payloads are now expressed with
+Pydantic models, meaning that types, default values, and validation rules are
+enforced consistently across the stack.
 
 ## Endpoints
 
@@ -14,7 +16,8 @@ Content-Type: application/json
 Successful requests return `200 OK` with the calculation payload described
 below. Validation issues produce a `400 Bad Request` response with a JSON body
 containing `error` and `message` fields. When invalid field values are
-detected, the API returns `{"error": "validation_error", "message": "..."}`.
+detected, the API returns `{"error": "validation_error", "message": "..."}`
+where the message lists each failing field and its validation error.
 
 Metadata endpoints support the front-end in building dynamic forms:
 
@@ -33,36 +36,130 @@ or numeric type) to apply on the client.
 
 ## Request Body
 
+Every request must be a JSON object that matches the `CalculationRequest`
+schema. Unknown top-level or nested keys are rejected (`extra="forbid"`).
+
+### Top-level fields
+
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| `year` | integer | ✅ | Tax year to evaluate. Must match an available configuration file. |
-| `locale` | string | ❌ | BCP-47 locale code (`"en"` by default, `"el"` supported). |
-| `dependents.children` | integer | ❌ | Number of dependant children. Used to derive employment/pension credits. |
-| `employment.gross_income` | number | ❌ | Annual gross salary subject to the progressive employment scale. |
-| `employment.monthly_income` | number | ❌ | Monthly gross salary (optional). When provided it is multiplied by `employment.payments_per_year`. |
-| `employment.payments_per_year` | integer | ❌ | Salary payments per year (e.g. 12 or 14). Defaults to 14 when paired with a monthly input. |
-| `pension.gross_income` | number | ❌ | Annual pension income. Shares the employment scale and credits. |
-| `freelance.profit` | number | ❌ | Declared freelance profit. Optional alternative: provide `gross_revenue` and `deductible_expenses`. |
-| `freelance.gross_revenue` | number | ❌ | Total freelance revenue (used if `profit` omitted). |
-| `freelance.deductible_expenses` | number | ❌ | Deductible business expenses. |
-| `freelance.mandatory_contributions` | number | ❌ | Social security contributions deducted from profit. |
-| `freelance.include_trade_fee` | boolean | ❌ | Include the business activity fee (defaults to `true`). |
-| `rental.gross_income` | number | ❌ | Rental revenue for the year. |
-| `rental.deductible_expenses` | number | ❌ | Deductible rental expenses. |
-| `investment.*` | number | ❌ | Amounts for each configured investment category (e.g. `dividends`, `interest`, `capital_gains`, `royalties`). |
-| `obligations.vat` | number | ❌ | Value Added Tax due for the year. Included in totals without further calculation. |
-| `obligations.enfia` | number | ❌ | ENFIA property tax amount to include in the summary. |
-| `obligations.luxury` | number | ❌ | Luxury living tax amount for high-value assets. Added directly to the summary. |
+| `year` | integer | ✅ | Tax year to evaluate. Must reference an available configuration file. |
+| `locale` | string | ❌ | BCP-47 locale code (`"en"` by default, `"el"` supported). Whitespace-only values default to `"en"`. |
+| `dependents` | object | ❌ | Household dependent information. Defaults to no dependents. |
+| `employment` | object | ❌ | Employment income inputs. Defaults to zero amounts. |
+| `pension` | object | ❌ | Pension income inputs. Defaults to zero amounts. |
+| `freelance` | object | ❌ | Freelance/self-employment inputs. Defaults to zero amounts. |
+| `rental` | object | ❌ | Rental income inputs. Defaults to zero amounts. |
+| `agricultural` | object | ❌ | Agricultural activity inputs. Defaults to zero amounts. |
+| `investment` | object | ❌ | Map of investment category identifiers to non-negative numeric amounts. Defaults to `{}`. |
+| `other` | object | ❌ | Miscellaneous taxable income inputs. Defaults to zero amounts. |
+| `obligations` | object | ❌ | Flat obligations such as VAT, ENFIA, and luxury tax. Defaults to zero amounts. |
+| `deductions` | object | ❌ | User-entered deduction amounts. Defaults to zero amounts. |
+| `withholding_tax` | number | ❌ | Amount of tax already withheld. Defaults to `0`. Must be non-negative. |
 
-All numeric fields must be non-negative. Boolean fields accept `true`, `false`,
-and equivalent string toggles (`"yes"`, `"no"`, `"1"`, `"0"`, etc.). Missing
-sections default to zero values.
+### Dependents
+
+| Field | Type | Required | Rules |
+| --- | --- | --- | --- |
+| `children` | integer | ❌ | Defaults to `0`. Must be ≥ 0. |
+
+### Employment & Pension sections
+
+Each section shares the same structure:
+
+| Field | Type | Required | Rules |
+| --- | --- | --- | --- |
+| `gross_income` | number | ❌ | Defaults to `0`. Must be ≥ 0. |
+| `monthly_income` | number | ❌ | Defaults to `null`. When provided it must be ≥ 0. |
+| `payments_per_year` | integer | ❌ | Defaults to `null`. When provided it must be ≥ 0. |
+| `employee_contributions` (employment only) | number | ❌ | Defaults to `0`. Must be ≥ 0. |
+| `net_income` | number | ❌ | Deprecated field. Positive values are rejected with instructions to provide gross amounts instead. |
+| `net_monthly_income` | number | ❌ | Same rules as `net_income`. |
+
+### Freelance
+
+| Field | Type | Required | Rules |
+| --- | --- | --- | --- |
+| `profit` | number | ❌ | Optional shortcut; must be ≥ 0 when provided. |
+| `gross_revenue` | number | ❌ | Defaults to `0`. Must be ≥ 0. |
+| `deductible_expenses` | number | ❌ | Defaults to `0`. Must be ≥ 0. |
+| `efka_category` | string | ❌ | Optional supplementary metadata. |
+| `efka_months` | integer | ❌ | Defaults to `null`. Must be ≥ 0. |
+| `mandatory_contributions` | number | ❌ | Defaults to `0`. Must be ≥ 0. |
+| `auxiliary_contributions` | number | ❌ | Defaults to `0`. Must be ≥ 0. |
+| `lump_sum_contributions` | number | ❌ | Defaults to `0`. Must be ≥ 0. |
+| `include_trade_fee` | boolean | ❌ | Defaults to `true` when omitted or `null`. |
+| `trade_fee_location` | string | ❌ | Defaults to `"standard"`. Only `"standard"` or `"reduced"` values (case-insensitive) are accepted. |
+| `years_active` | integer | ❌ | Defaults to `null`. Must be ≥ 0. |
+| `newly_self_employed` | boolean | ❌ | Defaults to `false` when omitted or `null`. |
+
+### Rental
+
+| Field | Type | Required | Rules |
+| --- | --- | --- | --- |
+| `gross_income` | number | ❌ | Defaults to `0`. Must be ≥ 0. |
+| `deductible_expenses` | number | ❌ | Defaults to `0`. Must be ≥ 0. |
+
+### Agricultural income
+
+| Field | Type | Required | Rules |
+| --- | --- | --- | --- |
+| `gross_revenue` | number | ❌ | Defaults to `0`. Must be ≥ 0. |
+| `deductible_expenses` | number | ❌ | Defaults to `0`. Must be ≥ 0. |
+| `professional_farmer` | boolean | ❌ | Defaults to `false`. |
+
+### Other income
+
+| Field | Type | Required | Rules |
+| --- | --- | --- | --- |
+| `taxable_income` | number | ❌ | Defaults to `0`. Must be ≥ 0. |
+
+### Obligations
+
+| Field | Type | Required | Rules |
+| --- | --- | --- | --- |
+| `vat` | number | ❌ | Defaults to `0`. Must be ≥ 0. |
+| `enfia` | number | ❌ | Defaults to `0`. Must be ≥ 0. |
+| `luxury` | number | ❌ | Defaults to `0`. Must be ≥ 0. |
+
+### Deductions
+
+| Field | Type | Required | Rules |
+| --- | --- | --- | --- |
+| `donations` | number | ❌ | Defaults to `0`. Must be ≥ 0. |
+| `medical` | number | ❌ | Defaults to `0`. Must be ≥ 0. |
+| `education` | number | ❌ | Defaults to `0`. Must be ≥ 0. |
+| `insurance` | number | ❌ | Defaults to `0`. Must be ≥ 0. |
+
+All numeric fields are validated as non-negative floats or integers during
+schema parsing. Boolean fields accept JSON booleans as well as typical string or
+numeric truthy/falsy representations supported by Pydantic.
 
 ### Validation Errors
 
-Invalid inputs raise `ValueError` with a descriptive message referencing the
-problematic field (for example, `"Field 'rental.gross_income' must be numeric"`).
-API layers should translate these exceptions into `400 Bad Request` responses.
+Validation is performed by the `CalculationRequest` Pydantic model. Any issues
+raise a `pydantic.ValidationError`, which is converted into a single
+human-readable string via the shared `format_validation_error` helper. The API
+returns:
+
+```json
+{
+  "error": "validation_error",
+  "message": "Invalid calculation payload:\\n- employment.gross_income: value cannot be negative\\n- freelance.trade_fee_location: Invalid trade fee location selection"
+}
+```
+
+Key characteristics of the new validation layer:
+
+- Errors list the dotted path to the offending field followed by Pydantic's
+  normalized message.
+- Negative numeric inputs are rewritten to `value cannot be negative` for
+  consistency.
+- Extra keys that are not part of the schema trigger `...: Extra inputs are not
+  permitted`.
+- Legacy net income fields are accepted only when blank or zero and otherwise
+  produce `Employment net income inputs are no longer supported; provide gross
+  amounts instead`.
 
 ## Response Body
 
