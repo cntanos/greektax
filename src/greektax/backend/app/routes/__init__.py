@@ -4,6 +4,7 @@ from flask import Flask
 
 from .calculations import blueprint as calculations_blueprint
 from .config import blueprint as config_blueprint
+from .localization import blueprint as translations_blueprint
 
 
 def register_routes(app: Flask) -> None:
@@ -11,3 +12,4 @@ def register_routes(app: Flask) -> None:
 
     app.register_blueprint(calculations_blueprint)
     app.register_blueprint(config_blueprint)
+    app.register_blueprint(translations_blueprint)
