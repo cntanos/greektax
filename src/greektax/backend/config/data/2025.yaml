@@ -1,8 +1,8 @@
 year: 2025
 meta:
   version: 1
-  status: draft
-  notes: "Draft 2025 configuration with updated family tax credits"
+  status: final
+  notes: "Final 2025 configuration with confirmed family credits and trade fee abolition"
 income:
   employment:
     payroll:
@@ -26,7 +26,7 @@ income:
       - rate: 0.44
     tax_credit:
       amounts_by_children:
-        "0": 780
+        "0": 778
         "1": 820
         "2": 910
         "3": 1140
@@ -63,15 +63,9 @@ income:
         rate: 0.36
       - rate: 0.44
     trade_fee:
-      standard_amount: 620
-      reduced_amount: 310
-      newly_self_employed_reduction_years: 5
-      sunset:
-        status_key: statuses.trade_fee.proposed
-        year: 2026
-        description_key: hints.freelance-trade-fee-sunset
-        documentation_key: links.trade_fee_sunset
-        documentation_url: https://www.aade.gr/epiheiriseis/telos-epitidevmatos
+      standard_amount: 0
+      reduced_amount: null
+      newly_self_employed_reduction_years: null
     efka_categories:
       - id: general_class_1
         label_key: forms.freelance.efka.category.general_class_1
@@ -284,17 +278,3 @@ warnings:
     message_key: warnings.employment.partial_year_review
     documentation_key: warnings.links.partial_year_review
     documentation_url: https://www.sepenet.gr/el/library/content/apolysi-symvasi-ergasias
-  - id: config.pending_deduction_updates
-    severity: warning
-    applies_to:
-      - deductions
-    message_key: warnings.configuration.pending_deductions_2025
-    documentation_key: warnings.links.pending_deductions
-    documentation_url: https://www.aade.gr/polites/eisodima/forologikes-ekptoseis
-  - id: freelance.trade_fee_sunset
-    severity: info
-    applies_to:
-      - freelance
-    message_key: warnings.freelance.trade_fee_sunset
-    documentation_key: links.trade_fee_sunset
-    documentation_url: https://www.aade.gr/epiheiriseis/telos-epitidevmatos

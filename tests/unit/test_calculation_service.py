@@ -451,7 +451,7 @@ def test_calculate_tax_applies_medical_credit_threshold_for_freelance() -> None:
 
 
 def test_calculate_tax_trade_fee_auto_exemption_by_year() -> None:
-    """2024 defaults to the sunset exemption while later years still charge it."""
+    """Trade fee remains waived from 2024 onwards once the abolition takes effect."""
 
     payload_2024 = {"year": 2024, "freelance": {"profit": 12_000}}
     result_2024 = calculate_tax(payload_2024)
@@ -465,9 +465,11 @@ def test_calculate_tax_trade_fee_auto_exemption_by_year() -> None:
     freelance_2025 = next(
         detail for detail in result_2025["details"] if detail["category"] == "freelance"
     )
-    assert freelance_2025["trade_fee"] == pytest.approx(620.0)
+    assert freelance_2025["trade_fee"] == pytest.approx(0.0)
 
-    assert result_2025["summary"]["tax_total"] > result_2024["summary"]["tax_total"]
+    assert result_2025["summary"]["tax_total"] == pytest.approx(
+        result_2024["summary"]["tax_total"]
+    )
 
 
 def test_calculate_tax_with_agricultural_and_other_income() -> None:
@@ -498,8 +500,89 @@ def test_calculate_tax_with_agricultural_and_other_income() -> None:
     assert summary["tax_total"] == pytest.approx(2_660.0)
 
 
+def test_agricultural_only_income_receives_tax_credit() -> None:
+    """Sole agricultural income qualifies for the base tax credit in 2025."""
+
+    config = load_year_configuration(2025)
+    base_credit = config.employment.tax_credit.amount_for_children(0)
+
+    payload = {
+        "year": 2025,
+        "agricultural": {
+            "gross_revenue": 12_000,
+            "deductible_expenses": 2_000,
+        },
+    }
+
+    result = calculate_tax(payload)
+
+    agricultural_detail = next(
+        detail for detail in result["details"] if detail["category"] == "agricultural"
+    )
+
+    taxable_income = agricultural_detail["taxable_income"]
+
+    def _progressive_tax(amount: float) -> float:
+        total = 0.0
+        lower = 0.0
+        for bracket in config.employment.brackets:
+            upper = bracket.upper_bound
+            rate = bracket.rate
+            if upper is None or amount <= upper:
+                total += (amount - lower) * rate
+                break
+            total += (upper - lower) * rate
+            lower = upper
+        return total
+
+    expected_before_credit = _progressive_tax(taxable_income)
+    expected_credit = min(base_credit, expected_before_credit)
+    expected_tax = expected_before_credit - expected_credit
+
+    assert agricultural_detail["tax_before_credits"] == pytest.approx(
+        expected_before_credit
+    )
+    assert agricultural_detail["credits"] == pytest.approx(expected_credit)
+    assert agricultural_detail["tax"] == pytest.approx(expected_tax)
+    assert result["summary"]["tax_total"] == pytest.approx(expected_tax)
+
+
+def test_professional_farmer_receives_dependent_credit() -> None:
+    """Professional farmers retain the credit even with other income."""
+
+    config = load_year_configuration(2025)
+    dependent_credit = config.employment.tax_credit.amount_for_children(2)
+
+    payload = {
+        "year": 2025,
+        "dependents": {"children": 2},
+        "agricultural": {
+            "gross_revenue": 28_000,
+            "deductible_expenses": 3_000,
+            "professional_farmer": True,
+        },
+        "other": {"taxable_income": 4_000},
+    }
+
+    result = calculate_tax(payload)
+
+    agricultural_detail = next(
+        detail for detail in result["details"] if detail["category"] == "agricultural"
+    )
+    other_detail = next(
+        detail for detail in result["details"] if detail["category"] == "other"
+    )
+
+    assert agricultural_detail["credits"] == pytest.approx(
+        min(dependent_credit, agricultural_detail["tax_before_credits"])
+    )
+    if "credits" in other_detail:
+        assert other_detail["credits"] == pytest.approx(0.0)
+    else:
+        assert "credits" not in other_detail
+
 def test_calculate_tax_trade_fee_reduction_rules() -> None:
-    """Trade fee respects optional inclusion and reduction toggles."""
+    """Trade fee toggles keep the amount at zero after the abolition."""
 
     base_payload = {
         "year": 2025,

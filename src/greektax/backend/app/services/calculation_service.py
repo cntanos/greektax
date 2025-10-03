@@ -97,6 +97,7 @@ class _NormalisedPayload:
     luxury_due: float
     agricultural_gross_revenue: float
     agricultural_deductible_expenses: float
+    agricultural_professional_farmer: bool
     other_taxable_income: float
     deductions_donations: float
     deductions_medical: float
@@ -145,6 +146,27 @@ class _NormalisedPayload:
             or self.agricultural_deductible_expenses > 0
             or self.agricultural_profit > 0
         )
+
+    @property
+    def has_non_agricultural_taxable_income(self) -> bool:
+        return any(
+            (
+                self.has_employment_income,
+                self.has_pension_income,
+                self.freelance_taxable_income > 0,
+                self.other_taxable_income > 0,
+                self.rental_taxable_income > 0,
+                self.has_investment_income,
+            )
+        )
+
+    @property
+    def qualifies_for_agricultural_tax_credit(self) -> bool:
+        if not self.has_agricultural_income:
+            return False
+        if self.agricultural_professional_farmer:
+            return True
+        return not self.has_non_agricultural_taxable_income
 
     @property
     def has_other_income(self) -> bool:
@@ -541,6 +563,9 @@ def _normalise_payload(
         agricultural_section.get("deductible_expenses", 0.0),
         "agricultural.deductible_expenses",
     )
+    agricultural_professional = _to_bool(
+        agricultural_section.get("professional_farmer"), False
+    )
 
     other_section = _extract_section(payload, "other")
     other_income = _to_float(
@@ -599,6 +624,7 @@ def _normalise_payload(
         luxury_due=luxury_due,
         agricultural_gross_revenue=agricultural_revenue,
         agricultural_deductible_expenses=agricultural_expenses,
+        agricultural_professional_farmer=agricultural_professional,
         other_taxable_income=other_income,
         deductions_donations=deductions_donations,
         deductions_medical=deductions_medical,
@@ -1020,7 +1046,7 @@ def _build_general_income_components(
                 label_key="details.agricultural",
                 gross_income=payload.agricultural_gross_revenue,
                 taxable_income=payload.agricultural_profit,
-                credit_eligible=False,
+                credit_eligible=payload.qualifies_for_agricultural_tax_credit,
                 deductible_expenses=payload.agricultural_deductible_expenses,
             )
         )
@@ -1060,6 +1086,13 @@ def _apply_progressive_tax(
     if any(component.category == "pension" for component in components):
         credit_candidates.append(
             config.pension.tax_credit.amount_for_children(payload.children)
+        )
+    if any(
+        component.category == "agricultural" and component.credit_eligible
+        for component in components
+    ):
+        credit_candidates.append(
+            config.employment.tax_credit.amount_for_children(payload.children)
         )
 
     credit_requested = max(credit_candidates) if credit_candidates else 0.0
@@ -1127,9 +1160,13 @@ def _calculate_general_income_details(
                 component.deductible_expenses
             )
 
-        if component.category in {"employment", "pension"}:
-            detail["tax_before_credits"] = _round_currency(component.tax_before_credit)
+        if component.credit_eligible:
+            detail["tax_before_credits"] = _round_currency(
+                component.tax_before_credit
+            )
             detail["credits"] = _round_currency(component.credit)
+
+        if component.category in {"employment", "pension"}:
             if component.employee_contributions:
                 detail["employee_contributions"] = _round_currency(
                     component.employee_contributions
