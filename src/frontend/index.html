@@ -149,6 +149,10 @@
           Tax calculator
         </h2>
         <form id="calculator-form" novalidate>
+          <p class="form-intro" data-i18n-key="calculator.instructions_intro">
+            Toggle the sections that apply, enter your annual or monthly amounts,
+            then press calculate to see the breakdown.
+          </p>
           <fieldset class="fieldset">
             <legend data-i18n-key="calculator.legends.year_household">
               Year and household
@@ -177,7 +181,17 @@
                   min="0"
                   step="1"
                   value="0"
+                  aria-describedby="children-hint"
                 />
+                <p
+                  id="children-hint"
+                  class="form-hint"
+                  data-i18n-key="hints.children-eligibility"
+                >
+                  Count dependent children recognised for the AADE family credit
+                  (minors, full-time students up to 24, or dependents with a
+                  disability).
+                </p>
               </div>
             </div>
             <div
@@ -302,7 +316,16 @@
                   min="0"
                   step="0.01"
                   value="0"
+                  aria-describedby="employment-income-hint"
                 />
+                <p
+                  id="employment-income-hint"
+                  class="form-hint"
+                  data-i18n-key="hints.employment-income"
+                >
+                  Provide the annual gross salary if you are paid once per year;
+                  otherwise switch to monthly/per payment mode above.
+                </p>
               </div>
               <div
                 class="form-control"
@@ -323,7 +346,16 @@
                   min="0"
                   step="0.01"
                   value="0"
+                  aria-describedby="employment-monthly-income-hint"
                 />
+                <p
+                  id="employment-monthly-income-hint"
+                  class="form-hint"
+                  data-i18n-key="hints.employment-monthly-income"
+                >
+                  Enter the gross amount per payslip (monthly or bonus). The
+                  calculator multiplies it by the payments per year you selected.
+                </p>
               </div>
             </div>
             <p
@@ -386,7 +418,16 @@
                   min="0"
                   step="0.01"
                   value="0"
+                  aria-describedby="pension-income-hint"
                 />
+                <p
+                  id="pension-income-hint"
+                  class="form-hint"
+                  data-i18n-key="hints.pension-income-gross"
+                >
+                  Use this when you know the annual gross pension before
+                  deductions.
+                </p>
               </div>
               <div
                 class="form-control"
@@ -407,7 +448,16 @@
                   min="0"
                   step="0.01"
                   value="0"
+                  aria-describedby="pension-net-income-hint"
                 />
+                <p
+                  id="pension-net-income-hint"
+                  class="form-hint"
+                  data-i18n-key="hints.pension-income-net"
+                >
+                  Enter the total net pension paid over the year when gross
+                  figures are not available.
+                </p>
               </div>
               <div
                 class="form-control"
@@ -428,7 +478,16 @@
                   min="0"
                   step="0.01"
                   value="0"
+                  aria-describedby="pension-net-monthly-income-hint"
                 />
+                <p
+                  id="pension-net-monthly-income-hint"
+                  class="form-hint"
+                  data-i18n-key="hints.pension-income-net-monthly"
+                >
+                  Provide the net amount per pension payment; it will be
+                  multiplied by the number of payments you selected.
+                </p>
               </div>
             </div>
           </fieldset>
@@ -447,6 +506,20 @@
             <legend data-i18n-key="calculator.legends.freelance">
               Freelance income
             </legend>
+            <details class="help-panel">
+              <summary data-i18n-key="ui.freelance_help_summary">
+                Freelance help
+              </summary>
+              <p data-i18n-key="ui.freelance_help_body">
+                Report gross turnover before VAT and declare expenses only when
+                you have invoices (rent, utilities, equipment, etc.).
+              </p>
+              <p data-i18n-key="ui.freelance_help_contributions">
+                Selecting an EFKA class preloads mandatory social security
+                payments; you can override the totals with actual receipts if
+                they differ.
+              </p>
+            </details>
             <div class="form-grid double">
               <div class="form-control">
                 <label
@@ -462,7 +535,15 @@
                   min="0"
                   step="0.01"
                   value="0"
+                  aria-describedby="freelance-revenue-hint"
                 />
+                <p
+                  id="freelance-revenue-hint"
+                  class="form-hint"
+                  data-i18n-key="hints.freelance-revenue"
+                >
+                  Include total invoices issued before VAT or withholding taxes.
+                </p>
               </div>
               <div class="form-control">
                 <label
@@ -478,7 +559,16 @@
                   min="0"
                   step="0.01"
                   value="0"
+                  aria-describedby="freelance-expenses-hint"
                 />
+                <p
+                  id="freelance-expenses-hint"
+                  class="form-hint"
+                  data-i18n-key="hints.freelance-expenses"
+                >
+                  List documented operating costs (rent, utilities, equipment,
+                  professional fees) that meet AADE deductibility rules.
+                </p>
               </div>
             </div>
             <div class="form-grid double">
@@ -553,12 +643,36 @@
                 ></p>
                 <div class="form-grid double">
                   <div class="form-control">
-                    <label
-                      for="freelance-contributions"
-                      data-i18n-key="fields.freelance-contributions"
-                    >
-                      Manual EFKA contributions (€)
-                    </label>
+                    <div class="label-with-tooltip">
+                      <label
+                        for="freelance-contributions"
+                        data-i18n-key="fields.freelance-contributions"
+                      >
+                        Manual EFKA contributions (€)
+                      </label>
+                      <button
+                        type="button"
+                        class="info-badge"
+                        aria-describedby="freelance-contributions-tooltip"
+                      >
+                        <span aria-hidden="true">i</span>
+                        <span
+                          class="visually-hidden"
+                          data-i18n-key="ui.info_tooltip_label"
+                        >
+                          More information about this field
+                        </span>
+                      </button>
+                      <span
+                        id="freelance-contributions-tooltip"
+                        class="info-tooltip"
+                        role="tooltip"
+                        data-i18n-key="ui.freelance_mandatory_tooltip"
+                      >
+                        Mandatory EFKA and auxiliary payments reduce taxable
+                        profit euro-for-euro when supported by receipts.
+                      </span>
+                    </div>
                     <input
                       id="freelance-contributions"
                       name="freelance.mandatory_contributions"
@@ -811,6 +925,20 @@
             <legend data-i18n-key="calculator.legends.deductions">
               Deductions
             </legend>
+            <details class="help-panel">
+              <summary data-i18n-key="ui.deductions_help_summary">
+                Deductions help
+              </summary>
+              <p data-i18n-key="ui.deductions_help_body">
+                Enter documented spending only—receipts or payment slips are
+                required for all deduction categories.
+              </p>
+              <p data-i18n-key="ui.deductions_help_limits">
+                The calculator applies statutory limits automatically (e.g. 20%
+                credit for donations, AADE caps for medical, education, and
+                insurance costs).
+              </p>
+            </details>
             <div class="form-grid double">
               <div class="form-control">
                 <label
