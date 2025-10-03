@@ -28,6 +28,7 @@ const THEME_STORAGE_KEY = "greektax.theme";
 const DEFAULT_THEME = "dark";
 const PLOTLY_SDK_URL = "https://cdn.plot.ly/plotly-2.26.0.min.js";
 const PLOTLY_SDK_ATTRIBUTE = "data-plotly-sdk";
+const SVG_NS = "http://www.w3.org/2000/svg";
 
 let plotlyLoaderPromise = null;
 let pendingPlotlyJob = null;
@@ -267,6 +268,10 @@ const sankeyWrapper = document.getElementById("sankey-wrapper");
 const sankeyChart = document.getElementById("sankey-chart");
 const sankeyEmptyState = document.getElementById("sankey-empty");
 const distributionWrapper = document.getElementById("distribution-wrapper");
+const distributionVisual = distributionWrapper
+  ? distributionWrapper.querySelector(".distribution-visual")
+  : null;
+const distributionChart = document.getElementById("distribution-chart");
 const distributionList = document.getElementById("distribution-list");
 const distributionEmptyState = document.getElementById("distribution-empty");
 const summaryGrid = document.getElementById("summary-grid");
@@ -2782,6 +2787,13 @@ const DISTRIBUTION_CATEGORIES = [
   { key: "expenses", colorVar: "--flow-expenses" },
 ];
 
+const DISTRIBUTION_FALLBACK_COLORS = {
+  profits: "#0f6dff",
+  taxes: "#ff4d6a",
+  insurance: "#00bfa6",
+  expenses: "#f5a524",
+};
+
 function toFiniteNumber(value) {
   const parsed = Number.parseFloat(value ?? 0);
   return Number.isFinite(parsed) ? parsed : 0;
@@ -2873,11 +2885,14 @@ function computeDistributionTotals(details) {
 }
 
 function renderDistributionChart(details) {
-  if (!distributionWrapper || !distributionList) {
+  if (!distributionWrapper || !distributionList || !distributionChart) {
     return;
   }
 
   distributionList.innerHTML = "";
+  distributionChart.innerHTML = "";
+  distributionChart.removeAttribute("aria-label");
+  distributionChart.setAttribute("aria-hidden", "true");
 
   const { totals, totalValue } = computeDistributionTotals(details);
   const safeTotal = totalValue > 0 ? totalValue : 0;
@@ -2886,54 +2901,126 @@ function renderDistributionChart(details) {
     if (distributionEmptyState) {
       distributionEmptyState.hidden = false;
     }
+    if (distributionVisual) {
+      distributionVisual.hidden = true;
+    }
+    distributionList.hidden = true;
+    distributionChart.hidden = true;
     distributionWrapper.hidden = false;
     return;
   }
+
+  const rootStyles =
+    typeof window !== "undefined"
+      ? window.getComputedStyle(document.documentElement)
+      : null;
+  const center = 120;
+  const radius = 90;
+  const circumference = 2 * Math.PI * radius;
+  let offset = 0;
+  const labelParts = [];
+
+  const ring = document.createElementNS(SVG_NS, "circle");
+  ring.setAttribute("class", "distribution-chart__ring");
+  ring.setAttribute("cx", center);
+  ring.setAttribute("cy", center);
+  ring.setAttribute("r", radius);
+  distributionChart.appendChild(ring);
 
   DISTRIBUTION_CATEGORIES.forEach(({ key, colorVar }) => {
     const value = Math.max(totals[key] || 0, 0);
     const ratio = safeTotal > 0 ? value / safeTotal : 0;
     const clampedRatio = Math.max(0, Math.min(ratio, 1));
+    const strokeLength = clampedRatio * circumference;
+
+    const cssColor = rootStyles ? rootStyles.getPropertyValue(colorVar) : "";
+    const normalizedColor = cssColor && cssColor.trim().length
+      ? cssColor.trim()
+      : DISTRIBUTION_FALLBACK_COLORS[key] || "#0f6dff";
+
+    if (strokeLength > 0) {
+      const segment = document.createElementNS(SVG_NS, "circle");
+      segment.setAttribute("class", "distribution-chart__segment");
+      segment.dataset.category = key;
+      segment.setAttribute("cx", center);
+      segment.setAttribute("cy", center);
+      segment.setAttribute("r", radius);
+      segment.setAttribute("stroke", normalizedColor);
+      segment.setAttribute(
+        "stroke-dasharray",
+        `${strokeLength} ${Math.max(circumference - strokeLength, 0)}`,
+      );
+      segment.setAttribute("stroke-dashoffset", `${-offset}`);
+      distributionChart.appendChild(segment);
+    }
+
+    offset = Math.min(offset + strokeLength, circumference);
 
     const item = document.createElement("li");
-    item.className = "distribution-row";
+    item.className = "distribution-legend__item";
     item.dataset.category = key;
+    item.style.setProperty("--distribution-color", normalizedColor);
 
-    const header = document.createElement("div");
-    header.className = "distribution-row__header";
+    const swatch = document.createElement("span");
+    swatch.className = "distribution-legend__swatch";
+    swatch.setAttribute("aria-hidden", "true");
+    item.appendChild(swatch);
 
     const labelSpan = document.createElement("span");
-    labelSpan.className = "distribution-row__label";
-    labelSpan.textContent = t(`distribution.${key}`);
-    header.appendChild(labelSpan);
+    labelSpan.className = "distribution-legend__label";
+    const labelText = t(`distribution.${key}`);
+    labelSpan.textContent = labelText;
+    item.appendChild(labelSpan);
 
     const amountSpan = document.createElement("span");
-    amountSpan.className = "distribution-row__amount";
+    amountSpan.className = "distribution-legend__amount";
     amountSpan.textContent = formatCurrency(value);
-    header.appendChild(amountSpan);
-
-    const bar = document.createElement("div");
-    bar.className = "distribution-row__bar";
-
-    const fill = document.createElement("div");
-    fill.className = "distribution-row__fill";
-    fill.style.setProperty("--distribution-ratio", clampedRatio.toFixed(4));
-    fill.style.setProperty("--distribution-color", `var(${colorVar})`);
-    bar.appendChild(fill);
+    item.appendChild(amountSpan);
 
     const percentSpan = document.createElement("span");
-    percentSpan.className = "distribution-row__percent";
+    percentSpan.className = "distribution-legend__percent";
     percentSpan.textContent = formatPercent(ratio);
-    bar.appendChild(percentSpan);
+    item.appendChild(percentSpan);
 
-    item.appendChild(header);
-    item.appendChild(bar);
     distributionList.appendChild(item);
+
+    if (value > 0) {
+      labelParts.push(`${labelText} ${percentSpan.textContent}`);
+    }
   });
+
+  const totalLabel = document.createElementNS(SVG_NS, "text");
+  totalLabel.classList.add("distribution-chart__center-label");
+  totalLabel.setAttribute("x", center);
+  totalLabel.setAttribute("y", center - 6);
+  totalLabel.setAttribute("text-anchor", "middle");
+  totalLabel.textContent = t("calculator.results_heading");
+  distributionChart.appendChild(totalLabel);
+
+  const totalValueText = document.createElementNS(SVG_NS, "text");
+  totalValueText.classList.add("distribution-chart__center-value");
+  totalValueText.setAttribute("x", center);
+  totalValueText.setAttribute("y", center + 18);
+  totalValueText.setAttribute("text-anchor", "middle");
+  totalValueText.textContent = formatCurrency(safeTotal);
+  distributionChart.appendChild(totalValueText);
+
+  if (labelParts.length) {
+    distributionChart.setAttribute(
+      "aria-label",
+      `${t("distribution.heading")}: ${labelParts.join(", ")}`,
+    );
+    distributionChart.setAttribute("aria-hidden", "false");
+  }
 
   if (distributionEmptyState) {
     distributionEmptyState.hidden = true;
   }
+  if (distributionVisual) {
+    distributionVisual.hidden = false;
+  }
+  distributionList.hidden = false;
+  distributionChart.hidden = false;
   distributionWrapper.hidden = false;
 }
 
@@ -3222,6 +3309,16 @@ function resetResults() {
   }
   if (distributionList) {
     distributionList.innerHTML = "";
+    distributionList.hidden = true;
+  }
+  if (distributionChart) {
+    distributionChart.innerHTML = "";
+    distributionChart.hidden = true;
+    distributionChart.removeAttribute("aria-label");
+    distributionChart.setAttribute("aria-hidden", "true");
+  }
+  if (distributionVisual) {
+    distributionVisual.hidden = true;
   }
   if (distributionEmptyState) {
     distributionEmptyState.hidden = false;
