@@ -56,6 +56,23 @@ Validate configuration files to surface contributor-facing alerts:
 python -m greektax.backend.config.validator
 ```
 
+### Refreshing front-end translations
+
+Whenever you update the shared catalogues in `src/greektax/translations`,
+regenerate the embedded front-end bundle so the static UI picks up the changes:
+
+```bash
+python scripts/embed_translations.py
+```
+
+This script reads the canonical JSON resources and emits
+`src/frontend/assets/scripts/translations.generated.js`, which the browser loads
+before the main application script. The generated file should be committed so
+static deployments remain in sync with the latest catalogue content.
+
+Refer to [`docs/i18n.md`](docs/i18n.md) for the full localisation workflow,
+including how to add new strings or support additional languages.
+
 Additional tooling configured for future sprints:
 
 - `ruff` for linting (`ruff check src tests`)
