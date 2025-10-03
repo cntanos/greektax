@@ -1,9 +1,14 @@
 """Integration coverage for configuration metadata endpoints."""
 
 from http import HTTPStatus
+from shutil import copy2
+from unittest.mock import patch
+
+import yaml
 
 from flask.testing import FlaskClient
 
+from greektax.backend.config import year_config
 from greektax.backend.version import get_project_version
 
 
@@ -26,6 +31,8 @@ def test_list_years_endpoint(client: FlaskClient) -> None:
     assert payload["default_year"] == 2025
 
     current_year = next(entry for entry in years if entry["year"] == 2025)
+    previous_year = next(entry for entry in years if entry["year"] == 2024)
+
     employment_meta = current_year["employment"]
     assert employment_meta["payroll"]["default_payments_per_year"] == 14
     assert 12 in employment_meta["payroll"]["allowed_payments_per_year"]
@@ -52,6 +59,50 @@ def test_list_years_endpoint(client: FlaskClient) -> None:
     warnings = current_year["warnings"]
     assert isinstance(warnings, list) and warnings
     assert all(entry["id"] != "config.pending_deduction_updates" for entry in warnings)
+    assert all(entry["id"] != "freelance.trade_fee_sunset" for entry in warnings)
+
+    legacy_trade_fee = previous_year["freelance"]["trade_fee"]
+    assert legacy_trade_fee["standard_amount"] > 0
+    assert "sunset" in legacy_trade_fee
+    assert legacy_trade_fee["sunset"]["year"] == 2025
+    assert legacy_trade_fee["sunset"]["description_key"]
+    legacy_warnings = previous_year["warnings"]
+    assert any(entry["id"] == "freelance.trade_fee_sunset" for entry in legacy_warnings)
+
+    modern_trade_fee = current_year["freelance"]["trade_fee"]
+    assert modern_trade_fee["standard_amount"] == 0
+    assert modern_trade_fee.get("sunset") is None
+
+
+def test_list_years_endpoint_discovers_new_config_file(
+    client: FlaskClient, tmp_path
+) -> None:
+    original_directory = year_config.CONFIG_DIRECTORY
+    for filename in ("2024.yaml", "2025.yaml"):
+        copy2(original_directory / filename, tmp_path / filename)
+
+    new_year_path = tmp_path / "2030.yaml"
+    copy2(original_directory / "2025.yaml", new_year_path)
+    config = yaml.safe_load(new_year_path.read_text())
+    config["year"] = 2030
+    config.setdefault("meta", {})["year"] = 2030
+    new_year_path.write_text(
+        yaml.safe_dump(config, sort_keys=False, allow_unicode=True)
+    )
+
+    year_config.load_year_configuration.cache_clear()
+    with patch.object(year_config, "CONFIG_DIRECTORY", tmp_path):
+        year_config.load_year_configuration.cache_clear()
+        response = client.get("/api/v1/config/years")
+
+    year_config.load_year_configuration.cache_clear()
+
+    assert response.status_code == HTTPStatus.OK
+    payload = response.get_json()
+    years = payload["years"]
+    discovered = {entry["year"] for entry in years}
+    assert {2024, 2025, 2030}.issubset(discovered)
+    assert payload["default_year"] == 2030
 
 
 def test_investment_categories_endpoint(client: FlaskClient) -> None:

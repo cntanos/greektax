@@ -168,6 +168,74 @@ class InvestmentConfig:
 
 
 @dataclass(frozen=True)
+class DonationCreditConfig:
+    """Configuration for donation tax credits."""
+
+    credit_rate: float
+    income_cap_rate: float | None = None
+
+    def __post_init__(self) -> None:  # pragma: no cover - defensive validation
+        if self.credit_rate < 0 or self.credit_rate > 1:
+            raise ConfigurationError(
+                "Donation credit rate must be between 0 and 1"
+            )
+        if self.income_cap_rate is not None:
+            if self.income_cap_rate < 0 or self.income_cap_rate > 1:
+                raise ConfigurationError(
+                    "Donation income cap rate must be between 0 and 1 when provided"
+                )
+
+
+@dataclass(frozen=True)
+class MedicalCreditConfig:
+    """Configuration for medical expense tax credits."""
+
+    credit_rate: float
+    income_threshold_rate: float
+    max_credit: float
+
+    def __post_init__(self) -> None:  # pragma: no cover - defensive validation
+        if self.credit_rate < 0 or self.credit_rate > 1:
+            raise ConfigurationError(
+                "Medical credit rate must be between 0 and 1"
+            )
+        if self.income_threshold_rate < 0 or self.income_threshold_rate > 1:
+            raise ConfigurationError(
+                "Medical income threshold rate must be between 0 and 1"
+            )
+        if self.max_credit < 0:
+            raise ConfigurationError("Medical max credit must be non-negative")
+
+
+@dataclass(frozen=True)
+class CappedExpenseCreditConfig:
+    """Configuration for credits with a capped eligible expense base."""
+
+    credit_rate: float
+    max_eligible_expense: float
+
+    def __post_init__(self) -> None:  # pragma: no cover - defensive validation
+        if self.credit_rate < 0 or self.credit_rate > 1:
+            raise ConfigurationError(
+                "Credit rate must be between 0 and 1"
+            )
+        if self.max_eligible_expense < 0:
+            raise ConfigurationError(
+                "Max eligible expense must be non-negative"
+            )
+
+
+@dataclass(frozen=True)
+class DeductionRuleConfig:
+    """Configuration block covering statutory deduction credit rules."""
+
+    donations: DonationCreditConfig
+    medical: MedicalCreditConfig
+    education: CappedExpenseCreditConfig
+    insurance: CappedExpenseCreditConfig
+
+
+@dataclass(frozen=True)
 class DeductionHint:
     """Hint metadata for user-facing deduction inputs."""
 
@@ -204,6 +272,7 @@ class DeductionConfig:
     """Container for deduction metadata hints."""
 
     hints: Sequence[DeductionHint]
+    rules: DeductionRuleConfig
 
 
 @dataclass(frozen=True)
@@ -613,6 +682,117 @@ def _parse_investment_config(raw: Mapping[str, Any]) -> InvestmentConfig:
     return InvestmentConfig(rates=rates)
 
 
+def _default_deduction_rules() -> DeductionRuleConfig:
+    return DeductionRuleConfig(
+        donations=DonationCreditConfig(credit_rate=0.20, income_cap_rate=0.10),
+        medical=MedicalCreditConfig(
+            credit_rate=0.10,
+            income_threshold_rate=0.05,
+            max_credit=3_000.0,
+        ),
+        education=CappedExpenseCreditConfig(
+            credit_rate=0.10,
+            max_eligible_expense=1_000.0,
+        ),
+        insurance=CappedExpenseCreditConfig(
+            credit_rate=0.10,
+            max_eligible_expense=1_200.0,
+        ),
+    )
+
+
+def _parse_donation_credit(
+    raw: Mapping[str, Any] | None, default: DonationCreditConfig
+) -> DonationCreditConfig:
+    if raw is None:
+        return default
+    if not isinstance(raw, Mapping):
+        raise ConfigurationError("Deduction donation rules must be a mapping when provided")
+
+    if "credit_rate" not in raw:
+        raise ConfigurationError("Donation rules require a 'credit_rate'")
+
+    credit_rate = float(raw["credit_rate"])
+    income_cap_raw = raw.get("income_cap_rate")
+    income_cap_rate = float(income_cap_raw) if income_cap_raw is not None else None
+
+    return DonationCreditConfig(
+        credit_rate=credit_rate,
+        income_cap_rate=income_cap_rate,
+    )
+
+
+def _parse_medical_credit(
+    raw: Mapping[str, Any] | None, default: MedicalCreditConfig
+) -> MedicalCreditConfig:
+    if raw is None:
+        return default
+    if not isinstance(raw, Mapping):
+        raise ConfigurationError("Medical deduction rules must be a mapping when provided")
+
+    required_fields = {"credit_rate", "income_threshold_rate", "max_credit"}
+    missing = required_fields - set(raw)
+    if missing:
+        missing_list = ", ".join(sorted(missing))
+        raise ConfigurationError(
+            f"Medical deduction rules missing required field(s): {missing_list}"
+        )
+
+    return MedicalCreditConfig(
+        credit_rate=float(raw["credit_rate"]),
+        income_threshold_rate=float(raw["income_threshold_rate"]),
+        max_credit=float(raw["max_credit"]),
+    )
+
+
+def _parse_capped_expense_credit(
+    raw: Mapping[str, Any] | None, default: CappedExpenseCreditConfig, context: str
+) -> CappedExpenseCreditConfig:
+    if raw is None:
+        return default
+    if not isinstance(raw, Mapping):
+        raise ConfigurationError(f"{context} deduction rules must be a mapping when provided")
+
+    required_fields = {"credit_rate", "max_eligible_expense"}
+    missing = required_fields - set(raw)
+    if missing:
+        missing_list = ", ".join(sorted(missing))
+        raise ConfigurationError(
+            f"{context} deduction rules missing required field(s): {missing_list}"
+        )
+
+    return CappedExpenseCreditConfig(
+        credit_rate=float(raw["credit_rate"]),
+        max_eligible_expense=float(raw["max_eligible_expense"]),
+    )
+
+
+def _parse_deduction_rules(
+    raw: Mapping[str, Any] | None,
+) -> DeductionRuleConfig:
+    defaults = _default_deduction_rules()
+    if raw is None:
+        return defaults
+    if not isinstance(raw, Mapping):
+        raise ConfigurationError("'rules' must be a mapping when provided")
+
+    donations = _parse_donation_credit(raw.get("donations"), defaults.donations)
+    medical = _parse_medical_credit(raw.get("medical"), defaults.medical)
+    education = _parse_capped_expense_credit(
+        raw.get("education"), defaults.education, "Education"
+    )
+    insurance = _parse_capped_expense_credit(
+        raw.get("insurance"), defaults.insurance, "Insurance"
+    )
+
+    return DeductionRuleConfig(
+        donations=donations,
+        medical=medical,
+        education=education,
+        insurance=insurance,
+    )
+
+
 def _parse_deduction_threshold(raw: Mapping[str, Any]) -> DeductionThreshold:
     label_key = raw.get("label_key")
     if not label_key or not isinstance(label_key, str):
@@ -727,19 +907,22 @@ def _parse_deduction_hint(raw: Mapping[str, Any]) -> DeductionHint:
 
 def _parse_deductions_config(raw: Mapping[str, Any] | None) -> DeductionConfig:
     if raw is None:
-        return DeductionConfig(hints=tuple())
+        hints_raw: Iterable[Mapping[str, Any]] = []
+        rules_raw: Mapping[str, Any] | None = None
+    else:
+        if not isinstance(raw, Mapping):
+            raise ConfigurationError("'deductions' section must be a mapping")
+        rules_raw = raw.get("rules")
+        hints_candidate = raw.get("hints", [])
+        if hints_candidate is None:
+            hints_candidate = []
+        if not isinstance(hints_candidate, Iterable):
+            raise ConfigurationError("'hints' must be an iterable of hint definitions")
+        hints_raw = hints_candidate
 
-    if not isinstance(raw, Mapping):
-        raise ConfigurationError("'deductions' section must be a mapping")
-
-    hints_raw = raw.get("hints", [])
-    if hints_raw is None:
-        hints_raw = []
-    if not isinstance(hints_raw, Iterable):
-        raise ConfigurationError("'hints' must be an iterable of hint definitions")
-
+    rules = _parse_deduction_rules(rules_raw)
     hints = tuple(_parse_deduction_hint(hint) for hint in hints_raw)
-    return DeductionConfig(hints=hints)
+    return DeductionConfig(hints=hints, rules=rules)
 
 
 def _parse_year_warnings(

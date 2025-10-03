@@ -10,6 +10,7 @@ from .year_config import (
     ContributionRates,
     DeductionConfig,
     DeductionHint,
+    DeductionRuleConfig,
     EFKACategoryConfig,
     PayrollConfig,
     TradeFeeConfig,
@@ -259,6 +260,8 @@ def _validate_deductions(config: DeductionConfig) -> list[str]:
     errors: list[str] = []
     seen_ids: set[str] = set()
 
+    errors.extend(_validate_deduction_rules(config.rules))
+
     for hint in config.hints:
         if hint.id in seen_ids:
             errors.append(
@@ -279,6 +282,75 @@ def _validate_deductions(config: DeductionConfig) -> list[str]:
             )
 
         errors.extend(_validate_deduction_allowances(hint))
+
+    return errors
+
+
+def _validate_deduction_rules(config: DeductionRuleConfig) -> list[str]:
+    errors: list[str] = []
+
+    donation_rate = config.donations.credit_rate
+    if donation_rate < 0 or donation_rate > 1:
+        errors.append(
+            _format_scope(
+                "deductions.rules.donations",
+                "credit_rate must be between 0 and 1",
+            )
+        )
+
+    income_cap = config.donations.income_cap_rate
+    if income_cap is not None and (income_cap < 0 or income_cap > 1):
+        errors.append(
+            _format_scope(
+                "deductions.rules.donations",
+                "income_cap_rate must be between 0 and 1",
+            )
+        )
+
+    medical_rate = config.medical.credit_rate
+    if medical_rate < 0 or medical_rate > 1:
+        errors.append(
+            _format_scope(
+                "deductions.rules.medical",
+                "credit_rate must be between 0 and 1",
+            )
+        )
+
+    threshold_rate = config.medical.income_threshold_rate
+    if threshold_rate < 0 or threshold_rate > 1:
+        errors.append(
+            _format_scope(
+                "deductions.rules.medical",
+                "income_threshold_rate must be between 0 and 1",
+            )
+        )
+
+    if config.medical.max_credit < 0:
+        errors.append(
+            _format_scope(
+                "deductions.rules.medical",
+                "max_credit must be non-negative",
+            )
+        )
+
+    for scope, entry in {
+        "education": config.education,
+        "insurance": config.insurance,
+    }.items():
+        if entry.credit_rate < 0 or entry.credit_rate > 1:
+            errors.append(
+                _format_scope(
+                    f"deductions.rules.{scope}",
+                    "credit_rate must be between 0 and 1",
+                )
+            )
+        if entry.max_eligible_expense < 0:
+            errors.append(
+                _format_scope(
+                    f"deductions.rules.{scope}",
+                    "max_eligible_expense must be non-negative",
+                )
+            )
 
     return errors
 

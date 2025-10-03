@@ -76,6 +76,8 @@ class CalculationInput(BaseModel):
     pension_payments_per_year: int | None
     pension_net_target_income: float | None
     freelance_profit: float
+    freelance_gross_revenue: float
+    freelance_deductible_expenses: float
     freelance_category_id: str | None
     freelance_category_months: int | None
     freelance_category_contribution: float
@@ -116,12 +118,24 @@ class CalculationInput(BaseModel):
         )
 
     @property
+    def freelance_total_contributions(self) -> float:
+        """Maintain backwards-compatible naming for total contributions."""
+
+        return self.total_freelance_contributions
+
+    @property
     def has_employment_income(self) -> bool:
         return self.employment_income > 0
 
     @property
     def has_pension_income(self) -> bool:
         return self.pension_income > 0
+
+    @property
+    def has_freelance_income(self) -> bool:
+        """Alias for ``has_freelance_activity`` expected by legacy callers."""
+
+        return self.has_freelance_activity
 
     @property
     def has_freelance_activity(self) -> bool:
@@ -135,6 +149,12 @@ class CalculationInput(BaseModel):
     def agricultural_profit(self) -> float:
         profit = self.agricultural_gross_revenue - self.agricultural_deductible_expenses
         return profit if profit > 0 else 0.0
+
+    @property
+    def agricultural_taxable_income(self) -> float:
+        """Alias for legacy agricultural taxable income naming."""
+
+        return self.agricultural_profit
 
     @property
     def has_agricultural_income(self) -> bool:

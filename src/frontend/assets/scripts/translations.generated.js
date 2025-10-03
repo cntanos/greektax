@@ -217,7 +217,7 @@
       },
       "ui": {
         "deductions_help_body": "Καταχωρήστε μόνο ποσά με νόμιμες αποδείξεις ή αποδεικτικά πληρωμής.",
-        "deductions_help_limits": "Εφαρμόζονται αυτόματα τα νόμιμα όρια—οι δωρεές δίνουν πίστωση 20%, ενώ ιατρικές, εκπαιδευτικές και ασφαλιστικές δαπάνες ακολουθούν τα όρια της ΑΑΔΕ.",
+        "deductions_help_limits": "Εφαρμόζονται αυτόματα τα νόμιμα όρια—η πίστωση για δωρεές εξαρτάται από το εισόδημα, ενώ ιατρικές, εκπαιδευτικές και ασφαλιστικές δαπάνες ακολουθούν τα όρια της ΑΑΔΕ.",
         "deductions_help_summary": "Βοήθεια για εκπτώσεις",
         "disclaimer": "Αποποίηση ευθύνης: Το εργαλείο είναι ανεπίσημο και παρέχεται ως έχει. Τα δεδομένα εισόδου αποθηκεύονται τοπικά στη συσκευή σας για έως δύο ώρες και δεν αποστέλλονται σε διακομιστή. Συμβουλευτείτε λογιστή για επίσημες δηλώσεις.",
         "freelance_help_body": "Δηλώστε τον ακαθάριστο κύκλο εργασιών πριν τον ΦΠΑ και καταχωρήστε μόνο τεκμηριωμένες δαπάνες (ενοίκιο, ΔΕΚΟ, εξοπλισμός, αμοιβές).",
@@ -473,7 +473,7 @@
       },
       "ui": {
         "deductions_help_body": "Only enter amounts supported by official receipts or payment slips.",
-        "deductions_help_limits": "Statutory limits are applied automatically—donations receive a 20% credit, while medical, education, and insurance costs follow AADE caps.",
+        "deductions_help_limits": "Statutory limits are applied automatically—donation credits depend on income, while medical, education, and insurance costs follow AADE caps.",
         "deductions_help_summary": "Deductions help",
         "disclaimer": "Disclaimer: This tool is unofficial and provided as-is. Inputs are stored locally on your device for up to two hours and are never sent to a server. Please consult a professional accountant for formal filings.",
         "freelance_help_body": "Report gross turnover before VAT and only claim expenses you can document (rent, utilities, equipment, professional fees).",

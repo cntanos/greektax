@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import os
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping
 from contextlib import contextmanager
 from numbers import Real
 from time import perf_counter
@@ -13,40 +13,32 @@ from typing import Any
 
 from pydantic import ValidationError
 
-from greektax.backend.app.localization import Translator, get_translator
+from greektax.backend.app.localization import get_translator
 from greektax.backend.app.models import (
     CalculationInput,
     CalculationRequest,
     CalculationResponse,
     DetailTotals,
-    GeneralIncomeComponent,
     format_validation_error,
 )
 from greektax.backend.config.year_config import (
-    FreelanceConfig,
-    InvestmentConfig,
     PayrollConfig,
-    RentalConfig,
-    TaxBracket,
     YearConfiguration,
     load_year_configuration,
 )
 
+from .calculators import (
+    calculate_enfia,
+    calculate_general_income_details,
+    calculate_investment,
+    calculate_luxury,
+    calculate_rental,
+    calculate_vat,
+    round_currency,
+    round_rate,
+)
+
 _LOGGER = logging.getLogger(__name__)
-
-
-# Conservative approximations of statutory deduction rules. They can be
-# refined per tax-year configuration when more granular data becomes
-# available, but prevent over-application of relief in the meantime.
-_DONATIONS_CREDIT_RATE = 0.20
-_DONATIONS_INCOME_CAP_RATE = 0.10
-_MEDICAL_CREDIT_RATE = 0.10
-_MEDICAL_INCOME_THRESHOLD_RATE = 0.05
-_MEDICAL_MAX_CREDIT = 3_000.0
-_EDUCATION_CREDIT_RATE = 0.10
-_EDUCATION_MAX_ELIGIBLE_EXPENSE = 1_000.0
-_INSURANCE_CREDIT_RATE = 0.10
-_INSURANCE_MAX_ELIGIBLE_EXPENSE = 1_200.0
 
 
 def _profiling_enabled() -> bool:
@@ -126,8 +118,10 @@ def _normalise_payload(
     withholding_tax = request.withholding_tax
 
     freelance_input = request.freelance
+    freelance_gross_revenue = freelance_input.gross_revenue
+    freelance_deductible_expenses = freelance_input.deductible_expenses
     if freelance_input.profit is None:
-        profit = freelance_input.gross_revenue - freelance_input.deductible_expenses
+        profit = freelance_gross_revenue - freelance_deductible_expenses
         if profit < 0:
             profit = 0.0
     else:
@@ -245,6 +239,8 @@ def _normalise_payload(
         pension_payments_per_year=pension_payments,
         pension_net_target_income=pension_net_target,
         freelance_profit=profit,
+        freelance_gross_revenue=freelance_gross_revenue,
+        freelance_deductible_expenses=freelance_deductible_expenses,
         freelance_category_id=category_config.id if category_config else None,
         freelance_category_months=category_months,
         freelance_category_contribution=category_contribution,
@@ -382,668 +378,6 @@ def _solve_net_target(
     return best_payload.model_copy(update={"pension_net_target_income": None})
 
 
-def _calculate_progressive_tax(amount: float, brackets: Sequence[TaxBracket]) -> float:
-    if amount <= 0:
-        return 0.0
-
-    total = 0.0
-    lower_bound = 0.0
-
-    for bracket in brackets:
-        upper = bracket.upper_bound
-        if upper is None or amount < upper:
-            total += (amount - lower_bound) * bracket.rate
-            break
-
-        total += (upper - lower_bound) * bracket.rate
-        lower_bound = upper
-
-    return total
-
-
-def _calculate_trade_fee(payload: CalculationInput, config: FreelanceConfig) -> float:
-    if not payload.include_trade_fee:
-        return 0.0
-    if payload.freelance_taxable_income <= 0:
-        return 0.0
-
-    sunset = config.trade_fee.sunset
-    if sunset is not None:
-        status_key = (sunset.status_key or "").strip().lower()
-        if status_key.endswith("scheduled"):
-            scheduled_year = sunset.year
-            if scheduled_year is None:
-                return 0.0
-            if payload.year >= scheduled_year - 1:
-                return 0.0
-
-    amount = config.trade_fee.standard_amount
-
-    if (
-        payload.freelance_trade_fee_location == "reduced"
-        and config.trade_fee.reduced_amount is not None
-    ):
-        amount = config.trade_fee.reduced_amount
-
-    if payload.freelance_newly_self_employed:
-        years_active = payload.freelance_years_active or 0
-        reduction_years = config.trade_fee.newly_self_employed_reduction_years
-        if reduction_years is not None and years_active < reduction_years:
-            if config.trade_fee.reduced_amount is not None:
-                amount = min(amount, config.trade_fee.reduced_amount)
-            else:
-                amount = 0.0
-
-    return amount if amount > 0 else 0.0
-
-
-def _apply_deduction_credits(
-    payload: CalculationInput,
-    components: Sequence[GeneralIncomeComponent],
-    translator: Translator,
-) -> tuple[float, list[dict[str, Any]]]:
-    credit_eligible_components = [
-        component for component in components if component.credit_eligible
-    ]
-    available_tax = sum(
-        component.tax_after_credit for component in credit_eligible_components
-    )
-    income_for_thresholds = sum(
-        component.gross_income for component in credit_eligible_components
-    )
-
-    breakdown: list[dict[str, Any]] = []
-
-    def _append_breakdown(
-        entry_type: str,
-        amounts: tuple[float, float, float],
-        requested: float,
-        note: str | None = None,
-    ) -> None:
-        entered, eligible, rate = amounts
-        breakdown.append(
-            {
-                "type": entry_type,
-                "label": translator(f"forms.deductions.{entry_type}"),
-                "entered": entered,
-                "eligible": eligible,
-                "credit_rate": rate,
-                "credit_requested": requested,
-                "credit_applied": 0.0,
-                "notes": note,
-            }
-        )
-
-    donations = max(payload.deductions_donations, 0.0)
-    if donations > 0:
-        if income_for_thresholds > 0:
-            income_cap = income_for_thresholds * _DONATIONS_INCOME_CAP_RATE
-            eligible = min(donations, income_cap)
-            note = None
-            if donations > income_cap:
-                note = (
-                    "Only donations up to 10% of eligible income qualify for the 20% credit."
-                )
-        else:
-            eligible = 0.0
-            note = "Donations cannot generate a credit without taxable income."
-        requested = eligible * _DONATIONS_CREDIT_RATE
-        _append_breakdown(
-            "donations",
-            (donations, eligible, _DONATIONS_CREDIT_RATE),
-            requested,
-            note,
-        )
-
-    medical = max(payload.deductions_medical, 0.0)
-    if medical > 0:
-        if income_for_thresholds > 0:
-            threshold = income_for_thresholds * _MEDICAL_INCOME_THRESHOLD_RATE
-            eligible_expense = max(medical - threshold, 0.0)
-            note = None
-            if medical <= threshold:
-                note = "Medical expenses must exceed 5% of income before a credit is granted."
-        else:
-            eligible_expense = 0.0
-            note = "Medical credits require taxable income to satisfy the 5% threshold."
-        requested = eligible_expense * _MEDICAL_CREDIT_RATE
-        if requested > _MEDICAL_MAX_CREDIT:
-            requested = _MEDICAL_MAX_CREDIT
-            extra_note = (
-                "Medical expense credits are capped at €3,000 per taxpayer."
-            )
-            note = f"{note} {extra_note}".strip() if note else extra_note
-        _append_breakdown(
-            "medical",
-            (medical, eligible_expense, _MEDICAL_CREDIT_RATE),
-            requested,
-            note,
-        )
-
-    education = max(payload.deductions_education, 0.0)
-    if education > 0:
-        eligible = min(education, _EDUCATION_MAX_ELIGIBLE_EXPENSE)
-        note = None
-        if education > _EDUCATION_MAX_ELIGIBLE_EXPENSE:
-            note = (
-                "Education expenses eligible for credits are capped; excess is ignored."
-            )
-        requested = eligible * _EDUCATION_CREDIT_RATE
-        _append_breakdown(
-            "education",
-            (education, eligible, _EDUCATION_CREDIT_RATE),
-            requested,
-            note,
-        )
-
-    insurance = max(payload.deductions_insurance, 0.0)
-    if insurance > 0:
-        eligible = min(insurance, _INSURANCE_MAX_ELIGIBLE_EXPENSE)
-        note = None
-        if insurance > _INSURANCE_MAX_ELIGIBLE_EXPENSE:
-            note = (
-                "Life and health insurance premiums have a statutory ceiling for credits."
-            )
-        requested = eligible * _INSURANCE_CREDIT_RATE
-        _append_breakdown(
-            "insurance",
-            (insurance, eligible, _INSURANCE_CREDIT_RATE),
-            requested,
-            note,
-        )
-
-    total_requested = sum(item["credit_requested"] for item in breakdown)
-    if total_requested <= 0:
-        return 0.0, breakdown
-
-    scaling_factor = 1.0
-    if total_requested > available_tax:
-        scaling_factor = available_tax / total_requested if total_requested > 0 else 0.0
-        for item in breakdown:
-            existing_note = item.get("notes")
-            limitation_note = (
-                "Credits were limited by the remaining tax liability."
-            )
-            item["notes"] = (
-                f"{existing_note} {limitation_note}".strip()
-                if existing_note
-                else limitation_note
-            )
-
-    total_applied = 0.0
-    for item in breakdown:
-        applied = item["credit_requested"] * scaling_factor
-        item["credit_applied"] = applied
-        total_applied += applied
-
-    if total_applied <= 0:
-        return 0.0, breakdown
-
-    if available_tax <= 0:
-        return 0.0, breakdown
-
-    for component in credit_eligible_components:
-        share = (
-            component.tax_after_credit / available_tax if available_tax > 0 else 0.0
-        )
-        credit_share = total_applied * share
-        if credit_share <= 0:
-            continue
-        component.deductions_applied = credit_share
-        component.tax_after_credit = max(component.tax_after_credit - credit_share, 0.0)
-
-    return total_applied, breakdown
-
-
-def _build_general_income_components(
-    payload: CalculationInput, config: YearConfiguration
-) -> list[GeneralIncomeComponent]:
-    components: list[GeneralIncomeComponent] = []
-
-    if payload.has_employment_income:
-        auto_employee_contrib = (
-            payload.employment_income * config.employment.contributions.employee_rate
-        )
-        employee_manual_contrib = payload.employment_manual_contributions
-        employee_contrib = auto_employee_contrib + employee_manual_contrib
-        employer_contrib = (
-            payload.employment_income * config.employment.contributions.employer_rate
-        )
-        monthly_income = payload.employment_monthly_income
-        if (
-            monthly_income is None
-            and payload.employment_payments_per_year
-            and payload.employment_payments_per_year > 0
-        ):
-            monthly_income = payload.employment_income / payload.employment_payments_per_year
-
-        components.append(
-            GeneralIncomeComponent(
-                category="employment",
-                label_key="details.employment",
-                gross_income=payload.employment_income,
-                taxable_income=payload.employment_income,
-                credit_eligible=True,
-                payments_per_year=payload.employment_payments_per_year,
-                monthly_gross_income=monthly_income,
-                employee_contributions=employee_contrib,
-                employee_manual_contributions=employee_manual_contrib,
-                employer_contributions=employer_contrib,
-            )
-        )
-
-    if payload.has_pension_income:
-        employee_contrib = (
-            payload.pension_income * config.pension.contributions.employee_rate
-        )
-        employer_contrib = (
-            payload.pension_income * config.pension.contributions.employer_rate
-        )
-        monthly_income = payload.pension_monthly_income
-        if (
-            monthly_income is None
-            and payload.pension_payments_per_year
-            and payload.pension_payments_per_year > 0
-        ):
-            monthly_income = payload.pension_income / payload.pension_payments_per_year
-
-        components.append(
-            GeneralIncomeComponent(
-                category="pension",
-                label_key="details.pension",
-                gross_income=payload.pension_income,
-                taxable_income=payload.pension_income,
-                credit_eligible=True,
-                payments_per_year=payload.pension_payments_per_year,
-                monthly_gross_income=monthly_income,
-                employee_contributions=employee_contrib,
-                employer_contributions=employer_contrib,
-            )
-        )
-
-    if payload.has_freelance_activity:
-        trade_fee = _calculate_trade_fee(payload, config.freelance)
-        components.append(
-            GeneralIncomeComponent(
-                category="freelance",
-                label_key="details.freelance",
-                gross_income=payload.freelance_profit,
-                taxable_income=payload.freelance_taxable_income,
-                credit_eligible=True,
-                contributions=payload.total_freelance_contributions,
-                category_contributions=payload.freelance_category_contribution,
-                additional_contributions=payload.freelance_additional_contributions,
-                auxiliary_contributions=payload.freelance_auxiliary_contributions,
-                lump_sum_contributions=payload.freelance_lump_sum_contributions,
-                trade_fee=trade_fee,
-            )
-        )
-
-    if payload.has_agricultural_income:
-        components.append(
-            GeneralIncomeComponent(
-                category="agricultural",
-                label_key="details.agricultural",
-                gross_income=payload.agricultural_gross_revenue,
-                taxable_income=payload.agricultural_profit,
-                credit_eligible=payload.qualifies_for_agricultural_tax_credit,
-                deductible_expenses=payload.agricultural_deductible_expenses,
-            )
-        )
-
-    if payload.has_other_income:
-        components.append(
-            GeneralIncomeComponent(
-                category="other",
-                label_key="details.other",
-                gross_income=payload.other_taxable_income,
-                taxable_income=payload.other_taxable_income,
-                credit_eligible=False,
-            )
-        )
-
-    return components
-
-
-def _apply_progressive_tax(
-    components: Sequence[GeneralIncomeComponent],
-    payload: CalculationInput,
-    config: YearConfiguration,
-) -> None:
-    if not components:
-        return
-
-    total_taxable = sum(component.taxable_income for component in components)
-    tax_before_credit = _calculate_progressive_tax(
-        total_taxable, config.employment.brackets
-    )
-
-    credit_candidates: list[float] = []
-    if any(component.category == "employment" for component in components):
-        credit_candidates.append(
-            config.employment.tax_credit.amount_for_children(payload.children)
-        )
-    if any(component.category == "pension" for component in components):
-        credit_candidates.append(
-            config.pension.tax_credit.amount_for_children(payload.children)
-        )
-    if any(
-        component.category == "agricultural" and component.credit_eligible
-        for component in components
-    ):
-        credit_candidates.append(
-            config.employment.tax_credit.amount_for_children(payload.children)
-        )
-
-    credit_requested = max(credit_candidates) if credit_candidates else 0.0
-    credit_applied = min(credit_requested, tax_before_credit)
-
-    if total_taxable > 0:
-        for component in components:
-            share = component.taxable_income / total_taxable
-            component.tax_before_credit = tax_before_credit * share
-    else:
-        for component in components:
-            component.tax_before_credit = 0.0
-
-    eligible_tax = sum(
-        component.tax_before_credit
-        for component in components
-        if component.credit_eligible
-    )
-
-    for component in components:
-        if component.credit_eligible and eligible_tax > 0:
-            share = component.tax_before_credit / eligible_tax
-            component.credit = credit_applied * share
-        else:
-            component.credit = 0.0
-        component.tax_after_credit = max(
-            component.tax_before_credit - component.credit, 0.0
-        )
-
-
-def _rounded_component_values(
-    component: GeneralIncomeComponent,
-) -> tuple[float, float, float, float, float]:
-    gross_income = _round_currency(component.gross_income)
-    taxable_income = _round_currency(component.taxable_income)
-    tax_amount = _round_currency(component.tax_after_credit)
-    total_tax = _round_currency(component.total_tax())
-    net_income = _round_currency(component.net_income())
-    return gross_income, taxable_income, tax_amount, total_tax, net_income
-
-
-def _add_deductible_expenses(detail: dict[str, Any], component: GeneralIncomeComponent) -> None:
-    if component.deductible_expenses:
-        detail["deductible_expenses"] = _round_currency(component.deductible_expenses)
-
-
-def _add_credit_fields(detail: dict[str, Any], component: GeneralIncomeComponent) -> None:
-    if component.credit_eligible:
-        detail["tax_before_credits"] = _round_currency(component.tax_before_credit)
-        detail["credits"] = _round_currency(component.credit)
-
-
-def _add_employment_contribution_fields(
-    detail: dict[str, Any], component: GeneralIncomeComponent
-) -> None:
-    if component.category not in {"employment", "pension"}:
-        return
-
-    if component.employee_contributions:
-        detail["employee_contributions"] = _round_currency(
-            component.employee_contributions
-        )
-        if component.employee_manual_contributions:
-            detail["employee_contributions_manual"] = _round_currency(
-                component.employee_manual_contributions
-            )
-        if component.payments_per_year:
-            detail["employee_contributions_per_payment"] = _round_currency(
-                component.employee_contributions / component.payments_per_year
-            )
-
-    if component.employer_contributions:
-        detail["employer_contributions"] = _round_currency(
-            component.employer_contributions
-        )
-        if component.payments_per_year:
-            detail["employer_contributions_per_payment"] = _round_currency(
-                component.employer_contributions / component.payments_per_year
-            )
-
-
-def _add_freelance_fields(
-    detail: dict[str, Any], component: GeneralIncomeComponent, translator: Translator
-) -> None:
-    if component.category != "freelance":
-        return
-
-    detail["deductible_contributions"] = _round_currency(component.contributions)
-    detail["trade_fee"] = _round_currency(component.trade_fee)
-    if component.trade_fee:
-        detail["trade_fee_label"] = translator("details.trade_fee")
-
-    optional_contributions = {
-        "category_contributions": component.category_contributions,
-        "additional_contributions": component.additional_contributions,
-        "auxiliary_contributions": component.auxiliary_contributions,
-        "lump_sum_contributions": component.lump_sum_contributions,
-    }
-
-    for field, value in optional_contributions.items():
-        if value:
-            detail[field] = _round_currency(value)
-
-
-def _add_payment_structure_fields(
-    detail: dict[str, Any], component: GeneralIncomeComponent
-) -> None:
-    if component.monthly_gross_income is not None:
-        detail["monthly_gross_income"] = _round_currency(component.monthly_gross_income)
-
-    if not component.payments_per_year:
-        return
-
-    detail["payments_per_year"] = component.payments_per_year
-
-    gross_per_payment = component.gross_income_per_payment()
-    if gross_per_payment is not None:
-        detail["gross_income_per_payment"] = _round_currency(gross_per_payment)
-
-    net_per_payment = component.net_income_per_payment()
-    if net_per_payment is not None:
-        detail["net_income_per_payment"] = _round_currency(net_per_payment)
-
-
-def _add_deductions_field(detail: dict[str, Any], component: GeneralIncomeComponent) -> None:
-    if component.deductions_applied:
-        detail["deductions_applied"] = _round_currency(component.deductions_applied)
-
-
-def _detail_from_component(
-    component: GeneralIncomeComponent, translator: Translator
-) -> tuple[dict[str, Any], float, float, float]:
-    (
-        gross_income,
-        taxable_income,
-        tax_amount,
-        total_tax,
-        net_income,
-    ) = _rounded_component_values(component)
-
-    detail: dict[str, Any] = {
-        "category": component.category,
-        "label": translator(component.label_key),
-        "gross_income": gross_income,
-        "taxable_income": taxable_income,
-        "tax": tax_amount,
-        "total_tax": total_tax,
-        "net_income": net_income,
-    }
-
-    _add_deductible_expenses(detail, component)
-    _add_credit_fields(detail, component)
-    _add_employment_contribution_fields(detail, component)
-    _add_freelance_fields(detail, component, translator)
-    _add_payment_structure_fields(detail, component)
-    _add_deductions_field(detail, component)
-
-    return detail, gross_income, total_tax, net_income
-
-
-def _calculate_general_income_details(
-    payload: CalculationInput,
-    config: YearConfiguration,
-    translator: Translator,
-) -> tuple[list[dict[str, Any]], float, DetailTotals, list[dict[str, Any]]]:
-    components = _build_general_income_components(payload, config)
-    if not components:
-        return [], 0.0, DetailTotals(), []
-
-    _apply_progressive_tax(components, payload, config)
-    deductions_applied, deduction_breakdown = _apply_deduction_credits(
-        payload, components, translator
-    )
-
-    details: list[dict[str, Any]] = []
-    totals = DetailTotals()
-    for component in components:
-        detail, gross_income, total_tax, net_income = _detail_from_component(
-            component, translator
-        )
-        details.append(detail)
-        totals.add(gross_income, total_tax, net_income)
-
-    return details, deductions_applied, totals, deduction_breakdown
-
-
-def _calculate_rental(
-    payload: CalculationInput,
-    config: RentalConfig,
-    translator: Translator,
-) -> dict[str, Any] | None:
-    if not payload.has_rental_income:
-        return None
-
-    gross = payload.rental_gross_income
-    expenses = payload.rental_deductible_expenses
-    taxable = payload.rental_taxable_income
-    tax = _calculate_progressive_tax(taxable, config.brackets)
-    net_income = gross - expenses - tax
-
-    return {
-        "category": "rental",
-        "label": translator("details.rental"),
-        "gross_income": _round_currency(gross),
-        "deductible_expenses": _round_currency(expenses),
-        "taxable_income": _round_currency(taxable),
-        "tax": _round_currency(tax),
-        "total_tax": _round_currency(tax),
-        "net_income": _round_currency(net_income),
-    }
-
-
-def _calculate_investment(
-    payload: CalculationInput,
-    config: InvestmentConfig,
-    translator: Translator,
-) -> dict[str, Any] | None:
-    if not payload.has_investment_income:
-        return None
-
-    breakdown: list[dict[str, Any]] = []
-    gross_total = 0.0
-    tax_total = 0.0
-
-    for category, rate in config.rates.items():
-        amount = float(payload.investment_amounts.get(category, 0.0))
-        if amount <= 0:
-            continue
-
-        tax = amount * rate
-        gross_total += amount
-        tax_total += tax
-        breakdown.append(
-            {
-                "type": category,
-                "label": translator(f"details.investment.{category}"),
-                "amount": _round_currency(amount),
-                "rate": rate,
-                "tax": _round_currency(tax),
-            }
-        )
-
-    if gross_total <= 0:
-        return None
-
-    net_income = gross_total - tax_total
-
-    return {
-        "category": "investment",
-        "label": translator("details.investment"),
-        "gross_income": _round_currency(gross_total),
-        "tax": _round_currency(tax_total),
-        "total_tax": _round_currency(tax_total),
-        "net_income": _round_currency(net_income),
-        "items": breakdown,
-    }
-
-
-def _round_currency(value: float) -> float:
-    return round(value, 2)
-
-
-def _round_rate(value: float) -> float:
-    return round(value, 4)
-
-
-def _calculate_vat(payload: CalculationInput, translator: Translator) -> dict[str, Any] | None:
-    if not payload.has_vat_obligation:
-        return None
-
-    amount = payload.vat_due
-    rounded = _round_currency(amount)
-    return {
-        "category": "vat",
-        "label": translator("details.vat"),
-        "tax": rounded,
-        "total_tax": rounded,
-        "net_income": _round_currency(-amount),
-    }
-
-
-def _calculate_enfia(payload: CalculationInput, translator: Translator) -> dict[str, Any] | None:
-    if not payload.has_enfia_obligation:
-        return None
-
-    amount = payload.enfia_due
-    rounded = _round_currency(amount)
-    return {
-        "category": "enfia",
-        "label": translator("details.enfia"),
-        "tax": rounded,
-        "total_tax": rounded,
-        "net_income": _round_currency(-amount),
-    }
-
-
-def _calculate_luxury(payload: CalculationInput, translator: Translator) -> dict[str, Any] | None:
-    if not payload.has_luxury_obligation:
-        return None
-
-    amount = payload.luxury_due
-    rounded = _round_currency(amount)
-    return {
-        "category": "luxury",
-        "label": translator("details.luxury"),
-        "tax": rounded,
-        "total_tax": rounded,
-        "net_income": _round_currency(-amount),
-    }
-
-
 def _update_totals_from_detail(
     detail: Mapping[str, Any], totals: DetailTotals
 ) -> None:
@@ -1110,34 +444,34 @@ def calculate_tax(
             deductions_applied,
             general_totals,
             deduction_breakdown,
-        ) = _calculate_general_income_details(normalised, config, translator)
+        ) = calculate_general_income_details(normalised, config, translator)
     details.extend(general_income_details)
     totals.merge(general_totals)
 
     with _profile_section("rental", timings):
-        rental_detail = _calculate_rental(normalised, config.rental, translator)
+        rental_detail = calculate_rental(normalised, config.rental, translator)
     if rental_detail:
         _append_detail(rental_detail)
 
     with _profile_section("investment", timings):
-        investment_detail = _calculate_investment(
+        investment_detail = calculate_investment(
             normalised, config.investment, translator
         )
     if investment_detail:
         _append_detail(investment_detail)
 
     with _profile_section("vat", timings):
-        vat_detail = _calculate_vat(normalised, translator)
+        vat_detail = calculate_vat(normalised, translator)
     if vat_detail:
         _append_detail(vat_detail)
 
     with _profile_section("enfia", timings):
-        enfia_detail = _calculate_enfia(normalised, translator)
+        enfia_detail = calculate_enfia(normalised, translator)
     if enfia_detail:
         _append_detail(enfia_detail)
 
     with _profile_section("luxury", timings):
-        luxury_detail = _calculate_luxury(normalised, translator)
+        luxury_detail = calculate_luxury(normalised, translator)
     if luxury_detail:
         _append_detail(luxury_detail)
 
@@ -1160,14 +494,14 @@ def calculate_tax(
     withholding_tax = normalised.withholding_tax if normalised.withholding_tax > 0 else 0.0
 
     summary: dict[str, Any] = {
-        "income_total": _round_currency(income_total),
-        "tax_total": _round_currency(tax_total),
-        "net_income": _round_currency(net_income),
-        "net_monthly_income": _round_currency(net_monthly_income),
-        "average_monthly_tax": _round_currency(average_monthly_tax),
-        "effective_tax_rate": _round_rate(effective_tax_rate),
-        "deductions_entered": _round_currency(deductions_entered),
-        "deductions_applied": _round_currency(deductions_applied),
+        "income_total": round_currency(income_total),
+        "tax_total": round_currency(tax_total),
+        "net_income": round_currency(net_income),
+        "net_monthly_income": round_currency(net_monthly_income),
+        "average_monthly_tax": round_currency(average_monthly_tax),
+        "effective_tax_rate": round_rate(effective_tax_rate),
+        "deductions_entered": round_currency(deductions_entered),
+        "deductions_applied": round_currency(deductions_applied),
         "labels": {
             "income_total": translator("summary.income_total"),
             "tax_total": translator("summary.tax_total"),
@@ -1181,13 +515,13 @@ def calculate_tax(
     }
 
     if withholding_tax > 0:
-        summary["withholding_tax"] = _round_currency(withholding_tax)
+        summary["withholding_tax"] = round_currency(withholding_tax)
         summary["labels"]["withholding_tax"] = translator("summary.withholding_tax")
 
         balance_due = tax_total - withholding_tax
         is_refund = balance_due < 0
         display_amount = -balance_due if is_refund else balance_due
-        summary["balance_due"] = _round_currency(display_amount)
+        summary["balance_due"] = round_currency(display_amount)
         summary["balance_due_is_refund"] = is_refund
         balance_label_key = "summary.refund_due" if is_refund else "summary.balance_due"
         summary["labels"]["balance_due"] = translator(balance_label_key)
@@ -1197,11 +531,11 @@ def calculate_tax(
             {
                 "type": entry["type"],
                 "label": entry["label"],
-                "entered": _round_currency(entry["entered"]),
-                "eligible": _round_currency(entry["eligible"]),
+                "entered": round_currency(entry["entered"]),
+                "eligible": round_currency(entry["eligible"]),
                 "credit_rate": entry["credit_rate"],
-                "credit_requested": _round_currency(entry["credit_requested"]),
-                "credit_applied": _round_currency(entry["credit_applied"]),
+                "credit_requested": round_currency(entry["credit_requested"]),
+                "credit_applied": round_currency(entry["credit_applied"]),
                 "notes": entry.get("notes"),
             }
             for entry in deduction_breakdown

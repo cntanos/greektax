@@ -16,7 +16,7 @@
     "details.trade_fee": "Business activity fee",
     "details.vat": "Value Added Tax",
     "forms.deductions.donations": "Charitable donations",
-    "forms.deductions.donations_hint": "Documented donations to eligible charities qualify for a 20% tax credit (retain official receipts).",
+    "forms.deductions.donations_hint": "Documented donations to eligible charities qualify for the statutory tax credit (retain official receipts).",
     "forms.deductions.education": "Education expenses",
     "forms.deductions.education_hint": "Eligible tuition or tutoring expenses for dependents with official receipts; statutory caps apply.",
     "forms.deductions.insurance": "Insurance premiums",
@@ -288,7 +288,7 @@
     },
     "ui": {
       "deductions_help_body": "Only enter amounts supported by official receipts or payment slips.",
-      "deductions_help_limits": "Statutory limits are applied automatically—donations receive a 20% credit, while medical, education, and insurance costs follow AADE caps.",
+      "deductions_help_limits": "Statutory limits are applied automatically—donation credits depend on income, while medical, education, and insurance costs follow AADE caps.",
       "deductions_help_summary": "Deductions help",
       "disclaimer": "Disclaimer: This tool is unofficial and provided as-is. Inputs are stored locally on your device for up to two hours and are never sent to a server. Please consult a professional accountant for formal filings.",
       "freelance_help_body": "Report gross turnover before VAT and only claim expenses you can document (rent, utilities, equipment, professional fees).",
