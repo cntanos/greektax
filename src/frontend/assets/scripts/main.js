@@ -43,7 +43,15 @@ const UI_MESSAGES = {
       tagline: "Unofficial tax estimation toolkit for Greece",
       overview_heading: "Overview",
       overview_description:
-        "Estimate annual income taxes for Greece across employment, freelance, rental, and investment categories. Select a tax year, choose your language, and provide the income figures relevant to your situation to receive a bilingual breakdown of obligations.",
+        "Follow these quick steps to receive a bilingual summary of your Greek income taxes.",
+      overview_step_select_year:
+        "Choose the tax year and confirm the language above.",
+      overview_step_toggle_sections:
+        "Enable the income sections that match your situation.",
+      overview_step_enter_values:
+        "Enter the amounts requested for each active section.",
+      overview_step_calculate:
+        "Press Calculate to view your results and download a copy.",
       disclaimer:
         "Disclaimer: This tool is unofficial and provided as-is. Inputs are stored locally on your device for up to two hours and are never sent to a server. Please consult a professional accountant for formal filings.",
       highlight_inputs_title: "Guided calculator inputs",
@@ -91,8 +99,10 @@ const UI_MESSAGES = {
     calculator: {
       heading: "Tax calculator",
       instructions_intro:
-        "Toggle the sections that apply, enter annual or per-payment figures, then select Calculate to generate your summary.",
+        "Work through the sections you enable, using the hints to enter annual or per-payment figures, then select Calculate to generate your summary.",
       results_heading: "Results",
+      results_intro:
+        "Results Summary: The chart and tables below show your total income, taxes, and net income. Hover over the diagram for details and review each category in the list.",
       legends: {
         year_household: "Year and household",
         employment_pension: "Employment and/or pension income",
@@ -257,6 +267,8 @@ const UI_MESSAGES = {
         "Add EFKA amounts you pay directly with receipts (for example, voluntary top-ups). Leave blank if contributions are only withheld from payslips.",
       "employment-withholding":
         "Enter PAYE income tax already withheld on your payslips to reduce the balance due.",
+      "year-partial-note":
+        "If you didn't earn income for the full year, enter what you earned; the annual tax credit still applies in full.",
       "employment-net-note":
         "Net-to-gross salary conversion isn't supported. Choose annual or per-payment mode above and provide gross amounts only.",
       "employment-income":
@@ -287,7 +299,7 @@ const UI_MESSAGES = {
       "freelance-expenses":
         "Claim only expenses backed by invoices (rent, utilities, professional fees, equipment, vehicle costs used for business).",
       "freelance-trade-fee-location":
-        "Standard: full fee; Reduced: half fee for eligible small towns/islands.",
+        "Standard areas pay the full business activity fee; reduced areas pay half in eligible small towns or islands.",
       "freelance-activity-start-year":
         "Determines if the new-business 5-year fee exemption applies.",
       "freelance-trade-fee": "Trade fee applied: {{amount}}.",
@@ -297,7 +309,9 @@ const UI_MESSAGES = {
       "freelance-trade-fee-new-expired":
         "The reduced-rate window has ended (more than {{years}} years of activity).",
       "freelance-trade-fee-sunset":
-        "The trade fee is scheduled to change from {{year}} (status: {{status}}). Confirm any exemptions with your accountant.",
+        "The business activity fee is slated to return from {{year}} (status: {{status}}). Double-check the latest rules with your accountant.",
+      "freelance-trade-fee-waived":
+        "No business activity fee is due for this tax year, so you can leave this switched off.",
     },
     warnings: {
       learn_more: "Learn more",
@@ -307,7 +321,7 @@ const UI_MESSAGES = {
       },
       freelance: {
         trade_fee_sunset:
-          "Legislated trade-fee changes are pending final confirmation. Verify whether the business activity fee applies for {{year}} before filing.",
+          "AADE plans to bring back the business activity fee in stages. For {{year}}, confirm whether it applies to your activity before you submit.",
       },
       configuration: {
         pending_deductions_2025:
@@ -339,7 +353,15 @@ const UI_MESSAGES = {
       tagline: "Μη επίσημο εργαλείο εκτίμησης φόρων για την Ελλάδα",
       overview_heading: "Επισκόπηση",
       overview_description:
-        "Υπολογίστε ετήσιες φορολογικές υποχρεώσεις στην Ελλάδα για μισθωτούς, ελεύθερους επαγγελματίες, ενοίκια και επενδύσεις. Επιλέξτε φορολογικό έτος, γλώσσα και εισάγετε τα ποσά για να λάβετε δίγλωσση ανάλυση.",
+        "Ακολουθήστε αυτά τα σύντομα βήματα για να λάβετε δίγλωσση σύνοψη των ελληνικών φορολογικών σας υποχρεώσεων.",
+      overview_step_select_year:
+        "Επιλέξτε το φορολογικό έτος και επιβεβαιώστε τη γλώσσα παραπάνω.",
+      overview_step_toggle_sections:
+        "Ενεργοποιήστε τις ενότητες εισοδήματος που ταιριάζουν στην περίπτωσή σας.",
+      overview_step_enter_values:
+        "Καταχωρήστε τα ζητούμενα ποσά για κάθε ενεργή ενότητα.",
+      overview_step_calculate:
+        "Πατήστε Υπολογισμός για να δείτε τα αποτελέσματα και να κατεβάσετε αντίγραφο.",
       disclaimer:
         "Αποποίηση ευθύνης: Το εργαλείο είναι ανεπίσημο και παρέχεται ως έχει. Τα δεδομένα εισόδου αποθηκεύονται τοπικά στη συσκευή σας για έως δύο ώρες και δεν αποστέλλονται σε διακομιστή. Συμβουλευτείτε λογιστή για επίσημες δηλώσεις.",
       highlight_inputs_title: "Καθοδηγούμενη εισαγωγή στοιχείων",
@@ -387,8 +409,10 @@ const UI_MESSAGES = {
     calculator: {
       heading: "Φορολογικός υπολογιστής",
       instructions_intro:
-        "Ενεργοποιήστε τις ενότητες που σας αφορούν, εισάγετε ετήσια ή ανά πληρωμή ποσά και πατήστε Υπολογισμός για να δείτε την ανάλυση.",
+        "Εργαστείτε στις ενότητες που ενεργοποιείτε, χρησιμοποιώντας τις συμβουλές για να εισάγετε ετήσια ή ανά πληρωμή ποσά και πατήστε Υπολογισμός για να δημιουργηθεί η σύνοψη.",
       results_heading: "Αποτελέσματα",
+      results_intro:
+        "Σύνοψη αποτελεσμάτων: Το διάγραμμα και οι πίνακες που ακολουθούν δείχνουν το συνολικό εισόδημα, τους φόρους και το καθαρό ποσό. Τοποθετήστε τον δείκτη πάνω από το διάγραμμα για λεπτομέρειες και δείτε την ανάλυση κάθε κατηγορίας στη λίστα.",
       legends: {
         year_household: "Έτος και νοικοκυριό",
         employment_pension: "Εισόδημα από μισθωτή εργασία ή/και συντάξεις",
@@ -554,6 +578,8 @@ const UI_MESSAGES = {
         "Προσθέστε εισφορές ΕΦΚΑ που καταβάλλετε απευθείας με αποδείξεις (π.χ. προαιρετικές συμπληρωματικές). Αφήστε κενό αν οι εισφορές παρακρατούνται μόνο μέσω μισθοδοσίας.",
       "employment-withholding":
         "Καταχωρήστε τον φόρο PAYE που έχει ήδη παρακρατηθεί στις μισθοδοσίες ώστε να μειωθεί το υπόλοιπο.",
+      "year-partial-note":
+        "Αν δεν είχατε εισόδημα για ολόκληρο το έτος, καταχωρήστε ό,τι εισπράξατε· η ετήσια φορολογική πίστωση εφαρμόζεται κανονικά.",
       "employment-net-note":
         "Δεν υποστηρίζεται μετατροπή καθαρού μισθού σε ακαθάριστο. Επιλέξτε ετήσια ή ανά καταβολή εισαγωγή και συμπληρώστε μόνο ακαθάριστα ποσά.",
       "employment-income":
@@ -584,7 +610,7 @@ const UI_MESSAGES = {
       "freelance-expenses":
         "Καταχωρήστε μόνο δαπάνες με νόμιμα παραστατικά (ενοίκιο, ΔΕΚΟ, επαγγελματικές αμοιβές, εξοπλισμός, επαγγελματική χρήση οχήματος).",
       "freelance-trade-fee-location":
-        "Τυπικό: πλήρες τέλος· Μειωμένο: μισό τέλος για επιλέξιμες μικρές πόλεις/νησιά.",
+        "Στις τυπικές περιοχές εφαρμόζεται ολόκληρο το τέλος επιτηδεύματος· στις μειωμένες περιοχές (μικρές πόλεις/νησιά) εφαρμόζεται το μισό.",
       "freelance-activity-start-year":
         "Καθορίζει αν ισχύει η 5ετής απαλλαγή νέας επιχείρησης.",
       "freelance-trade-fee": "Εφαρμοζόμενο τέλος επιτηδεύματος: {{amount}}.",
@@ -594,7 +620,9 @@ const UI_MESSAGES = {
       "freelance-trade-fee-new-expired":
         "Το παράθυρο μειωμένης χρέωσης έχει λήξει (πάνω από {{years}} έτη δραστηριότητας).",
       "freelance-trade-fee-sunset":
-        "Το τέλος επιτηδεύματος αναμένεται να αλλάξει από {{year}} (κατάσταση: {{status}}). Επιβεβαιώστε τυχόν απαλλαγές με τον λογιστή σας.",
+        "Το τέλος επιτηδεύματος αναμένεται να επανέλθει από το {{year}} (κατάσταση: {{status}}). Επιβεβαιώστε τις τρέχουσες οδηγίες με τον λογιστή σας.",
+      "freelance-trade-fee-waived":
+        "Για το συγκεκριμένο φορολογικό έτος δεν οφείλεται τέλος επιτηδεύματος, επομένως αφήστε τον διακόπτη απενεργοποιημένο.",
     },
     warnings: {
       learn_more: "Μάθετε περισσότερα",
@@ -604,7 +632,7 @@ const UI_MESSAGES = {
       },
       freelance: {
         trade_fee_sunset:
-          "Οι αλλαγές στο τέλος επιτηδεύματος εκκρεμούν για οριστικοποίηση. Βεβαιωθείτε ότι ισχύει για το {{year}} πριν από την υποβολή.",
+          "Η ΑΑΔΕ σχεδιάζει την επαναφορά του τέλους επιτηδεύματος σταδιακά. Για το {{year}} επιβεβαιώστε αν ισχύει για τη δραστηριότητά σας πριν από την υποβολή.",
       },
       configuration: {
         pending_deductions_2025:
@@ -2275,9 +2303,13 @@ function updateTradeFeeHint() {
   }
 
   if (typeof amount === "number" && Number.isFinite(amount)) {
-    messages.push(
-      t("hints.freelance-trade-fee", { amount: formatCurrency(amount) }),
-    );
+    if (amount > 0) {
+      messages.push(
+        t("hints.freelance-trade-fee", { amount: formatCurrency(amount) }),
+      );
+    } else if (amount === 0) {
+      messages.push(t("hints.freelance-trade-fee-waived"));
+    }
   }
 
   if (tradeFee.newly_self_employed_reduction_years) {

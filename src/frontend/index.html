@@ -84,11 +84,23 @@
       <section id="app-intro" class="card">
         <h2 data-i18n-key="ui.overview_heading">Overview</h2>
         <p data-i18n-key="ui.overview_description">
-          Estimate annual income taxes for Greece across employment, freelance,
-          rental, and investment categories. Select a tax year, choose your
-          language, and provide the income figures relevant to your situation to
-          receive a bilingual breakdown of obligations.
+          Follow these quick steps to receive a bilingual summary of your Greek
+          income taxes.
         </p>
+        <ol class="overview-steps">
+          <li data-i18n-key="ui.overview_step_select_year">
+            Choose the tax year and confirm the language above.
+          </li>
+          <li data-i18n-key="ui.overview_step_toggle_sections">
+            Enable the income sections that match your situation.
+          </li>
+          <li data-i18n-key="ui.overview_step_enter_values">
+            Enter the amounts requested for each active section.
+          </li>
+          <li data-i18n-key="ui.overview_step_calculate">
+            Press Calculate to view your results and download a copy.
+          </li>
+        </ol>
         <ul class="intro-highlights">
           <li class="intro-highlight">
             <p
@@ -167,6 +179,14 @@
                   Tax year
                 </label>
                 <select id="year-select" name="year"></select>
+                <p
+                  id="year-partial-note"
+                  class="form-hint form-hint--note"
+                  data-i18n-key="hints.year-partial-note"
+                >
+                  If you did not earn income for the full year, enter what you
+                  received—the full-year tax credit still applies.
+                </p>
               </div>
               <div class="form-control">
                 <label
@@ -1162,6 +1182,11 @@
             aria-live="polite"
           >
           <h3 data-i18n-key="calculator.results_heading">Results</h3>
+          <p class="results-intro" data-i18n-key="calculator.results_intro">
+            Results Summary: The chart and tables below show your total income,
+            taxes, and net income. Hover over the diagram for details and review
+            each category in the list.
+          </p>
           <div id="sankey-wrapper" class="results-visualisation" hidden>
             <h4 data-i18n-key="sankey.heading">Income distribution</h4>
             <div class="sankey-legend" role="list">
@@ -1209,7 +1234,8 @@
     <footer class="site-footer">
       <p>
         &copy; 2025 Christos Ntanos for CogniSys. Released under the GNU GPL v3
-        License. Version 0.1.1 —
+        License. Version 0.1.2 —
+        <!-- R is the release, X is a major revision, Y is a minor revision -->
         <a href="https://github.com/cntanos/greektax">Source on GitHub</a>.
       </p>
     </footer>
