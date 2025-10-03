@@ -38,7 +38,8 @@ objectives, and delivery roadmap updates.
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-pip install -e .[dev]
+pip install -r requirements-dev.txt
+pip install -e .
 ```
 
 ### Testing & Quality
