@@ -159,6 +159,9 @@ const UI_MESSAGES = {
       "employment-income": "Employment gross income (€)",
       "employment-monthly-income": "Monthly gross income (€)",
       "employment-payments": "Salary payments per year",
+      "employment-mode": "Salary input type",
+      "employment-mode-annual": "Enter annual gross salary",
+      "employment-mode-monthly": "Enter gross salary per payment",
       "employment-employee-contributions":
         "Employee EFKA contributions (€)",
       "pension-income": "Pension gross income (€)",
@@ -233,6 +236,8 @@ const UI_MESSAGES = {
         "Most salaried roles use 14 payments (12 monthly plus bonuses). Adjust if your contract pays a different number of times per year.",
       "employment-employee-contributions":
         "Add EFKA amounts you pay directly (for example, voluntary top-ups). Leave blank if contributions are only withheld from payslips.",
+      "employment-net-note":
+        "Net-to-gross salary conversion isn't supported. Provide gross amounts either annually or per payment.",
       "freelance-efka-category": "Select a contribution class to prefill mandatory EFKA payments.",
       "freelance-efka-summary-empty":
         "Select a contribution class to view monthly pension, health, and auxiliary amounts.",
@@ -412,6 +417,9 @@ const UI_MESSAGES = {
       "employment-income": "Ακαθάριστο εισόδημα μισθωτών (€)",
       "employment-monthly-income": "Μηνιαίο ακαθάριστο εισόδημα (€)",
       "employment-payments": "Μισθολογικές καταβολές ανά έτος",
+      "employment-mode": "Τρόπος εισαγωγής μισθού",
+      "employment-mode-annual": "Καταχώρηση ετήσιου ακαθάριστου ποσού",
+      "employment-mode-monthly": "Καταχώρηση ακαθάριστου ποσού ανά καταβολή",
       "employment-employee-contributions":
         "Εισφορές ΕΦΚΑ εργαζομένου (€)",
       "pension-income": "Ακαθάριστο εισόδημα συντάξεων (€)",
@@ -486,6 +494,8 @@ const UI_MESSAGES = {
         "Συνήθως καταβάλλονται 14 μισθοί (12 μηνιαίοι και 2 δώρα). Προσαρμόστε τον αριθμό αν η σύμβασή σας προβλέπει διαφορετικές καταβολές ανά έτος.",
       "employment-employee-contributions":
         "Προσθέστε εισφορές ΕΦΚΑ που καταβάλλετε απευθείας (π.χ. προαιρετικές συμπληρωματικές). Αφήστε κενό αν οι εισφορές παρακρατούνται μόνο μέσω μισθοδοσίας.",
+      "employment-net-note":
+        "Δεν υποστηρίζεται μετατροπή καθαρού μισθού σε ακαθάριστο. Συμπληρώστε ακαθάριστα ποσά είτε ετησίως είτε ανά καταβολή.",
       "freelance-efka-category": "Επιλέξτε κατηγορία εισφορών για αυτόματη συμπλήρωση των υποχρεωτικών ποσών.",
       "freelance-efka-summary-empty":
         "Επιλέξτε κατηγορία για να εμφανιστούν τα μηνιαία ποσά κύριας, υγειονομικής και επικουρικής ασφάλισης.",
@@ -549,6 +559,7 @@ let currentLocale = "en";
 let currentTheme = DEFAULT_THEME;
 const yearMetadataByYear = new Map();
 let currentYearMetadata = null;
+let currentEmploymentMode = "annual";
 let currentPensionMode = "gross";
 let currentInvestmentCategories = [];
 let currentDeductionHints = [];
@@ -579,6 +590,7 @@ const employmentEmployeeContributionsInput = document.getElementById(
   "employment-employee-contributions",
 );
 const employmentPaymentsInput = document.getElementById("employment-payments");
+const employmentModeSelect = document.getElementById("employment-mode");
 const yearAlertsContainer = document.getElementById("year-alerts");
 const pensionModeSelect = document.getElementById("pension-mode");
 const pensionPaymentsInput = document.getElementById("pension-payments");
@@ -1468,6 +1480,12 @@ function applyPendingCalculatorState() {
     updatePensionMode(pensionModeSelect.value || "gross");
   }
 
+  if (employmentModeSelect) {
+    updateEmploymentMode(employmentModeSelect.value || "annual");
+  } else {
+    updateEmploymentMode(currentEmploymentMode);
+  }
+
   const toggles = [
     toggleEmployment,
     toggleFreelance,
@@ -1492,8 +1510,10 @@ function handleCalculatorStateChange() {
   schedulePersistCalculatorState();
 }
 
-function updateSectionMode(section, mode) {
-  const desiredMode = mode === "net" ? "net" : "gross";
+function updateSectionMode(section, mode, defaultMode = "") {
+  const requestedMode = (mode || "").toString().toLowerCase();
+  const fallbackMode = (defaultMode || "").toString().toLowerCase();
+  const desiredMode = requestedMode || fallbackMode;
   document
     .querySelectorAll(`.form-control[data-section="${section}"]`)
     .forEach((control) => {
@@ -1501,7 +1521,7 @@ function updateSectionMode(section, mode) {
       if (!controlMode) {
         return;
       }
-      const isVisible = controlMode === desiredMode;
+      const isVisible = controlMode.toLowerCase() === desiredMode;
       control.hidden = !isVisible;
       if (!isVisible) {
         const input = control.querySelector("input");
@@ -1517,7 +1537,15 @@ function updatePensionMode(mode) {
   if (pensionModeSelect) {
     pensionModeSelect.value = currentPensionMode;
   }
-  updateSectionMode("pension", currentPensionMode);
+  updateSectionMode("pension", currentPensionMode, "gross");
+}
+
+function updateEmploymentMode(mode) {
+  currentEmploymentMode = mode === "monthly" ? "monthly" : "annual";
+  if (employmentModeSelect) {
+    employmentModeSelect.value = currentEmploymentMode;
+  }
+  updateSectionMode("employment", currentEmploymentMode, "annual");
 }
 
 function populatePayrollSelect(select, payrollConfig) {
@@ -1656,6 +1684,7 @@ function applyYearMetadata(year) {
       currentYearMetadata?.pension?.payroll || null,
     );
 
+    updateEmploymentMode(currentEmploymentMode);
     updatePensionMode(currentPensionMode);
     populateFreelanceMetadata(currentYearMetadata?.freelance || null);
     applyPendingCalculatorState();
@@ -3485,6 +3514,13 @@ function initialiseCalculator() {
     updatePensionMode(currentPensionMode);
   }
 
+  if (employmentModeSelect) {
+    currentEmploymentMode = employmentModeSelect.value || "annual";
+    updateEmploymentMode(currentEmploymentMode);
+  } else {
+    updateEmploymentMode(currentEmploymentMode);
+  }
+
   initialiseSectionToggles();
   applyPendingCalculatorState();
   freelanceEfkaSelect?.addEventListener("change", updateFreelanceCategoryHint);
@@ -3517,6 +3553,11 @@ function initialiseCalculator() {
     const target = event.target;
     const value = typeof target?.value === "string" ? target.value : "gross";
     updatePensionMode(value);
+  });
+  employmentModeSelect?.addEventListener("change", (event) => {
+    const target = event.target;
+    const value = typeof target?.value === "string" ? target.value : "annual";
+    updateEmploymentMode(value);
   });
 
   downloadButton?.addEventListener("click", downloadJsonSummary);

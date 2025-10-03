@@ -234,6 +234,28 @@
               </div>
               <div class="form-control">
                 <label
+                  for="employment-mode"
+                  data-i18n-key="fields.employment-mode"
+                >
+                  Salary input type
+                </label>
+                <select id="employment-mode">
+                  <option
+                    value="annual"
+                    data-i18n-key="fields.employment-mode-annual"
+                  >
+                    Enter annual gross salary
+                  </option>
+                  <option
+                    value="monthly"
+                    data-i18n-key="fields.employment-mode-monthly"
+                  >
+                    Enter gross salary per payment
+                  </option>
+                </select>
+              </div>
+              <div class="form-control">
+                <label
                   for="employment-employee-contributions"
                   data-i18n-key="fields.employment-employee-contributions"
                 >
@@ -256,7 +278,11 @@
                   Include any EFKA payments you cover outside payroll (optional).
                 </p>
               </div>
-              <div class="form-control">
+              <div
+                class="form-control"
+                data-section="employment"
+                data-mode="annual"
+              >
                 <label
                   for="employment-income"
                   data-i18n-key="fields.employment-income"
@@ -272,7 +298,12 @@
                   value="0"
                 />
               </div>
-              <div class="form-control">
+              <div
+                class="form-control"
+                data-section="employment"
+                data-mode="monthly"
+                hidden
+              >
                 <label
                   for="employment-monthly-income"
                   data-i18n-key="fields.employment-monthly-income"
@@ -289,6 +320,13 @@
                 />
               </div>
             </div>
+            <p
+              class="form-hint"
+              data-i18n-key="hints.employment-net-note"
+            >
+              Net-to-gross salary conversion isn't supported. Please enter gross
+              amounts only.
+            </p>
             <div class="form-grid double">
               <div class="form-control">
                 <label
