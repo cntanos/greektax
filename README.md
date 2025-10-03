@@ -176,9 +176,10 @@ GreekTax tracks releases with the semantic pattern **R.X.Y**:
 - **Y** – fix iterations for hot-fixes or polish delivered within a sprint.
   Increment this for follow-up patches within the same sprint.
 
-The current application version is **0.1.2**. When you bump the version, update
-the project metadata, footer copy, and documentation references together so the
-published UI and repository remain in sync.
+The canonical version is declared once in [`pyproject.toml`](pyproject.toml) and
+is surfaced automatically via the `/api/v1/config/meta` endpoint and the UI
+footer. Bump the value there to propagate the new release identifier
+everywhere.
 
 ## License
 

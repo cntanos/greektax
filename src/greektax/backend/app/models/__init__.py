@@ -1,5 +1,239 @@
 """Data models for the GreekTax domain.
 
-TODO: Introduce pydantic or dataclass-based schemas for validated inputs,
-normalized internal representations, and API responses.
+The calculation service previously stored its validated payloads and response
+components in ad-hoc private dataclasses. Those structures are now promoted to
+first-class models so the rest of the application – routes, services, and
+future background jobs – can share a single source of truth for typed
+structures.
 """
+
+from __future__ import annotations
+
+from collections.abc import Mapping
+from dataclasses import dataclass
+
+__all__ = [
+    "CalculationInput",
+    "GeneralIncomeComponent",
+    "DetailTotals",
+]
+
+
+@dataclass(frozen=True, slots=True)
+class CalculationInput:
+    """Validated and normalised user input for tax calculations."""
+
+    year: int
+    locale: str
+    children: int
+    employment_income: float
+    employment_monthly_income: float | None
+    employment_payments_per_year: int | None
+    employment_manual_contributions: float
+    withholding_tax: float
+    pension_income: float
+    pension_monthly_income: float | None
+    pension_payments_per_year: int | None
+    pension_net_target_income: float | None
+    freelance_profit: float
+    freelance_category_id: str | None
+    freelance_category_months: int | None
+    freelance_category_contribution: float
+    freelance_additional_contributions: float
+    freelance_auxiliary_contributions: float
+    freelance_lump_sum_contributions: float
+    include_trade_fee: bool
+    freelance_trade_fee_location: str
+    freelance_years_active: int | None
+    freelance_newly_self_employed: bool
+    rental_gross_income: float
+    rental_deductible_expenses: float
+    investment_amounts: Mapping[str, float]
+    vat_due: float
+    enfia_due: float
+    luxury_due: float
+    agricultural_gross_revenue: float
+    agricultural_deductible_expenses: float
+    agricultural_professional_farmer: bool
+    other_taxable_income: float
+    deductions_donations: float
+    deductions_medical: float
+    deductions_education: float
+    deductions_insurance: float
+
+    @property
+    def freelance_taxable_income(self) -> float:
+        taxable = self.freelance_profit - self.total_freelance_contributions
+        return taxable if taxable > 0 else 0.0
+
+    @property
+    def total_freelance_contributions(self) -> float:
+        return (
+            self.freelance_category_contribution
+            + self.freelance_additional_contributions
+            + self.freelance_auxiliary_contributions
+            + self.freelance_lump_sum_contributions
+        )
+
+    @property
+    def has_employment_income(self) -> bool:
+        return self.employment_income > 0
+
+    @property
+    def has_pension_income(self) -> bool:
+        return self.pension_income > 0
+
+    @property
+    def has_freelance_activity(self) -> bool:
+        return (
+            self.freelance_profit > 0
+            or self.total_freelance_contributions > 0
+            or self.freelance_taxable_income > 0
+        )
+
+    @property
+    def agricultural_profit(self) -> float:
+        profit = self.agricultural_gross_revenue - self.agricultural_deductible_expenses
+        return profit if profit > 0 else 0.0
+
+    @property
+    def has_agricultural_income(self) -> bool:
+        return (
+            self.agricultural_gross_revenue > 0
+            or self.agricultural_deductible_expenses > 0
+            or self.agricultural_profit > 0
+        )
+
+    @property
+    def has_non_agricultural_taxable_income(self) -> bool:
+        return any(
+            (
+                self.has_employment_income,
+                self.has_pension_income,
+                self.freelance_taxable_income > 0,
+                self.other_taxable_income > 0,
+                self.rental_taxable_income > 0,
+                self.has_investment_income,
+            )
+        )
+
+    @property
+    def qualifies_for_agricultural_tax_credit(self) -> bool:
+        if not self.has_agricultural_income:
+            return False
+        if self.agricultural_professional_farmer:
+            return True
+        return not self.has_non_agricultural_taxable_income
+
+    @property
+    def has_other_income(self) -> bool:
+        return self.other_taxable_income > 0
+
+    @property
+    def total_deductions(self) -> float:
+        total = (
+            self.deductions_donations
+            + self.deductions_medical
+            + self.deductions_education
+            + self.deductions_insurance
+        )
+        return total if total > 0 else 0.0
+
+    @property
+    def rental_taxable_income(self) -> float:
+        taxable = self.rental_gross_income - self.rental_deductible_expenses
+        return taxable if taxable > 0 else 0.0
+
+    @property
+    def has_rental_income(self) -> bool:
+        return (
+            self.rental_gross_income > 0
+            or self.rental_deductible_expenses > 0
+            or self.rental_taxable_income > 0
+        )
+
+    @property
+    def has_investment_income(self) -> bool:
+        return any(amount > 0 for amount in self.investment_amounts.values())
+
+    @property
+    def has_vat_obligation(self) -> bool:
+        return self.vat_due > 0
+
+    @property
+    def has_enfia_obligation(self) -> bool:
+        return self.enfia_due > 0
+
+    @property
+    def has_luxury_obligation(self) -> bool:
+        return self.luxury_due > 0
+
+
+@dataclass(slots=True)
+class GeneralIncomeComponent:
+    """Represents an income category that shares the progressive scale."""
+
+    category: str
+    label_key: str
+    gross_income: float
+    taxable_income: float
+    credit_eligible: bool
+    contributions: float = 0.0
+    deductible_expenses: float = 0.0
+    trade_fee: float = 0.0
+    tax_before_credit: float = 0.0
+    credit: float = 0.0
+    tax_after_credit: float = 0.0
+    payments_per_year: int | None = None
+    monthly_gross_income: float | None = None
+    employee_contributions: float = 0.0
+    employee_manual_contributions: float = 0.0
+    employer_contributions: float = 0.0
+    category_contributions: float = 0.0
+    additional_contributions: float = 0.0
+    auxiliary_contributions: float = 0.0
+    lump_sum_contributions: float = 0.0
+    deductions_applied: float = 0.0
+
+    def total_tax(self) -> float:
+        total = self.tax_after_credit
+        if self.category == "freelance":
+            total += self.trade_fee
+        return total
+
+    def net_income(self) -> float:
+        net = self.gross_income - self.tax_after_credit
+        if self.category == "freelance":
+            net -= self.contributions + self.trade_fee
+        if self.category in {"employment", "pension"}:
+            net -= self.employee_contributions
+        return net
+
+    def net_income_per_payment(self) -> float | None:
+        if not self.payments_per_year or self.payments_per_year <= 0:
+            return None
+        return self.net_income() / self.payments_per_year
+
+    def gross_income_per_payment(self) -> float | None:
+        if not self.payments_per_year or self.payments_per_year <= 0:
+            return None
+        return self.gross_income / self.payments_per_year
+
+
+@dataclass(slots=True)
+class DetailTotals:
+    """Tracks cumulative totals for calculation results."""
+
+    income: float = 0.0
+    tax: float = 0.0
+    net: float = 0.0
+
+    def add(self, income: float = 0.0, tax: float = 0.0, net: float = 0.0) -> None:
+        self.income += income
+        self.tax += tax
+        self.net += net
+
+    def merge(self, other: DetailTotals) -> None:
+        self.income += other.income
+        self.tax += other.tax
+        self.net += other.net

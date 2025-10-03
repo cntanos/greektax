@@ -1,4 +1,7 @@
 # End-to-End Testing Scaffold
 
-TODO: Define browser-based tests (e.g., Playwright) that verify the full user
-journey from input to bilingual output once UI and API integrations are in place.
+Browser-driven tests are intentionally deferred until the API stabilises and the
+design system is finalised. When those milestones land we will introduce
+Playwright-based scenarios that cover the full journey from data entry to the
+bilingual report download. Until then the directory remains as documentation so
+infrastructure can be prepared without shipping brittle placeholders.

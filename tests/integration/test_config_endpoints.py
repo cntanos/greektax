@@ -4,6 +4,16 @@ from http import HTTPStatus
 
 from flask.testing import FlaskClient
 
+from greektax.backend.version import get_project_version
+
+
+def test_meta_endpoint(client: FlaskClient) -> None:
+    response = client.get("/api/v1/config/meta")
+
+    assert response.status_code == HTTPStatus.OK
+    payload = response.get_json()
+    assert payload == {"version": get_project_version()}
+
 
 def test_list_years_endpoint(client: FlaskClient) -> None:
     response = client.get("/api/v1/config/years")

@@ -2,26 +2,28 @@
 
 from importlib import util as importlib_util
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Callable, cast
 from warnings import warn
 
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, Response, jsonify, request, send_from_directory
 from flask.typing import ResponseReturnValue
 from werkzeug.exceptions import BadRequest
 
+from .routes import register_routes
+
 if TYPE_CHECKING:  # pragma: no cover - only for static type checkers
-    from flask_cors import CORS as FlaskCorsFactory
+    from flask import Response
+else:  # pragma: no cover - runtime branch
+    from flask import Response  # type: ignore
 
 CORS: Callable[..., None] | None
 
 if importlib_util.find_spec("flask_cors") is not None:
     from flask_cors import CORS as _cors
 
-    CORS = _cors
+    CORS = cast(Callable[..., None], _cors)
 else:  # pragma: no cover - executed only when optional dependency missing
     CORS = None
-
-from .routes import register_routes
 
 # Resolve the repository root so we can serve the prototype front-end directly
 # from ``src/frontend`` during local development.
@@ -32,7 +34,7 @@ ASSETS_ROOT = FRONTEND_ROOT / "assets"
 def _apply_default_cors_headers(response: ResponseReturnValue) -> ResponseReturnValue:
     """Attach permissive CORS headers when Flask-Cors is unavailable."""
 
-    if not hasattr(response, "headers"):
+    if not isinstance(response, Response):
         return response
 
     origin = request.headers.get("Origin")

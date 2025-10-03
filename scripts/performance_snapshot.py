@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Collect baseline performance and accessibility metrics for GreekTax."""
 
+# ruff: noqa: E402
+
 from __future__ import annotations
 
 import json
@@ -15,7 +17,7 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from greektax.backend.app.services.calculation_service import calculate_tax  # noqa: E402
+from greektax.backend.app.services.calculation_service import calculate_tax
 
 SAMPLE_PAYLOAD = {
     "year": 2024,

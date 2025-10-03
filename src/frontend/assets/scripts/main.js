@@ -14,6 +14,7 @@ const API_BASE = REMOTE_API_BASE;
 // const API_BASE = LOCAL_API_BASE; // Uncomment to use the local API during development.
 const CALCULATIONS_ENDPOINT = `${API_BASE}/calculations`;
 const CONFIG_YEARS_ENDPOINT = `${API_BASE}/config/years`;
+const CONFIG_META_ENDPOINT = `${API_BASE}/config/meta`;
 const CONFIG_INVESTMENT_ENDPOINT = (year, locale) =>
   `${API_BASE}/config/${year}/investment-categories?locale=${encodeURIComponent(
     locale,
@@ -2053,6 +2054,35 @@ async function loadYearOptions() {
   }
 }
 
+async function refreshApplicationVersion() {
+  const versionElement = document.querySelector("[data-app-version]");
+  if (!versionElement) {
+    return;
+  }
+
+  const fallbackText =
+    versionElement.dataset.versionFallback?.trim() || versionElement.textContent || "";
+
+  try {
+    const response = await fetch(CONFIG_META_ENDPOINT, { credentials: "omit" });
+    if (!response.ok) {
+      throw new Error(`Unable to load application metadata (${response.status})`);
+    }
+
+    const payload = await response.json();
+    const version =
+      typeof payload?.version === "string" ? payload.version.trim() : "";
+    if (version) {
+      versionElement.textContent = version;
+      return;
+    }
+  } catch (error) {
+    console.error("Failed to refresh application metadata", error);
+  }
+
+  versionElement.textContent = fallbackText || "unavailable";
+}
+
 function renderInvestmentFields(categories) {
   if (!investmentFieldsContainer) {
     return;
@@ -3702,15 +3732,6 @@ function downloadCsvSummary() {
   URL.revokeObjectURL(url);
 }
 
-function escapeHtml(value) {
-  return String(value)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
-
 function printSummary() {
   if (!lastCalculation) {
     return;
@@ -3811,6 +3832,7 @@ function bootstrap() {
   initialiseLocaleControls();
   initialiseThemeControls();
   initialiseCalculator();
+  void refreshApplicationVersion();
 
   console.info("GreekTax interface initialised");
 }

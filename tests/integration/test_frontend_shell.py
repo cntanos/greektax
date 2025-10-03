@@ -1,5 +1,7 @@
 """Integration tests for the static front-end shell."""
 
+from http import HTTPStatus
+
 from flask.testing import FlaskClient
 
 
@@ -8,7 +10,7 @@ def test_frontend_index_is_served(client: FlaskClient) -> None:
 
     response = client.get("/")
 
-    assert response.status_code == 200
+    assert response.status_code == HTTPStatus.OK
     assert "text/html" in (response.content_type or "").lower()
     assert b"GreekTax" in response.data
 
@@ -18,5 +20,5 @@ def test_frontend_assets_are_available(client: FlaskClient) -> None:
 
     response = client.get("/assets/scripts/main.js")
 
-    assert response.status_code == 200
+    assert response.status_code == HTTPStatus.OK
     assert "javascript" in (response.content_type or "").lower()
