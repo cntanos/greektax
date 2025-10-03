@@ -54,6 +54,44 @@ def test_calculate_tax_employment_only() -> None:
     assert employment_detail["employer_contributions"] == pytest.approx(6_729.0)
 
 
+def test_calculate_tax_with_withholding_tax_balance_due() -> None:
+    """Withholding reduces the net tax payable and surfaces in the summary."""
+
+    payload = {
+        "year": 2024,
+        "employment": {"gross_income": 30_000},
+        "withholding_tax": 2_000,
+    }
+
+    result = calculate_tax(payload)
+
+    summary = result["summary"]
+    assert summary["tax_total"] == pytest.approx(5_123.0)
+    assert summary["withholding_tax"] == pytest.approx(2_000.0)
+    assert summary["balance_due"] == pytest.approx(3_123.0)
+    assert summary["balance_due_is_refund"] is False
+    assert summary["labels"]["balance_due"] == "Net tax due"
+
+
+def test_calculate_tax_with_withholding_tax_refund() -> None:
+    """Withholding greater than tax due produces a refund summary."""
+
+    payload = {
+        "year": 2024,
+        "employment": {"gross_income": 30_000},
+        "withholding_tax": 6_000,
+    }
+
+    result = calculate_tax(payload)
+
+    summary = result["summary"]
+    assert summary["tax_total"] == pytest.approx(5_123.0)
+    assert summary["withholding_tax"] == pytest.approx(6_000.0)
+    assert summary["balance_due"] == pytest.approx(877.0)
+    assert summary["balance_due_is_refund"] is True
+    assert summary["labels"]["balance_due"] == "Refund due"
+
+
 def test_calculate_tax_accepts_monthly_employment_income() -> None:
     """Monthly salary inputs convert to annual totals and per-payment nets."""
 

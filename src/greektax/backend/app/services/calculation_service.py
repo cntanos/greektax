@@ -74,6 +74,7 @@ class _NormalisedPayload:
     employment_monthly_income: Optional[float]
     employment_payments_per_year: Optional[int]
     employment_manual_contributions: float
+    withholding_tax: float
     pension_income: float
     pension_monthly_income: Optional[float]
     pension_payments_per_year: Optional[int]
@@ -372,6 +373,8 @@ def _normalise_payload(
         "employment.employee_contributions",
     )
 
+    withholding_tax = _to_float(payload.get("withholding_tax", 0.0), "withholding_tax")
+
     net_income_value = employment_section.get("net_income")
     if net_income_value not in {None, "", 0, 0.0}:
         net_amount = _to_float(net_income_value, "employment.net_income")
@@ -601,6 +604,7 @@ def _normalise_payload(
         employment_monthly_income=employment_monthly_income,
         employment_payments_per_year=employment_payments,
         employment_manual_contributions=employment_manual_contributions,
+        withholding_tax=withholding_tax,
         pension_income=pension_income,
         pension_monthly_income=pension_monthly_income,
         pension_payments_per_year=pension_payments,
@@ -1458,6 +1462,8 @@ def calculate_tax(payload: Dict[str, Any]) -> Dict[str, Any]:
             {name: round(duration * 1000, 3) for name, duration in timings.items()},
         )
 
+    withholding_tax = normalised.withholding_tax if normalised.withholding_tax > 0 else 0.0
+
     summary: Dict[str, Any] = {
         "income_total": _round_currency(income_total),
         "tax_total": _round_currency(tax_total),
@@ -1478,6 +1484,18 @@ def calculate_tax(payload: Dict[str, Any]) -> Dict[str, Any]:
             "deductions_applied": translator("summary.deductions_applied"),
         },
     }
+
+    if withholding_tax > 0:
+        summary["withholding_tax"] = _round_currency(withholding_tax)
+        summary["labels"]["withholding_tax"] = translator("summary.withholding_tax")
+
+        balance_due = tax_total - withholding_tax
+        is_refund = balance_due < 0
+        display_amount = -balance_due if is_refund else balance_due
+        summary["balance_due"] = _round_currency(display_amount)
+        summary["balance_due_is_refund"] = is_refund
+        balance_label_key = "summary.refund_due" if is_refund else "summary.balance_due"
+        summary["labels"]["balance_due"] = translator(balance_label_key)
 
     if deduction_breakdown:
         summary["deductions_breakdown"] = [
