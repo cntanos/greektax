@@ -194,6 +194,9 @@ GreekTax tracks releases with the semantic pattern **R.X.Y**:
 - **Y** – fix iterations for hot-fixes or polish delivered within a sprint.
   Increment this for follow-up patches within the same sprint.
 
+The current milestone is **R.5.0** (version `0.5.0` in `pyproject.toml`),
+reflecting the fifth major sprint within the initial release cycle.
+
 The canonical version is declared once in [`pyproject.toml`](pyproject.toml) and
 is surfaced automatically via the `/api/v1/config/meta` endpoint and the UI
 footer. Bump the value there to propagate the new release identifier
