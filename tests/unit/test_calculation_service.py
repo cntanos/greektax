@@ -728,6 +728,9 @@ def test_calculate_tax_with_engineer_lump_sum_contributions() -> None:
 def test_calculate_tax_applies_deductions_across_components() -> None:
     """Itemised deductions now translate into capped tax credits."""
 
+    config = load_year_configuration(2024)
+    rules = config.deductions.rules
+
     request = CalculationRequest.model_validate(
         {
             "year": 2024,
@@ -743,6 +746,29 @@ def test_calculate_tax_applies_deductions_across_components() -> None:
         }
     )
 
+    employment_income = request.employment.gross_income
+    income_cap_rate = rules.donations.income_cap_rate
+    income_cap = (
+        employment_income * income_cap_rate if income_cap_rate is not None else None
+    )
+    eligible_donations = (
+        min(request.deductions.donations, income_cap)
+        if income_cap is not None
+        else request.deductions.donations
+    )
+    expected_donation_credit = eligible_donations * rules.donations.credit_rate
+    expected_education_credit = (
+        min(request.deductions.education, rules.education.max_eligible_expense)
+        * rules.education.credit_rate
+    )
+    expected_insurance_credit = (
+        min(request.deductions.insurance, rules.insurance.max_eligible_expense)
+        * rules.insurance.credit_rate
+    )
+    expected_total_credit = (
+        expected_donation_credit + expected_education_credit + expected_insurance_credit
+    )
+
     result = calculate_tax(request)
 
     employment_detail = next(
@@ -752,25 +778,31 @@ def test_calculate_tax_applies_deductions_across_components() -> None:
         detail for detail in result["details"] if detail["category"] == "agricultural"
     )
 
-    assert employment_detail["deductions_applied"] == pytest.approx(600.0)
+    assert employment_detail["deductions_applied"] == pytest.approx(
+        expected_total_credit
+    )
     assert employment_detail["taxable_income"] == pytest.approx(30_000.0)
     assert "deductions_applied" not in agricultural_detail
     assert agricultural_detail["taxable_income"] == pytest.approx(10_000.0)
 
     summary = result["summary"]
     assert summary["deductions_entered"] == pytest.approx(5_000.0)
-    assert summary["deductions_applied"] == pytest.approx(600.0)
+    assert summary["deductions_applied"] == pytest.approx(expected_total_credit)
 
     breakdown = summary.get("deductions_breakdown")
     assert breakdown is not None
     donations = next(item for item in breakdown if item["type"] == "donations")
-    assert donations["credit_applied"] == pytest.approx(400.0)
+    assert donations["credit_rate"] == pytest.approx(rules.donations.credit_rate)
+    assert donations["credit_applied"] == pytest.approx(expected_donation_credit)
     medical = next(item for item in breakdown if item["type"] == "medical")
     assert medical["credit_applied"] == pytest.approx(0.0)
 
 
 def test_calculate_tax_applies_donation_credit_to_freelance_tax() -> None:
     """Donation credits now reduce freelance progressive tax directly."""
+
+    config = load_year_configuration(2024)
+    donation_rules = config.deductions.rules.donations
 
     base_request = CalculationRequest.model_validate(
         {
@@ -787,16 +819,23 @@ def test_calculate_tax_applies_donation_credit_to_freelance_tax() -> None:
     baseline_tax = baseline["summary"]["tax_total"]
     donation_tax = with_donation["summary"]["tax_total"]
 
-    assert baseline_tax - donation_tax == pytest.approx(20.0)
+    expected_credit = 100 * donation_rules.credit_rate
+    assert baseline_tax - donation_tax == pytest.approx(expected_credit)
 
     breakdown = with_donation["summary"].get("deductions_breakdown")
     assert breakdown is not None
     donation_entry = next(item for item in breakdown if item["type"] == "donations")
-    assert donation_entry["credit_applied"] == pytest.approx(20.0)
+    assert donation_entry["credit_rate"] == pytest.approx(
+        donation_rules.credit_rate
+    )
+    assert donation_entry["credit_applied"] == pytest.approx(expected_credit)
 
 
 def test_calculate_tax_applies_medical_credit_threshold_for_freelance() -> None:
     """Medical credits apply the 5% threshold before reducing tax."""
+
+    config = load_year_configuration(2024)
+    medical_rules = config.deductions.rules.medical
 
     base_request = CalculationRequest.model_validate(
         {
@@ -813,13 +852,21 @@ def test_calculate_tax_applies_medical_credit_threshold_for_freelance() -> None:
     baseline_tax = baseline["summary"]["tax_total"]
     medical_tax = with_medical["summary"]["tax_total"]
 
-    assert baseline_tax - medical_tax == pytest.approx(150.0)
+    taxable_income = base_request.freelance.profit
+    threshold = taxable_income * medical_rules.income_threshold_rate
+    eligible_expense = max(2_500 - threshold, 0.0)
+    expected_credit = min(
+        eligible_expense * medical_rules.credit_rate, medical_rules.max_credit
+    )
+
+    assert baseline_tax - medical_tax == pytest.approx(expected_credit)
 
     breakdown = with_medical["summary"].get("deductions_breakdown")
     assert breakdown is not None
     medical_entry = next(item for item in breakdown if item["type"] == "medical")
-    assert medical_entry["eligible"] == pytest.approx(1_500.0)
-    assert medical_entry["credit_applied"] == pytest.approx(150.0)
+    assert medical_entry["eligible"] == pytest.approx(eligible_expense)
+    assert medical_entry["credit_rate"] == pytest.approx(medical_rules.credit_rate)
+    assert medical_entry["credit_applied"] == pytest.approx(expected_credit)
 
 
 def test_calculate_tax_trade_fee_auto_exemption_by_year() -> None:

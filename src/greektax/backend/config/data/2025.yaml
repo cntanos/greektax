@@ -163,6 +163,20 @@ income:
       capital_gains: 0.15
       royalties: 0.20
 deductions:
+  rules:
+    donations:
+      credit_rate: 0.20
+      income_cap_rate: 0.10
+    medical:
+      credit_rate: 0.10
+      income_threshold_rate: 0.05
+      max_credit: 3000
+    education:
+      credit_rate: 0.10
+      max_eligible_expense: 1000
+    insurance:
+      credit_rate: 0.10
+      max_eligible_expense: 1200
   hints:
     - id: dependents.children
       applies_to:
