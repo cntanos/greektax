@@ -86,63 +86,6 @@ function storeFrontendTranslations(locale, frontend) {
   translationsByLocale.set(locale, frontend);
 }
 
-function readEmbeddedTranslations() {
-  if (
-    typeof window !== "undefined" &&
-    window.__GREEKTAX_EMBEDDED_TRANSLATIONS__ &&
-    typeof window.__GREEKTAX_EMBEDDED_TRANSLATIONS__ === "object"
-  ) {
-    return window.__GREEKTAX_EMBEDDED_TRANSLATIONS__;
-  }
-
-  if (
-    typeof globalThis !== "undefined" &&
-    globalThis.__GREEKTAX_EMBEDDED_TRANSLATIONS__ &&
-    typeof globalThis.__GREEKTAX_EMBEDDED_TRANSLATIONS__ === "object"
-  ) {
-    return globalThis.__GREEKTAX_EMBEDDED_TRANSLATIONS__;
-  }
-
-  return null;
-}
-
-function bootstrapEmbeddedTranslations() {
-  const payload = readEmbeddedTranslations();
-  if (!payload || typeof payload !== "object") {
-    return;
-  }
-
-  Object.entries(payload).forEach(([locale, catalogue]) => {
-    const normalized = normaliseLocaleChoice(locale);
-    if (!normalized) {
-      return;
-    }
-
-    if (!availableTranslationLocales.includes(normalized)) {
-      availableTranslationLocales.push(normalized);
-    }
-
-    if (catalogue && typeof catalogue === "object") {
-      storeFrontendTranslations(normalized, catalogue);
-    }
-  });
-
-  if (!translationsByLocale.has(fallbackLocale) && translationsByLocale.size) {
-    const firstLocale = translationsByLocale.keys().next().value;
-    if (firstLocale) {
-      fallbackLocale = normaliseLocaleChoice(firstLocale);
-    }
-  }
-
-  availableTranslationLocales = Array.from(
-    new Set(
-      availableTranslationLocales.map((value) => normaliseLocaleChoice(value)).filter(Boolean),
-    ),
-  );
-}
-
-bootstrapEmbeddedTranslations();
-
 async function requestTranslations(locale) {
   const response = await fetch(TRANSLATIONS_ENDPOINT(locale));
   if (!response.ok) {
