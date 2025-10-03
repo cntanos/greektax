@@ -57,6 +57,19 @@ const UI_MESSAGES = {
         "Track taxes, contributions, and take-home pay through a colour-coded Sankey diagram.",
       theme_option_light: "Light",
       theme_option_dark: "Dark",
+      info_tooltip_label: "More information about this field",
+      freelance_help_summary: "Freelance help",
+      freelance_help_body:
+        "Report gross turnover before VAT and only claim expenses you can document (rent, utilities, equipment, professional fees).",
+      freelance_help_contributions:
+        "Choosing an EFKA category preloads mandatory contributions; override with your actual payments if they differ.",
+      deductions_help_summary: "Deductions help",
+      deductions_help_body:
+        "Only enter amounts supported by official receipts or payment slips.",
+      deductions_help_limits:
+        "Statutory limits are applied automatically—donations receive a 20% credit, while medical, education, and insurance costs follow AADE caps.",
+      freelance_mandatory_tooltip:
+        "Mandatory EFKA and auxiliary contributions reduce taxable profit euro-for-euro when supported by receipts.",
     },
     status: {
       loading_years: "Loading tax years…",
@@ -77,6 +90,8 @@ const UI_MESSAGES = {
     },
     calculator: {
       heading: "Tax calculator",
+      instructions_intro:
+        "Toggle the sections that apply, enter annual or per-payment figures, then select Calculate to generate your summary.",
       results_heading: "Results",
       legends: {
         year_household: "Year and household",
@@ -123,7 +138,7 @@ const UI_MESSAGES = {
         },
         mandatory_contributions: "Mandatory social contributions",
         mandatory_contributions_hint:
-          "Deductible EFKA and auxiliary fund payments.",
+          "Mandatory EFKA, health, and auxiliary fund payments backed by receipts.",
       },
     },
     detailFields: {
@@ -232,14 +247,26 @@ const UI_MESSAGES = {
       },
     },
     hints: {
+      "children-eligibility":
+        "Count dependent children recognised for the AADE family tax credit (minors, students up to 24, or dependents with a disability).",
       "employment-payments":
-        "Most salaried roles use 14 payments (12 monthly plus bonuses). Adjust if your contract pays a different number of times per year.",
+        "Most salaried roles use 14 payments (12 monthly plus bonuses). Adjust this to match the number of payslips you receive each year.",
       "employment-employee-contributions":
-        "Add EFKA amounts you pay directly (for example, voluntary top-ups). Leave blank if contributions are only withheld from payslips.",
+        "Add EFKA amounts you pay directly with receipts (for example, voluntary top-ups). Leave blank if contributions are only withheld from payslips.",
       "employment-net-note":
-        "Net-to-gross salary conversion isn't supported. Provide gross amounts either annually or per payment.",
+        "Net-to-gross salary conversion isn't supported. Choose annual or per-payment mode above and provide gross amounts only.",
+      "employment-income":
+        "Enter the total gross salary for the year when you have a single annual figure.",
+      "employment-monthly-income":
+        "Enter the gross amount per payslip (monthly or bonus). The calculator multiplies it by your payments per year.",
       "employment-pension-scope":
         "(for wages, salaries, and retirement pensions)",
+      "pension-income-gross":
+        "Use the gross field when you know the annual pension before deductions.",
+      "pension-income-net":
+        "Enter the total net pension paid over the year if gross information is unavailable.",
+      "pension-income-net-monthly":
+        "Provide the net amount per pension payment; it will be multiplied by the payments per year selected above.",
       "freelance-efka-category": "Select a contribution class to prefill mandatory EFKA payments.",
       "freelance-efka-summary-empty":
         "Select a contribution class to view monthly pension, health, and auxiliary amounts.",
@@ -251,6 +278,10 @@ const UI_MESSAGES = {
         "Lump-sum fund: {{monthly}} × {{months}} months = {{total}}.",
       "freelance-efka-summary-total":
         "Estimated annual EFKA payments: {{total}}.",
+      "freelance-revenue":
+        "Report gross turnover before VAT or withholding taxes.",
+      "freelance-expenses":
+        "Claim only expenses backed by invoices (rent, utilities, professional fees, equipment, vehicle costs used for business).",
       "freelance-activity-start-year":
         "Enter the year your freelance activity was first registered to check reduced trade-fee eligibility.",
       "freelance-trade-fee": "Trade fee applied: {{amount}}.",
@@ -274,7 +305,7 @@ const UI_MESSAGES = {
       },
       configuration: {
         pending_deductions_2025:
-          "Some deduction thresholds for {{year}} are under review by tax authorities. Double-check deductible amounts before submitting returns.",
+          "Tax deduction rules for {{year}} are subject to change. Confirm eligible amounts before submitting returns.",
       },
       links: {
         partial_year_review: "Guidance on partial-year payroll",
@@ -316,6 +347,19 @@ const UI_MESSAGES = {
         "Παρακολουθήστε φόρους, εισφορές και καθαρό ποσό σε διάγραμμα Sankey με χρωματική κωδικοποίηση.",
       theme_option_light: "Φωτεινό",
       theme_option_dark: "Σκοτεινό",
+      info_tooltip_label: "Περισσότερες πληροφορίες για το πεδίο",
+      freelance_help_summary: "Βοήθεια για ελεύθερους επαγγελματίες",
+      freelance_help_body:
+        "Δηλώστε τον ακαθάριστο κύκλο εργασιών πριν τον ΦΠΑ και καταχωρήστε μόνο τεκμηριωμένες δαπάνες (ενοίκιο, ΔΕΚΟ, εξοπλισμός, αμοιβές).",
+      freelance_help_contributions:
+        "Η επιλογή κατηγορίας ΕΦΚΑ προ-συμπληρώνει τις υποχρεωτικές εισφορές· προσαρμόστε τα ποσά με βάση τα πραγματικά σας παραστατικά.",
+      deductions_help_summary: "Βοήθεια για εκπτώσεις",
+      deductions_help_body:
+        "Καταχωρήστε μόνο ποσά με νόμιμες αποδείξεις ή αποδεικτικά πληρωμής.",
+      deductions_help_limits:
+        "Εφαρμόζονται αυτόματα τα νόμιμα όρια—οι δωρεές δίνουν πίστωση 20%, ενώ ιατρικές, εκπαιδευτικές και ασφαλιστικές δαπάνες ακολουθούν τα όρια της ΑΑΔΕ.",
+      freelance_mandatory_tooltip:
+        "Οι υποχρεωτικές εισφορές ΕΦΚΑ και επικουρικών μειώνουν ισόποσα το φορολογητέο κέρδος όταν στηρίζονται σε παραστατικά.",
     },
     status: {
       loading_years: "Φόρτωση διαθέσιμων φορολογικών ετών…",
@@ -336,6 +380,8 @@ const UI_MESSAGES = {
     },
     calculator: {
       heading: "Φορολογικός υπολογιστής",
+      instructions_intro:
+        "Ενεργοποιήστε τις ενότητες που σας αφορούν, εισάγετε ετήσια ή ανά πληρωμή ποσά και πατήστε Υπολογισμός για να δείτε την ανάλυση.",
       results_heading: "Αποτελέσματα",
       legends: {
         year_household: "Έτος και νοικοκυριό",
@@ -383,7 +429,7 @@ const UI_MESSAGES = {
         },
         mandatory_contributions: "Υποχρεωτικές εισφορές",
         mandatory_contributions_hint:
-          "Εκπιπτόμενες καταβολές ΕΦΚΑ και επικουρικών ταμείων.",
+          "Υποχρεωτικές εισφορές ΕΦΚΑ, υγείας και επικουρικών ταμείων με παραστατικά.",
       },
     },
     detailFields: {
@@ -492,14 +538,26 @@ const UI_MESSAGES = {
       },
     },
     hints: {
+      "children-eligibility":
+        "Μετρήστε τα εξαρτώμενα τέκνα που δικαιούνται την οικογενειακή έκπτωση ΑΑΔΕ (ανήλικοι, φοιτητές έως 24 ή τέκνα με αναπηρία).",
       "employment-payments":
-        "Συνήθως καταβάλλονται 14 μισθοί (12 μηνιαίοι και 2 δώρα). Προσαρμόστε τον αριθμό αν η σύμβασή σας προβλέπει διαφορετικές καταβολές ανά έτος.",
+        "Συνήθως καταβάλλονται 14 μισθοί (12 μηνιαίοι και 2 δώρα). Προσαρμόστε τον αριθμό ώστε να ταιριάζει με τις καταβολές μισθοδοσίας που λαμβάνετε ετησίως.",
       "employment-employee-contributions":
-        "Προσθέστε εισφορές ΕΦΚΑ που καταβάλλετε απευθείας (π.χ. προαιρετικές συμπληρωματικές). Αφήστε κενό αν οι εισφορές παρακρατούνται μόνο μέσω μισθοδοσίας.",
+        "Προσθέστε εισφορές ΕΦΚΑ που καταβάλλετε απευθείας με αποδείξεις (π.χ. προαιρετικές συμπληρωματικές). Αφήστε κενό αν οι εισφορές παρακρατούνται μόνο μέσω μισθοδοσίας.",
       "employment-net-note":
-        "Δεν υποστηρίζεται μετατροπή καθαρού μισθού σε ακαθάριστο. Συμπληρώστε ακαθάριστα ποσά είτε ετησίως είτε ανά καταβολή.",
+        "Δεν υποστηρίζεται μετατροπή καθαρού μισθού σε ακαθάριστο. Επιλέξτε ετήσια ή ανά καταβολή εισαγωγή και συμπληρώστε μόνο ακαθάριστα ποσά.",
+      "employment-income":
+        "Εισάγετε το ετήσιο ακαθάριστο ποσό μισθού όταν διαθέτετε ένα συνολικό ποσό.",
+      "employment-monthly-income":
+        "Εισάγετε το ακαθάριστο ποσό ανά μισθοδοσία (μήνας ή δώρο). Ο υπολογιστής το πολλαπλασιάζει με τις πληρωμές ανά έτος.",
       "employment-pension-scope":
         "(για μισθούς, ημερομίσθια και συντάξεις)",
+      "pension-income-gross":
+        "Χρησιμοποιήστε το πεδίο ακαθάριστου όταν γνωρίζετε τη σύνταξη πριν από τις κρατήσεις.",
+      "pension-income-net":
+        "Εισάγετε το καθαρό ποσό σύνταξης για όλο το έτος όταν δεν υπάρχουν διαθέσιμα ακαθάριστα στοιχεία.",
+      "pension-income-net-monthly":
+        "Δώστε το καθαρό ποσό ανά καταβολή σύνταξης· θα πολλαπλασιαστεί με τις πληρωμές ανά έτος που επιλέξατε.",
       "freelance-efka-category": "Επιλέξτε κατηγορία εισφορών για αυτόματη συμπλήρωση των υποχρεωτικών ποσών.",
       "freelance-efka-summary-empty":
         "Επιλέξτε κατηγορία για να εμφανιστούν τα μηνιαία ποσά κύριας, υγειονομικής και επικουρικής ασφάλισης.",
@@ -511,6 +569,10 @@ const UI_MESSAGES = {
         "Ταμείο πρόνοιας/εφάπαξ: {{monthly}} × {{months}} μήνες = {{total}}.",
       "freelance-efka-summary-total":
         "Εκτιμώμενες ετήσιες εισφορές ΕΦΚΑ: {{total}}.",
+      "freelance-revenue":
+        "Δηλώστε τον ακαθάριστο κύκλο εργασιών πριν από ΦΠΑ ή παρακρατήσεις.",
+      "freelance-expenses":
+        "Καταχωρήστε μόνο δαπάνες με νόμιμα παραστατικά (ενοίκιο, ΔΕΚΟ, επαγγελματικές αμοιβές, εξοπλισμός, επαγγελματική χρήση οχήματος).",
       "freelance-activity-start-year":
         "Δηλώστε το έτος έναρξης δραστηριότητας για να ελεγχθεί η επιλεξιμότητα μειωμένου τέλους επιτηδεύματος.",
       "freelance-trade-fee": "Εφαρμοζόμενο τέλος επιτηδεύματος: {{amount}}.",
@@ -534,7 +596,7 @@ const UI_MESSAGES = {
       },
       configuration: {
         pending_deductions_2025:
-          "Ορισμένα όρια εκπτώσεων για το {{year}} βρίσκονται υπό επανεξέταση. Ελέγξτε ξανά τα ποσά πριν τα δηλώσετε.",
+          "Οι κανόνες φορολογικών εκπτώσεων για το {{year}} ενδέχεται να αλλάξουν. Ελέγξτε τα επιλέξιμα ποσά πριν την υποβολή.",
       },
       links: {
         partial_year_review: "Οδηγίες για μερική απασχόληση",
