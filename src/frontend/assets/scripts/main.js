@@ -38,629 +38,15 @@ let sankeyWindowResizeHandler = null;
 let hasAppliedThemeOnce = false;
 let themeTransitionHandle = null;
 
-const UI_MESSAGES = {
-  en: {
-    ui: {
-      tagline: "Unofficial tax estimation toolkit for Greece",
-      overview_heading: "Overview",
-      overview_description:
-        "Follow these quick steps to receive a bilingual summary of your Greek income taxes.",
-      overview_step_select_year:
-        "Choose the tax year and confirm the language above.",
-      overview_step_toggle_sections:
-        "Enable the income sections that match your situation.",
-      overview_step_enter_values:
-        "Enter the amounts requested for each active section.",
-      overview_step_calculate:
-        "Press Calculate to view your results and download a copy.",
-      disclaimer:
-        "Disclaimer: This tool is unofficial and provided as-is. Inputs are stored locally on your device for up to two hours and are never sent to a server. Please consult a professional accountant for formal filings.",
-      highlight_inputs_title: "Guided calculator inputs",
-      highlight_inputs_copy:
-        "Toggle each income type only when you need it, supported by inline tips and validation.",
-      highlight_localisation_title: "Bilingual header controls",
-      highlight_localisation_copy:
-        "Use the top-right language buttons to switch between English and Greek without losing your data.",
-      highlight_visual_title: "Visual income breakdown",
-      highlight_visual_copy:
-        "Track taxes, contributions, and take-home pay through a colour-coded Sankey diagram.",
-      theme_option_light: "Light",
-      theme_option_dark: "Dark",
-      info_tooltip_label: "More information about this field",
-      freelance_help_summary: "Freelance help",
-      freelance_help_body:
-        "Report gross turnover before VAT and only claim expenses you can document (rent, utilities, equipment, professional fees).",
-      freelance_help_contributions:
-        "Choosing an EFKA category preloads mandatory contributions; override with your actual payments if they differ.",
-      deductions_help_summary: "Deductions help",
-      deductions_help_body:
-        "Only enter amounts supported by official receipts or payment slips.",
-      deductions_help_limits:
-        "Statutory limits are applied automatically—donations receive a 20% credit, while medical, education, and insurance costs follow AADE caps.",
-      freelance_mandatory_tooltip:
-        "Mandatory EFKA and auxiliary contributions reduce taxable profit euro-for-euro when supported by receipts.",
-    },
-    status: {
-      loading_years: "Loading tax years…",
-      ready: "Configuration loaded. Enter your details to calculate.",
-      year_error: "Unable to load tax year configuration metadata.",
-      select_year: "Please select a tax year before calculating.",
-      calculating: "Calculating tax breakdown…",
-      calculation_complete: "Calculation complete.",
-      validation_errors: "Please fix the highlighted fields and try again.",
-      calculation_failed: "Unable to process calculation.",
-    },
-    errors: {
-      invalid_number: "Please enter a valid number for {{field}}.",
-      negative_number: "{{field}} cannot be negative.",
-      min_number: "{{field}} must be at least {{min}}.",
-      max_number: "{{field}} must be at most {{max}}.",
-      non_integer: "{{field}} must be a whole number.",
-    },
-    calculator: {
-      heading: "Tax calculator",
-      instructions_intro:
-        "Work through the sections you enable, using the hints to enter annual or per-payment figures, then select Calculate to generate your summary.",
-      results_heading: "Results",
-      results_intro:
-        "Results Summary: The chart and tables below show your total income, taxes, and net income. Hover over the diagram for details and review each category in the list.",
-      legends: {
-        year_household: "Year and household",
-        employment_pension: "Employment and/or pension income",
-        freelance: "Freelance income",
-        agricultural: "Agricultural income",
-        other: "Other income",
-        rental: "Rental income",
-        investment: "Investment income",
-        obligations: "Additional obligations",
-        deductions: "Deductions",
-      },
-    },
-    sankey: {
-      heading: "Income distribution",
-      empty:
-        "Add taxable income above to reveal colour-coded flows for taxes, contributions, and take-home pay across categories.",
-      taxes: "Taxes",
-      contributions: "Contributions & expenses",
-      net: "Net income",
-      aria_label:
-        "Sankey diagram showing how gross income flows into taxes, contributions, and net amounts.",
-    },
-    forms: {
-      no_investment_categories: "No investment categories configured for this year.",
-      freelance: {
-        efka: {
-          category: {
-            general_class_1: "General scheme — Class 1",
-            general_class_2: "General scheme — Class 2",
-            general_class_3: "General scheme — Class 3",
-            general_class_4: "General scheme — Class 4",
-            general_class_5: "General scheme — Class 5",
-            general_class_6: "General scheme — Class 6",
-            general_reduced: "General scheme — Reduced contributions",
-            general_reduced_description:
-              "Available to eligible professionals within the reduced-rate window.",
-            engineer_class_1: "Engineers (TSMEDE) — Class 1",
-            engineer_class_2: "Engineers (TSMEDE) — Class 2",
-            engineer_class_3: "Engineers (TSMEDE) — Class 3",
-            engineer_description:
-              "Includes mandatory auxiliary (ETEAEP) and lump-sum fund contributions.",
-          },
-        },
-        mandatory_contributions: "Mandatory social contributions",
-        mandatory_contributions_hint:
-          "Mandatory EFKA, health, and auxiliary fund payments backed by receipts.",
-      },
-    },
-    detailFields: {
-      gross_income: "Gross income",
-      deductible_contributions: "Mandatory contributions",
-      category_contributions: "EFKA category contributions",
-      additional_contributions: "Additional contributions",
-      auxiliary_contributions: "Auxiliary contributions",
-      lump_sum_contributions: "Lump-sum fund contributions",
-      deductible_expenses: "Deductible expenses",
-      taxable_income: "Taxable income",
-      tax_before_credits: "Tax before credits",
-      credits: "Credits",
-      tax: "Tax",
-      trade_fee: "Business activity fee",
-      total_tax: "Total tax",
-      net_income: "Net impact",
-      monthly_gross_income: "Monthly gross income",
-      payments_per_year: "Payments per year",
-      gross_income_per_payment: "Gross per payment",
-      net_income_per_payment: "Net per payment",
-      employee_contributions: "Employee contributions",
-      employee_contributions_manual: "Additional employee contributions",
-      employer_contributions: "Employer contributions",
-      employee_contributions_per_payment: "Employee contributions per payment",
-      employer_contributions_per_payment: "Employer contributions per payment",
-      breakdown: "Breakdown",
-      deductions_applied: "Deductions applied",
-    },
-    fields: {
-      "year-select": "Tax year",
-      "children-input": "Dependent children",
-      "employment-income": "Employment gross income (€)",
-      "employment-monthly-income": "Monthly gross income (€)",
-      "employment-payments": "Salary payments per year",
-      "employment-mode": "Salary input type",
-      "employment-mode-annual": "Enter annual gross salary",
-      "employment-mode-monthly": "Enter gross salary per payment",
-      "employment-employee-contributions":
-        "Employee EFKA contributions (€)",
-      "employment-withholding": "Tax already withheld (PAYE) (€)",
-      "pension-income": "Pension gross income (€)",
-      "pension-mode": "Pension input type",
-      "pension-mode-gross": "Enter gross amounts",
-      "pension-mode-net": "Enter net amounts",
-      "pension-payments": "Pension payments per year",
-      "pension-net-income": "Annual net pension (€)",
-      "pension-net-monthly-income": "Net pension per payment (€)",
-      "freelance-revenue": "Freelance gross revenue (€)",
-      "freelance-expenses": "Freelance deductible expenses (€)",
-      "freelance-contributions": "Manual EFKA contributions (€)",
-      "freelance-auxiliary-contributions": "Manual auxiliary fund contributions (€)",
-      "freelance-lump-sum-contributions": "Manual lump-sum fund contributions (€)",
-      "freelance-manual-contributions": "Override EFKA payments",
-      "freelance-manual-contributions-hint":
-        "Use if your actual payments differ from the auto-calculated totals.",
-      "freelance-activity-start-year": "Year freelance activity started",
-      "freelance-activity-start-year-hint":
-        "Determines eligibility for the reduced business activity fee.",
-      "freelance-efka-category": "EFKA contribution class",
-      "freelance-efka-category-placeholder": "Select EFKA category (optional)",
-      "freelance-efka-months": "Contribution months",
-      "freelance-trade-fee-location": "Trade fee location",
-      "freelance-trade-fee-standard": "Standard amount",
-      "freelance-trade-fee-reduced": "Reduced amount",
-      "freelance-years-active": "Years self-employed",
-      "trade-fee-toggle": "Include business activity fee",
-      "toggle-pension": "Include pension income",
-      "toggle-employment": "Include salary/pension income",
-      "toggle-freelance": "Include freelance income",
-      "toggle-agricultural": "Include agricultural income",
-      "toggle-other": "Include other income",
-      "toggle-rental": "Include rental income",
-      "toggle-investment": "Include investment income",
-      "toggle-deductions": "Include deductions",
-      "toggle-obligations": "Include additional obligations",
-      "agricultural-revenue": "Agricultural revenue (€)",
-      "agricultural-expenses": "Agricultural expenses (€)",
-      "other-income": "Other taxable income (€)",
-      "rental-income": "Rental gross income (€)",
-      "rental-expenses": "Rental deductible expenses (€)",
-      "deductions-donations": "Charitable donations (€)",
-      "deductions-medical": "Medical expenses (€)",
-      "deductions-education": "Education expenses (€)",
-      "deductions-insurance": "Insurance premiums (€)",
-      "vat-due": "VAT due (€)",
-      "enfia-due": "ENFIA amount (€)",
-      "luxury-due": "Luxury living tax (€)",
-      freelance: {
-        efka: {
-          category: {
-            general_class_1: "General scheme — Class 1",
-            general_class_2: "General scheme — Class 2",
-            general_class_3: "General scheme — Class 3",
-            general_class_4: "General scheme — Class 4",
-            general_class_5: "General scheme — Class 5",
-            general_class_6: "General scheme — Class 6",
-            general_reduced: "General scheme — Reduced contributions",
-            general_reduced_description:
-              "Available to eligible professionals within the reduced-rate window.",
-            engineer_class_1: "Engineers (TSMEDE) — Class 1",
-            engineer_class_2: "Engineers (TSMEDE) — Class 2",
-            engineer_class_3: "Engineers (TSMEDE) — Class 3",
-            engineer_description:
-              "Includes mandatory auxiliary (ETEAEP) and lump-sum fund contributions.",
-          },
-        },
-      },
-    },
-    hints: {
-      "children-eligibility":
-        "Count dependent children recognised for the AADE family tax credit (minors, students up to 24, or dependents with a disability).",
-      "employment-payments":
-        "Most salaried roles use 14 payments (12 monthly plus bonuses). Adjust this to match the number of payslips you receive each year.",
-      "employment-employee-contributions":
-        "Add EFKA amounts you pay directly with receipts (for example, voluntary top-ups). Leave blank if contributions are only withheld from payslips.",
-      "employment-withholding":
-        "Enter PAYE income tax already withheld on your payslips to reduce the balance due.",
-      "year-partial-note":
-        "If you didn't earn income for the full year, enter what you earned; the annual tax credit still applies in full.",
-      "employment-net-note":
-        "Net-to-gross salary conversion isn't supported. Choose annual or per-payment mode above and provide gross amounts only.",
-      "employment-income":
-        "Enter the total gross salary for the year when you have a single annual figure.",
-      "employment-monthly-income":
-        "Enter the gross amount per payslip (monthly or bonus). The calculator multiplies it by your payments per year.",
-      "employment-pension-scope":
-        "(for wages, salaries, and retirement pensions)",
-      "pension-income-gross":
-        "Use the gross field when you know the annual pension before deductions.",
-      "pension-income-net":
-        "Enter the total net pension paid over the year if gross information is unavailable.",
-      "pension-income-net-monthly":
-        "Provide the net amount per pension payment; it will be multiplied by the payments per year selected above.",
-      "freelance-efka-category": "Select a contribution class to prefill mandatory EFKA payments.",
-      "freelance-efka-summary-empty":
-        "Select a contribution class to view monthly pension, health, and auxiliary amounts.",
-      "freelance-efka-summary-base":
-        "Base EFKA (pension and health): {{monthly}} × {{months}} months = {{total}}.",
-      "freelance-efka-summary-auxiliary":
-        "Auxiliary fund: {{monthly}} × {{months}} months = {{total}}.",
-      "freelance-efka-summary-lump":
-        "Lump-sum fund: {{monthly}} × {{months}} months = {{total}}.",
-      "freelance-efka-summary-total":
-        "Estimated annual EFKA payments: {{total}}.",
-      "freelance-revenue":
-        "Report gross turnover before VAT or withholding taxes.",
-      "freelance-expenses":
-        "Claim only expenses backed by invoices (rent, utilities, professional fees, equipment, vehicle costs used for business).",
-      "freelance-trade-fee-location":
-        "Standard areas pay the full business activity fee; reduced areas pay half in eligible small towns or islands.",
-      "freelance-activity-start-year":
-        "Determines if the new-business 5-year fee exemption applies.",
-      "freelance-trade-fee": "Trade fee applied: {{amount}}.",
-      "freelance-trade-fee-new": "Reduced rate applies for the first {{years}} years of activity.",
-      "freelance-trade-fee-new-eligible":
-        "Based on your start year, the reduced amount applies for this tax year.",
-      "freelance-trade-fee-new-expired":
-        "The reduced-rate window has ended (more than {{years}} years of activity).",
-      "freelance-trade-fee-sunset":
-        "The business activity fee is slated to return from {{year}} (status: {{status}}). Double-check the latest rules with your accountant.",
-      "freelance-trade-fee-waived":
-        "No business activity fee is due for this tax year, so you can leave this switched off.",
-    },
-    warnings: {
-      learn_more: "Learn more",
-      employment: {
-        partial_year_review:
-          "Partial-year payroll scenarios may require manual EFKA and tax credit adjustments. Validate the figures for {{year}} if your contract ended early.",
-      },
-      freelance: {
-        trade_fee_sunset:
-          "AADE plans to bring back the business activity fee in stages. For {{year}}, confirm whether it applies to your activity before you submit.",
-      },
-      configuration: {
-        pending_deductions_2025:
-          "Tax deduction rules for {{year}} are subject to change. Confirm eligible amounts before submitting returns.",
-      },
-      links: {
-        partial_year_review: "Guidance on partial-year payroll",
-        pending_deductions: "AADE deduction guidance",
-      },
-    },
-    links: {
-      trade_fee_sunset: "AADE trade fee update",
-    },
-    statuses: {
-      trade_fee: {
-        scheduled: "scheduled",
-        proposed: "proposed",
-      },
-    },
-    actions: {
-      calculate: "Calculate taxes",
-      download: "Download summary (JSON)",
-      download_csv: "Download summary (CSV)",
-      print: "Print summary",
-    },
-  },
-  el: {
-    ui: {
-      tagline: "Ανεπίσημο εργαλείο εκτίμησης φόρων για την Ελλάδα",
-      overview_heading: "Επισκόπηση",
-      overview_description:
-        "Ακολουθήστε αυτά τα σύντομα βήματα για να λάβετε δίγλωσση σύνοψη των ελληνικών φορολογικών σας υποχρεώσεων.",
-      overview_step_select_year:
-        "Επιλέξτε το φορολογικό έτος και επιβεβαιώστε τη γλώσσα παραπάνω.",
-      overview_step_toggle_sections:
-        "Ενεργοποιήστε τις ενότητες εισοδήματος που ταιριάζουν στην περίπτωσή σας.",
-      overview_step_enter_values:
-        "Καταχωρήστε τα ζητούμενα ποσά για κάθε ενεργή ενότητα.",
-      overview_step_calculate:
-        "Πατήστε Υπολογισμός για να δείτε τα αποτελέσματα και να κατεβάσετε αντίγραφο.",
-      disclaimer:
-        "Αποποίηση ευθύνης: Το εργαλείο είναι ανεπίσημο και παρέχεται ως έχει. Τα δεδομένα εισόδου αποθηκεύονται τοπικά στη συσκευή σας για έως δύο ώρες και δεν αποστέλλονται σε διακομιστή. Συμβουλευτείτε λογιστή για επίσημες δηλώσεις.",
-      highlight_inputs_title: "Καθοδηγούμενη εισαγωγή στοιχείων",
-      highlight_inputs_copy:
-        "Ενεργοποιήστε μόνο τις ενότητες εισοδήματος που σας αφορούν με ενσωματωμένες συμβουλές και ελέγχους.",
-      highlight_localisation_title: "Έλεγχος γλώσσας στην κορυφή",
-      highlight_localisation_copy:
-        "Χρησιμοποιήστε τα κουμπιά γλώσσας στο επάνω μέρος για να εναλλάσσετε Αγγλικά και Ελληνικά χωρίς να χάνονται τα δεδομένα σας.",
-      highlight_visual_title: "Οπτική απεικόνιση εισοδήματος",
-      highlight_visual_copy:
-        "Παρακολουθήστε φόρους, εισφορές και καθαρό ποσό σε διάγραμμα Sankey με χρωματική κωδικοποίηση.",
-      theme_option_light: "Φωτεινό",
-      theme_option_dark: "Σκοτεινό",
-      info_tooltip_label: "Περισσότερες πληροφορίες για το πεδίο",
-      freelance_help_summary: "Βοήθεια για ελεύθερους επαγγελματίες",
-      freelance_help_body:
-        "Δηλώστε τον ακαθάριστο κύκλο εργασιών πριν τον ΦΠΑ και καταχωρήστε μόνο τεκμηριωμένες δαπάνες (ενοίκιο, ΔΕΚΟ, εξοπλισμός, αμοιβές).",
-      freelance_help_contributions:
-        "Η επιλογή κατηγορίας ΕΦΚΑ προ-συμπληρώνει τις υποχρεωτικές εισφορές· προσαρμόστε τα ποσά με βάση τα πραγματικά σας παραστατικά.",
-      deductions_help_summary: "Βοήθεια για εκπτώσεις",
-      deductions_help_body:
-        "Καταχωρήστε μόνο ποσά με νόμιμες αποδείξεις ή αποδεικτικά πληρωμής.",
-      deductions_help_limits:
-        "Εφαρμόζονται αυτόματα τα νόμιμα όρια—οι δωρεές δίνουν πίστωση 20%, ενώ ιατρικές, εκπαιδευτικές και ασφαλιστικές δαπάνες ακολουθούν τα όρια της ΑΑΔΕ.",
-      freelance_mandatory_tooltip:
-        "Οι υποχρεωτικές εισφορές ΕΦΚΑ και επικουρικών μειώνουν ισόποσα το φορολογητέο κέρδος όταν στηρίζονται σε παραστατικά.",
-    },
-    status: {
-      loading_years: "Φόρτωση διαθέσιμων φορολογικών ετών…",
-      ready: "Η διαμόρφωση ολοκληρώθηκε. Συμπληρώστε τα στοιχεία σας για υπολογισμό.",
-      year_error: "Αδυναμία φόρτωσης των δεδομένων φορολογικού έτους.",
-      select_year: "Επιλέξτε φορολογικό έτος πριν από τον υπολογισμό.",
-      calculating: "Υπολογισμός ανάλυσης φόρου…",
-      calculation_complete: "Ο υπολογισμός ολοκληρώθηκε.",
-      validation_errors: "Διορθώστε τα επισημασμένα πεδία και προσπαθήστε ξανά.",
-      calculation_failed: "Δεν ήταν δυνατή η επεξεργασία του υπολογισμού.",
-    },
-    errors: {
-      invalid_number: "Εισαγάγετε έγκυρο αριθμό για {{field}}.",
-      negative_number: "{{field}} δεν μπορεί να είναι αρνητικό.",
-      min_number: "{{field}} πρέπει να είναι τουλάχιστον {{min}}.",
-      max_number: "{{field}} πρέπει να είναι το πολύ {{max}}.",
-      non_integer: "{{field}} πρέπει να είναι ακέραιος αριθμός.",
-    },
-    calculator: {
-      heading: "Φορολογικός υπολογιστής",
-      instructions_intro:
-        "Εργαστείτε στις ενότητες που ενεργοποιείτε, χρησιμοποιώντας τις συμβουλές για να εισάγετε ετήσια ή ανά πληρωμή ποσά και πατήστε Υπολογισμός για να δημιουργηθεί η σύνοψη.",
-      results_heading: "Αποτελέσματα",
-      results_intro:
-        "Σύνοψη αποτελεσμάτων: Το διάγραμμα και οι πίνακες που ακολουθούν δείχνουν το συνολικό εισόδημα, τους φόρους και το καθαρό ποσό. Τοποθετήστε τον δείκτη πάνω από το διάγραμμα για λεπτομέρειες και δείτε την ανάλυση κάθε κατηγορίας στη λίστα.",
-      legends: {
-        year_household: "Έτος και νοικοκυριό",
-        employment_pension: "Εισόδημα από μισθωτή εργασία ή/και συντάξεις",
-        freelance: "Εισόδημα ελεύθερου επαγγελματία",
-        agricultural: "Αγροτικό εισόδημα",
-        other: "Λοιπά εισοδήματα",
-        rental: "Εισόδημα από ενοίκια",
-        investment: "Επενδυτικά εισοδήματα",
-        obligations: "Πρόσθετες υποχρεώσεις",
-        deductions: "Εκπτώσεις",
-      },
-    },
-    sankey: {
-      heading: "Κατανομή εισοδήματος",
-      empty:
-        "Προσθέστε φορολογητέο εισόδημα για να εμφανιστούν οι χρωματισμένες ροές φόρων, εισφορών και καθαρού ποσού ανά κατηγορία.",
-      taxes: "Φόροι",
-      contributions: "Εισφορές & δαπάνες",
-      net: "Καθαρό εισόδημα",
-      aria_label:
-        "Διάγραμμα Sankey που δείχνει τη ροή του ακαθάριστου εισοδήματος σε φόρους, εισφορές και καθαρά ποσά.",
-    },
-    forms: {
-      no_investment_categories:
-        "Δεν έχουν οριστεί επενδυτικές κατηγορίες για αυτό το έτος.",
-      freelance: {
-        efka: {
-          category: {
-            general_class_1: "Γενικό καθεστώς — Κλάση 1",
-            general_class_2: "Γενικό καθεστώς — Κλάση 2",
-            general_class_3: "Γενικό καθεστώς — Κλάση 3",
-            general_class_4: "Γενικό καθεστώς — Κλάση 4",
-            general_class_5: "Γενικό καθεστώς — Κλάση 5",
-            general_class_6: "Γενικό καθεστώς — Κλάση 6",
-            general_reduced: "Γενικό καθεστώς — Μειωμένες εισφορές",
-            general_reduced_description:
-              "Διαθέσιμη για όσους βρίσκονται εντός του παραθύρου μειωμένου συντελεστή.",
-            engineer_class_1: "Μηχανικοί (ΤΣΜΕΔΕ) — Κλάση 1",
-            engineer_class_2: "Μηχανικοί (ΤΣΜΕΔΕ) — Κλάση 2",
-            engineer_class_3: "Μηχανικοί (ΤΣΜΕΔΕ) — Κλάση 3",
-            engineer_description:
-              "Περιλαμβάνει υποχρεωτικές εισφορές επικουρικού (ΕΤΕΑΕΠ) και εφάπαξ.",
-          },
-        },
-        mandatory_contributions: "Υποχρεωτικές εισφορές",
-        mandatory_contributions_hint:
-          "Υποχρεωτικές εισφορές ΕΦΚΑ, υγείας και επικουρικών ταμείων με παραστατικά.",
-      },
-    },
-    detailFields: {
-      gross_income: "Ακαθάριστο εισόδημα",
-      deductible_contributions: "Υποχρεωτικές εισφορές",
-      category_contributions: "Εισφορές κατηγορίας ΕΦΚΑ",
-      additional_contributions: "Επιπλέον εισφορές",
-      auxiliary_contributions: "Εισφορές επικουρικού",
-      lump_sum_contributions: "Εισφορές εφάπαξ",
-      deductible_expenses: "Εκπιπτόμενες δαπάνες",
-      taxable_income: "Φορολογητέο εισόδημα",
-      tax_before_credits: "Φόρος πριν τις εκπτώσεις",
-      credits: "Εκπτώσεις",
-      tax: "Φόρος",
-      trade_fee: "Τέλος επιτηδεύματος",
-      total_tax: "Συνολικός φόρος",
-      net_income: "Καθαρή επίδραση",
-      monthly_gross_income: "Μηνιαίο ακαθάριστο εισόδημα",
-      payments_per_year: "Καταβολές ανά έτος",
-      gross_income_per_payment: "Ακαθάριστο ανά καταβολή",
-      net_income_per_payment: "Καθαρό ανά καταβολή",
-      employee_contributions: "Εισφορές εργαζομένου",
-      employee_contributions_manual: "Πρόσθετες εισφορές εργαζομένου",
-      employer_contributions: "Εισφορές εργοδότη",
-      employee_contributions_per_payment: "Εισφορές εργαζομένου ανά καταβολή",
-      employer_contributions_per_payment: "Εισφορές εργοδότη ανά καταβολή",
-      breakdown: "Ανάλυση",
-      deductions_applied: "Εφαρμοσμένες εκπτώσεις",
-    },
-    fields: {
-      "year-select": "Φορολογικό έτος",
-      "children-input": "Εξαρτώμενα τέκνα",
-      "employment-income": "Ακαθάριστο εισόδημα μισθωτών (€)",
-      "employment-monthly-income": "Μηνιαίο ακαθάριστο εισόδημα (€)",
-      "employment-payments": "Μισθολογικές καταβολές ανά έτος",
-      "employment-mode": "Τρόπος εισαγωγής μισθού",
-      "employment-mode-annual": "Καταχώρηση ετήσιου ακαθάριστου ποσού",
-      "employment-mode-monthly": "Καταχώρηση ακαθάριστου ποσού ανά καταβολή",
-      "employment-employee-contributions":
-        "Εισφορές ΕΦΚΑ εργαζομένου (€)",
-      "employment-withholding": "Παρακρατηθείς φόρος μισθοδοσίας (PAYE) (€)",
-      "pension-income": "Ακαθάριστο εισόδημα συντάξεων (€)",
-      "pension-mode": "Τύπος εισαγωγής σύνταξης",
-      "pension-mode-gross": "Καταχώρηση ακαθάριστων ποσών",
-      "pension-mode-net": "Καταχώρηση καθαρών ποσών",
-      "pension-payments": "Καταβολές συντάξεων ανά έτος",
-      "pension-net-income": "Ετήσιο καθαρό ποσό σύνταξης (€)",
-      "pension-net-monthly-income": "Καθαρό ποσό σύνταξης ανά καταβολή (€)",
-      "freelance-revenue": "Ακαθάριστα έσοδα ελευθέρου επαγγελματία (€)",
-      "freelance-expenses": "Εκπιπτόμενες δαπάνες ελευθέρου επαγγελματία (€)",
-      "freelance-contributions": "Χειροκίνητες εισφορές ΕΦΚΑ (€)",
-      "freelance-auxiliary-contributions": "Χειροκίνητες εισφορές επικουρικού (€)",
-      "freelance-lump-sum-contributions": "Χειροκίνητες εισφορές εφάπαξ (€)",
-      "freelance-manual-contributions": "Παράκαμψη ποσών ΕΦΚΑ",
-      "freelance-manual-contributions-hint":
-        "Χρησιμοποιήστε την όταν τα πραγματικά ποσά διαφέρουν από τους αυτόματους υπολογισμούς.",
-      "freelance-activity-start-year": "Έτος έναρξης δραστηριότητας",
-      "freelance-activity-start-year-hint":
-        "Καθορίζει την επιλεξιμότητα για το μειωμένο τέλος επιτηδεύματος.",
-      "freelance-efka-category": "Κατηγορία εισφορών ΕΦΚΑ",
-      "freelance-efka-category-placeholder": "Επιλέξτε κατηγορία ΕΦΚΑ (προαιρετικά)",
-      "freelance-efka-months": "Μήνες εισφορών",
-      "freelance-trade-fee-location": "Περιοχή τέλους επιτηδεύματος",
-      "freelance-trade-fee-standard": "Τυπικό ποσό",
-      "freelance-trade-fee-reduced": "Μειωμένο ποσό",
-      "freelance-years-active": "Έτη ως ελεύθερος επαγγελματίας",
-      "trade-fee-toggle": "Συμπερίληψη τέλους επιτηδεύματος",
-      "toggle-pension": "Συμπερίληψη εισοδήματος συντάξεων",
-      "toggle-employment": "Συμπερίληψη εισοδήματος μισθωτών/συντάξεων",
-      "toggle-freelance": "Συμπερίληψη εισοδήματος ελευθέρων επαγγελματιών",
-      "toggle-agricultural": "Συμπερίληψη αγροτικού εισοδήματος",
-      "toggle-other": "Συμπερίληψη λοιπών εισοδημάτων",
-      "toggle-rental": "Συμπερίληψη εισοδήματος από ενοίκια",
-      "toggle-investment": "Συμπερίληψη επενδυτικών εισοδημάτων",
-      "toggle-deductions": "Συμπερίληψη εκπτώσεων",
-      "toggle-obligations": "Συμπερίληψη πρόσθετων υποχρεώσεων",
-      "agricultural-revenue": "Ακαθάριστα αγροτικά έσοδα (€)",
-      "agricultural-expenses": "Εκπιπτόμενες αγροτικές δαπάνες (€)",
-      "other-income": "Λοιπά φορολογητέα εισοδήματα (€)",
-      "rental-income": "Ακαθάριστα έσοδα ενοικίων (€)",
-      "rental-expenses": "Εκπιπτόμενες δαπάνες ενοικίων (€)",
-      "deductions-donations": "Δωρεές (€)",
-      "deductions-medical": "Ιατρικές δαπάνες (€)",
-      "deductions-education": "Εκπαιδευτικές δαπάνες (€)",
-      "deductions-insurance": "Ασφαλιστικά ασφάλιστρα (€)",
-      "vat-due": "Οφειλόμενος ΦΠΑ (€)",
-      "enfia-due": "Ποσό ΕΝΦΙΑ (€)",
-      "luxury-due": "Φόρος πολυτελούς διαβίωσης (€)",
-      freelance: {
-        efka: {
-          category: {
-            general_class_1: "Γενικό καθεστώς — Κλάση 1",
-            general_class_2: "Γενικό καθεστώς — Κλάση 2",
-            general_class_3: "Γενικό καθεστώς — Κλάση 3",
-            general_class_4: "Γενικό καθεστώς — Κλάση 4",
-            general_class_5: "Γενικό καθεστώς — Κλάση 5",
-            general_class_6: "Γενικό καθεστώς — Κλάση 6",
-            general_reduced: "Γενικό καθεστώς — Μειωμένες εισφορές",
-            general_reduced_description:
-              "Διαθέσιμη για όσους βρίσκονται εντός του παραθύρου μειωμένου συντελεστή.",
-            engineer_class_1: "Μηχανικοί (ΤΣΜΕΔΕ) — Κλάση 1",
-            engineer_class_2: "Μηχανικοί (ΤΣΜΕΔΕ) — Κλάση 2",
-            engineer_class_3: "Μηχανικοί (ΤΣΜΕΔΕ) — Κλάση 3",
-            engineer_description:
-              "Περιλαμβάνει υποχρεωτικές εισφορές επικουρικού (ΕΤΕΑΕΠ) και εφάπαξ.",
-          },
-        },
-      },
-    },
-    hints: {
-      "children-eligibility":
-        "Μετρήστε τα εξαρτώμενα τέκνα που δικαιούνται την οικογενειακή έκπτωση ΑΑΔΕ (ανήλικοι, φοιτητές έως 24 ή τέκνα με αναπηρία).",
-      "employment-payments":
-        "Συνήθως καταβάλλονται 14 μισθοί (12 μηνιαίοι και 2 δώρα). Προσαρμόστε τον αριθμό ώστε να ταιριάζει με τις καταβολές μισθοδοσίας που λαμβάνετε ετησίως.",
-      "employment-employee-contributions":
-        "Προσθέστε εισφορές ΕΦΚΑ που καταβάλλετε απευθείας με αποδείξεις (π.χ. προαιρετικές συμπληρωματικές). Αφήστε κενό αν οι εισφορές παρακρατούνται μόνο μέσω μισθοδοσίας.",
-      "employment-withholding":
-        "Καταχωρήστε τον φόρο PAYE που έχει ήδη παρακρατηθεί στις μισθοδοσίες ώστε να μειωθεί το υπόλοιπο.",
-      "year-partial-note":
-        "Αν δεν είχατε εισόδημα για ολόκληρο το έτος, καταχωρήστε ό,τι εισπράξατε· η ετήσια φορολογική πίστωση εφαρμόζεται κανονικά.",
-      "employment-net-note":
-        "Δεν υποστηρίζεται μετατροπή καθαρού μισθού σε ακαθάριστο. Επιλέξτε ετήσια ή ανά καταβολή εισαγωγή και συμπληρώστε μόνο ακαθάριστα ποσά.",
-      "employment-income":
-        "Εισάγετε το ετήσιο ακαθάριστο ποσό μισθού όταν διαθέτετε ένα συνολικό ποσό.",
-      "employment-monthly-income":
-        "Εισάγετε το ακαθάριστο ποσό ανά μισθοδοσία (μήνας ή δώρο). Ο υπολογιστής το πολλαπλασιάζει με τις πληρωμές ανά έτος.",
-      "employment-pension-scope":
-        "(για μισθούς, ημερομίσθια και συντάξεις)",
-      "pension-income-gross":
-        "Χρησιμοποιήστε το πεδίο ακαθάριστου όταν γνωρίζετε τη σύνταξη πριν από τις κρατήσεις.",
-      "pension-income-net":
-        "Εισάγετε το καθαρό ποσό σύνταξης για όλο το έτος όταν δεν υπάρχουν διαθέσιμα ακαθάριστα στοιχεία.",
-      "pension-income-net-monthly":
-        "Δώστε το καθαρό ποσό ανά καταβολή σύνταξης· θα πολλαπλασιαστεί με τις πληρωμές ανά έτος που επιλέξατε.",
-      "freelance-efka-category": "Επιλέξτε κατηγορία εισφορών για αυτόματη συμπλήρωση των υποχρεωτικών ποσών.",
-      "freelance-efka-summary-empty":
-        "Επιλέξτε κατηγορία για να εμφανιστούν τα μηνιαία ποσά κύριας, υγειονομικής και επικουρικής ασφάλισης.",
-      "freelance-efka-summary-base":
-        "Βασική εισφορά (κύρια και υγείας): {{monthly}} × {{months}} μήνες = {{total}}.",
-      "freelance-efka-summary-auxiliary":
-        "Επικουρικό ταμείο: {{monthly}} × {{months}} μήνες = {{total}}.",
-      "freelance-efka-summary-lump":
-        "Ταμείο πρόνοιας/εφάπαξ: {{monthly}} × {{months}} μήνες = {{total}}.",
-      "freelance-efka-summary-total":
-        "Εκτιμώμενες ετήσιες εισφορές ΕΦΚΑ: {{total}}.",
-      "freelance-revenue":
-        "Δηλώστε τον ακαθάριστο κύκλο εργασιών πριν από ΦΠΑ ή παρακρατήσεις.",
-      "freelance-expenses":
-        "Καταχωρήστε μόνο δαπάνες με νόμιμα παραστατικά (ενοίκιο, ΔΕΚΟ, επαγγελματικές αμοιβές, εξοπλισμός, επαγγελματική χρήση οχήματος).",
-      "freelance-trade-fee-location":
-        "Στις τυπικές περιοχές εφαρμόζεται ολόκληρο το τέλος επιτηδεύματος· στις μειωμένες περιοχές (μικρές πόλεις/νησιά) εφαρμόζεται το μισό.",
-      "freelance-activity-start-year":
-        "Καθορίζει αν ισχύει η 5ετής απαλλαγή νέας επιχείρησης.",
-      "freelance-trade-fee": "Εφαρμοζόμενο τέλος επιτηδεύματος: {{amount}}.",
-      "freelance-trade-fee-new": "Ισχύει μειωμένο ποσό για τα πρώτα {{years}} έτη δραστηριότητας.",
-      "freelance-trade-fee-new-eligible":
-        "Με βάση το έτος έναρξης, ισχύει το μειωμένο ποσό για το τρέχον έτος.",
-      "freelance-trade-fee-new-expired":
-        "Το παράθυρο μειωμένης χρέωσης έχει λήξει (πάνω από {{years}} έτη δραστηριότητας).",
-      "freelance-trade-fee-sunset":
-        "Το τέλος επιτηδεύματος αναμένεται να επανέλθει από το {{year}} (κατάσταση: {{status}}). Επιβεβαιώστε τις τρέχουσες οδηγίες με τον λογιστή σας.",
-      "freelance-trade-fee-waived":
-        "Για το συγκεκριμένο φορολογικό έτος δεν οφείλεται τέλος επιτηδεύματος, επομένως αφήστε τον διακόπτη απενεργοποιημένο.",
-    },
-    warnings: {
-      learn_more: "Μάθετε περισσότερα",
-      employment: {
-        partial_year_review:
-          "Τα σενάρια με μερική απασχόληση ενδέχεται να απαιτούν χειροκίνητη προσαρμογή εισφορών και πιστώσεων. Επαληθεύστε τα ποσά για το {{year}} αν η σύμβασή σας έληξε νωρίτερα.",
-      },
-      freelance: {
-        trade_fee_sunset:
-          "Η ΑΑΔΕ σχεδιάζει την επαναφορά του τέλους επιτηδεύματος σταδιακά. Για το {{year}} επιβεβαιώστε αν ισχύει για τη δραστηριότητά σας πριν από την υποβολή.",
-      },
-      configuration: {
-        pending_deductions_2025:
-          "Οι κανόνες φορολογικών εκπτώσεων για το {{year}} ενδέχεται να αλλάξουν. Ελέγξτε τα επιλέξιμα ποσά πριν την υποβολή.",
-      },
-      links: {
-        partial_year_review: "Οδηγίες για μερική απασχόληση",
-        pending_deductions: "Οδηγός εκπτώσεων ΑΑΔΕ",
-      },
-    },
-    links: {
-      trade_fee_sunset: "Ενημέρωση ΑΑΔΕ για τέλος επιτηδεύματος",
-    },
-    statuses: {
-      trade_fee: {
-        scheduled: "προγραμματισμένο",
-        proposed: "υπό πρόταση",
-      },
-    },
-    actions: {
-      calculate: "Υπολογισμός φόρων",
-      download: "Λήψη σύνοψης (JSON)",
-      download_csv: "Λήψη σύνοψης (CSV)",
-      print: "Εκτύπωση σύνοψης",
-    },
-  },
-};
+const TRANSLATIONS_ENDPOINT = (locale) =>
+  locale
+    ? `${API_BASE}/translations/${encodeURIComponent(locale)}`
+    : `${API_BASE}/translations`;
+
+const translationsByLocale = new Map();
+let availableTranslationLocales = ["en"];
+let fallbackLocale = "en";
+
 
 let currentLocale = "en";
 let currentTheme = DEFAULT_THEME;
@@ -680,6 +66,173 @@ let pendingCalculatorState = null;
 let calculatorStatePersistHandle = null;
 let isApplyingYearMetadata = false;
 let partialYearWarningActive = false;
+
+function normaliseLocaleChoice(locale) {
+  if (typeof locale !== "string" || !locale) {
+    return fallbackLocale;
+  }
+  return locale.toLowerCase().split("-")[0];
+}
+
+function getFrontendCatalog(locale) {
+  const entry = translationsByLocale.get(locale);
+  return entry && typeof entry === "object" ? entry : null;
+}
+
+function storeFrontendTranslations(locale, frontend) {
+  if (!locale || !frontend || typeof frontend !== "object") {
+    return;
+  }
+  translationsByLocale.set(locale, frontend);
+}
+
+function readEmbeddedTranslations() {
+  if (
+    typeof window !== "undefined" &&
+    window.__GREEKTAX_EMBEDDED_TRANSLATIONS__ &&
+    typeof window.__GREEKTAX_EMBEDDED_TRANSLATIONS__ === "object"
+  ) {
+    return window.__GREEKTAX_EMBEDDED_TRANSLATIONS__;
+  }
+
+  if (
+    typeof globalThis !== "undefined" &&
+    globalThis.__GREEKTAX_EMBEDDED_TRANSLATIONS__ &&
+    typeof globalThis.__GREEKTAX_EMBEDDED_TRANSLATIONS__ === "object"
+  ) {
+    return globalThis.__GREEKTAX_EMBEDDED_TRANSLATIONS__;
+  }
+
+  return null;
+}
+
+function bootstrapEmbeddedTranslations() {
+  const payload = readEmbeddedTranslations();
+  if (!payload || typeof payload !== "object") {
+    return;
+  }
+
+  Object.entries(payload).forEach(([locale, catalogue]) => {
+    const normalized = normaliseLocaleChoice(locale);
+    if (!normalized) {
+      return;
+    }
+
+    if (!availableTranslationLocales.includes(normalized)) {
+      availableTranslationLocales.push(normalized);
+    }
+
+    if (catalogue && typeof catalogue === "object") {
+      storeFrontendTranslations(normalized, catalogue);
+    }
+  });
+
+  if (!translationsByLocale.has(fallbackLocale) && translationsByLocale.size) {
+    const firstLocale = translationsByLocale.keys().next().value;
+    if (firstLocale) {
+      fallbackLocale = normaliseLocaleChoice(firstLocale);
+    }
+  }
+
+  availableTranslationLocales = Array.from(
+    new Set(
+      availableTranslationLocales.map((value) => normaliseLocaleChoice(value)).filter(Boolean),
+    ),
+  );
+}
+
+bootstrapEmbeddedTranslations();
+
+async function requestTranslations(locale) {
+  const response = await fetch(TRANSLATIONS_ENDPOINT(locale));
+  if (!response.ok) {
+    throw new Error(`Unable to load translations (${response.status})`);
+  }
+
+  const payload = await response.json();
+  if (!payload || typeof payload !== "object") {
+    throw new Error("Unexpected translations payload");
+  }
+
+  if (Array.isArray(payload.available_locales) && payload.available_locales.length) {
+    availableTranslationLocales = payload.available_locales
+      .map((value) =>
+        typeof value === "string" ? value.toLowerCase().split("-")[0] : null,
+      )
+      .filter((value) => value);
+  }
+
+  const resolvedLocale =
+    typeof payload.locale === "string"
+      ? payload.locale.toLowerCase().split("-")[0]
+      : null;
+  if (resolvedLocale && payload.frontend && typeof payload.frontend === "object") {
+    storeFrontendTranslations(resolvedLocale, payload.frontend);
+  }
+
+  const fallbackPayload = payload.fallback;
+  if (
+    fallbackPayload &&
+    typeof fallbackPayload === "object" &&
+    typeof fallbackPayload.locale === "string" &&
+    fallbackPayload.frontend &&
+    typeof fallbackPayload.frontend === "object"
+  ) {
+    const fallbackResolved = fallbackPayload.locale.toLowerCase().split("-")[0];
+    fallbackLocale = fallbackResolved;
+    storeFrontendTranslations(fallbackResolved, fallbackPayload.frontend);
+    if (!availableTranslationLocales.includes(fallbackResolved)) {
+      availableTranslationLocales.push(fallbackResolved);
+    }
+  }
+
+  if (resolvedLocale && !availableTranslationLocales.includes(resolvedLocale)) {
+    availableTranslationLocales.push(resolvedLocale);
+  }
+
+  if (!availableTranslationLocales.length) {
+    availableTranslationLocales = [fallbackLocale];
+  } else {
+    availableTranslationLocales = Array.from(new Set(availableTranslationLocales));
+  }
+
+  return resolvedLocale || fallbackLocale;
+}
+
+async function ensureTranslations(locale) {
+  const target = normaliseLocaleChoice(locale);
+  if (!translationsByLocale.has(target)) {
+    try {
+      return await requestTranslations(target);
+    } catch (error) {
+      console.error("Failed to load translations", error);
+      if (!translationsByLocale.has(fallbackLocale)) {
+        try {
+          await requestTranslations(fallbackLocale);
+        } catch (fallbackError) {
+          console.error("Failed to load fallback translations", fallbackError);
+        }
+      }
+    }
+  }
+  return translationsByLocale.has(target) ? target : fallbackLocale;
+}
+
+function getMessagesSection(locale, section) {
+  const catalogue = getFrontendCatalog(locale);
+  if (catalogue && section in catalogue && typeof catalogue[section] === "object") {
+    return catalogue[section];
+  }
+  const fallbackCatalogue = getFrontendCatalog(fallbackLocale);
+  if (
+    fallbackCatalogue &&
+    section in fallbackCatalogue &&
+    typeof fallbackCatalogue[section] === "object"
+  ) {
+    return fallbackCatalogue[section];
+  }
+  return {};
+}
 
 const localeButtons = Array.from(
   document.querySelectorAll("[data-locale-option]"),
@@ -778,7 +331,7 @@ const printButton = document.getElementById("print-button");
 const pensionFieldsContainer = document.getElementById("pension-fields");
 
 function lookupMessage(locale, keyParts) {
-  let cursor = UI_MESSAGES[locale];
+  let cursor = getFrontendCatalog(locale);
   for (const part of keyParts) {
     if (cursor && typeof cursor === "object" && part in cursor) {
       cursor = cursor[part];
@@ -799,7 +352,8 @@ function formatTemplate(template, replacements) {
 function t(key, replacements = {}, locale = currentLocale) {
   const keyParts = key.split(".");
   const primary = lookupMessage(locale, keyParts);
-  const fallback = locale === "en" ? undefined : lookupMessage("en", keyParts);
+  const fallback =
+    locale === fallbackLocale ? undefined : lookupMessage(fallbackLocale, keyParts);
   const template =
     typeof primary === "string"
       ? primary
@@ -1082,10 +636,10 @@ function cancelIdleWork(handle) {
 function resolveStoredLocale(defaultLocale = "en") {
   try {
     const stored = window.localStorage.getItem(STORAGE_KEY);
-    return stored || defaultLocale;
+    return normaliseLocaleChoice(stored || defaultLocale);
   } catch (error) {
     console.warn("Unable to access localStorage", error);
-    return defaultLocale;
+    return normaliseLocaleChoice(defaultLocale);
   }
 }
 
@@ -1321,8 +875,8 @@ function applyTheme(theme) {
   }
 }
 
-function applyLocale(locale) {
-  const resolved = locale === "el" ? "el" : "en";
+async function applyLocale(locale) {
+  const resolved = await ensureTranslations(locale);
   currentLocale = resolved;
   persistLocale(resolved);
   document.documentElement.lang = resolved;
@@ -1372,10 +926,10 @@ function initialiseLocaleControls() {
   localeButtons.forEach((button) => {
     button.addEventListener("click", () => {
       const value = button.dataset.localeOption || "en";
-      if (value === currentLocale) {
+      if (normaliseLocaleChoice(value) === currentLocale) {
         return;
       }
-      applyLocale(value);
+      void applyLocale(value);
     });
   });
 }
@@ -2506,12 +2060,12 @@ function getFieldLabel(input) {
     return dynamicFieldLabels[input.id];
   }
 
-  const messages = UI_MESSAGES[currentLocale]?.fields || {};
+  const messages = getMessagesSection(currentLocale, "fields");
   if (messages[input.id]) {
     return messages[input.id];
   }
 
-  const fallbackMessages = UI_MESSAGES.en.fields || {};
+  const fallbackMessages = getMessagesSection(fallbackLocale, "fields");
   if (fallbackMessages[input.id]) {
     return fallbackMessages[input.id];
   }
@@ -3316,8 +2870,7 @@ function renderDetailCard(detail) {
   title.textContent = detail.label || detail.category;
   card.appendChild(title);
 
-  const detailLabels =
-    UI_MESSAGES[currentLocale]?.detailFields || UI_MESSAGES.en.detailFields || {};
+  const detailLabels = getMessagesSection(currentLocale, "detailFields");
 
   const dl = document.createElement("dl");
   const fieldOrder = [
@@ -3636,8 +3189,7 @@ function downloadCsvSummary() {
   const summary = lastCalculation.summary || {};
   const summaryLabels = summary.labels || {};
   const details = Array.isArray(lastCalculation.details) ? lastCalculation.details : [];
-  const detailLabels =
-    UI_MESSAGES[currentLocale]?.detailFields || UI_MESSAGES.en.detailFields || {};
+  const detailLabels = getMessagesSection(currentLocale, "detailFields");
 
   const lines = [["Section", "Label", "Value"]];
 
@@ -3823,11 +3375,11 @@ function initialiseCalculator() {
   });
 }
 
-function bootstrap() {
+async function bootstrap() {
   const initialTheme = resolveStoredTheme();
   applyTheme(initialTheme);
   const initialLocale = resolveStoredLocale();
-  applyLocale(initialLocale);
+  await applyLocale(initialLocale);
 
   initialiseLocaleControls();
   initialiseThemeControls();
@@ -3837,4 +3389,6 @@ function bootstrap() {
   console.info("GreekTax interface initialised");
 }
 
-document.addEventListener("DOMContentLoaded", bootstrap);
+document.addEventListener("DOMContentLoaded", () => {
+  void bootstrap();
+});
