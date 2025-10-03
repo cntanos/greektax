@@ -1,10 +1,10 @@
-"""Data models for the GreekTax domain.
+"""Typed request/response models shared across the calculation services.
 
-The calculation service previously stored its validated payloads and response
-components in ad-hoc private dataclasses. Those structures are now promoted to
-first-class models so the rest of the application – routes, services, and
-future background jobs – can share a single source of truth for typed
-structures.
+The refactor moved the calculation pipeline away from transient, per-module
+dataclasses and towards a cohesive set of Pydantic inputs with lightweight
+dataclasses for derived results. Centralising the schema here keeps validation,
+normalisation, and downstream serialisation in sync for routes, background
+tasks, and any future integrations.
 """
 
 from __future__ import annotations

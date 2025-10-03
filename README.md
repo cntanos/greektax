@@ -25,6 +25,18 @@ technologies.
 Refer to [`docs/project_plan.md`](docs/project_plan.md) for epics, sprint
 objectives, and delivery roadmap updates.
 
+## Architecture Overview
+
+GreekTax is split between a Flask API (`src/greektax/backend`) and a static
+front-end (`src/frontend`). The back-end publishes calculation, configuration,
+and localisation endpoints consumed by the UI, while the front-end embeds the
+shared translation catalogue and issues JSON requests against the API. Yearly
+tax rules are managed as YAML data files under
+`src/greektax/backend/config/data`, letting maintainers add new filing years
+without touching Python code. See [`docs/architecture.md`](docs/architecture.md)
+for a detailed walkthrough of the module boundaries, deployment model, and
+maintenance workflows.
+
 ## Development Environment
 
 ### Prerequisites
@@ -44,7 +56,7 @@ pip install -e .
 
 ### Testing & Quality
 
-Run the placeholder tests to validate the scaffold:
+Run the automated checks to keep the scaffold healthy:
 
 ```bash
 pytest
@@ -92,77 +104,39 @@ average durations), bundle sizes for the key front-end assets, and ARIA usage in
 the HTML shell. See [`docs/performance_baseline.md`](docs/performance_baseline.md)
 for guidance on interpreting the output.
 
+## Current Capabilities
+
+- **Comprehensive calculation engine** – The Flask back end validates incoming
+  payloads, normalises employment and freelance entries, and produces bilingual
+  summaries for income, deductions, and optional obligations such as ENFIA and
+  VAT.【F:src/greektax/backend/app/services/calculation_service.py†L1-L240】
+- **Public API contract** – Versioned endpoints expose calculation, metadata,
+  and localisation resources so the static front end and external clients can
+  consume the same business rules.【F:docs/api_contract.md†L1-L226】
+- **Translation pipeline** – Localised strings live in shared catalogues that
+  power both the Flask responses and the static UI. The `embed_translations.py`
+  script regenerates the front-end bundle to keep the two layers in sync.【F:scripts/embed_translations.py†L1-L109】
+- **Static front-end shell** – A responsive calculator front end renders
+  interactive forms, Sankey visualisations, and summaries with language and
+  theme switching powered by the embedded translations.【F:src/frontend/index.html†L1-L560】【F:src/frontend/assets/scripts/main.js†L20-L2549】
+
 ## Tax Logic & Recent Updates
 
-- Charitable donations now yield a direct tax credit instead of reducing taxable
-  income. This aligns the calculator with the latest deduction engine updates
-  and validation tests.
-- As of the 2024 filing year, most individual scenarios no longer include a
-  trade fee by default. The simulator only surfaces the fee when a filing status
-  or profession explicitly requires it.
-
-### Highlights from the Last 15 Commits
-
-- Expanded automated coverage for new tax credit and trade fee branches to keep
-  regression risk low (802148a).
-- Improved inline guidance and bilingual copy across form steps to clarify data
-  entry expectations (1ac622b).
-- Sharpened employment and pension toggle wording for clearer user decisions
-  (e49d997).
-- Introduced an employment income mode toggle so contributors can model payroll
-  and pension flows separately (18944c7).
-- Reworked the deduction engine to support credit-based relief and consistent
-  calculations across income types (892a1af).
-- Delivered responsive Sankey sizing improvements so the allocation chart fits
-  small screens without clipping (7bc8935).
-- Patched Sankey overflow bugs that previously hid labels on dense datasets
-  (c02dc13).
-- Refined investment detail styling with better numeric emphasis for comparison
-  scanning (6543fce).
-- Ensured the results section is visible before the Sankey renders to avoid
-  layout shifts during loading (182b234).
-- Added a built-in fallback when `Flask-Cors` is unavailable to keep the API
-  responsive in minimal deployments (a5c9f61).
-- Streamlined API base detection logic so hosted deployments default to the
-  remote endpoint when appropriate (bbf5e84).
-- Simplified client-side base URL selection to reduce maintenance overhead
-  (7423a7a).
-- Enabled CORS across API endpoints, unblocking integrations with embedded
-  front-ends (56ccfd9).
-- Defaulted production builds to the same-origin API base for improved security
-  defaults (c621d8c).
-- Added explicit overrides for embedded deployments so CMS integrations can
-  point to bespoke API hosts (be1da47).
+- Charitable donations yield direct credits within the deduction engine while
+  maintaining audit-friendly detail rows in the response payload.【F:src/greektax/backend/app/services/calculation_service.py†L904-L1020】
+- Trade fee handling reflects the latest filing guidance, only adding the charge
+  for professions or start years that require it.【F:src/greektax/backend/app/services/calculation_service.py†L702-L776】
 
 ## Configuring the API endpoint
 
-The front-end automatically selects which API base URL to use:
-
-- `/api/v1` for same-origin deployments (including loopback, private network,
-  or custom domains).
-- `https://cntanos.pythonanywhere.com/api/v1` when hosted directly from the
-  PythonAnywhere environment.
-
-When embedding the calculator in a CMS or iframe, you can override the detected
-endpoint without rebuilding the assets. The lookup order is:
-
-1. A global variable defined before `assets/scripts/main.js` runs:
-   ```html
-   <script>
-     window.__GREEKTAX_API_BASE__ = "https://example.com/custom/api";
-   </script>
-   ```
-2. A `<meta>` tag in the document head:
-   ```html
-   <meta name="greektax:api-base" content="https://example.com/custom/api" />
-   ```
-3. A `data-api-base` attribute on the loader script tag:
-   ```html
-   <script src="./assets/scripts/main.js" data-api-base="https://example.com/custom/api"></script>
-   ```
-
-The chosen value is normalised to remove trailing slashes before being used in
-requests.
+The front-end reads a single `API_BASE` constant near the top of
+`src/frontend/assets/scripts/main.js`. It defaults to the hosted
+`https://cntanos.pythonanywhere.com/api/v1` service so static deployments work
+out of the box. For local development or self-hosted installs, switch the
+commented line to `LOCAL_API_BASE` before building or serving the assets from the
+Flask application. When embedding the calculator in a CMS, serve the static
+bundle from the same origin as your API or fork the repository to bake in the
+desired endpoint.
 
 ## Brand & Media Assets
 

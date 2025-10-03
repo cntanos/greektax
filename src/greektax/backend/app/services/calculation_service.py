@@ -1,4 +1,10 @@
-"""Business logic for tax calculations."""
+"""Orchestrate request validation, normalisation, and tax calculations.
+
+The calculation service coordinates the shared request models, translation
+layer, and year-based configuration so that each income module can focus on its
+own arithmetic. Profiling hooks and defensive validation live here to give the
+rest of the application a simple ``calculate_tax`` entry point.
+"""
 
 from __future__ import annotations
 

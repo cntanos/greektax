@@ -1,4 +1,10 @@
-"""Year-based configuration loader for Greek tax rules."""
+"""Data layer for annual tax configuration loaded from versioned YAML files.
+
+Each tax year is described in declarative YAML, parsed into immutable
+dataclasses that the calculation service and configuration API can share. The
+module owns validation and caching so that adding a new year or tweaking rates
+requires only configuration changes.
+"""
 
 from __future__ import annotations
 
