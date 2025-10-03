@@ -266,6 +266,9 @@ const resultsSection = document.getElementById("calculation-results");
 const sankeyWrapper = document.getElementById("sankey-wrapper");
 const sankeyChart = document.getElementById("sankey-chart");
 const sankeyEmptyState = document.getElementById("sankey-empty");
+const distributionWrapper = document.getElementById("distribution-wrapper");
+const distributionList = document.getElementById("distribution-list");
+const distributionEmptyState = document.getElementById("distribution-empty");
 const summaryGrid = document.getElementById("summary-grid");
 const detailsList = document.getElementById("details-list");
 const downloadButton = document.getElementById("download-button");
@@ -443,7 +446,7 @@ function computeSankeyDimensions() {
   );
   const chartHeight = Math.max(
     280,
-    Math.min(480, Math.round(resolvedWidth * 0.55)),
+    Math.min(520, Math.round(resolvedWidth * 0.62)),
   );
 
   return { width: resolvedWidth, height: chartHeight };
@@ -2669,8 +2672,8 @@ function renderSankey(result) {
       type: "sankey",
       orientation: "h",
       node: {
-        pad: 18,
-        thickness: 18,
+        pad: 12,
+        thickness: 26,
         label: nodeLabels,
         line: { color: nodeLineColor, width: 1 },
         color: nodeColors,
@@ -2682,7 +2685,9 @@ function renderSankey(result) {
         label: linkLabels,
         color: linkColors,
         line: { color: linkOutlineColor, width: 1.2 },
-        hovertemplate: "%{label}<extra></extra>",
+        text: linkLabels,
+        hoverinfo: "text",
+        hovertemplate: "%{text}<extra></extra>",
       },
       hoverlabel: {
         bgcolor: tooltipBackground,
@@ -2692,7 +2697,7 @@ function renderSankey(result) {
   ];
 
   const layout = {
-    margin: { l: 10, r: 10, t: 10, b: 10 },
+    margin: { l: 6, r: 6, t: 8, b: 8 },
     paper_bgcolor: "rgba(0,0,0,0)",
     plot_bgcolor: "rgba(0,0,0,0)",
     font: { size: 12, color: textColor },
@@ -2754,6 +2759,182 @@ function renderSankey(result) {
   } else {
     executeRender();
   }
+}
+
+const DISTRIBUTION_CONTRIBUTION_FIELDS = [
+  "deductible_contributions",
+  "category_contributions",
+  "additional_contributions",
+  "auxiliary_contributions",
+  "lump_sum_contributions",
+  "mandatory_contributions",
+  "employee_contributions",
+  "employee_contributions_manual",
+  "employer_contributions",
+];
+
+const DISTRIBUTION_EXPENSE_FIELDS = ["deductible_expenses"];
+
+const DISTRIBUTION_CATEGORIES = [
+  { key: "profits", colorVar: "--flow-net" },
+  { key: "taxes", colorVar: "--flow-taxes" },
+  { key: "insurance", colorVar: "--flow-contributions" },
+  { key: "expenses", colorVar: "--flow-expenses" },
+];
+
+function toFiniteNumber(value) {
+  const parsed = Number.parseFloat(value ?? 0);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function sumDetailFields(detail, fields) {
+  if (!detail) {
+    return 0;
+  }
+  return fields.reduce((total, field) => {
+    const amount = toFiniteNumber(detail[field]);
+    return amount > 0 ? total + amount : total;
+  }, 0);
+}
+
+function computeDistributionTotals(details) {
+  const totals = { profits: 0, taxes: 0, insurance: 0, expenses: 0 };
+  const entries = Array.isArray(details) ? details : [];
+
+  entries.forEach((detail) => {
+    if (!detail) {
+      return;
+    }
+
+    const gross = Math.max(toFiniteNumber(detail.gross_income), 0);
+    const rawNet = toFiniteNumber(detail.net_income);
+    let profitValue = rawNet > 0 ? rawNet : 0;
+
+    const taxCandidate =
+      detail.total_tax !== undefined && detail.total_tax !== null
+        ? detail.total_tax
+        : detail.tax;
+    let taxValue = Math.max(toFiniteNumber(taxCandidate), 0);
+
+    let insuranceValue = sumDetailFields(
+      detail,
+      DISTRIBUTION_CONTRIBUTION_FIELDS,
+    );
+    let expenseValue = sumDetailFields(detail, DISTRIBUTION_EXPENSE_FIELDS);
+
+    if (rawNet < 0) {
+      expenseValue += Math.abs(rawNet);
+    }
+
+    const allocated = taxValue + insuranceValue + expenseValue + profitValue;
+
+    if (gross > 0) {
+      const difference = gross - allocated;
+      if (difference > 0.01) {
+        profitValue += difference;
+      } else if (difference < -0.01) {
+        let remaining = Math.abs(difference);
+
+        if (profitValue > 0) {
+          const reduction = Math.min(profitValue, remaining);
+          profitValue -= reduction;
+          remaining -= reduction;
+        }
+
+        if (remaining > 0 && expenseValue > 0) {
+          const reduction = Math.min(expenseValue, remaining);
+          expenseValue -= reduction;
+          remaining -= reduction;
+        }
+
+        if (remaining > 0 && insuranceValue > 0) {
+          const reduction = Math.min(insuranceValue, remaining);
+          insuranceValue -= reduction;
+          remaining -= reduction;
+        }
+
+        if (remaining > 0 && taxValue > 0) {
+          const reduction = Math.min(taxValue, remaining);
+          taxValue -= reduction;
+        }
+      }
+    }
+
+    totals.profits += Math.max(profitValue, 0);
+    totals.taxes += Math.max(taxValue, 0);
+    totals.insurance += Math.max(insuranceValue, 0);
+    totals.expenses += Math.max(expenseValue, 0);
+  });
+
+  const totalValue =
+    totals.profits + totals.taxes + totals.insurance + totals.expenses;
+
+  return { totals, totalValue };
+}
+
+function renderDistributionChart(details) {
+  if (!distributionWrapper || !distributionList) {
+    return;
+  }
+
+  distributionList.innerHTML = "";
+
+  const { totals, totalValue } = computeDistributionTotals(details);
+  const safeTotal = totalValue > 0 ? totalValue : 0;
+
+  if (!safeTotal) {
+    if (distributionEmptyState) {
+      distributionEmptyState.hidden = false;
+    }
+    distributionWrapper.hidden = false;
+    return;
+  }
+
+  DISTRIBUTION_CATEGORIES.forEach(({ key, colorVar }) => {
+    const value = Math.max(totals[key] || 0, 0);
+    const ratio = safeTotal > 0 ? value / safeTotal : 0;
+    const clampedRatio = Math.max(0, Math.min(ratio, 1));
+
+    const item = document.createElement("li");
+    item.className = "distribution-row";
+    item.dataset.category = key;
+
+    const header = document.createElement("div");
+    header.className = "distribution-row__header";
+
+    const labelSpan = document.createElement("span");
+    labelSpan.className = "distribution-row__label";
+    labelSpan.textContent = t(`distribution.${key}`);
+    header.appendChild(labelSpan);
+
+    const amountSpan = document.createElement("span");
+    amountSpan.className = "distribution-row__amount";
+    amountSpan.textContent = formatCurrency(value);
+    header.appendChild(amountSpan);
+
+    const bar = document.createElement("div");
+    bar.className = "distribution-row__bar";
+
+    const fill = document.createElement("div");
+    fill.className = "distribution-row__fill";
+    fill.style.setProperty("--distribution-ratio", clampedRatio.toFixed(4));
+    fill.style.setProperty("--distribution-color", `var(${colorVar})`);
+    bar.appendChild(fill);
+
+    const percentSpan = document.createElement("span");
+    percentSpan.className = "distribution-row__percent";
+    percentSpan.textContent = formatPercent(ratio);
+    bar.appendChild(percentSpan);
+
+    item.appendChild(header);
+    item.appendChild(bar);
+    distributionList.appendChild(item);
+  });
+
+  if (distributionEmptyState) {
+    distributionEmptyState.hidden = true;
+  }
+  distributionWrapper.hidden = false;
 }
 
 function renderSummary(summary) {
@@ -3024,6 +3205,7 @@ function renderCalculation(result) {
   printButton?.removeAttribute("disabled");
 
   renderSankey(result);
+  renderDistributionChart(result.details || []);
   renderSummary(result.summary || {});
   renderDetails(result.details || []);
 }
@@ -3037,6 +3219,15 @@ function resetResults() {
   }
   if (detailsList) {
     detailsList.innerHTML = "";
+  }
+  if (distributionList) {
+    distributionList.innerHTML = "";
+  }
+  if (distributionEmptyState) {
+    distributionEmptyState.hidden = false;
+  }
+  if (distributionWrapper) {
+    distributionWrapper.hidden = true;
   }
   downloadButton?.setAttribute("disabled", "true");
   downloadCsvButton?.setAttribute("disabled", "true");
