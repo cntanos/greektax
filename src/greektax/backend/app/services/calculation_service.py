@@ -738,6 +738,17 @@ def _calculate_trade_fee(payload: _NormalisedPayload, config: FreelanceConfig) -
         return 0.0
     if payload.freelance_taxable_income <= 0:
         return 0.0
+
+    sunset = config.trade_fee.sunset
+    if sunset is not None:
+        status_key = (sunset.status_key or "").strip().lower()
+        if status_key.endswith("scheduled"):
+            scheduled_year = sunset.year
+            if scheduled_year is None:
+                return 0.0
+            if payload.year >= scheduled_year - 1:
+                return 0.0
+
     amount = config.trade_fee.standard_amount
 
     if (
@@ -992,7 +1003,7 @@ def _build_general_income_components(
                 label_key="details.freelance",
                 gross_income=payload.freelance_profit,
                 taxable_income=payload.freelance_taxable_income,
-                credit_eligible=False,
+                credit_eligible=True,
                 contributions=payload.total_freelance_contributions,
                 category_contributions=payload.freelance_category_contribution,
                 additional_contributions=payload.freelance_additional_contributions,

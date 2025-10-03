@@ -19,17 +19,17 @@
     "expectations": {
       "summary": {
         "income_total": 34000.0,
-        "tax_total": 6133.0,
-        "net_income": 22093.0,
-        "average_monthly_tax": 511.08
+        "tax_total": 5483.0,
+        "net_income": 22743.0,
+        "average_monthly_tax": 456.92
       },
       "details": {
         "employment": {
-          "total_tax": 3261.71
+          "total_tax": 3537.42
         },
         "freelance": {
           "taxable_income": 11000.0,
-          "total_tax": 2871.29
+          "total_tax": 1945.58
         }
       }
     }

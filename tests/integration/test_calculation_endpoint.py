@@ -83,3 +83,61 @@ def test_calculation_endpoint_handles_service_errors(client: FlaskClient) -> Non
     payload = response.get_json()
     assert payload["error"] == "validation_error"
     assert "cannot be negative" in payload["message"].lower()
+
+
+def test_calculation_endpoint_accepts_mixed_employment_inputs(client: FlaskClient) -> None:
+    """Submitting both annual and monthly salary amounts remains stable."""
+
+    payload = {
+        "year": 2024,
+        "employment": {
+            "gross_income": 30_000,
+            "monthly_income": 1_500,
+            "payments_per_year": 14,
+        },
+    }
+
+    response = client.post("/api/v1/calculations", json=payload)
+    assert response.status_code == HTTPStatus.OK
+
+    result = response.get_json()
+    summary = result["summary"]
+    assert summary["income_total"] == pytest.approx(30_000.0)
+
+    employment_detail = next(
+        item for item in result["details"] if item["category"] == "employment"
+    )
+    assert employment_detail["gross_income"] == pytest.approx(30_000.0)
+    assert employment_detail["monthly_gross_income"] == pytest.approx(1_500.0)
+    assert employment_detail["gross_income_per_payment"] == pytest.approx(
+        30_000 / 14, abs=0.01
+    )
+
+
+def test_calculation_endpoint_handles_employment_and_pension_toggles(
+    client: FlaskClient,
+) -> None:
+    """Employment and pension sections can be combined without conflicts."""
+
+    payload = {
+        "year": 2024,
+        "employment": {"gross_income": 18_000},
+        "pension": {"gross_income": 9_000},
+    }
+
+    response = client.post("/api/v1/calculations", json=payload)
+    assert response.status_code == HTTPStatus.OK
+
+    result = response.get_json()
+    categories = {detail["category"] for detail in result["details"]}
+    assert {"employment", "pension"}.issubset(categories)
+
+    employment_detail = next(
+        item for item in result["details"] if item["category"] == "employment"
+    )
+    pension_detail = next(
+        item for item in result["details"] if item["category"] == "pension"
+    )
+
+    assert employment_detail["gross_income"] == pytest.approx(18_000.0)
+    assert pension_detail["gross_income"] == pytest.approx(9_000.0)
