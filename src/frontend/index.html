@@ -148,7 +148,8 @@
         <h2 id="calculator-title" data-i18n-key="calculator.heading">
           Tax calculator
         </h2>
-        <form id="calculator-form" novalidate>
+        <div class="calculator-layout">
+          <form id="calculator-form" class="calculator-form" novalidate>
           <p class="form-intro" data-i18n-key="calculator.instructions_intro">
             Toggle the sections that apply, enter your annual or monthly amounts,
             then press calculate to see the breakdown.
@@ -1104,10 +1105,15 @@
               Print summary
             </button>
           </div>
-        <p id="calculator-status" aria-live="polite"></p>
-      </form>
+          <p id="calculator-status" aria-live="polite"></p>
+        </form>
 
-        <section id="calculation-results" hidden aria-live="polite">
+          <section
+            id="calculation-results"
+            class="calculator-results"
+            hidden
+            aria-live="polite"
+          >
           <h3 data-i18n-key="calculator.results_heading">Results</h3>
           <div id="sankey-wrapper" class="results-visualisation" hidden>
             <h4 data-i18n-key="sankey.heading">Income distribution</h4>
@@ -1148,7 +1154,8 @@
           </div>
           <div class="summary-grid" id="summary-grid"></div>
           <div class="details-list" id="details-list"></div>
-        </section>
+          </section>
+        </div>
       </section>
     </main>
 
