@@ -222,7 +222,7 @@ body {
 
 .site-header__inner {
   margin: 0 auto;
-  width: clamp(18rem, 92vw, 2560px);
+  width: clamp(18rem, 96vw, 3200px);
   max-width: 100%;
   display: grid;
   gap: 0.75rem;
@@ -371,12 +371,12 @@ body {
 }
 
 main {
-  width: clamp(20rem, 92vw, 2560px);
+  width: clamp(20rem, 96vw, 3200px);
   max-width: 100%;
   margin: -2.5rem auto 2.25rem;
   display: grid;
   gap: 1.5rem;
-  padding: 0 1.25rem 2.25rem;
+  padding: 0 clamp(1.25rem, 3vw, 3.5rem) clamp(2.25rem, 3vw, 4rem);
 }
 
 .disclaimer {
@@ -1321,12 +1321,12 @@ main {
 @media (max-width: 1024px) {
   .site-header__inner,
   main {
-    width: clamp(20rem, 94vw, 2560px);
+    width: clamp(20rem, 94vw, 3200px);
   }
 
   main {
     gap: 2rem;
-    padding: 0 1.5rem 2.85rem;
+    padding: 0 clamp(1.25rem, 4vw, 3rem) clamp(2.25rem, 4vw, 3.5rem);
   }
 
   .calculator-layout {
@@ -1341,7 +1341,7 @@ main {
 
   .site-header__inner,
   main {
-    width: clamp(20rem, 96vw, 2560px);
+    width: clamp(20rem, 96vw, 3200px);
   }
 
   .site-header__topbar {
@@ -1357,19 +1357,20 @@ main {
 
   .preference-bar {
     width: 100%;
-    justify-content: space-between;
+    justify-content: center;
     flex-wrap: wrap;
     gap: 0.75rem;
   }
 
   .preference-switch {
-    flex: 1 1 12rem;
-    justify-content: space-between;
-    width: 100%;
+    flex: 0 1 auto;
+    justify-content: center;
+    width: auto;
+    min-width: 0;
   }
 
   .preference-switch__button {
-    flex: 1 1 0;
+    flex: 0 1 auto;
     min-width: 0;
   }
 
@@ -1388,18 +1389,18 @@ main {
   }
 
   main {
-    width: clamp(20rem, 98vw, 2560px);
+    width: clamp(20rem, 98vw, 3200px);
     margin: -2rem auto 2.5rem;
-    padding: 0 1rem 2.5rem;
+    padding: 0 clamp(1rem, 5vw, 2rem) 2.5rem;
   }
 
   .preference-bar {
     flex-direction: column;
-    align-items: stretch;
+    align-items: center;
   }
 
   .preference-switch {
-    width: 100%;
+    width: auto;
   }
 
   .calculator-layout {
@@ -1474,14 +1475,18 @@ main {
   }
 
   .preference-switch {
-    flex-direction: column;
-    align-items: stretch;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
     gap: 0.35rem;
+    padding: 0.3rem 0.5rem;
   }
 
   .preference-switch__button {
-    font-size: 0.76rem;
-    padding: 0.4rem 0.6rem;
+    font-size: 0.72rem;
+    padding: 0.35rem 0.55rem;
+    flex: 0 1 auto;
   }
 
   .distribution-visual {
