@@ -11,11 +11,11 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-import pytest
-from flask import Flask
-from flask.testing import FlaskClient
+import pytest  # noqa: E402
+from flask import Flask  # noqa: E402
+from flask.testing import FlaskClient  # noqa: E402
 
-from greektax.backend.app import create_app
+from greektax.backend.app import create_app  # noqa: E402
 
 
 @pytest.fixture()

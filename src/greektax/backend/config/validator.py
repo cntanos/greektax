@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import argparse
 from collections import Counter
-from typing import Iterable, Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 
 from .year_config import (
     ContributionRates,
@@ -93,7 +93,10 @@ def _validate_trade_fee(trade_fee: TradeFeeConfig) -> list[str]:
 
     if trade_fee.standard_amount < 0:
         errors.append(
-            _format_scope("freelance.trade_fee", "standard amount must be non-negative"),
+            _format_scope(
+                "freelance.trade_fee",
+                "standard amount must be non-negative",
+            )
         )
 
     reduced = trade_fee.reduced_amount
@@ -238,13 +241,14 @@ def _validate_deduction_allowances(hint: DeductionHint) -> list[str]:
                 )
             if threshold.percentage is not None:
                 if threshold.percentage < 0 or threshold.percentage > 1:
+                    percentage_message = (
+                        "threshold "
+                        f"'{threshold.label_key}' percentage must be between 0 and 1"
+                    )
                     errors.append(
                         _format_scope(
                             f"deductions.{hint.id}",
-                            (
-                                "threshold "
-                                f"'{threshold.label_key}' percentage must be between 0 and 1"
-                            ),
+                            percentage_message,
                         )
                     )
 
@@ -334,10 +338,16 @@ def validate_year_configuration(config: YearConfiguration) -> list[str]:
     errors.extend(_validate_payroll("pension.payroll", config.pension.payroll))
 
     errors.extend(
-        _validate_contributions("employment.contributions", config.employment.contributions)
+        _validate_contributions(
+            "employment.contributions",
+            config.employment.contributions,
+        )
     )
     errors.extend(
-        _validate_contributions("pension.contributions", config.pension.contributions)
+        _validate_contributions(
+            "pension.contributions",
+            config.pension.contributions,
+        )
     )
 
     errors.extend(_validate_trade_fee(config.freelance.trade_fee))

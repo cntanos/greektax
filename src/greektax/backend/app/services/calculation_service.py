@@ -4,16 +4,21 @@ from __future__ import annotations
 
 import logging
 import os
+from collections.abc import Mapping, Sequence
 from contextlib import contextmanager
-from dataclasses import dataclass, replace
+from dataclasses import replace
 from numbers import Real
 from time import perf_counter
 from types import MappingProxyType
-from typing import Any, Dict, Iterable, Mapping, Optional, Sequence
+from typing import Any
 
 from greektax.backend.app.localization import Translator, get_translator
+from greektax.backend.app.models import (
+    CalculationInput,
+    DetailTotals,
+    GeneralIncomeComponent,
+)
 from greektax.backend.config.year_config import (
-    ContributionRates,
     FreelanceConfig,
     InvestmentConfig,
     PayrollConfig,
@@ -22,7 +27,6 @@ from greektax.backend.config.year_config import (
     YearConfiguration,
     load_year_configuration,
 )
-
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -37,6 +41,9 @@ _MEDICAL_INCOME_THRESHOLD_RATE = 0.05
 _MEDICAL_MAX_CREDIT = 3_000.0
 _EDUCATION_CREDIT_RATE = 0.10
 _EDUCATION_MAX_ELIGIBLE_EXPENSE = 1_000.0
+_NET_INPUT_ERROR = (
+    "Employment net income inputs are no longer supported; provide gross amounts instead"
+)
 _INSURANCE_CREDIT_RATE = 0.10
 _INSURANCE_MAX_ELIGIBLE_EXPENSE = 1_200.0
 
@@ -49,7 +56,7 @@ def _profiling_enabled() -> bool:
 
 
 @contextmanager
-def _profile_section(name: str, store: Optional[Dict[str, float]]):
+def _profile_section(name: str, store: dict[str, float] | None):
     """Capture the duration of a named section when profiling is enabled."""
 
     if store is None:
@@ -63,224 +70,6 @@ def _profile_section(name: str, store: Optional[Dict[str, float]]):
         store[name] = perf_counter() - start
 
 
-@dataclass(frozen=True, slots=True)
-class _NormalisedPayload:
-    """Validates and stores user input in a predictable structure."""
-
-    year: int
-    locale: str
-    children: int
-    employment_income: float
-    employment_monthly_income: Optional[float]
-    employment_payments_per_year: Optional[int]
-    employment_manual_contributions: float
-    withholding_tax: float
-    pension_income: float
-    pension_monthly_income: Optional[float]
-    pension_payments_per_year: Optional[int]
-    pension_net_target_income: Optional[float]
-    freelance_profit: float
-    freelance_category_id: Optional[str]
-    freelance_category_months: Optional[int]
-    freelance_category_contribution: float
-    freelance_additional_contributions: float
-    freelance_auxiliary_contributions: float
-    freelance_lump_sum_contributions: float
-    include_trade_fee: bool
-    freelance_trade_fee_location: str
-    freelance_years_active: Optional[int]
-    freelance_newly_self_employed: bool
-    rental_gross_income: float
-    rental_deductible_expenses: float
-    investment_amounts: Mapping[str, float]
-    vat_due: float
-    enfia_due: float
-    luxury_due: float
-    agricultural_gross_revenue: float
-    agricultural_deductible_expenses: float
-    agricultural_professional_farmer: bool
-    other_taxable_income: float
-    deductions_donations: float
-    deductions_medical: float
-    deductions_education: float
-    deductions_insurance: float
-
-    @property
-    def freelance_taxable_income(self) -> float:
-        taxable = self.freelance_profit - self.total_freelance_contributions
-        return taxable if taxable > 0 else 0.0
-
-    @property
-    def total_freelance_contributions(self) -> float:
-        return (
-            self.freelance_category_contribution
-            + self.freelance_additional_contributions
-            + self.freelance_auxiliary_contributions
-            + self.freelance_lump_sum_contributions
-        )
-
-    @property
-    def has_employment_income(self) -> bool:
-        return self.employment_income > 0
-
-    @property
-    def has_pension_income(self) -> bool:
-        return self.pension_income > 0
-
-    @property
-    def has_freelance_activity(self) -> bool:
-        return (
-            self.freelance_profit > 0
-            or self.total_freelance_contributions > 0
-            or self.freelance_taxable_income > 0
-        )
-
-    @property
-    def agricultural_profit(self) -> float:
-        profit = self.agricultural_gross_revenue - self.agricultural_deductible_expenses
-        return profit if profit > 0 else 0.0
-
-    @property
-    def has_agricultural_income(self) -> bool:
-        return (
-            self.agricultural_gross_revenue > 0
-            or self.agricultural_deductible_expenses > 0
-            or self.agricultural_profit > 0
-        )
-
-    @property
-    def has_non_agricultural_taxable_income(self) -> bool:
-        return any(
-            (
-                self.has_employment_income,
-                self.has_pension_income,
-                self.freelance_taxable_income > 0,
-                self.other_taxable_income > 0,
-                self.rental_taxable_income > 0,
-                self.has_investment_income,
-            )
-        )
-
-    @property
-    def qualifies_for_agricultural_tax_credit(self) -> bool:
-        if not self.has_agricultural_income:
-            return False
-        if self.agricultural_professional_farmer:
-            return True
-        return not self.has_non_agricultural_taxable_income
-
-    @property
-    def has_other_income(self) -> bool:
-        return self.other_taxable_income > 0
-
-    @property
-    def total_deductions(self) -> float:
-        total = (
-            self.deductions_donations
-            + self.deductions_medical
-            + self.deductions_education
-            + self.deductions_insurance
-        )
-        return total if total > 0 else 0.0
-
-    @property
-    def rental_taxable_income(self) -> float:
-        taxable = self.rental_gross_income - self.rental_deductible_expenses
-        return taxable if taxable > 0 else 0.0
-
-    @property
-    def has_rental_income(self) -> bool:
-        return (
-            self.rental_gross_income > 0
-            or self.rental_deductible_expenses > 0
-            or self.rental_taxable_income > 0
-        )
-
-    @property
-    def has_investment_income(self) -> bool:
-        return any(amount > 0 for amount in self.investment_amounts.values())
-
-    @property
-    def has_vat_obligation(self) -> bool:
-        return self.vat_due > 0
-
-    @property
-    def has_enfia_obligation(self) -> bool:
-        return self.enfia_due > 0
-
-    @property
-    def has_luxury_obligation(self) -> bool:
-        return self.luxury_due > 0
-
-
-@dataclass(slots=True)
-class _GeneralIncomeComponent:
-    """Represents an income category that shares the progressive scale."""
-
-    category: str
-    label_key: str
-    gross_income: float
-    taxable_income: float
-    credit_eligible: bool
-    contributions: float = 0.0
-    deductible_expenses: float = 0.0
-    trade_fee: float = 0.0
-    tax_before_credit: float = 0.0
-    credit: float = 0.0
-    tax_after_credit: float = 0.0
-    payments_per_year: Optional[int] = None
-    monthly_gross_income: Optional[float] = None
-    employee_contributions: float = 0.0
-    employee_manual_contributions: float = 0.0
-    employer_contributions: float = 0.0
-    category_contributions: float = 0.0
-    additional_contributions: float = 0.0
-    auxiliary_contributions: float = 0.0
-    lump_sum_contributions: float = 0.0
-    deductions_applied: float = 0.0
-
-    def total_tax(self) -> float:
-        total = self.tax_after_credit
-        if self.category == "freelance":
-            total += self.trade_fee
-        return total
-
-    def net_income(self) -> float:
-        net = self.gross_income - self.tax_after_credit
-        if self.category == "freelance":
-            net -= self.contributions + self.trade_fee
-        if self.category in {"employment", "pension"}:
-            net -= self.employee_contributions
-        return net
-
-    def net_income_per_payment(self) -> Optional[float]:
-        if not self.payments_per_year or self.payments_per_year <= 0:
-            return None
-        return self.net_income() / self.payments_per_year
-
-    def gross_income_per_payment(self) -> Optional[float]:
-        if not self.payments_per_year or self.payments_per_year <= 0:
-            return None
-        return self.gross_income / self.payments_per_year
-
-
-@dataclass(slots=True)
-class _DetailTotals:
-    """Tracks cumulative totals for calculation results."""
-
-    income: float = 0.0
-    tax: float = 0.0
-    net: float = 0.0
-
-    def add(self, income: float = 0.0, tax: float = 0.0, net: float = 0.0) -> None:
-        self.income += income
-        self.tax += tax
-        self.net += net
-
-    def merge(self, other: "_DetailTotals") -> None:
-        self.income += other.income
-        self.tax += other.tax
-        self.net += other.net
 
 
 def _to_float(value: Any, field_name: str) -> float:
@@ -333,7 +122,7 @@ def _extract_section(payload: Mapping[str, Any], key: str) -> Mapping[str, Any]:
 
 def _validate_payments(
     value: Any, payroll: PayrollConfig, field_name: str
-) -> Optional[int]:
+) -> int | None:
     if value is None:
         return None
 
@@ -348,7 +137,7 @@ def _validate_payments(
 
 def _normalise_payload(
     payload: Mapping[str, Any], year: int, config: YearConfiguration
-) -> _NormalisedPayload:
+) -> CalculationInput:
     if not isinstance(payload, Mapping):
         raise ValueError("Payload must be a mapping")
 
@@ -365,7 +154,7 @@ def _normalise_payload(
         "employment.payments_per_year",
     )
 
-    employment_monthly_income: Optional[float] = None
+    employment_monthly_income: float | None = None
     employment_income = 0.0
 
     employment_manual_contributions = _to_float(
@@ -379,9 +168,7 @@ def _normalise_payload(
     if net_income_value not in {None, "", 0, 0.0}:
         net_amount = _to_float(net_income_value, "employment.net_income")
         if net_amount > 0:
-            raise ValueError(
-                "Employment net income inputs are no longer supported; provide gross amounts instead"
-            )
+            raise ValueError(_NET_INPUT_ERROR)
 
     net_monthly_value = employment_section.get("net_monthly_income")
     if net_monthly_value not in {None, "", 0, 0.0}:
@@ -389,9 +176,7 @@ def _normalise_payload(
             net_monthly_value, "employment.net_monthly_income"
         )
         if net_monthly > 0:
-            raise ValueError(
-                "Employment net income inputs are no longer supported; provide gross amounts instead"
-            )
+            raise ValueError(_NET_INPUT_ERROR)
 
     monthly_input = employment_section.get("monthly_income")
     if monthly_input is not None:
@@ -414,7 +199,7 @@ def _normalise_payload(
             employment_monthly_income = employment_income / employment_payments
 
     freelance_section = _extract_section(payload, "freelance")
-    profit_value: Optional[Any] = freelance_section.get("profit")
+    profit_value: Any | None = freelance_section.get("profit")
     if profit_value is None:
         revenue = _to_float(
             freelance_section.get("gross_revenue", 0.0), "freelance.gross_revenue"
@@ -433,7 +218,11 @@ def _normalise_payload(
     category_config = None
     if category_id:
         category_config = next(
-            (entry for entry in config.freelance.efka_categories if entry.id == category_id),
+            (
+                entry
+                for entry in config.freelance.efka_categories
+                if entry.id == category_id
+            ),
             None,
         )
         if category_config is None:
@@ -495,9 +284,9 @@ def _normalise_payload(
         "pension.payments_per_year",
     )
 
-    pension_monthly_income: Optional[float] = None
+    pension_monthly_income: float | None = None
     pension_income = 0.0
-    pension_net_target: Optional[float] = None
+    pension_net_target: float | None = None
 
     pension_monthly_input = pension_section.get("monthly_income")
     if pension_monthly_input is not None:
@@ -553,7 +342,7 @@ def _normalise_payload(
     )
 
     investment_section = _extract_section(payload, "investment")
-    investment_amounts: Dict[str, float] = {}
+    investment_amounts: dict[str, float] = {}
     for key, value in investment_section.items():
         investment_amounts[str(key)] = _to_float(value, f"investment.{key}")
 
@@ -596,7 +385,7 @@ def _normalise_payload(
         deductions_section.get("insurance", 0.0), "deductions.insurance"
     )
 
-    normalised = _NormalisedPayload(
+    normalised = CalculationInput(
         year=year,
         locale=locale,
         children=children,
@@ -640,8 +429,8 @@ def _normalise_payload(
 
 
 def _apply_net_targets(
-    payload: _NormalisedPayload, config: YearConfiguration
-) -> _NormalisedPayload:
+    payload: CalculationInput, config: YearConfiguration
+) -> CalculationInput:
     adjusted = payload
 
     if adjusted.pension_net_target_income:
@@ -656,8 +445,8 @@ def _apply_net_targets(
 
 
 def _set_component_income(
-    payload: _NormalisedPayload, category: str, gross_income: float, payments: int
-) -> _NormalisedPayload:
+    payload: CalculationInput, category: str, gross_income: float, payments: int
+) -> CalculationInput:
     monthly_income = gross_income / payments if payments > 0 else None
     if category == "employment":
         return replace(
@@ -679,12 +468,12 @@ def _set_component_income(
 
 
 def _solve_net_target(
-    payload: _NormalisedPayload,
+    payload: CalculationInput,
     config: YearConfiguration,
     *,
     category: str,
     target: float,
-) -> _NormalisedPayload:
+) -> CalculationInput:
     if category == "employment":
         raise ValueError("Employment net income inputs are not supported")
 
@@ -763,7 +552,7 @@ def _calculate_progressive_tax(amount: float, brackets: Sequence[TaxBracket]) ->
     return total
 
 
-def _calculate_trade_fee(payload: _NormalisedPayload, config: FreelanceConfig) -> float:
+def _calculate_trade_fee(payload: CalculationInput, config: FreelanceConfig) -> float:
     if not payload.include_trade_fee:
         return 0.0
     if payload.freelance_taxable_income <= 0:
@@ -800,10 +589,10 @@ def _calculate_trade_fee(payload: _NormalisedPayload, config: FreelanceConfig) -
 
 
 def _apply_deduction_credits(
-    payload: _NormalisedPayload,
-    components: Sequence[_GeneralIncomeComponent],
+    payload: CalculationInput,
+    components: Sequence[GeneralIncomeComponent],
     translator: Translator,
-) -> tuple[float, list[Dict[str, Any]]]:
+) -> tuple[float, list[dict[str, Any]]]:
     credit_eligible_components = [
         component for component in components if component.credit_eligible
     ]
@@ -814,16 +603,15 @@ def _apply_deduction_credits(
         component.gross_income for component in credit_eligible_components
     )
 
-    breakdown: list[Dict[str, Any]] = []
+    breakdown: list[dict[str, Any]] = []
 
     def _append_breakdown(
         entry_type: str,
-        entered: float,
-        eligible: float,
-        rate: float,
+        amounts: tuple[float, float, float],
         requested: float,
-        note: Optional[str] = None,
+        note: str | None = None,
     ) -> None:
+        entered, eligible, rate = amounts
         breakdown.append(
             {
                 "type": entry_type,
@@ -851,7 +639,12 @@ def _apply_deduction_credits(
             eligible = 0.0
             note = "Donations cannot generate a credit without taxable income."
         requested = eligible * _DONATIONS_CREDIT_RATE
-        _append_breakdown("donations", donations, eligible, _DONATIONS_CREDIT_RATE, requested, note)
+        _append_breakdown(
+            "donations",
+            (donations, eligible, _DONATIONS_CREDIT_RATE),
+            requested,
+            note,
+        )
 
     medical = max(payload.deductions_medical, 0.0)
     if medical > 0:
@@ -873,9 +666,7 @@ def _apply_deduction_credits(
             note = f"{note} {extra_note}".strip() if note else extra_note
         _append_breakdown(
             "medical",
-            medical,
-            eligible_expense,
-            _MEDICAL_CREDIT_RATE,
+            (medical, eligible_expense, _MEDICAL_CREDIT_RATE),
             requested,
             note,
         )
@@ -891,9 +682,7 @@ def _apply_deduction_credits(
         requested = eligible * _EDUCATION_CREDIT_RATE
         _append_breakdown(
             "education",
-            education,
-            eligible,
-            _EDUCATION_CREDIT_RATE,
+            (education, eligible, _EDUCATION_CREDIT_RATE),
             requested,
             note,
         )
@@ -909,9 +698,7 @@ def _apply_deduction_credits(
         requested = eligible * _INSURANCE_CREDIT_RATE
         _append_breakdown(
             "insurance",
-            insurance,
-            eligible,
-            _INSURANCE_CREDIT_RATE,
+            (insurance, eligible, _INSURANCE_CREDIT_RATE),
             requested,
             note,
         )
@@ -960,9 +747,9 @@ def _apply_deduction_credits(
 
 
 def _build_general_income_components(
-    payload: _NormalisedPayload, config: YearConfiguration
-) -> list[_GeneralIncomeComponent]:
-    components: list[_GeneralIncomeComponent] = []
+    payload: CalculationInput, config: YearConfiguration
+) -> list[GeneralIncomeComponent]:
+    components: list[GeneralIncomeComponent] = []
 
     if payload.has_employment_income:
         auto_employee_contrib = (
@@ -982,7 +769,7 @@ def _build_general_income_components(
             monthly_income = payload.employment_income / payload.employment_payments_per_year
 
         components.append(
-            _GeneralIncomeComponent(
+            GeneralIncomeComponent(
                 category="employment",
                 label_key="details.employment",
                 gross_income=payload.employment_income,
@@ -1012,7 +799,7 @@ def _build_general_income_components(
             monthly_income = payload.pension_income / payload.pension_payments_per_year
 
         components.append(
-            _GeneralIncomeComponent(
+            GeneralIncomeComponent(
                 category="pension",
                 label_key="details.pension",
                 gross_income=payload.pension_income,
@@ -1028,7 +815,7 @@ def _build_general_income_components(
     if payload.has_freelance_activity:
         trade_fee = _calculate_trade_fee(payload, config.freelance)
         components.append(
-            _GeneralIncomeComponent(
+            GeneralIncomeComponent(
                 category="freelance",
                 label_key="details.freelance",
                 gross_income=payload.freelance_profit,
@@ -1045,7 +832,7 @@ def _build_general_income_components(
 
     if payload.has_agricultural_income:
         components.append(
-            _GeneralIncomeComponent(
+            GeneralIncomeComponent(
                 category="agricultural",
                 label_key="details.agricultural",
                 gross_income=payload.agricultural_gross_revenue,
@@ -1057,7 +844,7 @@ def _build_general_income_components(
 
     if payload.has_other_income:
         components.append(
-            _GeneralIncomeComponent(
+            GeneralIncomeComponent(
                 category="other",
                 label_key="details.other",
                 gross_income=payload.other_taxable_income,
@@ -1070,8 +857,8 @@ def _build_general_income_components(
 
 
 def _apply_progressive_tax(
-    components: Sequence[_GeneralIncomeComponent],
-    payload: _NormalisedPayload,
+    components: Sequence[GeneralIncomeComponent],
+    payload: CalculationInput,
     config: YearConfiguration,
 ) -> None:
     if not components:
@@ -1127,110 +914,156 @@ def _apply_progressive_tax(
         )
 
 
+def _rounded_component_values(
+    component: GeneralIncomeComponent,
+) -> tuple[float, float, float, float, float]:
+    gross_income = _round_currency(component.gross_income)
+    taxable_income = _round_currency(component.taxable_income)
+    tax_amount = _round_currency(component.tax_after_credit)
+    total_tax = _round_currency(component.total_tax())
+    net_income = _round_currency(component.net_income())
+    return gross_income, taxable_income, tax_amount, total_tax, net_income
+
+
+def _add_deductible_expenses(detail: dict[str, Any], component: GeneralIncomeComponent) -> None:
+    if component.deductible_expenses:
+        detail["deductible_expenses"] = _round_currency(component.deductible_expenses)
+
+
+def _add_credit_fields(detail: dict[str, Any], component: GeneralIncomeComponent) -> None:
+    if component.credit_eligible:
+        detail["tax_before_credits"] = _round_currency(component.tax_before_credit)
+        detail["credits"] = _round_currency(component.credit)
+
+
+def _add_employment_contribution_fields(
+    detail: dict[str, Any], component: GeneralIncomeComponent
+) -> None:
+    if component.category not in {"employment", "pension"}:
+        return
+
+    if component.employee_contributions:
+        detail["employee_contributions"] = _round_currency(
+            component.employee_contributions
+        )
+        if component.employee_manual_contributions:
+            detail["employee_contributions_manual"] = _round_currency(
+                component.employee_manual_contributions
+            )
+        if component.payments_per_year:
+            detail["employee_contributions_per_payment"] = _round_currency(
+                component.employee_contributions / component.payments_per_year
+            )
+
+    if component.employer_contributions:
+        detail["employer_contributions"] = _round_currency(
+            component.employer_contributions
+        )
+        if component.payments_per_year:
+            detail["employer_contributions_per_payment"] = _round_currency(
+                component.employer_contributions / component.payments_per_year
+            )
+
+
+def _add_freelance_fields(
+    detail: dict[str, Any], component: GeneralIncomeComponent, translator: Translator
+) -> None:
+    if component.category != "freelance":
+        return
+
+    detail["deductible_contributions"] = _round_currency(component.contributions)
+    detail["trade_fee"] = _round_currency(component.trade_fee)
+    if component.trade_fee:
+        detail["trade_fee_label"] = translator("details.trade_fee")
+
+    optional_contributions = {
+        "category_contributions": component.category_contributions,
+        "additional_contributions": component.additional_contributions,
+        "auxiliary_contributions": component.auxiliary_contributions,
+        "lump_sum_contributions": component.lump_sum_contributions,
+    }
+
+    for field, value in optional_contributions.items():
+        if value:
+            detail[field] = _round_currency(value)
+
+
+def _add_payment_structure_fields(
+    detail: dict[str, Any], component: GeneralIncomeComponent
+) -> None:
+    if component.monthly_gross_income is not None:
+        detail["monthly_gross_income"] = _round_currency(component.monthly_gross_income)
+
+    if not component.payments_per_year:
+        return
+
+    detail["payments_per_year"] = component.payments_per_year
+
+    gross_per_payment = component.gross_income_per_payment()
+    if gross_per_payment is not None:
+        detail["gross_income_per_payment"] = _round_currency(gross_per_payment)
+
+    net_per_payment = component.net_income_per_payment()
+    if net_per_payment is not None:
+        detail["net_income_per_payment"] = _round_currency(net_per_payment)
+
+
+def _add_deductions_field(detail: dict[str, Any], component: GeneralIncomeComponent) -> None:
+    if component.deductions_applied:
+        detail["deductions_applied"] = _round_currency(component.deductions_applied)
+
+
+def _detail_from_component(
+    component: GeneralIncomeComponent, translator: Translator
+) -> tuple[dict[str, Any], float, float, float]:
+    (
+        gross_income,
+        taxable_income,
+        tax_amount,
+        total_tax,
+        net_income,
+    ) = _rounded_component_values(component)
+
+    detail: dict[str, Any] = {
+        "category": component.category,
+        "label": translator(component.label_key),
+        "gross_income": gross_income,
+        "taxable_income": taxable_income,
+        "tax": tax_amount,
+        "total_tax": total_tax,
+        "net_income": net_income,
+    }
+
+    _add_deductible_expenses(detail, component)
+    _add_credit_fields(detail, component)
+    _add_employment_contribution_fields(detail, component)
+    _add_freelance_fields(detail, component, translator)
+    _add_payment_structure_fields(detail, component)
+    _add_deductions_field(detail, component)
+
+    return detail, gross_income, total_tax, net_income
+
+
 def _calculate_general_income_details(
-    payload: _NormalisedPayload,
+    payload: CalculationInput,
     config: YearConfiguration,
     translator: Translator,
-) -> tuple[list[Dict[str, Any]], float, _DetailTotals, list[Dict[str, Any]]]:
+) -> tuple[list[dict[str, Any]], float, DetailTotals, list[dict[str, Any]]]:
     components = _build_general_income_components(payload, config)
     if not components:
-        return [], 0.0, _DetailTotals(), []
+        return [], 0.0, DetailTotals(), []
 
     _apply_progressive_tax(components, payload, config)
     deductions_applied, deduction_breakdown = _apply_deduction_credits(
         payload, components, translator
     )
 
-    details: list[Dict[str, Any]] = []
-    totals = _DetailTotals()
+    details: list[dict[str, Any]] = []
+    totals = DetailTotals()
     for component in components:
-        gross_income = _round_currency(component.gross_income)
-        taxable_income = _round_currency(component.taxable_income)
-        tax_amount = _round_currency(component.tax_after_credit)
-        total_tax = _round_currency(component.total_tax())
-        net_income = _round_currency(component.net_income())
-        detail: Dict[str, Any] = {
-            "category": component.category,
-            "label": translator(component.label_key),
-            "gross_income": gross_income,
-            "taxable_income": taxable_income,
-            "tax": tax_amount,
-            "total_tax": total_tax,
-            "net_income": net_income,
-        }
-
-        if component.deductible_expenses:
-            detail["deductible_expenses"] = _round_currency(
-                component.deductible_expenses
-            )
-
-        if component.credit_eligible:
-            detail["tax_before_credits"] = _round_currency(
-                component.tax_before_credit
-            )
-            detail["credits"] = _round_currency(component.credit)
-
-        if component.category in {"employment", "pension"}:
-            if component.employee_contributions:
-                detail["employee_contributions"] = _round_currency(
-                    component.employee_contributions
-                )
-                if component.employee_manual_contributions:
-                    detail["employee_contributions_manual"] = _round_currency(
-                        component.employee_manual_contributions
-                    )
-                if component.payments_per_year:
-                    detail["employee_contributions_per_payment"] = _round_currency(
-                        component.employee_contributions / component.payments_per_year
-                    )
-            if component.employer_contributions:
-                detail["employer_contributions"] = _round_currency(
-                    component.employer_contributions
-                )
-                if component.payments_per_year:
-                    detail["employer_contributions_per_payment"] = _round_currency(
-                        component.employer_contributions / component.payments_per_year
-                    )
-
-        if component.category == "freelance":
-            detail["deductible_contributions"] = _round_currency(component.contributions)
-            detail["trade_fee"] = _round_currency(component.trade_fee)
-            if component.trade_fee:
-                detail["trade_fee_label"] = translator("details.trade_fee")
-            if component.category_contributions:
-                detail["category_contributions"] = _round_currency(
-                    component.category_contributions
-                )
-            if component.additional_contributions:
-                detail["additional_contributions"] = _round_currency(
-                    component.additional_contributions
-                )
-            if component.auxiliary_contributions:
-                detail["auxiliary_contributions"] = _round_currency(
-                    component.auxiliary_contributions
-                )
-            if component.lump_sum_contributions:
-                detail["lump_sum_contributions"] = _round_currency(
-                    component.lump_sum_contributions
-                )
-
-        if component.monthly_gross_income is not None:
-            detail["monthly_gross_income"] = _round_currency(component.monthly_gross_income)
-
-        if component.payments_per_year:
-            detail["payments_per_year"] = component.payments_per_year
-            gross_per_payment = component.gross_income_per_payment()
-            if gross_per_payment is not None:
-                detail["gross_income_per_payment"] = _round_currency(gross_per_payment)
-            net_per_payment = component.net_income_per_payment()
-            if net_per_payment is not None:
-                detail["net_income_per_payment"] = _round_currency(net_per_payment)
-
-        if component.deductions_applied:
-            detail["deductions_applied"] = _round_currency(
-                component.deductions_applied
-            )
-
+        detail, gross_income, total_tax, net_income = _detail_from_component(
+            component, translator
+        )
         details.append(detail)
         totals.add(gross_income, total_tax, net_income)
 
@@ -1238,10 +1071,10 @@ def _calculate_general_income_details(
 
 
 def _calculate_rental(
-    payload: _NormalisedPayload,
+    payload: CalculationInput,
     config: RentalConfig,
     translator: Translator,
-) -> Optional[Dict[str, Any]]:
+) -> dict[str, Any] | None:
     if not payload.has_rental_income:
         return None
 
@@ -1264,14 +1097,14 @@ def _calculate_rental(
 
 
 def _calculate_investment(
-    payload: _NormalisedPayload,
+    payload: CalculationInput,
     config: InvestmentConfig,
     translator: Translator,
-) -> Optional[Dict[str, Any]]:
+) -> dict[str, Any] | None:
     if not payload.has_investment_income:
         return None
 
-    breakdown: list[Dict[str, Any]] = []
+    breakdown: list[dict[str, Any]] = []
     gross_total = 0.0
     tax_total = 0.0
 
@@ -1317,7 +1150,7 @@ def _round_rate(value: float) -> float:
     return round(value, 4)
 
 
-def _calculate_vat(payload: _NormalisedPayload, translator: Translator) -> Optional[Dict[str, Any]]:
+def _calculate_vat(payload: CalculationInput, translator: Translator) -> dict[str, Any] | None:
     if not payload.has_vat_obligation:
         return None
 
@@ -1332,7 +1165,7 @@ def _calculate_vat(payload: _NormalisedPayload, translator: Translator) -> Optio
     }
 
 
-def _calculate_enfia(payload: _NormalisedPayload, translator: Translator) -> Optional[Dict[str, Any]]:
+def _calculate_enfia(payload: CalculationInput, translator: Translator) -> dict[str, Any] | None:
     if not payload.has_enfia_obligation:
         return None
 
@@ -1347,7 +1180,7 @@ def _calculate_enfia(payload: _NormalisedPayload, translator: Translator) -> Opt
     }
 
 
-def _calculate_luxury(payload: _NormalisedPayload, translator: Translator) -> Optional[Dict[str, Any]]:
+def _calculate_luxury(payload: CalculationInput, translator: Translator) -> dict[str, Any] | None:
     if not payload.has_luxury_obligation:
         return None
 
@@ -1363,7 +1196,7 @@ def _calculate_luxury(payload: _NormalisedPayload, translator: Translator) -> Op
 
 
 def _update_totals_from_detail(
-    detail: Mapping[str, Any], totals: _DetailTotals
+    detail: Mapping[str, Any], totals: DetailTotals
 ) -> None:
     gross = detail.get("gross_income")
     if isinstance(gross, Real):
@@ -1378,7 +1211,7 @@ def _update_totals_from_detail(
         totals.net += float(net)
 
 
-def calculate_tax(payload: Dict[str, Any]) -> Dict[str, Any]:
+def calculate_tax(payload: dict[str, Any]) -> dict[str, Any]:
     """Compute tax summary for the provided payload."""
 
     if not isinstance(payload, Mapping):
@@ -1387,7 +1220,7 @@ def calculate_tax(payload: Dict[str, Any]) -> Dict[str, Any]:
     if "year" not in payload:
         raise ValueError("Payload must include a tax year")
 
-    timings: Optional[Dict[str, float]] = {} if _profiling_enabled() else None
+    timings: dict[str, float] | None = {} if _profiling_enabled() else None
     overall_start = perf_counter() if timings is not None else None
 
     year = _to_int(payload["year"], "year")
@@ -1398,8 +1231,8 @@ def calculate_tax(payload: Dict[str, Any]) -> Dict[str, Any]:
 
     translator = get_translator(normalised.locale)
 
-    details: list[Dict[str, Any]] = []
-    totals = _DetailTotals()
+    details: list[dict[str, Any]] = []
+    totals = DetailTotals()
 
     def _append_detail(entry: Mapping[str, Any]) -> None:
         if isinstance(entry, dict):
@@ -1464,7 +1297,7 @@ def calculate_tax(payload: Dict[str, Any]) -> Dict[str, Any]:
 
     withholding_tax = normalised.withholding_tax if normalised.withholding_tax > 0 else 0.0
 
-    summary: Dict[str, Any] = {
+    summary: dict[str, Any] = {
         "income_total": _round_currency(income_total),
         "tax_total": _round_currency(tax_total),
         "net_income": _round_currency(net_income),

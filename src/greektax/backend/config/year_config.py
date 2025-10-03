@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable, Mapping, MutableMapping, Sequence
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Dict, Iterable, Mapping, MutableMapping, Optional, Sequence
+from typing import Any
 
-import yaml
+import yaml  # type: ignore[import-untyped]
 
 CONFIG_DIRECTORY = Path(__file__).resolve().parent / "data"
 
@@ -20,7 +21,7 @@ class ConfigurationError(ValueError):
 class TaxBracket:
     """Represents a single progressive tax bracket."""
 
-    upper_bound: Optional[float]
+    upper_bound: float | None
     rate: float
 
     def __post_init__(self) -> None:  # pragma: no cover - defensive programming
@@ -34,7 +35,7 @@ class TaxBracket:
 class EmploymentTaxCredit:
     """Year-specific reduction applied to employment income tax."""
 
-    amounts_by_children: Dict[int, float]
+    amounts_by_children: dict[int, float]
     incremental_amount_per_child: float
 
     def amount_for_children(self, dependants: int) -> float:
@@ -99,10 +100,10 @@ class TradeFeeSunset:
     """Represents a scheduled or proposed sunset for the trade fee."""
 
     status_key: str
-    year: Optional[int]
-    description_key: Optional[str] = None
-    documentation_key: Optional[str] = None
-    documentation_url: Optional[str] = None
+    year: int | None
+    description_key: str | None = None
+    documentation_key: str | None = None
+    documentation_url: str | None = None
 
 
 @dataclass(frozen=True)
@@ -110,9 +111,9 @@ class TradeFeeConfig:
     """Settings for the business activity fee (τέλος επιτηδεύματος)."""
 
     standard_amount: float
-    reduced_amount: Optional[float] = None
-    newly_self_employed_reduction_years: Optional[int] = None
-    sunset: Optional[TradeFeeSunset] = None
+    reduced_amount: float | None = None
+    newly_self_employed_reduction_years: int | None = None
+    sunset: TradeFeeSunset | None = None
 
 
 @dataclass(frozen=True)
@@ -122,11 +123,11 @@ class EFKACategoryConfig:
     id: str
     label_key: str
     monthly_amount: float
-    auxiliary_monthly_amount: Optional[float] = None
-    description_key: Optional[str] = None
-    pension_monthly_amount: Optional[float] = None
-    health_monthly_amount: Optional[float] = None
-    lump_sum_monthly_amount: Optional[float] = None
+    auxiliary_monthly_amount: float | None = None
+    description_key: str | None = None
+    pension_monthly_amount: float | None = None
+    health_monthly_amount: float | None = None
+    lump_sum_monthly_amount: float | None = None
 
 
 @dataclass(frozen=True)
@@ -163,7 +164,7 @@ class RentalConfig:
 class InvestmentConfig:
     """Configuration for investment income categories."""
 
-    rates: Dict[str, float]
+    rates: dict[str, float]
 
 
 @dataclass(frozen=True)
@@ -173,10 +174,10 @@ class DeductionHint:
     id: str
     applies_to: Sequence[str]
     label_key: str
-    description_key: Optional[str]
-    input_id: Optional[str]
-    validation: Dict[str, Any]
-    allowances: Sequence["DeductionAllowance"]
+    description_key: str | None
+    input_id: str | None
+    validation: dict[str, Any]
+    allowances: Sequence[DeductionAllowance]
 
 
 @dataclass(frozen=True)
@@ -184,9 +185,9 @@ class DeductionThreshold:
     """Specific allowance thresholds exposed for deduction hints."""
 
     label_key: str
-    amount: Optional[float]
-    percentage: Optional[float]
-    notes_key: Optional[str]
+    amount: float | None
+    percentage: float | None
+    notes_key: str | None
 
 
 @dataclass(frozen=True)
@@ -194,7 +195,7 @@ class DeductionAllowance:
     """Structured allowance guidance for deduction hints."""
 
     label_key: str
-    description_key: Optional[str]
+    description_key: str | None
     thresholds: Sequence[DeductionThreshold]
 
 
@@ -213,8 +214,8 @@ class YearWarning:
     message_key: str
     severity: str
     applies_to: Sequence[str]
-    documentation_key: Optional[str] = None
-    documentation_url: Optional[str] = None
+    documentation_key: str | None = None
+    documentation_url: str | None = None
 
 
 @dataclass(frozen=True)
@@ -222,7 +223,7 @@ class YearConfiguration:
     """Structured representation of a tax year configuration."""
 
     year: int
-    meta: Dict[str, Any]
+    meta: dict[str, Any]
     employment: EmploymentConfig
     pension: PensionConfig
     freelance: FreelanceConfig
@@ -236,7 +237,7 @@ class YearConfiguration:
 
 def _parse_tax_brackets(brackets: Iterable[Mapping[str, Any]]) -> Sequence[TaxBracket]:
     parsed: list[TaxBracket] = []
-    last_upper: Optional[float] = None
+    last_upper: float | None = None
 
     for bracket in brackets:
         if "rate" not in bracket:
@@ -268,7 +269,7 @@ def _parse_tax_credit(raw: Mapping[str, Any]) -> EmploymentTaxCredit:
     if not isinstance(amounts_raw, MutableMapping):
         raise ConfigurationError("'amounts_by_children' must be a mapping")
 
-    amounts: Dict[int, float] = {}
+    amounts: dict[int, float] = {}
     for key, value in amounts_raw.items():
         child_count = int(key)
         amounts[child_count] = float(value)
@@ -322,7 +323,7 @@ def _parse_payroll_config(raw: Mapping[str, Any], context: str) -> PayrollConfig
 
 
 def _parse_contribution_rates(
-    raw: Optional[Mapping[str, Any]], context: str
+    raw: Mapping[str, Any] | None, context: str
 ) -> ContributionRates:
     if raw is None:
         return ContributionRates(employee_rate=0.0, employer_rate=0.0)
@@ -418,7 +419,7 @@ def _parse_trade_fee(raw: Mapping[str, Any]) -> TradeFeeConfig:
         )
 
     sunset_raw = raw.get("sunset")
-    sunset: Optional[TradeFeeSunset] = None
+    sunset: TradeFeeSunset | None = None
     if sunset_raw is not None:
         if not isinstance(sunset_raw, Mapping):
             raise ConfigurationError("'sunset' must be defined using a mapping when provided")
@@ -466,7 +467,9 @@ def _parse_trade_fee(raw: Mapping[str, Any]) -> TradeFeeConfig:
     )
 
 
-def _parse_efka_categories(raw: Optional[Iterable[Mapping[str, Any]]]) -> Sequence[EFKACategoryConfig]:
+def _parse_efka_categories(
+    raw: Iterable[Mapping[str, Any]] | None,
+) -> Sequence[EFKACategoryConfig]:
     if not raw:
         return tuple()
 
@@ -556,7 +559,7 @@ def _parse_freelance_config(raw: Mapping[str, Any]) -> FreelanceConfig:
 
     efka_categories_raw = raw.get("efka_categories")
     if efka_categories_raw is None:
-        efka_categories = tuple()
+        efka_categories: Sequence[EFKACategoryConfig] = tuple()
     elif not isinstance(efka_categories_raw, Iterable):
         raise ConfigurationError("'efka_categories' must be an iterable when provided")
     else:
@@ -600,7 +603,7 @@ def _parse_investment_config(raw: Mapping[str, Any]) -> InvestmentConfig:
     if not isinstance(rates_raw, MutableMapping):
         raise ConfigurationError("Investment configuration must include a 'rates' mapping")
 
-    rates: Dict[str, float] = {}
+    rates: dict[str, float] = {}
     for key, value in rates_raw.items():
         rates[str(key)] = float(value)
 
@@ -722,7 +725,7 @@ def _parse_deduction_hint(raw: Mapping[str, Any]) -> DeductionHint:
     )
 
 
-def _parse_deductions_config(raw: Optional[Mapping[str, Any]]) -> DeductionConfig:
+def _parse_deductions_config(raw: Mapping[str, Any] | None) -> DeductionConfig:
     if raw is None:
         return DeductionConfig(hints=tuple())
 
@@ -739,7 +742,9 @@ def _parse_deductions_config(raw: Optional[Mapping[str, Any]]) -> DeductionConfi
     return DeductionConfig(hints=hints)
 
 
-def _parse_year_warnings(raw: Optional[Iterable[Mapping[str, Any]]]) -> Sequence[YearWarning]:
+def _parse_year_warnings(
+    raw: Iterable[Mapping[str, Any]] | None,
+) -> Sequence[YearWarning]:
     if raw is None:
         return tuple()
 

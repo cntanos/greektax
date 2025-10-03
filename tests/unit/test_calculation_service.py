@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 from greektax.backend.app.services.calculation_service import calculate_tax
@@ -27,7 +29,11 @@ def _progressive_tax(amount: float, brackets) -> float:
     return total
 
 
-def _employment_expectations(year: int, gross_income: float, children: int = 0) -> dict[str, float]:
+def _employment_expectations(
+    year: int,
+    gross_income: float,
+    children: int = 0,
+) -> dict[str, float]:
     """Return expected employment tax metrics for the given inputs."""
 
     config = load_year_configuration(year)
@@ -56,6 +62,92 @@ def _employment_expectations(year: int, gross_income: float, children: int = 0) 
         "net_monthly": net_income / 12 if gross_income else 0.0,
         "avg_monthly_tax": tax_after_credit / 12 if gross_income else 0.0,
         "effective_rate": round(effective_rate, 4),
+    }
+
+
+def _freelance_expectations(payload: dict[str, Any]) -> dict[str, Any]:
+    """Return expected freelance and employment metrics for the mixed payload."""
+
+    config = load_year_configuration(payload["year"])
+
+    employment_gross = payload["employment"]["gross_income"]
+    dependents = payload.get("dependents", {}).get("children", 0)
+
+    freelance_section = payload["freelance"]
+    gross_after_expenses = (
+        freelance_section["gross_revenue"] - freelance_section["deductible_expenses"]
+    )
+    contributions = freelance_section["mandatory_contributions"]
+
+    employment_taxable = employment_gross
+    freelance_taxable = gross_after_expenses - contributions
+    total_taxable = employment_taxable + freelance_taxable
+
+    total_tax_before_credit = _progressive_tax(
+        total_taxable,
+        config.employment.brackets,
+    )
+    credit_amount = config.employment.tax_credit.amount_for_children(dependents)
+    credit_applied = min(credit_amount, total_tax_before_credit)
+
+    employment_share = (
+        employment_taxable / total_taxable if total_taxable else 0.0
+    )
+    employment_tax_before_credit = total_tax_before_credit * employment_share
+    freelance_tax_before_credit = (
+        total_tax_before_credit - employment_tax_before_credit
+    )
+
+    employment_credit = (
+        credit_applied * (employment_tax_before_credit / total_tax_before_credit)
+        if total_tax_before_credit
+        else 0.0
+    )
+    freelance_credit = credit_applied - employment_credit
+
+    employment_tax = employment_tax_before_credit - employment_credit
+    freelance_tax = freelance_tax_before_credit - freelance_credit
+
+    employment_employee_contrib = (
+        employment_gross * config.employment.contributions.employee_rate
+    )
+    employment_employer_contrib = (
+        employment_gross * config.employment.contributions.employer_rate
+    )
+
+    employment_net = employment_gross - employment_tax - employment_employee_contrib
+    freelance_net = gross_after_expenses - freelance_tax - contributions
+
+    total_income = employment_gross + gross_after_expenses
+    total_tax = employment_tax + freelance_tax
+    total_net = employment_net + freelance_net
+
+    return {
+        "summary": {
+            "income": total_income,
+            "tax": total_tax,
+            "net": total_net,
+            "net_monthly": total_net / 12,
+            "avg_monthly_tax": total_tax / 12,
+            "effective_rate": round(total_tax / total_income, 4),
+        },
+        "employment": {
+            "gross": employment_gross,
+            "tax_before_credit": employment_tax_before_credit,
+            "credit": employment_credit,
+            "tax": employment_tax,
+            "employee_contrib": employment_employee_contrib,
+            "employer_contrib": employment_employer_contrib,
+            "net": employment_net,
+        },
+        "freelance": {
+            "gross": gross_after_expenses,
+            "taxable": freelance_taxable,
+            "tax": freelance_tax,
+            "credit": freelance_credit,
+            "net": freelance_net,
+            "contributions": contributions,
+        },
     }
 
 
@@ -274,92 +366,83 @@ def test_calculate_tax_with_freelance_income() -> None:
     }
 
     result = calculate_tax(payload)
-
-    config = load_year_configuration(2024)
-    employment_gross = payload["employment"]["gross_income"]
-    dependents = payload.get("dependents", {}).get("children", 0)
-
-    freelance_section = payload["freelance"]
-    freelance_gross = freelance_section["gross_revenue"] - freelance_section["deductible_expenses"]
-    freelance_contrib = freelance_section["mandatory_contributions"]
-    employment_taxable = employment_gross
-    freelance_taxable = freelance_gross - freelance_contrib
-    total_taxable = employment_taxable + freelance_taxable
-
-    total_tax_before_credit = _progressive_tax(total_taxable, config.employment.brackets)
-    credit_amount = config.employment.tax_credit.amount_for_children(dependents)
-    credit_applied = min(credit_amount, total_tax_before_credit)
-
-    employment_share = employment_taxable / total_taxable
-    employment_tax_before_credit = total_tax_before_credit * employment_share
-    freelance_tax_before_credit = total_tax_before_credit - employment_tax_before_credit
-
-    employment_credit = (
-        credit_applied * (employment_tax_before_credit / total_tax_before_credit)
-        if total_tax_before_credit
-        else 0.0
-    )
-    freelance_credit = credit_applied - employment_credit
-
-    employment_tax = employment_tax_before_credit - employment_credit
-    freelance_tax = freelance_tax_before_credit - freelance_credit
-
-    employment_employee_contrib = (
-        employment_gross * config.employment.contributions.employee_rate
-    )
-    employment_employer_contrib = (
-        employment_gross * config.employment.contributions.employer_rate
-    )
-
-    employment_net = employment_gross - employment_tax - employment_employee_contrib
-    freelance_net = freelance_gross - freelance_tax - freelance_contrib
-
-    total_income = employment_gross + freelance_gross
-    total_tax = employment_tax + freelance_tax
-    total_net = employment_net + freelance_net
+    expected = _freelance_expectations(payload)
 
     summary = result["summary"]
-    assert summary["income_total"] == pytest.approx(total_income)
-    assert summary["tax_total"] == pytest.approx(total_tax)
-    assert summary["net_income"] == pytest.approx(total_net)
-    assert summary["net_monthly_income"] == pytest.approx(total_net / 12, rel=1e-4)
-    assert summary["average_monthly_tax"] == pytest.approx(total_tax / 12, rel=1e-4)
+    assert summary["income_total"] == pytest.approx(expected["summary"]["income"])
+    assert summary["tax_total"] == pytest.approx(expected["summary"]["tax"])
+    assert summary["net_income"] == pytest.approx(expected["summary"]["net"])
+    assert summary["net_monthly_income"] == pytest.approx(
+        expected["summary"]["net_monthly"],
+        rel=1e-4,
+    )
+    assert summary["average_monthly_tax"] == pytest.approx(
+        expected["summary"]["avg_monthly_tax"],
+        rel=1e-4,
+    )
     assert summary["effective_tax_rate"] == pytest.approx(
-        round(total_tax / total_income, 4), rel=1e-4
+        expected["summary"]["effective_rate"],
+        rel=1e-4,
     )
 
-    assert len(result["details"]) == 2
-    employment_detail = next(
-        detail for detail in result["details"] if detail["category"] == "employment"
-    )
-    freelance_detail = next(
-        detail for detail in result["details"] if detail["category"] == "freelance"
-    )
+    details_by_category = {
+        detail["category"]: detail for detail in result["details"]
+    }
+    expected_categories = {"employment", "freelance"}
+    assert set(details_by_category) == expected_categories
 
-    assert employment_detail["gross_income"] == pytest.approx(employment_gross)
+    employment_detail = details_by_category["employment"]
+    assert employment_detail["gross_income"] == pytest.approx(
+        expected["employment"]["gross"]
+    )
     assert employment_detail["tax_before_credits"] == pytest.approx(
-        employment_tax_before_credit, rel=1e-4
+        expected["employment"]["tax_before_credit"],
+        rel=1e-4,
     )
     assert employment_detail["credits"] == pytest.approx(
-        employment_credit, rel=1e-4
+        expected["employment"]["credit"],
+        rel=1e-4,
     )
-    assert employment_detail["total_tax"] == pytest.approx(employment_tax, rel=1e-4)
+    assert employment_detail["total_tax"] == pytest.approx(
+        expected["employment"]["tax"],
+        rel=1e-4,
+    )
     assert employment_detail["employee_contributions"] == pytest.approx(
-        employment_employee_contrib, rel=1e-4
+        expected["employment"]["employee_contrib"],
+        rel=1e-4,
     )
     assert employment_detail["employer_contributions"] == pytest.approx(
-        employment_employer_contrib, rel=1e-4
+        expected["employment"]["employer_contrib"],
+        rel=1e-4,
     )
 
-    assert freelance_detail["gross_income"] == pytest.approx(freelance_gross)
-    assert freelance_detail["taxable_income"] == pytest.approx(freelance_taxable)
-    assert freelance_detail["tax"] == pytest.approx(freelance_tax, rel=1e-4)
+    freelance_detail = details_by_category["freelance"]
+    assert freelance_detail["gross_income"] == pytest.approx(
+        expected["freelance"]["gross"]
+    )
+    assert freelance_detail["taxable_income"] == pytest.approx(
+        expected["freelance"]["taxable"],
+        rel=1e-4,
+    )
+    assert freelance_detail["tax"] == pytest.approx(
+        expected["freelance"]["tax"],
+        rel=1e-4,
+    )
     assert freelance_detail["trade_fee"] == pytest.approx(0.0)
-    assert freelance_detail["total_tax"] == pytest.approx(freelance_tax, rel=1e-4)
-    assert freelance_detail["net_income"] == pytest.approx(freelance_net, rel=1e-4)
-    assert freelance_detail["credits"] == pytest.approx(freelance_credit, rel=1e-4)
+    assert freelance_detail["total_tax"] == pytest.approx(
+        expected["freelance"]["tax"],
+        rel=1e-4,
+    )
+    assert freelance_detail["net_income"] == pytest.approx(
+        expected["freelance"]["net"],
+        rel=1e-4,
+    )
+    assert freelance_detail["credits"] == pytest.approx(
+        expected["freelance"]["credit"],
+        rel=1e-4,
+    )
     assert freelance_detail["deductible_contributions"] == pytest.approx(
-        freelance_contrib
+        expected["freelance"]["contributions"]
     )
 
 
@@ -495,14 +578,17 @@ def test_calculate_tax_multi_year_credit_difference() -> None:
         "employment": {"gross_income": 25_000},
     }
 
-    result_2024 = calculate_tax({"year": 2024, **base_payload})
-    result_2025 = calculate_tax({"year": 2025, **base_payload})
+    current_year_payload = {"year": 2024, **base_payload}
+    next_year_payload = {"year": 2025, **base_payload}
+
+    result_2024 = calculate_tax(current_year_payload)
+    result_2025 = calculate_tax(next_year_payload)
 
     tax_2024 = result_2024["summary"]["tax_total"]
     tax_2025 = result_2025["summary"]["tax_total"]
 
     assert tax_2025 < tax_2024
-    assert result_2025["meta"]["year"] == 2025
+    assert result_2025["meta"]["year"] == next_year_payload["year"]
 
 
 def test_calculate_tax_with_freelance_category_contributions() -> None:
@@ -521,7 +607,9 @@ def test_calculate_tax_with_freelance_category_contributions() -> None:
 
     config = load_year_configuration(2024)
     category = next(
-        entry for entry in config.freelance.efka_categories if entry.id == "general_class_1"
+        entry
+        for entry in config.freelance.efka_categories
+        if entry.id == "general_class_1"
     )
     expected_category_contribution = category.monthly_amount * 6
     expected_deductible = expected_category_contribution + 500 + 120
@@ -547,7 +635,9 @@ def test_calculate_tax_with_engineer_lump_sum_contributions() -> None:
 
     config = load_year_configuration(2024)
     category = next(
-        entry for entry in config.freelance.efka_categories if entry.id == "engineer_class_1"
+        entry
+        for entry in config.freelance.efka_categories
+        if entry.id == "engineer_class_1"
     )
     months = 12
     auxiliary_total = (category.auxiliary_monthly_amount or 0) * months
@@ -570,7 +660,9 @@ def test_calculate_tax_with_engineer_lump_sum_contributions() -> None:
     expected_category = category.monthly_amount * months
     expected_total = expected_category + auxiliary_total + lump_sum_total
 
-    assert freelance_detail["category_contributions"] == pytest.approx(expected_category)
+    assert freelance_detail["category_contributions"] == pytest.approx(
+        expected_category
+    )
     assert freelance_detail["auxiliary_contributions"] == pytest.approx(auxiliary_total)
     assert freelance_detail["lump_sum_contributions"] == pytest.approx(lump_sum_total)
     assert freelance_detail["deductible_contributions"] == pytest.approx(expected_total)
@@ -821,7 +913,10 @@ def test_calculate_tax_trade_fee_reduction_rules() -> None:
         trade_fee_config.reduced_amount or trade_fee_config.standard_amount
     )
 
-    no_fee_payload = {"year": 2025, "freelance": {**base_payload["freelance"], "include_trade_fee": False}}
+    no_fee_payload = {
+        "year": 2025,
+        "freelance": {**base_payload["freelance"], "include_trade_fee": False},
+    }
     no_fee_result = calculate_tax(no_fee_payload)
     no_fee_detail = no_fee_result["details"][0]
     assert no_fee_detail["trade_fee"] == pytest.approx(0.0)

@@ -1,6 +1,9 @@
 from dataclasses import replace
 
-from greektax.backend.config.validator import validate_all_years, validate_year_configuration
+from greektax.backend.config.validator import (
+    validate_all_years,
+    validate_year_configuration,
+)
 from greektax.backend.config.year_config import load_year_configuration
 
 

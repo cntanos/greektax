@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict
-
-from typing import Any, Dict, List, Sequence
+from collections.abc import Sequence
+from typing import Any
 
 from flask import Blueprint, jsonify, request
 
@@ -18,26 +17,27 @@ from greektax.backend.config.year_config import (
     available_years,
     load_year_configuration,
 )
+from greektax.backend.version import get_project_version
 
 blueprint = Blueprint("config", __name__, url_prefix="/api/v1/config")
 
 
-def _serialise_payroll_config(config: PayrollConfig) -> Dict[str, Any]:
+def _serialise_payroll_config(config: PayrollConfig) -> dict[str, Any]:
     return {
         "allowed_payments_per_year": list(config.allowed_payments_per_year),
         "default_payments_per_year": config.default_payments_per_year,
     }
 
 
-def _serialise_contributions(contributions: ContributionRates) -> Dict[str, Any]:
+def _serialise_contributions(contributions: ContributionRates) -> dict[str, Any]:
     return {
         "employee_rate": contributions.employee_rate,
         "employer_rate": contributions.employer_rate,
     }
 
 
-def _serialise_trade_fee(config: TradeFeeConfig) -> Dict[str, Any]:
-    payload: Dict[str, Any] = {
+def _serialise_trade_fee(config: TradeFeeConfig) -> dict[str, Any]:
+    payload: dict[str, Any] = {
         "standard_amount": config.standard_amount,
         "reduced_amount": config.reduced_amount,
         "newly_self_employed_reduction_years": config.newly_self_employed_reduction_years,
@@ -55,8 +55,8 @@ def _serialise_trade_fee(config: TradeFeeConfig) -> Dict[str, Any]:
 
 def _serialise_efka_categories(
     categories: Sequence[EFKACategoryConfig],
-) -> List[Dict[str, Any]]:
-    serialised: List[Dict[str, Any]] = []
+) -> list[dict[str, Any]]:
+    serialised: list[dict[str, Any]] = []
     for category in categories:
         serialised.append(
             {
@@ -73,7 +73,7 @@ def _serialise_efka_categories(
     return serialised
 
 
-def _serialise_warning(entry: YearWarning) -> Dict[str, Any]:
+def _serialise_warning(entry: YearWarning) -> dict[str, Any]:
     return {
         "id": entry.id,
         "message_key": entry.message_key,
@@ -84,7 +84,7 @@ def _serialise_warning(entry: YearWarning) -> Dict[str, Any]:
     }
 
 
-def _serialise_year(year: int) -> Dict[str, Any]:
+def _serialise_year(year: int) -> dict[str, Any]:
     config = load_year_configuration(year)
     return {
         "year": year,
@@ -105,6 +105,14 @@ def _serialise_year(year: int) -> Dict[str, Any]:
         },
         "warnings": [_serialise_warning(entry) for entry in config.warnings],
     }
+
+
+@blueprint.get("/meta")
+def get_application_metadata() -> tuple[Any, int]:
+    """Expose lightweight application metadata such as the version identifier."""
+
+    payload = {"version": get_project_version()}
+    return jsonify(payload), 200
 
 
 @blueprint.get("/years")
@@ -157,9 +165,9 @@ def get_deduction_hints(year: int) -> tuple[Any, int]:
     locale = normalise_locale(locale_hint)
     translator = get_translator(locale)
 
-    hints: list[Dict[str, Any]] = []
+    hints: list[dict[str, Any]] = []
     for hint in config.deductions.hints:
-        entry: Dict[str, Any] = {
+        entry: dict[str, Any] = {
             "id": hint.id,
             "applies_to": list(hint.applies_to),
             "label": translator(hint.label_key),
@@ -169,9 +177,9 @@ def get_deduction_hints(year: int) -> tuple[Any, int]:
         if hint.description_key:
             entry["description"] = translator(hint.description_key)
 
-        allowances: list[Dict[str, Any]] = []
+        allowances: list[dict[str, Any]] = []
         for allowance in hint.allowances:
-            allowance_entry: Dict[str, Any] = {
+            allowance_entry: dict[str, Any] = {
                 "label": translator(allowance.label_key),
                 "thresholds": [],
             }
@@ -179,7 +187,7 @@ def get_deduction_hints(year: int) -> tuple[Any, int]:
                 allowance_entry["description"] = translator(allowance.description_key)
 
             for threshold in allowance.thresholds:
-                threshold_entry: Dict[str, Any] = {
+                threshold_entry: dict[str, Any] = {
                     "label": translator(threshold.label_key),
                 }
                 if threshold.amount is not None:
