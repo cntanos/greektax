@@ -80,7 +80,7 @@ const UI_MESSAGES = {
       results_heading: "Results",
       legends: {
         year_household: "Year and household",
-        employment_pension: "Employment & pension income",
+        employment_pension: "Employment and/or pension income",
         freelance: "Freelance income",
         agricultural: "Agricultural income",
         other: "Other income",
@@ -190,7 +190,7 @@ const UI_MESSAGES = {
       "freelance-trade-fee-reduced": "Reduced amount",
       "freelance-years-active": "Years self-employed",
       "trade-fee-toggle": "Include business activity fee",
-      "toggle-employment": "Include salary income",
+      "toggle-employment": "Include salary/pension income",
       "toggle-freelance": "Include freelance income",
       "toggle-agricultural": "Include agricultural income",
       "toggle-other": "Include other income",
@@ -238,6 +238,8 @@ const UI_MESSAGES = {
         "Add EFKA amounts you pay directly (for example, voluntary top-ups). Leave blank if contributions are only withheld from payslips.",
       "employment-net-note":
         "Net-to-gross salary conversion isn't supported. Provide gross amounts either annually or per payment.",
+      "employment-pension-scope":
+        "(for wages, salaries, and retirement pensions)",
       "freelance-efka-category": "Select a contribution class to prefill mandatory EFKA payments.",
       "freelance-efka-summary-empty":
         "Select a contribution class to view monthly pension, health, and auxiliary amounts.",
@@ -337,7 +339,7 @@ const UI_MESSAGES = {
       results_heading: "Αποτελέσματα",
       legends: {
         year_household: "Έτος και νοικοκυριό",
-        employment_pension: "Εισόδημα μισθωτών & συντάξεων",
+        employment_pension: "Εισόδημα από μισθωτή εργασία ή/και συντάξεις",
         freelance: "Εισόδημα ελεύθερου επαγγελματία",
         agricultural: "Αγροτικό εισόδημα",
         other: "Λοιπά εισοδήματα",
@@ -448,7 +450,7 @@ const UI_MESSAGES = {
       "freelance-trade-fee-reduced": "Μειωμένο ποσό",
       "freelance-years-active": "Έτη ως ελεύθερος επαγγελματίας",
       "trade-fee-toggle": "Συμπερίληψη τέλους επιτηδεύματος",
-      "toggle-employment": "Συμπερίληψη μισθολογικού εισοδήματος",
+      "toggle-employment": "Συμπερίληψη εισοδήματος μισθωτών/συντάξεων",
       "toggle-freelance": "Συμπερίληψη εισοδήματος ελευθέρων επαγγελματιών",
       "toggle-agricultural": "Συμπερίληψη αγροτικού εισοδήματος",
       "toggle-other": "Συμπερίληψη λοιπών εισοδημάτων",
@@ -496,6 +498,8 @@ const UI_MESSAGES = {
         "Προσθέστε εισφορές ΕΦΚΑ που καταβάλλετε απευθείας (π.χ. προαιρετικές συμπληρωματικές). Αφήστε κενό αν οι εισφορές παρακρατούνται μόνο μέσω μισθοδοσίας.",
       "employment-net-note":
         "Δεν υποστηρίζεται μετατροπή καθαρού μισθού σε ακαθάριστο. Συμπληρώστε ακαθάριστα ποσά είτε ετησίως είτε ανά καταβολή.",
+      "employment-pension-scope":
+        "(για μισθούς, ημερομίσθια και συντάξεις)",
       "freelance-efka-category": "Επιλέξτε κατηγορία εισφορών για αυτόματη συμπλήρωση των υποχρεωτικών ποσών.",
       "freelance-efka-summary-empty":
         "Επιλέξτε κατηγορία για να εμφανιστούν τα μηνιαία ποσά κύριας, υγειονομικής και επικουρικής ασφάλισης.",
