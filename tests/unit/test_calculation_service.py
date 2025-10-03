@@ -362,7 +362,7 @@ def test_calculate_tax_with_engineer_lump_sum_contributions() -> None:
 
 
 def test_calculate_tax_applies_deductions_across_components() -> None:
-    """Itemised deductions are distributed proportionally across taxable income."""
+    """Itemised deductions now translate into capped tax credits."""
 
     payload = {
         "year": 2024,
@@ -386,14 +386,21 @@ def test_calculate_tax_applies_deductions_across_components() -> None:
         detail for detail in result["details"] if detail["category"] == "agricultural"
     )
 
-    assert employment_detail["deductions_applied"] == pytest.approx(3_750.0)
-    assert employment_detail["taxable_income"] == pytest.approx(26_250.0)
-    assert agricultural_detail["deductions_applied"] == pytest.approx(1_250.0)
-    assert agricultural_detail["taxable_income"] == pytest.approx(8_750.0)
+    assert employment_detail["deductions_applied"] == pytest.approx(600.0)
+    assert employment_detail["taxable_income"] == pytest.approx(30_000.0)
+    assert "deductions_applied" not in agricultural_detail
+    assert agricultural_detail["taxable_income"] == pytest.approx(10_000.0)
 
     summary = result["summary"]
     assert summary["deductions_entered"] == pytest.approx(5_000.0)
-    assert summary["deductions_applied"] == pytest.approx(5_000.0)
+    assert summary["deductions_applied"] == pytest.approx(600.0)
+
+    breakdown = summary.get("deductions_breakdown")
+    assert breakdown is not None
+    donations = next(item for item in breakdown if item["type"] == "donations")
+    assert donations["credit_applied"] == pytest.approx(400.0)
+    medical = next(item for item in breakdown if item["type"] == "medical")
+    assert medical["credit_applied"] == pytest.approx(0.0)
 
 
 def test_calculate_tax_with_agricultural_and_other_income() -> None:
