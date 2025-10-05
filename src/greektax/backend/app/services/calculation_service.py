@@ -398,6 +398,10 @@ def _update_totals_from_detail(
     if isinstance(net, Real):
         totals.net += float(net)
 
+    taxable_income = detail.get("taxable_income")
+    if isinstance(taxable_income, Real):
+        totals.taxable += float(taxable_income)
+
 
 def calculate_tax(
     payload: Mapping[str, Any] | CalculationRequest,
@@ -476,6 +480,7 @@ def calculate_tax(
         _append_detail(luxury_detail)
 
     income_total = totals.income
+    taxable_total = totals.taxable
     tax_total = totals.tax
     net_income = totals.net
     net_monthly_income = net_income / 12 if net_income else 0.0
@@ -495,6 +500,7 @@ def calculate_tax(
 
     summary: dict[str, Any] = {
         "income_total": round_currency(income_total),
+        "taxable_income": round_currency(taxable_total),
         "tax_total": round_currency(tax_total),
         "net_income": round_currency(net_income),
         "net_monthly_income": round_currency(net_monthly_income),
@@ -504,6 +510,7 @@ def calculate_tax(
         "deductions_applied": round_currency(deductions_applied),
         "labels": {
             "income_total": translator("summary.income_total"),
+            "taxable_income": translator("summary.taxable_income"),
             "tax_total": translator("summary.tax_total"),
             "net_income": translator("summary.net_income"),
             "net_monthly_income": translator("summary.net_monthly_income"),

@@ -38,11 +38,17 @@ def calculate_general_income_details(
     details: list[dict[str, Any]] = []
     totals = DetailTotals()
     for component in components:
-        detail, gross_income, total_tax, net_income = _detail_from_component(
+        (
+            detail,
+            gross_income,
+            taxable_income,
+            total_tax,
+            net_income,
+        ) = _detail_from_component(
             component, translator
         )
         details.append(detail)
-        totals.add(gross_income, total_tax, net_income)
+        totals.add(gross_income, total_tax, net_income, taxable_income)
 
     return details, deductions_applied, totals, deduction_breakdown
 
@@ -407,7 +413,7 @@ def _apply_deduction_credits(
 
 def _detail_from_component(
     component: GeneralIncomeComponent, translator: Translator
-) -> tuple[dict[str, Any], float, float, float]:
+) -> tuple[dict[str, Any], float, float, float, float]:
     (
         gross_income,
         taxable_income,
@@ -433,7 +439,7 @@ def _detail_from_component(
     _add_payment_structure_fields(detail, component)
     _add_deductions_field(detail, component)
 
-    return detail, gross_income, total_tax, net_income
+    return detail, gross_income, taxable_income, total_tax, net_income
 
 
 def _rounded_component_values(
