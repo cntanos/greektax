@@ -1,6 +1,7 @@
 :root {
   color-scheme: light;
   font-family: "Segoe UI", "Noto Sans", system-ui, -apple-system, sans-serif;
+  --layout-max-width: 1080px;
   --flow-taxes: #ff4d6a;
   --flow-contributions: #00bfa6;
   --flow-net: #0f6dff;
@@ -222,7 +223,7 @@ body {
 
 .site-header__inner {
   margin: 0 auto;
-  width: clamp(18rem, 96vw, 3200px);
+  width: clamp(18rem, 96vw, var(--layout-max-width));
   max-width: 100%;
   display: grid;
   gap: 0.75rem;
@@ -371,10 +372,11 @@ body {
 }
 
 main {
-  width: clamp(20rem, 96vw, 3200px);
+  width: clamp(20rem, 96vw, var(--layout-max-width));
   max-width: 100%;
   margin: -2.5rem auto 2.25rem;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 1.5rem;
   padding: 0 clamp(1.25rem, 3vw, 3.5rem) clamp(2.25rem, 3vw, 4rem);
 }
@@ -1303,7 +1305,7 @@ main {
 @media (max-width: 1024px) {
   .site-header__inner,
   main {
-    width: clamp(20rem, 94vw, 3200px);
+    width: clamp(20rem, 94vw, var(--layout-max-width));
   }
 
   main {
@@ -1323,7 +1325,7 @@ main {
 
   .site-header__inner,
   main {
-    width: clamp(20rem, 96vw, 3200px);
+    width: clamp(20rem, 96vw, var(--layout-max-width));
   }
 
   .site-header__topbar {
@@ -1371,7 +1373,7 @@ main {
   }
 
   main {
-    width: clamp(20rem, 98vw, 3200px);
+    width: clamp(20rem, 98vw, var(--layout-max-width));
     margin: -2rem auto 2.5rem;
     padding: 0 clamp(1rem, 5vw, 2rem) 2.5rem;
   }
