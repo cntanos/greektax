@@ -79,10 +79,16 @@ def test_list_years_endpoint(client: FlaskClient) -> None:
     warnings = current_year["warnings"]
     assert isinstance(warnings, list) and warnings
     warning_ids = {entry["id"] for entry in warnings}
-    assert "employment.youth_relief_toggle" in warning_ids
-    assert "residence.small_village_toggle" in warning_ids
-    assert "family.new_mother_toggle" in warning_ids
-    assert all(entry not in warning_ids for entry in {"config.pending_deduction_updates", "freelance.trade_fee_sunset"})
+    assert "employment.partial_year_review" in warning_ids
+    assert {
+        "employment.youth_relief_toggle",
+        "residence.small_village_toggle",
+        "family.new_mother_toggle",
+    }.isdisjoint(warning_ids)
+    assert all(
+        entry not in warning_ids
+        for entry in {"config.pending_deduction_updates", "freelance.trade_fee_sunset"}
+    )
 
     legacy_trade_fee = legacy_year["freelance"]["trade_fee"]
     assert legacy_trade_fee["standard_amount"] > 0

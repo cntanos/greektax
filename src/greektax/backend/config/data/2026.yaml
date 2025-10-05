@@ -583,25 +583,3 @@ warnings:
     message_key: warnings.employment.partial_year_review
     documentation_key: warnings.links.partial_year_review
     documentation_url: https://www.sepenet.gr/el/library/content/apolysi-symvasi-ergasias
-  - id: employment.youth_relief_toggle
-    severity: info
-    applies_to:
-      - employment
-    message_key: warnings.employment.youth_relief_toggle
-    documentation_key: links.youth_relief
-    documentation_url: https://www.aade.gr/epiheiriseis/forologia-eisodimatos/forologikes-elafryseis-neon
-  - id: residence.small_village_toggle
-    severity: info
-    applies_to:
-      - freelance
-      - agricultural
-    message_key: warnings.residence.small_village_toggle
-    documentation_key: links.small_village_relief
-    documentation_url: https://www.aade.gr/adeiodotisi-epiheiriseon/katoikia-se-mikra-choria
-  - id: family.new_mother_toggle
-    severity: info
-    applies_to:
-      - employment
-    message_key: warnings.family.new_mother_toggle
-    documentation_key: links.new_mother_relief
-    documentation_url: https://www.aade.gr/polites/forologia-eisodimatos/forologikes-elafrynseis-neon-miteron
