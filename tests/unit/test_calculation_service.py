@@ -968,11 +968,8 @@ def test_youth_relief_applies_when_toggle_and_age_match() -> None:
     taxable_income = base_payload["employment"]["gross_income"] - expected_employee_contrib
     assert employment_detail["taxable_income"] == pytest.approx(taxable_income)
 
-    # Youth bracket rates: 12k at 5%, remainder at 18%.
-    remaining = taxable_income - 12_000
-    expected_tax_before_credit = 12_000 * 0.05
-    if remaining > 0:
-        expected_tax_before_credit += remaining * 0.18
+    # Youth bracket rates: zero tax on the first €20k for confirmed relief.
+    expected_tax_before_credit = 0.0
 
     assert employment_detail["tax_before_credits"] == pytest.approx(
         expected_tax_before_credit, rel=1e-4
@@ -986,11 +983,13 @@ def test_youth_relief_applies_when_toggle_and_age_match() -> None:
         detail for detail in baseline_result["details"] if detail["category"] == "employment"
     )
 
-    # Household rates without youth relief: 12k at 8.5%, remainder at 22%.
-    expected_baseline_tax = 12_000 * 0.085
-    remaining_baseline = taxable_income - 12_000
+    # Household rates without youth relief: 10k at 9%, remainder at 20% until 20k.
+    first_band = min(taxable_income, 10_000)
+    second_band = max(min(taxable_income - first_band, 10_000), 0)
+    expected_baseline_tax = first_band * 0.09 + second_band * 0.20
+    remaining_baseline = taxable_income - (first_band + second_band)
     if remaining_baseline > 0:
-        expected_baseline_tax += remaining_baseline * 0.22
+        expected_baseline_tax += remaining_baseline * 0.26
 
     assert baseline_detail["tax_before_credits"] == pytest.approx(
         expected_baseline_tax, rel=1e-4

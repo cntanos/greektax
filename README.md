@@ -137,9 +137,9 @@ for guidance on interpreting the output.
   maintaining audit-friendly detail rows in the response payload.【F:src/greektax/backend/app/services/calculation_service.py†L904-L1020】
 - Trade fee handling reflects the latest filing guidance, only adding the charge
   for professions or start years that require it.【F:src/greektax/backend/app/services/calculation_service.py†L702-L776】
-- Preliminary 2026 brackets include youth-rate relief, refreshed dependant credit
-  tiers pending confirmation, and a lower rental mid-band while freelance EFKA
-  categories remain flagged as estimates pending confirmation from EFKA.【F:src/greektax/backend/config/data/2026.yaml†L5-L141】【F:src/greektax/backend/config/data/2026.yaml†L220-L333】【F:src/greektax/backend/config/data/2026.yaml†L450-L520】
+- The 2026 wage and pension brackets now mirror the confirmed youth and large-
+  family relief schedule, while dependant credits, rental updates, and freelance
+  EFKA bands remain provisional pending official circulars.【F:src/greektax/backend/config/data/2026.yaml†L1-L141】【F:src/greektax/backend/config/data/2026.yaml†L220-L333】【F:src/greektax/backend/config/data/2026.yaml†L450-L520】
 
 ## Configuring the API endpoint
 
