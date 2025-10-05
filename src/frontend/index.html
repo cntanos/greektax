@@ -216,7 +216,151 @@
                   disability).
                 </p>
               </div>
+              <div class="form-control">
+                <label for="birth-year" data-i18n-key="fields.birth-year">
+                  Birth year (optional)
+                </label>
+                <input
+                  id="birth-year"
+                  name="demographics.birth_year"
+                  type="number"
+                  min="1900"
+                  max="2100"
+                  step="1"
+                  aria-describedby="birth-year-hint"
+                />
+                <p
+                  id="birth-year-hint"
+                  class="form-hint"
+                  data-i18n-key="hints.birth-year"
+                >
+                  Add the taxpayer birth year to auto-calculate youth relief
+                  eligibility.
+                </p>
+              </div>
+              <div class="form-control">
+                <label for="age-band" data-i18n-key="fields.age-band">
+                  Youth relief age group
+                </label>
+                <select id="age-band" name="demographics.age_band">
+                  <option
+                    value=""
+                    data-i18n-key="fields.age-band-default"
+                  >
+                    Select age group (optional)
+                  </option>
+                  <option
+                    value="under_25"
+                    data-i18n-key="fields.age-band-under-25"
+                  >
+                    Under 25 (youth rate)
+                  </option>
+                  <option
+                    value="age26_30"
+                    data-i18n-key="fields.age-band-26-30"
+                  >
+                    Age 26–30 entering workforce
+                  </option>
+                </select>
+                <p
+                  id="age-band-hint"
+                  class="form-hint"
+                  data-i18n-key="hints.age-band"
+                >
+                  Override the automatic youth band when the worker qualifies
+                  through special rules (for example, first-time employment).
+                </p>
+              </div>
             </div>
+            <div class="form-grid double">
+              <div class="form-control" id="youth-eligibility-control" hidden>
+                <span class="inline-field">
+                  <input
+                    id="youth-eligibility-toggle"
+                    type="checkbox"
+                    aria-describedby="youth-eligibility-hint"
+                  />
+                  <label
+                    for="youth-eligibility-toggle"
+                    data-i18n-key="fields.youth-eligibility-toggle"
+                  >
+                    Youth employment relief
+                  </label>
+                </span>
+                <p
+                  id="youth-eligibility-hint"
+                  class="form-hint"
+                  data-i18n-key="hints.youth-eligibility"
+                >
+                  Enable reduced tax rates when the employee qualifies for the
+                  AADE youth employment relief.
+                </p>
+              </div>
+              <div class="form-control" id="small-village-control" hidden>
+                <span class="inline-field">
+                  <input
+                    id="small-village-toggle"
+                    name="demographics.small_village"
+                    type="checkbox"
+                    aria-describedby="small-village-hint"
+                  />
+                  <label
+                    for="small-village-toggle"
+                    data-i18n-key="fields.small-village-toggle"
+                  >
+                    Small village residency relief
+                  </label>
+                </span>
+                <p
+                  id="small-village-hint"
+                  class="form-hint"
+                  data-i18n-key="hints.small-village"
+                >
+                  Residents of settlements under 500 inhabitants can reduce
+                  presumptive income imputation.
+                </p>
+              </div>
+              <div class="form-control" id="new-mother-control" hidden>
+                <span class="inline-field">
+                  <input
+                    id="new-mother-toggle"
+                    name="demographics.new_mother"
+                    type="checkbox"
+                    aria-describedby="new-mother-hint"
+                  />
+                  <label
+                    for="new-mother-toggle"
+                    data-i18n-key="fields.new-mother-toggle"
+                  >
+                    New mother allowance
+                  </label>
+                </span>
+                <p
+                  id="new-mother-hint"
+                  class="form-hint"
+                  data-i18n-key="hints.new-mother"
+                >
+                  Flag recent childbirth to surface enhanced family credits and
+                  tekmiria reductions.
+                </p>
+              </div>
+            </div>
+            <p
+              id="youth-rates-note"
+              class="form-hint form-hint--note"
+              data-i18n-key="hints.youth-rates-note"
+              hidden
+            >
+              Youth relief rates apply when eligible.
+            </p>
+            <p
+              id="tekmiria-note"
+              class="form-hint form-hint--note"
+              data-i18n-key="hints.tekmiria-note"
+              hidden
+            >
+              Eligible toggles adjust tekmiria-based presumptive income.
+            </p>
             <div
               id="year-alerts"
               class="alert-list"
@@ -356,6 +500,28 @@
             >
               (for wages, salaries, and retirement pensions)
             </p>
+            <details
+              class="help-panel"
+              data-bracket-summary="employment"
+              hidden
+            >
+              <summary data-i18n-key="ui.tax_brackets_summary">
+                View tax brackets
+              </summary>
+              <div
+                class="bracket-summary__content"
+                data-bracket-summary-content
+              ></div>
+            </details>
+            <details class="help-panel" data-bracket-summary="freelance" hidden>
+              <summary data-i18n-key="ui.tax_brackets_summary">
+                View tax brackets
+              </summary>
+              <div
+                class="bracket-summary__content"
+                data-bracket-summary-content
+              ></div>
+            </details>
             <div class="form-grid double">
               <div class="form-control">
                 <label
@@ -564,6 +730,15 @@
                 If you receive a pension, fill in the details below; otherwise
                 leave these fields blank.
               </p>
+              <details class="help-panel" data-bracket-summary="pension" hidden>
+                <summary data-i18n-key="ui.tax_brackets_summary">
+                  View tax brackets
+                </summary>
+                <div
+                  class="bracket-summary__content"
+                  data-bracket-summary-content
+                ></div>
+              </details>
               <div class="form-grid double">
                 <div class="form-control">
                   <label
@@ -982,12 +1157,29 @@
                 </span>
               </div>
             </div>
+            <p
+              id="trade-fee-note"
+              class="form-hint form-hint--note"
+              data-i18n-key="hints.trade-fee-note"
+              hidden
+            >
+              The statutory trade fee is currently abolished for this year.
+            </p>
           </fieldset>
 
           <fieldset class="fieldset" id="agricultural-section" hidden>
             <legend data-i18n-key="calculator.legends.agricultural">
               Agricultural income
             </legend>
+            <details class="help-panel" data-bracket-summary="agricultural" hidden>
+              <summary data-i18n-key="ui.tax_brackets_summary">
+                View tax brackets
+              </summary>
+              <div
+                class="bracket-summary__content"
+                data-bracket-summary-content
+              ></div>
+            </details>
             <div class="form-grid double">
               <div class="form-control">
                 <label
@@ -1052,6 +1244,15 @@
             <legend data-i18n-key="calculator.legends.other">
               Other income
             </legend>
+            <details class="help-panel" data-bracket-summary="other" hidden>
+              <summary data-i18n-key="ui.tax_brackets_summary">
+                View tax brackets
+              </summary>
+              <div
+                class="bracket-summary__content"
+                data-bracket-summary-content
+              ></div>
+            </details>
             <div class="form-grid double">
               <div class="form-control">
                 <label
@@ -1085,6 +1286,15 @@
             <legend data-i18n-key="calculator.legends.rental">
               Rental income
             </legend>
+            <details class="help-panel" data-bracket-summary="rental" hidden>
+              <summary data-i18n-key="ui.tax_brackets_summary">
+                View tax brackets
+              </summary>
+              <div
+                class="bracket-summary__content"
+                data-bracket-summary-content
+              ></div>
+            </details>
             <div class="form-grid double">
               <div class="form-control">
                 <label

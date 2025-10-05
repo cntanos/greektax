@@ -78,9 +78,14 @@
         "non_integer": "{{field}} πρέπει να είναι ακέραιος αριθμός."
       },
       "fields": {
+        "age-band": "Ηλικιακή κατηγορία έκπτωσης νεολαίας",
+        "age-band-26-30": "26–30 ετών που εισέρχονται στην εργασία",
+        "age-band-default": "Επιλογή ηλικιακής κατηγορίας (προαιρετικό)",
+        "age-band-under-25": "Κάτω των 25 (συντελεστής νεολαίας)",
         "agricultural-expenses": "Εκπιπτόμενες αγροτικές δαπάνες (€)",
         "agricultural-professional-farmer": "Καθεστώς επαγγελματία αγρότη",
         "agricultural-revenue": "Ακαθάριστα αγροτικά έσοδα (€)",
+        "birth-year": "Έτος γέννησης (προαιρετικό)",
         "children-input": "Εξαρτώμενα τέκνα",
         "deductions-donations": "Δωρεές (€)",
         "deductions-education": "Εκπαιδευτικές δαπάνες (€)",
@@ -182,7 +187,9 @@
         "no_investment_categories": "Δεν έχουν οριστεί επενδυτικές κατηγορίες για αυτό το έτος."
       },
       "hints": {
+        "age-band": "Υπερκαλύψτε την αυτόματη κατηγοριοποίηση όταν ισχύουν ειδικοί κανόνες (π.χ. πρώτη απασχόληση).",
         "agricultural-professional-farmer": "Επιλέξτε το αν είστε εγγεγραμμένος ως επαγγελματίας αγρότης για το φορολογικό έτος ώστε να εφαρμοστούν τυχόν διαθέσιμες ελαφρύνσεις.",
+        "birth-year": "Δηλώστε το έτος γέννησης για αυτόματο έλεγχο δικαιώματος στις εκπτώσεις νεολαίας.",
         "children-eligibility": "Μετρήστε τα εξαρτώμενα τέκνα που δικαιούνται την οικογενειακή έκπτωση ΑΑΔΕ (ανήλικοι, φοιτητές έως 24 ή τέκνα με αναπηρία).",
         "employment-employee-contributions": "Προσθέστε εισφορές ΕΦΚΑ που καταβάλλετε απευθείας εκτός μισθοδοσίας (π.χ. προαιρετικές συμπληρωματικές). Οι περισσότεροι μισθωτοί το αφήνουν στο 0 γιατί η μισθοδοσία καλύπτει ήδη τον ΕΦΚΑ.",
         "employment-include-social": "Αποεπιλέξτε για να δείτε καθαρό ποσό μόνο με φόρους. Οι εισφορές ΕΦΚΑ εργαζομένου και εργοδότη θα θεωρηθούν μηδενικές στα αποτελέσματα.",
@@ -194,9 +201,11 @@
         "employment-withholding": "Καταχωρήστε τον φόρο PAYE που έχει ήδη παρακρατηθεί στις μισθοδοσίες ώστε να μειωθεί το υπόλοιπο.",
         "freelance-activity-start-year": "Καθορίζει αν ισχύει η 5ετής απαλλαγή νέας επιχείρησης.",
         "freelance-efka-category": "Επιλέξτε κατηγορία εισφορών για αυτόματη συμπλήρωση των υποχρεωτικών ποσών.",
+        "freelance-efka-estimate": "Οι τιμές με σήμανση εκτίμησης ενδέχεται να αλλάξουν όταν επιβεβαιωθούν από την ΑΑΔΕ.",
         "freelance-efka-summary-auxiliary": "Επικουρικό ταμείο: {{monthly}} × {{months}} μήνες = {{total}}.",
         "freelance-efka-summary-base": "Βασική εισφορά (κύρια και υγείας): {{monthly}} × {{months}} μήνες = {{total}}.",
         "freelance-efka-summary-empty": "Επιλέξτε κατηγορία για να εμφανιστούν τα μηνιαία ποσά κύριας, υγειονομικής και επικουρικής ασφάλισης.",
+        "freelance-efka-summary-estimate": "Τα ποσά είναι προσωρινές εκτιμήσεις μέχρι να δημοσιευθούν οι επίσημοι πίνακες ΕΦΚΑ.",
         "freelance-efka-summary-lump": "Ταμείο πρόνοιας/εφάπαξ: {{monthly}} × {{months}} μήνες = {{total}}.",
         "freelance-efka-summary-total": "Εκτιμώμενες ετήσιες εισφορές ΕΦΚΑ: {{total}}.",
         "freelance-expenses": "Καταχωρήστε μόνο δαπάνες με νόμιμα παραστατικά (ενοίκιο, ΔΕΚΟ, επαγγελματικές αμοιβές, εξοπλισμός, επαγγελματική χρήση οχήματος).",
@@ -209,13 +218,19 @@
         "freelance-trade-fee-sunset": "Το τέλος επιτηδεύματος αναμένεται να επανέλθει από το {{year}} (κατάσταση: {{status}}). Επιβεβαιώστε τις τρέχουσες οδηγίες με τον λογιστή σας.",
         "freelance-trade-fee-waived": "Για το συγκεκριμένο φορολογικό έτος δεν οφείλεται τέλος επιτηδεύματος, επομένως αφήστε τον διακόπτη απενεργοποιημένο.",
         "income-toggle-intro": "Επιλέξτε κάθε κατηγορία εισοδήματος που σας αφορά για να εμφανιστούν τα αντίστοιχα πεδία.",
+        "new-mother": "Δηλώστε πρόσφατη γέννα ώστε να εφαρμοστούν ενισχυμένες οικογενειακές εκπτώσεις και μειώσεις τεκμηρίων.",
         "other-income": "Περιλάβετε φορολογητέα ποσά όπως επίδομα ανεργίας, διατροφή που εισπράττετε, φορολογητέες υποτροφίες, έπαθλα ή άλλο εισόδημα που δεν καλύπτεται παραπάνω.",
         "pension-income-gross": "Χρησιμοποιήστε το πεδίο ακαθάριστου όταν γνωρίζετε τη σύνταξη πριν από τις κρατήσεις.",
         "pension-income-net": "Συμπληρώστε το ετήσιο καθαρό ποσό μόνο αν επιλέξατε «Συνολικό ποσό έτους» παραπάνω.",
         "pension-income-net-monthly": "Συμπληρώστε το καθαρό ποσό ανά καταβολή μόνο αν επιλέξατε «Ανά καταβολή» παραπάνω.",
         "pension-net-input-mode": "Επιλέξτε αν θα δηλώσετε το συνολικό καθαρό ποσό του έτους ή το καθαρό ποσό κάθε καταβολής.",
         "pension-section-intro": "Αν λαμβάνετε σύνταξη, συμπληρώστε τα πεδία παρακάτω· διαφορετικά αφήστε τα κενά.",
-        "year-partial-note": "Αν δεν είχατε εισόδημα για ολόκληρο το έτος, καταχωρήστε ό,τι εισπράξατε· η ετήσια φορολογική πίστωση εφαρμόζεται κανονικά."
+        "small-village": "Οι μόνιμοι κάτοικοι οικισμών κάτω των 500 κατοίκων μπορούν να μειώσουν το τεκμαρτό εισόδημα.",
+        "tekmiria-note": "Η μείωση τεκμηρίων {{reduction}} εφαρμόζεται όταν ενεργοποιηθούν οι σχετικές επιλογές (μικρός οικισμός ή νέα μητέρα).",
+        "trade-fee-note": "Το τέλος επιτηδεύματος δεν επιβάλλεται για το έτος· απενεργοποιήστε το μόνο για συγκρίσεις με παλαιότερα δεδομένα.",
+        "year-partial-note": "Αν δεν είχατε εισόδημα για ολόκληρο το έτος, καταχωρήστε ό,τι εισπράξατε· η ετήσια φορολογική πίστωση εφαρμόζεται κανονικά.",
+        "youth-eligibility": "Ενεργοποιήστε τους μειωμένους συντελεστές όταν ο εργαζόμενος δικαιούται την έκπτωση νεανικής απασχόλησης.",
+        "youth-rates-note": "Ισχύουν μειωμένοι συντελεστές νεολαίας όταν πληρούνται τα κριτήρια: {{categories}}."
       },
       "links": {
         "trade_fee_sunset": "Ενημέρωση ΑΑΔΕ για τέλος επιτηδεύματος"
@@ -260,10 +275,23 @@
       },
       "ui": {
         "advanced_options": "Προχωρημένες επιλογές",
+        "bracket_estimate": "Εκτίμηση",
+        "bracket_household_entry": "Εξαρτώμενα {{dependants}}: {{rate}}",
+        "bracket_household_reduction": "Συντελεστής μείωσης οικογενειακού: {{reduction}}",
+        "bracket_label_base": "Βασικός συντελεστής",
+        "bracket_label_household": "Οικογενειακό",
+        "bracket_label_notes": "Σημειώσεις",
+        "bracket_label_youth": "Έκπτωση νεολαίας",
+        "bracket_pending": "Σε αναμονή επιβεβαίωσης",
+        "bracket_range_between": "Πάνω από {{lower}} έως {{upper}}",
+        "bracket_range_final": "Πάνω από {{lower}}",
+        "bracket_range_initial": "Έως {{upper}}",
+        "bracket_youth_entry": "{{label}}: {{rate}}",
         "deductions_help_body": "Καταχωρήστε μόνο ποσά με νόμιμες αποδείξεις ή αποδεικτικά πληρωμής.",
         "deductions_help_limits": "Εφαρμόζονται αυτόματα τα νόμιμα όρια—η πίστωση για δωρεές εξαρτάται από το εισόδημα, ενώ ιατρικές, εκπαιδευτικές και ασφαλιστικές δαπάνες ακολουθούν τα όρια της ΑΑΔΕ.",
         "deductions_help_summary": "Βοήθεια για εκπτώσεις",
         "disclaimer": "Αποποίηση ευθύνης: Το εργαλείο είναι ανεπίσημο και παρέχεται ως έχει. Τα δεδομένα εισόδου αποθηκεύονται τοπικά στη συσκευή σας για έως δύο ώρες και δεν αποστέλλονται σε διακομιστή. Συμβουλευτείτε λογιστή για επίσημες δηλώσεις.",
+        "estimate_tag": "≈ εκτίμηση",
         "freelance_help_body": "Δηλώστε τον ακαθάριστο κύκλο εργασιών πριν τον ΦΠΑ και καταχωρήστε μόνο τεκμηριωμένες δαπάνες (ενοίκιο, ΔΕΚΟ, εξοπλισμός, αμοιβές).",
         "freelance_help_contributions": "Η επιλογή κατηγορίας ΕΦΚΑ προ-συμπληρώνει τις υποχρεωτικές εισφορές· προσαρμόστε τα ποσά με βάση τα πραγματικά σας παραστατικά.",
         "freelance_help_summary": "Βοήθεια για ελεύθερους επαγγελματίες",
@@ -275,6 +303,7 @@
         "highlight_visual_copy": "Παρακολουθήστε φόρους, εισφορές και καθαρό ποσό σε διάγραμμα Sankey με χρωματική κωδικοποίηση.",
         "highlight_visual_title": "Οπτική απεικόνιση εισοδήματος",
         "info_tooltip_label": "Περισσότερες πληροφορίες για το πεδίο",
+        "list_and": "και",
         "overview_description": "Ακολουθήστε αυτά τα σύντομα βήματα για να λάβετε δίγλωσση σύνοψη των ελληνικών φορολογικών σας υποχρεώσεων.",
         "overview_heading": "Επισκόπηση",
         "overview_step_calculate": "Πατήστε Υπολογισμός για να δείτε τα αποτελέσματα και να κατεβάσετε αντίγραφο.",
@@ -282,8 +311,13 @@
         "overview_step_select_year": "Επιλέξτε το φορολογικό έτος και επιβεβαιώστε τη γλώσσα παραπάνω.",
         "overview_step_toggle_sections": "Ενεργοποιήστε τις ενότητες εισοδήματος που ταιριάζουν στην περίπτωσή σας.",
         "tagline": "Ανεπίσημο εργαλείο εκτίμησης φόρων για την Ελλάδα",
+        "tax_brackets_summary": "Προβολή φορολογικών κλιμακίων",
         "theme_option_dark": "Σκοτεινό",
-        "theme_option_light": "Φωτεινό"
+        "theme_option_light": "Φωτεινό",
+        "youth_band": {
+          "age26_30": "26–30 ετών",
+          "under_25": "Κάτω των 25"
+        }
       },
       "warnings": {
         "configuration": {
@@ -388,9 +422,14 @@
         "non_integer": "{{field}} must be a whole number."
       },
       "fields": {
+        "age-band": "Youth relief age group",
+        "age-band-26-30": "Age 26–30 entering workforce",
+        "age-band-default": "Select age group (optional)",
+        "age-band-under-25": "Under 25 (youth rate)",
         "agricultural-expenses": "Agricultural expenses (€)",
         "agricultural-professional-farmer": "Professional farmer status",
         "agricultural-revenue": "Agricultural revenue (€)",
+        "birth-year": "Birth year (optional)",
         "children-input": "Dependent children",
         "deductions-donations": "Charitable donations (€)",
         "deductions-education": "Education expenses (€)",
@@ -492,7 +531,9 @@
         "no_investment_categories": "No investment categories configured for this year."
       },
       "hints": {
+        "age-band": "Override the automatic youth band when the worker qualifies through special rules (for example, first-time employment).",
         "agricultural-professional-farmer": "Check this if you are registered as a professional farmer for the tax year. It enables any reliefs available for that status.",
+        "birth-year": "Add the taxpayer birth year to auto-calculate youth relief eligibility.",
         "children-eligibility": "Count dependent children recognised for the AADE family tax credit (minors, students up to 24, or dependents with a disability).",
         "employment-employee-contributions": "Add EFKA amounts you pay directly outside payroll (for example, voluntary top-ups). Most employees will leave this at 0 because payroll already covers EFKA.",
         "employment-include-social": "Untick to see tax-only net income. EFKA amounts (employee and employer) will be treated as zero in the results.",
@@ -504,9 +545,11 @@
         "employment-withholding": "Enter PAYE income tax already withheld on your payslips to reduce the balance due.",
         "freelance-activity-start-year": "Determines if the new-business 5-year fee exemption applies.",
         "freelance-efka-category": "Select a contribution class to prefill mandatory EFKA payments.",
+        "freelance-efka-estimate": "Values marked as estimates may change once AADE confirms the EFKA contributions.",
         "freelance-efka-summary-auxiliary": "Auxiliary fund: {{monthly}} × {{months}} months = {{total}}.",
         "freelance-efka-summary-base": "Base EFKA (pension and health): {{monthly}} × {{months}} months = {{total}}.",
         "freelance-efka-summary-empty": "Select a contribution class to view monthly pension, health, and auxiliary amounts.",
+        "freelance-efka-summary-estimate": "Amounts shown are provisional estimates until official EFKA tables are published.",
         "freelance-efka-summary-lump": "Lump-sum fund: {{monthly}} × {{months}} months = {{total}}.",
         "freelance-efka-summary-total": "Estimated annual EFKA payments: {{total}}.",
         "freelance-expenses": "Claim only expenses backed by invoices (rent, utilities, professional fees, equipment, vehicle costs used for business).",
@@ -519,13 +562,19 @@
         "freelance-trade-fee-sunset": "The business activity fee is slated to return from {{year}} (status: {{status}}). Double-check the latest rules with your accountant.",
         "freelance-trade-fee-waived": "No business activity fee is due for this tax year, so you can leave this switched off.",
         "income-toggle-intro": "Select each income type you receive to reveal its inputs.",
+        "new-mother": "Flag recent childbirth to surface enhanced family credits and tekmiria reductions.",
         "other-income": "Include taxable amounts such as unemployment benefits, alimony received, taxable scholarships, prizes, or other income not covered above.",
         "pension-income-gross": "Use the gross field when you know the annual pension before deductions.",
         "pension-income-net": "Enter the annual net pension only when you choose \"Total for year\" above.",
         "pension-income-net-monthly": "Enter the per-payment net pension only when you choose \"Per payment\" above.",
         "pension-net-input-mode": "Choose whether to enter the total net amount for the year or the net amount for each payment.",
         "pension-section-intro": "If you receive a pension, fill in the fields below; otherwise leave them blank.",
-        "year-partial-note": "If you didn't earn income for the full year, enter what you earned; the annual tax credit still applies in full."
+        "small-village": "Residents of settlements under 500 inhabitants can reduce presumptive income imputation.",
+        "tekmiria-note": "Tekmiria reductions of {{reduction}} apply when qualifying relief toggles (small village or new mother) are enabled.",
+        "trade-fee-note": "Business activity fees are waived for this year; keep the toggle off only for historical comparisons.",
+        "year-partial-note": "If you didn't earn income for the full year, enter what you earned; the annual tax credit still applies in full.",
+        "youth-eligibility": "Enable reduced tax rates when the employee qualifies for the AADE youth employment relief.",
+        "youth-rates-note": "Youth relief rates apply when eligible: {{categories}}."
       },
       "links": {
         "trade_fee_sunset": "AADE trade fee update"
@@ -570,10 +619,23 @@
       },
       "ui": {
         "advanced_options": "Advanced options",
+        "bracket_estimate": "Estimate",
+        "bracket_household_entry": "Dependants {{dependants}}: {{rate}}",
+        "bracket_household_reduction": "Household reduction factor: {{reduction}}",
+        "bracket_label_base": "Base rate",
+        "bracket_label_household": "Household",
+        "bracket_label_notes": "Notes",
+        "bracket_label_youth": "Youth relief",
+        "bracket_pending": "Pending confirmation",
+        "bracket_range_between": "Over {{lower}} up to {{upper}}",
+        "bracket_range_final": "Over {{lower}}",
+        "bracket_range_initial": "Up to {{upper}}",
+        "bracket_youth_entry": "{{label}}: {{rate}}",
         "deductions_help_body": "Only enter amounts supported by official receipts or payment slips.",
         "deductions_help_limits": "Statutory limits are applied automatically—donation credits depend on income, while medical, education, and insurance costs follow AADE caps.",
         "deductions_help_summary": "Deductions help",
         "disclaimer": "Disclaimer: This tool is unofficial and provided as-is. Inputs are stored locally on your device for up to two hours and are never sent to a server. Please consult a professional accountant for formal filings.",
+        "estimate_tag": "≈ estimate",
         "freelance_help_body": "Report gross turnover before VAT and only claim expenses you can document (rent, utilities, equipment, professional fees).",
         "freelance_help_contributions": "Choosing an EFKA category preloads mandatory contributions; override with your actual payments if they differ.",
         "freelance_help_summary": "Freelance help",
@@ -585,6 +647,7 @@
         "highlight_visual_copy": "Track taxes, contributions, and take-home pay through a colour-coded Sankey diagram.",
         "highlight_visual_title": "Visual income breakdown",
         "info_tooltip_label": "More information about this field",
+        "list_and": "and",
         "overview_description": "Follow these quick steps to receive a bilingual summary of your Greek income taxes.",
         "overview_heading": "Overview",
         "overview_step_calculate": "Press Calculate to view your results and download a copy.",
@@ -592,8 +655,13 @@
         "overview_step_select_year": "Choose the tax year and confirm the language above.",
         "overview_step_toggle_sections": "Enable the income sections that match your situation.",
         "tagline": "Unofficial tax estimation toolkit for Greece",
+        "tax_brackets_summary": "View tax brackets",
         "theme_option_dark": "Dark",
-        "theme_option_light": "Light"
+        "theme_option_light": "Light",
+        "youth_band": {
+          "age26_30": "Age 26–30",
+          "under_25": "Under 25"
+        }
       },
       "warnings": {
         "configuration": {

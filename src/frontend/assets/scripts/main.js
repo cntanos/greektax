@@ -61,6 +61,8 @@ let currentDeductionHints = [];
 let currentFreelanceMetadata = null;
 let derivedFreelanceYearsActive = null;
 let derivedFreelanceNewlySelfEmployed = false;
+let currentYearToggles = {};
+let currentYearToggleKeys = new Set();
 let dynamicFieldLabels = {};
 let deductionValidationByInput = {};
 let lastCalculation = null;
@@ -188,6 +190,20 @@ const themeButtons = Array.from(
 
 const yearSelect = document.getElementById("year-select");
 const childrenInput = document.getElementById("children-input");
+const birthYearInput = document.getElementById("birth-year");
+const ageBandSelect = document.getElementById("age-band");
+const youthEligibilityControl = document.getElementById(
+  "youth-eligibility-control",
+);
+const youthEligibilityToggle = document.getElementById(
+  "youth-eligibility-toggle",
+);
+const smallVillageControl = document.getElementById("small-village-control");
+const smallVillageToggle = document.getElementById("small-village-toggle");
+const newMotherControl = document.getElementById("new-mother-control");
+const newMotherToggle = document.getElementById("new-mother-toggle");
+const youthRatesNote = document.getElementById("youth-rates-note");
+const tekmiriaNote = document.getElementById("tekmiria-note");
 const employmentIncomeInput = document.getElementById("employment-income");
 const employmentMonthlyIncomeInput = document.getElementById(
   "employment-monthly-income",
@@ -229,6 +245,7 @@ const freelanceActivityStartInput = document.getElementById(
   "freelance-activity-start-year",
 );
 const tradeFeeToggle = document.getElementById("trade-fee-toggle");
+const tradeFeeNote = document.getElementById("trade-fee-note");
 const freelanceEfkaSelect = document.getElementById("freelance-efka-category");
 const freelanceEfkaMonthsInput = document.getElementById("freelance-efka-months");
 const freelanceEfkaHint = document.getElementById("freelance-efka-category-hint");
@@ -238,6 +255,19 @@ const freelanceTradeFeeLocationSelect = document.getElementById(
 const freelanceTradeFeeHint = document.getElementById("freelance-trade-fee-hint");
 const freelanceYearsActiveInput = document.getElementById("freelance-years-active");
 const freelanceEfkaSummary = document.getElementById("freelance-efka-summary");
+const bracketSummaryElements = Array.from(
+  document.querySelectorAll("[data-bracket-summary]"),
+);
+const bracketSummaryBySection = new Map();
+bracketSummaryElements.forEach((element) => {
+  const section = element.getAttribute("data-bracket-summary");
+  if (!section) {
+    return;
+  }
+  const content =
+    element.querySelector("[data-bracket-summary-content]") || element;
+  bracketSummaryBySection.set(section, { element, content });
+});
 const rentalIncomeInput = document.getElementById("rental-income");
 const rentalExpensesInput = document.getElementById("rental-expenses");
 const investmentFieldsContainer = document.getElementById("investment-fields");
@@ -973,6 +1003,379 @@ function formatPercent(value) {
   return `${sign}${integerPart}${decimalPart}%`;
 }
 
+function formatList(items) {
+  if (!Array.isArray(items) || items.length === 0) {
+    return "";
+  }
+  if (typeof Intl !== "undefined" && typeof Intl.ListFormat !== "undefined") {
+    try {
+      const formatter = new Intl.ListFormat(currentLocale || fallbackLocale || "en", {
+        style: "long",
+        type: "conjunction",
+      });
+      return formatter.format(items);
+    } catch (error) {
+      // Fall back to manual formatting below.
+    }
+  }
+  if (items.length === 1) {
+    return items[0];
+  }
+  const rest = items.slice(0, -1).join(", ");
+  const last = items[items.length - 1];
+  const conjunction = t("ui.list_and") || "and";
+  return `${rest} ${conjunction} ${last}`;
+}
+
+function sanitiseToggleMap(source) {
+  if (!source || typeof source !== "object") {
+    return {};
+  }
+  const toggles = {};
+  Object.entries(source).forEach(([key, value]) => {
+    toggles[String(key)] = Boolean(value);
+  });
+  return toggles;
+}
+
+function applyContributionDefaults(metadata) {
+  const employmentDefaults =
+    (metadata && metadata.employment && metadata.employment.defaults) || {};
+  if (employmentIncludeSocialToggle) {
+    if (employmentDefaults.hasOwnProperty("include_social_contributions")) {
+      employmentIncludeSocialToggle.checked = Boolean(
+        employmentDefaults.include_social_contributions,
+      );
+    } else {
+      employmentIncludeSocialToggle.checked = Boolean(
+        employmentIncludeSocialToggle.defaultChecked,
+      );
+    }
+  }
+
+  const freelanceDefaults =
+    (metadata && metadata.freelance && metadata.freelance.defaults) || {};
+  if (tradeFeeToggle) {
+    if (freelanceDefaults.hasOwnProperty("include_trade_fee")) {
+      tradeFeeToggle.checked = Boolean(freelanceDefaults.include_trade_fee);
+    } else {
+      tradeFeeToggle.checked = Boolean(tradeFeeToggle.defaultChecked);
+    }
+  }
+}
+
+function updateDemographicToggles(metadata, toggles) {
+  const hasYouthToggle = Object.prototype.hasOwnProperty.call(
+    toggles,
+    "youth_eligibility",
+  );
+  if (youthEligibilityControl) {
+    youthEligibilityControl.hidden = !hasYouthToggle;
+  }
+  if (youthEligibilityToggle) {
+    youthEligibilityToggle.checked = hasYouthToggle
+      ? Boolean(toggles.youth_eligibility)
+      : Boolean(youthEligibilityToggle.defaultChecked);
+  }
+
+  const hasSmallVillage = Object.prototype.hasOwnProperty.call(
+    toggles,
+    "small_village",
+  );
+  if (smallVillageControl) {
+    smallVillageControl.hidden = !hasSmallVillage;
+  }
+  if (smallVillageToggle) {
+    smallVillageToggle.checked = hasSmallVillage
+      ? Boolean(toggles.small_village)
+      : Boolean(smallVillageToggle.defaultChecked);
+  }
+
+  const hasNewMother = Object.prototype.hasOwnProperty.call(
+    toggles,
+    "new_mother",
+  );
+  if (newMotherControl) {
+    newMotherControl.hidden = !hasNewMother;
+  }
+  if (newMotherToggle) {
+    newMotherToggle.checked = hasNewMother
+      ? Boolean(toggles.new_mother)
+      : Boolean(newMotherToggle.defaultChecked);
+  }
+}
+
+function computeBracketRangeLabel(bracket, index, previousUpper) {
+  const upper = bracket && bracket.upper;
+  if (upper === null || upper === undefined) {
+    return t("ui.bracket_range_final", {
+      lower: formatCurrency(previousUpper),
+    });
+  }
+  if (index === 0) {
+    return t("ui.bracket_range_initial", {
+      upper: formatCurrency(upper),
+    });
+  }
+  return t("ui.bracket_range_between", {
+    lower: formatCurrency(previousUpper),
+    upper: formatCurrency(upper),
+  });
+}
+
+function renderBracketSummary(section, brackets) {
+  const target = bracketSummaryBySection.get(section);
+  if (!target) {
+    return;
+  }
+  const { element, content } = target;
+  if (!content) {
+    return;
+  }
+
+  const entries = Array.isArray(brackets) ? brackets : [];
+  if (!entries.length) {
+    content.innerHTML = "";
+    element.hidden = true;
+    if (element instanceof HTMLDetailsElement) {
+      element.open = false;
+    }
+    return;
+  }
+
+  const fragment = document.createDocumentFragment();
+  let previousUpper = 0;
+
+  entries.forEach((bracket, index) => {
+    if (!bracket) {
+      return;
+    }
+
+    const row = document.createElement("div");
+    row.className = "bracket-summary__row";
+
+    const rangeHeading = document.createElement("h4");
+    rangeHeading.className = "bracket-summary__range";
+    rangeHeading.textContent = computeBracketRangeLabel(
+      bracket,
+      index,
+      previousUpper,
+    );
+    row.appendChild(rangeHeading);
+
+    if (typeof bracket.upper === "number") {
+      previousUpper = bracket.upper;
+    }
+
+    const metrics = document.createElement("dl");
+    metrics.className = "bracket-summary__metrics";
+
+    const baseDt = document.createElement("dt");
+    baseDt.textContent = t("ui.bracket_label_base");
+    metrics.appendChild(baseDt);
+
+    const baseDd = document.createElement("dd");
+    const baseRate =
+      bracket.base_rate !== undefined && bracket.base_rate !== null
+        ? bracket.base_rate
+        : bracket.rate;
+    baseDd.textContent = formatPercent(baseRate || 0);
+    metrics.appendChild(baseDd);
+
+    const householdRates = Array.isArray(bracket.household?.rates)
+      ? bracket.household.rates
+      : [];
+    if (householdRates.length) {
+      const householdDt = document.createElement("dt");
+      householdDt.textContent = t("ui.bracket_label_household");
+      metrics.appendChild(householdDt);
+
+      const householdDd = document.createElement("dd");
+      const householdParts = householdRates.map((entry) =>
+        t("ui.bracket_household_entry", {
+          dependants: entry.dependants,
+          rate: formatPercent(entry.rate),
+        }),
+      );
+      const reductionFactor = bracket.household?.reduction_factor;
+      if (reductionFactor) {
+        householdParts.push(
+          t("ui.bracket_household_reduction", {
+            reduction: formatPercent(reductionFactor),
+          }),
+        );
+      }
+      householdDd.textContent = householdParts.join(" ");
+      metrics.appendChild(householdDd);
+    }
+
+    const youthRates = Array.isArray(bracket.youth) ? bracket.youth : [];
+    if (youthRates.length) {
+      const youthDt = document.createElement("dt");
+      youthDt.textContent = t("ui.bracket_label_youth");
+      metrics.appendChild(youthDt);
+
+      const youthDd = document.createElement("dd");
+      const youthParts = youthRates.map((entry) => {
+        const label = t(`ui.youth_band.${entry.band}`) || entry.band;
+        return t("ui.bracket_youth_entry", {
+          label,
+          rate: formatPercent(entry.rate),
+        });
+      });
+      youthDd.textContent = youthParts.join(" ");
+      metrics.appendChild(youthDd);
+    }
+
+    const notes = [];
+    if (bracket.pending_confirmation) {
+      notes.push(t("ui.bracket_pending"));
+    }
+    if (bracket.estimate) {
+      notes.push(t("ui.bracket_estimate"));
+    }
+    if (notes.length) {
+      const notesDt = document.createElement("dt");
+      notesDt.textContent = t("ui.bracket_label_notes");
+      metrics.appendChild(notesDt);
+
+      const notesDd = document.createElement("dd");
+      notesDd.textContent = notes.join(" ");
+      metrics.appendChild(notesDd);
+    }
+
+    row.appendChild(metrics);
+    fragment.appendChild(row);
+  });
+
+  content.innerHTML = "";
+  content.appendChild(fragment);
+  element.hidden = false;
+}
+
+function renderBracketSummaries(metadata) {
+  if (!bracketSummaryBySection.size) {
+    return;
+  }
+
+  const sections = [
+    ["employment", metadata?.employment?.brackets],
+    ["pension", metadata?.pension?.brackets],
+    ["freelance", metadata?.freelance?.brackets],
+    ["agricultural", metadata?.agricultural?.brackets],
+    ["other", metadata?.other?.brackets],
+    ["rental", metadata?.rental?.brackets],
+  ];
+
+  sections.forEach(([section, brackets]) => {
+    renderBracketSummary(section, brackets);
+  });
+}
+
+function collectYouthBands(brackets) {
+  const bands = new Set();
+  if (Array.isArray(brackets)) {
+    brackets.forEach((bracket) => {
+      if (Array.isArray(bracket?.youth)) {
+        bracket.youth.forEach((entry) => {
+          if (entry?.band) {
+            bands.add(String(entry.band));
+          }
+        });
+      }
+    });
+  }
+  return Array.from(bands);
+}
+
+function collectAllYouthBands(metadata) {
+  const sections = [
+    metadata?.employment?.brackets,
+    metadata?.pension?.brackets,
+    metadata?.freelance?.brackets,
+    metadata?.agricultural?.brackets,
+    metadata?.other?.brackets,
+    metadata?.rental?.brackets,
+  ];
+  const bands = new Set();
+  sections.forEach((brackets) => {
+    collectYouthBands(brackets).forEach((band) => bands.add(band));
+  });
+  return Array.from(bands);
+}
+
+function updateYouthNotes(metadata, toggles) {
+  if (!youthRatesNote) {
+    return;
+  }
+
+  const hasToggle = currentYearToggleKeys.has("youth_eligibility");
+  if (!metadata || !hasToggle) {
+    youthRatesNote.textContent = "";
+    youthRatesNote.hidden = true;
+    return;
+  }
+
+  const bands = collectAllYouthBands(metadata);
+  if (!bands.length) {
+    youthRatesNote.textContent = "";
+    youthRatesNote.hidden = true;
+    return;
+  }
+
+  const labels = bands.map((band) => t(`ui.youth_band.${band}`) || band);
+  const formatted = formatList(labels) || labels.join(", ");
+  youthRatesNote.textContent = t("hints.youth-rates-note", {
+    categories: formatted,
+  });
+  youthRatesNote.hidden = false;
+}
+
+function updateTekmiriaNote(metadata, toggles) {
+  if (!tekmiriaNote) {
+    return;
+  }
+
+  const tekmiriaConfig = metadata?.employment?.tekmiria;
+  if (!tekmiriaConfig || !tekmiriaConfig.enabled) {
+    tekmiriaNote.textContent = "";
+    tekmiriaNote.hidden = true;
+    return;
+  }
+
+  const factor = tekmiriaConfig.reduction_factor;
+  if (factor === null || factor === undefined) {
+    tekmiriaNote.textContent = "";
+    tekmiriaNote.hidden = true;
+    return;
+  }
+
+  tekmiriaNote.textContent = t("hints.tekmiria-note", {
+    reduction: formatPercent(factor),
+  });
+  tekmiriaNote.hidden = false;
+}
+
+function updateTradeFeeNote(metadata) {
+  if (!tradeFeeNote) {
+    return;
+  }
+
+  const tradeFee = metadata?.freelance?.trade_fee || {};
+  const standardAmount = tradeFee.standard_amount;
+  const noteEnabled =
+    Boolean(tradeFee.fee_sunset) ||
+    (typeof standardAmount === "number" && standardAmount === 0);
+
+  if (noteEnabled) {
+    tradeFeeNote.textContent = t("hints.trade-fee-note");
+    tradeFeeNote.hidden = false;
+  } else {
+    tradeFeeNote.textContent = "";
+    tradeFeeNote.hidden = true;
+  }
+}
+
 function isNumericInputElement(element) {
   return element instanceof HTMLInputElement && element.type === "number";
 }
@@ -1440,6 +1843,12 @@ function applyYearMetadata(year) {
   isApplyingYearMetadata = true;
   try {
     currentYearMetadata = yearMetadataByYear.get(year) || null;
+    currentYearToggles = sanitiseToggleMap(
+      (currentYearMetadata &&
+        (currentYearMetadata.toggles || currentYearMetadata.meta?.toggles)) ||
+        {},
+    );
+    currentYearToggleKeys = new Set(Object.keys(currentYearToggles));
     renderYearWarnings(currentYearMetadata, {
       showPartialYearWarning: partialYearWarningActive,
     });
@@ -1452,9 +1861,16 @@ function applyYearMetadata(year) {
       currentYearMetadata?.pension?.payroll || null,
     );
 
+    applyContributionDefaults(currentYearMetadata);
+    updateDemographicToggles(currentYearMetadata, currentYearToggles);
+    renderBracketSummaries(currentYearMetadata);
+    updateYouthNotes(currentYearMetadata, currentYearToggles);
+    updateTekmiriaNote(currentYearMetadata, currentYearToggles);
+
     updateEmploymentMode(currentEmploymentMode);
     updatePensionMode(currentPensionMode);
     populateFreelanceMetadata(currentYearMetadata?.freelance || null);
+    updateTradeFeeNote(currentYearMetadata);
     applyPendingCalculatorState();
     updatePartialYearWarningState();
   } finally {
@@ -1850,6 +2266,12 @@ function updateFreelanceCategoryHint() {
         }),
       );
     }
+    if (category?.estimate) {
+      const estimateSummary = t("hints.freelance-efka-summary-estimate");
+      if (estimateSummary) {
+        summaryMessages.push(estimateSummary);
+      }
+    }
   }
 
   if (freelanceEfkaSummary) {
@@ -1869,18 +2291,30 @@ function updateFreelanceCategoryHint() {
   }
 
   if (freelanceEfkaHint) {
+    const messages = [];
     if (category?.description_key) {
-      freelanceEfkaHint.textContent = t(category.description_key);
-      freelanceEfkaHint.hidden = false;
+      const description = t(category.description_key);
+      if (description) {
+        messages.push(description);
+      }
     } else {
       const defaultMessage = t("hints.freelance-efka-category");
       if (!category && defaultMessage) {
-        freelanceEfkaHint.textContent = defaultMessage;
-        freelanceEfkaHint.hidden = false;
-      } else {
-        freelanceEfkaHint.textContent = "";
-        freelanceEfkaHint.hidden = true;
+        messages.push(defaultMessage);
       }
+    }
+    if (category?.estimate) {
+      const estimateMessage = t("hints.freelance-efka-estimate");
+      if (estimateMessage) {
+        messages.push(estimateMessage);
+      }
+    }
+    if (messages.length) {
+      freelanceEfkaHint.textContent = messages.join(" ");
+      freelanceEfkaHint.hidden = false;
+    } else {
+      freelanceEfkaHint.textContent = "";
+      freelanceEfkaHint.hidden = true;
     }
   }
 }
@@ -1975,9 +2409,13 @@ function populateFreelanceMetadata(metadata) {
       }
       const option = document.createElement("option");
       option.value = category.id;
-      option.textContent = `${t(category.label_key)} (${formatCurrency(
-        category.monthly_amount || 0,
-      )}/month)`;
+      const label = t(category.label_key);
+      const monthly = formatCurrency(category.monthly_amount || 0);
+      let optionLabel = `${label} (${monthly}/month)`;
+      if (category.estimate) {
+        optionLabel = `${optionLabel} ${t("ui.estimate_tag")}`;
+      }
+      option.textContent = optionLabel;
       option.dataset.monthlyAmount = String(category.monthly_amount || 0);
       option.dataset.auxiliaryMonthlyAmount = String(
         category.auxiliary_monthly_amount || 0,
@@ -1985,6 +2423,7 @@ function populateFreelanceMetadata(metadata) {
       if (category.description_key) {
         option.dataset.descriptionKey = category.description_key;
       }
+      option.dataset.estimate = String(Boolean(category.estimate));
       freelanceEfkaSelect.appendChild(option);
     });
 
@@ -2280,10 +2719,47 @@ function buildCalculationPayload() {
   const year = Number.parseInt(yearSelect?.value ?? "0", 10);
   const payload = { year, locale: currentLocale };
 
+  const demographics = {};
+  const toggles = {};
+
+  if (currentYearToggleKeys.size) {
+    currentYearToggleKeys.forEach((key) => {
+      toggles[key] = Boolean(currentYearToggles[key]);
+    });
+  }
+
   const children = Number.parseInt(childrenInput?.value ?? "0", 10);
   if (Number.isFinite(children) && children > 0) {
     payload.dependents = { children };
   }
+
+  const birthYear = readInteger(birthYearInput);
+  if (birthYear >= 1900 && birthYear <= 2100) {
+    demographics.birth_year = birthYear;
+  }
+
+  const ageBand = ageBandSelect?.value || "";
+  if (ageBand) {
+    demographics.age_band = ageBand;
+  }
+
+  if (youthEligibilityToggle && isInputVisible(youthEligibilityToggle)) {
+    toggles.youth_eligibility = Boolean(youthEligibilityToggle.checked);
+  }
+
+  if (smallVillageToggle && isInputVisible(smallVillageToggle)) {
+    const value = Boolean(smallVillageToggle.checked);
+    toggles.small_village = value;
+    demographics.small_village = value;
+  }
+
+  if (newMotherToggle && isInputVisible(newMotherToggle)) {
+    const value = Boolean(newMotherToggle.checked);
+    toggles.new_mother = value;
+    demographics.new_mother = value;
+  }
+
+  payload.demographics = demographics;
 
   const employmentPayload = {};
   const grossIncome = readNumber(employmentIncomeInput);
@@ -2497,6 +2973,9 @@ function buildCalculationPayload() {
       payload.obligations = obligationsPayload;
     }
   }
+
+  currentYearToggles = { ...toggles };
+  payload.toggles = toggles;
 
   return payload;
 }
