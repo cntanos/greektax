@@ -12,6 +12,9 @@ from .year_config import (
     DeductionHint,
     DeductionRuleConfig,
     EFKACategoryConfig,
+    EmploymentConfig,
+    FamilyTaxCreditMetadata,
+    FreelanceConfig,
     PayrollConfig,
     TradeFeeConfig,
     YearConfiguration,
@@ -135,6 +138,36 @@ def _validate_trade_fee(trade_fee: TradeFeeConfig) -> list[str]:
                     "sunset documentation URL must be absolute",
                 )
             )
+
+    return errors
+
+
+def _validate_family_tax_credit(metadata: FamilyTaxCreditMetadata) -> list[str]:
+    errors: list[str] = []
+
+    reduction = metadata.reduction_factor
+    if reduction is not None and reduction < 0:
+        errors.append(
+            _format_scope(
+                "employment.family_tax_credit",
+                "reduction_factor must be non-negative when provided",
+            )
+        )
+
+    return errors
+
+
+def _validate_tekmiria_reduction(config: EmploymentConfig) -> list[str]:
+    errors: list[str] = []
+
+    value = config.tekmiria_reduction_factor
+    if value is not None and value < 0:
+        errors.append(
+            _format_scope(
+                "employment.tekmiria_reduction_factor",
+                "value must be non-negative when provided",
+            )
+        )
 
     return errors
 
@@ -433,6 +466,8 @@ def validate_year_configuration(config: YearConfiguration) -> list[str]:
 
     errors.extend(_validate_trade_fee(config.freelance.trade_fee))
     errors.extend(_validate_efka_categories(config.freelance.efka_categories))
+    errors.extend(_validate_family_tax_credit(config.employment.family_tax_credit))
+    errors.extend(_validate_tekmiria_reduction(config.employment))
     errors.extend(_validate_investment_rates(config.investment.rates))
     errors.extend(_validate_deductions(config.deductions))
     errors.extend(_validate_warnings(config.warnings))

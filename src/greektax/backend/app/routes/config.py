@@ -16,6 +16,7 @@ from greektax.backend.app.localization import get_translator, normalise_locale
 from greektax.backend.config.year_config import (
     ContributionRates,
     EFKACategoryConfig,
+    EmploymentConfig,
     PayrollConfig,
     TradeFeeConfig,
     YearWarning,
@@ -39,6 +40,14 @@ def _serialise_contributions(contributions: ContributionRates) -> dict[str, Any]
         "employee_rate": contributions.employee_rate,
         "employer_rate": contributions.employer_rate,
         "monthly_salary_cap": contributions.monthly_salary_cap,
+    }
+
+
+def _serialise_family_tax_credit(config: EmploymentConfig) -> dict[str, Any]:
+    return {
+        "pending_confirmation": config.family_tax_credit.pending_confirmation,
+        "estimate": config.family_tax_credit.estimate,
+        "reduction_factor": config.family_tax_credit.reduction_factor,
     }
 
 
@@ -98,6 +107,8 @@ def _serialise_year(year: int) -> dict[str, Any]:
         "employment": {
             "payroll": _serialise_payroll_config(config.employment.payroll),
             "contributions": _serialise_contributions(config.employment.contributions),
+            "family_tax_credit": _serialise_family_tax_credit(config.employment),
+            "tekmiria_reduction_factor": config.employment.tekmiria_reduction_factor,
         },
         "pension": {
             "payroll": _serialise_payroll_config(config.pension.payroll),
@@ -108,6 +119,7 @@ def _serialise_year(year: int) -> dict[str, Any]:
             "efka_categories": _serialise_efka_categories(
                 config.freelance.efka_categories
             ),
+            "pending_contribution_update": config.freelance.pending_contribution_update,
         },
         "warnings": [_serialise_warning(entry) for entry in config.warnings],
     }

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from greektax.backend.config.year_config import TaxBracket
+from greektax.backend.config.year_config import ProgressiveTaxBracket
 
 
 def format_percentage(value: float) -> str:
@@ -16,7 +16,9 @@ def format_percentage(value: float) -> str:
     return f"{percentage:.2f}%"
 
 
-def calculate_progressive_tax(amount: float, brackets: Sequence[TaxBracket]) -> float:
+def calculate_progressive_tax(
+    amount: float, brackets: Sequence[ProgressiveTaxBracket]
+) -> float:
     """Calculate progressive tax for ``amount`` using ``brackets``."""
 
     if amount <= 0:
