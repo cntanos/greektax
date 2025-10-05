@@ -1161,6 +1161,10 @@ main {
   align-items: center;
 }
 
+#distribution-wrapper {
+  position: relative;
+}
+
 .distribution-chart {
   width: min(100%, 320px);
   aspect-ratio: 1 / 1;
@@ -1183,6 +1187,86 @@ main {
   stroke-width: 32;
   stroke-linecap: butt;
   transition: stroke-dashoffset 0.35s ease, stroke 0.35s ease;
+  cursor: pointer;
+  outline: none;
+}
+
+.distribution-chart__segment--active {
+  stroke-width: 34;
+  filter: drop-shadow(0 0 0.85rem rgba(15, 109, 255, 0.25));
+}
+
+:root[data-theme="dark"] .distribution-chart__segment--active {
+  filter: drop-shadow(0 0 0.85rem rgba(50, 224, 212, 0.35));
+}
+
+.distribution-chart__tooltip {
+  position: absolute;
+  top: var(--tooltip-y, 0);
+  left: var(--tooltip-x, 0);
+  transform: translate(-50%, calc(-100% - 12px));
+  padding: 0.45rem 0.6rem;
+  border-radius: 0.65rem;
+  border: 1px solid rgba(15, 109, 255, 0.25);
+  background: var(--surface-raised);
+  color: var(--text-body);
+  box-shadow: 0 0.75rem 1.5rem rgba(15, 23, 42, 0.12);
+  font-size: 0.78rem;
+  line-height: 1.3;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 5;
+  font-weight: 600;
+  opacity: 0;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.distribution-chart__tooltip[data-visible="true"] {
+  opacity: 1;
+  transform: translate(-50%, calc(-100% - 8px));
+}
+
+.distribution-chart__tooltip[hidden] {
+  display: none;
+}
+
+.distribution-chart__tooltip::after {
+  content: "";
+  position: absolute;
+  bottom: -0.35rem;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  width: 0.6rem;
+  height: 0.6rem;
+  background: inherit;
+  border-left: 1px solid rgba(15, 109, 255, 0.25);
+  border-bottom: 1px solid rgba(15, 109, 255, 0.25);
+  box-shadow: -0.15rem 0.35rem 0.6rem rgba(15, 23, 42, 0.18);
+}
+
+:root[data-theme="dark"] .distribution-chart__tooltip {
+  border-color: rgba(50, 224, 212, 0.35);
+  background: rgba(9, 15, 22, 0.96);
+  box-shadow: 0 0.85rem 1.6rem rgba(3, 19, 23, 0.65);
+}
+
+:root[data-theme="dark"] .distribution-chart__tooltip::after {
+  border-color: rgba(50, 224, 212, 0.35);
+  box-shadow: -0.15rem 0.35rem 0.6rem rgba(3, 19, 23, 0.6);
+}
+
+.distribution-chart__tooltip-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  margin-bottom: 0.2rem;
+}
+
+.distribution-chart__tooltip-value {
+  display: block;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  color: var(--text-subtle);
 }
 
 .distribution-chart__center-label {
