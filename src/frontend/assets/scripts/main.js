@@ -1035,6 +1035,10 @@ function normaliseNumericString(
     decimalChar = ",";
   }
 
+  if (decimal !== "." && decimalChar === ".") {
+    decimalChar = null;
+  }
+
   let decimalIndex = decimalChar ? normalised.lastIndexOf(decimalChar) : -1;
 
   let integerPart = normalised;
