@@ -60,6 +60,7 @@ class EmploymentInput(BaseModel):
     net_monthly_income: float | None = Field(default=None, ge=0)
     payments_per_year: int | None = Field(default=None, ge=0)
     employee_contributions: float = Field(default=0.0, ge=0)
+    include_social_contributions: bool = True
 
     @field_validator("net_income", "net_monthly_income")
     @classmethod

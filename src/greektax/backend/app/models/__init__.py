@@ -70,6 +70,7 @@ class CalculationInput(BaseModel):
     employment_monthly_income: float | None
     employment_payments_per_year: int | None
     employment_manual_contributions: float
+    employment_include_social_contributions: bool
     withholding_tax: float
     pension_income: float
     pension_monthly_income: float | None

@@ -430,6 +430,31 @@
                       employees will leave this at 0 because payroll already covers EFKA.
                     </p>
                   </div>
+                  <div class="form-control form-control--nested">
+                    <span class="inline-field">
+                      <input
+                        id="employment-include-social"
+                        name="employment.include_social_contributions"
+                        type="checkbox"
+                        checked
+                        aria-describedby="employment-include-social-hint"
+                      />
+                      <label
+                        for="employment-include-social"
+                        data-i18n-key="fields.employment-include-social"
+                      >
+                        Include social insurance contributions in net pay
+                      </label>
+                    </span>
+                    <p
+                      id="employment-include-social-hint"
+                      class="form-hint"
+                      data-i18n-key="hints.employment-include-social"
+                    >
+                      Uncheck to see tax-only net income. EFKA amounts (employee and employer) will be treated as
+                      zero in the results.
+                    </p>
+                  </div>
                 </details>
               </div>
               <div class="form-control">

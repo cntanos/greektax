@@ -471,6 +471,62 @@ def test_calculate_tax_supports_manual_employee_contributions() -> None:
     )
 
 
+def test_employment_social_contributions_can_be_excluded() -> None:
+    """Users can opt out of including EFKA contributions in the net result."""
+
+    base_request = CalculationRequest.model_validate(
+        {
+            "year": 2024,
+            "employment": {
+                "monthly_income": 2_000,
+                "payments_per_year": 14,
+                "employee_contributions": 250,
+            },
+        }
+    )
+
+    excluded_request = CalculationRequest.model_validate(
+        {
+            "year": 2024,
+            "employment": {
+                "monthly_income": 2_000,
+                "payments_per_year": 14,
+                "employee_contributions": 250,
+                "include_social_contributions": False,
+            },
+        }
+    )
+
+    inclusive_result = calculate_tax(base_request)
+    excluded_result = calculate_tax(excluded_request)
+
+    inclusive_detail = next(
+        detail for detail in inclusive_result["details"] if detail["category"] == "employment"
+    )
+    excluded_detail = next(
+        detail for detail in excluded_result["details"] if detail["category"] == "employment"
+    )
+
+    inclusive_contributions = inclusive_detail.get("employee_contributions", 0.0)
+    assert inclusive_contributions > 0
+    assert excluded_detail.get("employee_contributions", 0.0) == pytest.approx(0.0)
+    assert excluded_detail.get("employee_contributions_manual", 0.0) == pytest.approx(0.0)
+    assert excluded_detail.get("employer_contributions", 0.0) == pytest.approx(0.0)
+
+    assert excluded_detail["net_income"] == pytest.approx(
+        inclusive_detail["net_income"] + inclusive_contributions,
+        rel=1e-4,
+    )
+
+    inclusive_summary = inclusive_result["summary"]
+    excluded_summary = excluded_result["summary"]
+
+    assert excluded_summary["net_income"] == pytest.approx(
+        inclusive_summary["net_income"] + inclusive_contributions,
+        rel=1e-4,
+    )
+
+
 def test_calculate_tax_with_freelance_income() -> None:
     """Freelance profit combines progressive tax and trade fee."""
 

@@ -72,14 +72,21 @@ def _build_general_income_components(
             capped_annual_income = salary_cap * payments_per_year
             contribution_base_income = min(payload.employment_income, capped_annual_income)
 
-        auto_employee_contrib = (
-            contribution_base_income * config.employment.contributions.employee_rate
-        )
-        employee_manual_contrib = payload.employment_manual_contributions
+        include_social = payload.employment_include_social_contributions
+        if include_social:
+            auto_employee_contrib = (
+                contribution_base_income * config.employment.contributions.employee_rate
+            )
+            employer_contrib = (
+                contribution_base_income * config.employment.contributions.employer_rate
+            )
+            employee_manual_contrib = payload.employment_manual_contributions
+        else:
+            auto_employee_contrib = 0.0
+            employer_contrib = 0.0
+            employee_manual_contrib = 0.0
+
         employee_contrib = auto_employee_contrib + employee_manual_contrib
-        employer_contrib = (
-            contribution_base_income * config.employment.contributions.employer_rate
-        )
         components.append(
             GeneralIncomeComponent(
                 category="employment",

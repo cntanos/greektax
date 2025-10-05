@@ -195,6 +195,9 @@ const employmentMonthlyIncomeInput = document.getElementById(
 const employmentEmployeeContributionsInput = document.getElementById(
   "employment-employee-contributions",
 );
+const employmentIncludeSocialToggle = document.getElementById(
+  "employment-include-social",
+);
 const employmentPaymentsInput = document.getElementById("employment-payments");
 const employmentWithholdingInput = document.getElementById(
   "employment-withholding",
@@ -2298,6 +2301,13 @@ function buildCalculationPayload() {
   );
   if (manualEmployeeContributions > 0) {
     employmentPayload.employee_contributions = manualEmployeeContributions;
+  }
+
+  const includeSocial = employmentIncludeSocialToggle
+    ? Boolean(employmentIncludeSocialToggle.checked)
+    : true;
+  if (!includeSocial) {
+    employmentPayload.include_social_contributions = false;
   }
 
   const employmentPayments = resolvePaymentsValue(
