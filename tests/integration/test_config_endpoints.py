@@ -4,6 +4,7 @@ from http import HTTPStatus
 from shutil import copy2
 from unittest.mock import patch
 
+import pytest
 import yaml
 
 from flask.testing import FlaskClient
@@ -48,14 +49,23 @@ def test_list_years_endpoint(client: FlaskClient) -> None:
     assert pension_meta["payroll"]["allowed_payments_per_year"]
     assert pension_meta["contributions"]["employer_rate"] >= 0
 
+    rental_meta = current_year["rental"]
+    assert rental_meta["brackets"][0]["rate"] == pytest.approx(0.15)
+    assert rental_meta["brackets"][1]["upper"] == 25_000
+    assert rental_meta["brackets"][1]["rate"] == pytest.approx(0.25)
+    assert rental_meta["brackets"][2]["upper"] == 45_000
+
     freelance_meta = current_year["freelance"]
     trade_fee = freelance_meta["trade_fee"]
     assert trade_fee["standard_amount"] == 0
     assert trade_fee.get("reduced_amount") in {None, 0}
     assert trade_fee.get("sunset") is None
+    assert trade_fee.get("newly_self_employed_reduction_years") is None
+    assert freelance_meta.get("pending_contribution_update") is True
     transition_trade_fee = transition_year["freelance"]["trade_fee"]
     assert transition_trade_fee["standard_amount"] == 0
     assert transition_trade_fee["fee_sunset"] is False
+    assert transition_trade_fee.get("newly_self_employed_reduction_years") is None
     categories = freelance_meta["efka_categories"]
     assert isinstance(categories, list)
     general_category = next(

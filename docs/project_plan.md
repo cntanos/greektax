@@ -240,9 +240,11 @@ deliver user value in incremental, testable slices.
 ## Sprint 19 (Completed)
 
 **Highlights**
-- Published 2024 and 2025 EFKA contribution classes for both general freelancers
-  and engineers, exposing pension, health, auxiliary, and lump-sum breakdowns
-  through the configuration APIs and localisation catalogues.【F:src/greektax/backend/config/data/2024.yaml†L118-L135】【F:src/greektax/backend/app/localization/catalog.py†L54-L63】
+  - Published 2024 through 2026 EFKA contribution classes for both general
+    freelancers and engineers, exposing pension, health, auxiliary, and lump-sum
+    breakdowns through the configuration APIs and localisation catalogues. The
+    latest year is flagged as an estimate while the ministry finalises the
+    schedule.【F:src/greektax/backend/config/data/2024.yaml†L118-L135】【F:src/greektax/backend/config/data/2026.yaml†L220-L333】【F:src/greektax/backend/app/localization/catalog.py†L54-L63】
 - Reworked the freelance form to surface category summaries, trade-fee guidance,
   and a guided activity-start workflow that automatically determines reduced
   trade-fee eligibility.【F:src/frontend/index.html†L460-L541】【F:src/frontend/assets/scripts/main.js†L1788-L1897】
@@ -253,11 +255,14 @@ deliver user value in incremental, testable slices.
 ## Sprints 20-24 (Completed)
 
 **Highlights**
-- Codified mixed EFKA scenarios with manual overrides so engineer-specific
-  auxiliary and lump-sum contributions are exercised in unit coverage and
-  regression fixtures.【F:tests/unit/test_calculation_service.py†L667-L723】
-- Hardened configuration validation to flag payroll frequency gaps, EFKA data
-  regressions, and trade-fee metadata issues before they reach production
+  - Codified mixed EFKA scenarios with manual overrides so engineer-specific
+    auxiliary and lump-sum contributions are exercised in unit coverage and
+    regression fixtures.【F:tests/unit/test_calculation_service.py†L667-L723】
+  - Hardened configuration validation to flag payroll frequency gaps, EFKA data
+    regressions, and trade-fee metadata issues before they reach production
+  - Captured preliminary 2026 household brackets, dependant credits, and the
+    rental mid-band reduction so downstream clients can prepare for the upcoming
+    filing year while toggles remain in preview.【F:src/greektax/backend/config/data/2026.yaml†L5-L141】【F:src/greektax/backend/config/data/2026.yaml†L450-L520】
   deployments.【F:src/greektax/backend/config/validator.py†L1-L156】
 - Maintained localisation and asset parity by re-embedding the bilingual
   catalogues into the static bundle whenever translations change, keeping the

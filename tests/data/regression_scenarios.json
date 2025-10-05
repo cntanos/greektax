@@ -299,5 +299,78 @@
         }
       }
     }
+  },
+  {
+    "name": "youth_rental_combo_2026",
+    "payload": {
+      "year": 2026,
+      "locale": "en",
+      "dependents": {
+        "children": 2
+      },
+      "employment": {
+        "gross_income": 28000
+      },
+      "rental": {
+        "gross_income": 26000,
+        "deductible_expenses": 2000
+      },
+      "demographics": {
+        "taxpayer_birth_year": 2002
+      },
+      "toggles": {
+        "youth_eligibility": true
+      }
+    },
+    "expectations": {
+      "summary": {
+        "income_total": 54000.0,
+        "tax_total": 6708.97,
+        "net_income": 41547.43,
+        "average_monthly_tax": 559.08
+      },
+      "details": {
+        "employment": {
+          "tax_before_credits": 2818.97,
+          "credits": 910.0,
+          "total_tax": 1908.97,
+          "employee_contributions": 3743.6
+        },
+        "rental": {
+          "taxable_income": 24000.0,
+          "total_tax": 4800.0
+        }
+      }
+    }
+  },
+  {
+    "name": "freelance_efka_estimate_2026",
+    "payload": {
+      "year": 2026,
+      "freelance": {
+        "profit": 18000,
+        "efka_category": "general_class_2",
+        "efka_months": 12,
+        "mandatory_contributions": 600
+      }
+    },
+    "expectations": {
+      "summary": {
+        "income_total": 18000.0,
+        "tax_total": 1339.86,
+        "net_income": 12114.06,
+        "average_monthly_tax": 111.65
+      },
+      "details": {
+        "freelance": {
+          "taxable_income": 13453.92,
+          "deductible_contributions": 4546.08,
+          "category_contributions": 3946.08,
+          "additional_contributions": 600.0,
+          "trade_fee": 0.0,
+          "total_tax": 1339.86
+        }
+      }
+    }
   }
 ]
