@@ -109,7 +109,7 @@ for guidance on interpreting the output.
 - **Comprehensive calculation engine** – The Flask back end validates incoming
   payloads, normalises employment and freelance entries, and produces bilingual
   summaries for income, deductions, and optional obligations such as ENFIA and
-  VAT.【F:src/greektax/backend/app/services/calculation_service.py†L1-L240】
+  luxury levies.【F:src/greektax/backend/app/services/calculation_service.py†L1-L240】
 - **Public API contract** – Versioned endpoints expose calculation, metadata,
   and localisation resources so the static front end and external clients can
   consume the same business rules.【F:docs/api_contract.md†L1-L226】

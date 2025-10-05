@@ -21,7 +21,7 @@ deliver user value in incremental, testable slices.
    - Ensure high-fidelity error handling and user guidance.
 
 3. **Extended Tax Obligations & Reporting**
-   - Support optional modules such as VAT, ENFIA, and luxury tax inputs.
+   - Support optional modules such as ENFIA and luxury tax inputs.
    - Deliver printable or shareable summaries and export formats.
    - Validate calculations against real-world scenarios.
 
@@ -73,8 +73,8 @@ deliver user value in incremental, testable slices.
   categories.
 - Interactive calculator UI tied to the backend with download and print helpers
   plus investment metadata hydration.
-- Regression scenarios and unit tests validating VAT/ENFIA obligations within
-  the calculation engine.
+- Regression scenarios and unit tests validating ENFIA and luxury obligations
+  within the calculation engine.
 
 ## Sprint 5 (Completed)
 

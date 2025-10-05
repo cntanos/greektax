@@ -39,7 +39,6 @@ from .calculators import (
     calculate_investment,
     calculate_luxury,
     calculate_rental,
-    calculate_vat,
     round_currency,
     round_rate,
 )
@@ -221,7 +220,6 @@ def _normalise_payload(
     other_income = request.other.taxable_income
 
     obligations = request.obligations
-    vat_due = obligations.vat
     enfia_due = obligations.enfia
     luxury_due = obligations.luxury
 
@@ -260,7 +258,6 @@ def _normalise_payload(
         rental_gross_income=rental_gross,
         rental_deductible_expenses=rental_expenses,
         investment_amounts=investment_amounts,
-        vat_due=vat_due,
         enfia_due=enfia_due,
         luxury_due=luxury_due,
         agricultural_gross_revenue=agricultural_revenue,
@@ -465,11 +462,6 @@ def calculate_tax(
         )
     if investment_detail:
         _append_detail(investment_detail)
-
-    with _profile_section("vat", timings):
-        vat_detail = calculate_vat(normalised, translator)
-    if vat_detail:
-        _append_detail(vat_detail)
 
     with _profile_section("enfia", timings):
         enfia_detail = calculate_enfia(normalised, translator)

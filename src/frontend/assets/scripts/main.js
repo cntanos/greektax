@@ -248,7 +248,6 @@ const deductionsDonationsInput = document.getElementById("deductions-donations")
 const deductionsMedicalInput = document.getElementById("deductions-medical");
 const deductionsEducationInput = document.getElementById("deductions-education");
 const deductionsInsuranceInput = document.getElementById("deductions-insurance");
-const vatInput = document.getElementById("vat-due");
 const enfiaInput = document.getElementById("enfia-due");
 const luxuryInput = document.getElementById("luxury-due");
 const freelanceSection = document.getElementById("freelance-section");
@@ -2487,7 +2486,6 @@ function buildCalculationPayload() {
 
   if (isSectionActive(obligationsSection)) {
     const obligationsPayload = {
-      vat: readNumber(vatInput),
       enfia: readNumber(enfiaInput),
       luxury: readNumber(luxuryInput),
     };

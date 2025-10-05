@@ -91,7 +91,6 @@ class CalculationInput(BaseModel):
     rental_gross_income: float
     rental_deductible_expenses: float
     investment_amounts: Mapping[str, float]
-    vat_due: float
     enfia_due: float
     luxury_due: float
     agricultural_gross_revenue: float
@@ -215,10 +214,6 @@ class CalculationInput(BaseModel):
     @property
     def has_investment_income(self) -> bool:
         return any(amount > 0 for amount in self.investment_amounts.values())
-
-    @property
-    def has_vat_obligation(self) -> bool:
-        return self.vat_due > 0
 
     @property
     def has_enfia_obligation(self) -> bool:
