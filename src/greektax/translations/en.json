@@ -99,7 +99,9 @@
       "pension": "Pension income"
     },
       "results_heading": "Results",
-      "results_intro": "Results Summary: The chart and tables below show your total income, taxes, and net income. Hover over the diagram for details and review each category in the list."
+      "results_intro": "Results Summary: The chart and tables below show your total income, taxes, and net income. Hover over the diagram for details and review each category in the list.",
+      "results_social_note": "Net pay honours your social insurance selection. Leave the toggle on to subtract EFKA contributions automatically, or turn it off to see a tax-only projection.",
+      "results_employer_note": "Employer cost represents the gross salary plus employer EFKA contributions, capped at the statutory salary ceiling."
     },
     "detailFields": {
       "additional_contributions": "Additional contributions",

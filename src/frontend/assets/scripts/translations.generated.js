@@ -25,8 +25,10 @@
           "rental": "Εισόδημα από ενοίκια",
           "year_household": "Έτος και νοικοκυριό"
         },
+        "results_employer_note": "Το κόστος εργοδότη ισούται με τον μικτό μισθό και τις εργοδοτικές εισφορές ΕΦΚΑ, μέχρι το νόμιμο ανώτατο όριο αποδοχών.",
         "results_heading": "Αποτελέσματα",
         "results_intro": "Σύνοψη αποτελεσμάτων: Το διάγραμμα και οι πίνακες που ακολουθούν δείχνουν το συνολικό εισόδημα, τους φόρους και το καθαρό ποσό. Τοποθετήστε τον δείκτη πάνω από το διάγραμμα για λεπτομέρειες και δείτε την ανάλυση κάθε κατηγορίας στη λίστα.",
+        "results_social_note": "Η καθαρή αμοιβή προσαρμόζεται στην επιλογή σας για τις ασφαλιστικές εισφορές. Αφήστε το πεδίο ενεργό για αυτόματη αφαίρεση των εισφορών ΕΦΚΑ ή απενεργοποιήστε το για να δείτε ένα σενάριο μόνο με φόρους.",
         "subheadings": {
           "pension": "Εισόδημα συντάξεων"
         }
@@ -179,8 +181,8 @@
         "agricultural-professional-farmer": "Επιλέξτε το αν είστε εγγεγραμμένος ως επαγγελματίας αγρότης για το φορολογικό έτος ώστε να εφαρμοστούν τυχόν διαθέσιμες ελαφρύνσεις.",
         "children-eligibility": "Μετρήστε τα εξαρτώμενα τέκνα που δικαιούνται την οικογενειακή έκπτωση ΑΑΔΕ (ανήλικοι, φοιτητές έως 24 ή τέκνα με αναπηρία).",
         "employment-employee-contributions": "Προσθέστε εισφορές ΕΦΚΑ που καταβάλλετε απευθείας εκτός μισθοδοσίας (π.χ. προαιρετικές συμπληρωματικές). Οι περισσότεροι μισθωτοί το αφήνουν στο 0 γιατί η μισθοδοσία καλύπτει ήδη τον ΕΦΚΑ.",
-        "employment-income": "Εισάγετε το ετήσιο ακαθάριστο ποσό μισθού όταν διαθέτετε ένα συνολικό ποσό.",
         "employment-include-social": "Αποεπιλέξτε για να δείτε καθαρό ποσό μόνο με φόρους. Οι εισφορές ΕΦΚΑ εργαζομένου και εργοδότη θα θεωρηθούν μηδενικές στα αποτελέσματα.",
+        "employment-income": "Εισάγετε το ετήσιο ακαθάριστο ποσό μισθού όταν διαθέτετε ένα συνολικό ποσό.",
         "employment-monthly-income": "Εισάγετε το ακαθάριστο ποσό ανά μισθοδοσία (μήνας ή δώρο). Ο υπολογιστής το πολλαπλασιάζει με τις πληρωμές ανά έτος.",
         "employment-net-note": "Δεν υποστηρίζεται μετατροπή καθαρού μισθού σε ακαθάριστο. Επιλέξτε ετήσια ή ανά καταβολή εισαγωγή και συμπληρώστε μόνο ακαθάριστα ποσά.",
         "employment-payments": "Συνήθως καταβάλλονται 14 μισθοί (12 μηνιαίοι και 2 δώρα). Προσαρμόστε τον αριθμό ώστε να ταιριάζει με τις καταβολές μισθοδοσίας που λαμβάνετε ετησίως.",
@@ -318,8 +320,10 @@
           "rental": "Rental income",
           "year_household": "Year and household"
         },
+        "results_employer_note": "Employer cost represents the gross salary plus employer EFKA contributions, capped at the statutory salary ceiling.",
         "results_heading": "Results",
         "results_intro": "Results Summary: The chart and tables below show your total income, taxes, and net income. Hover over the diagram for details and review each category in the list.",
+        "results_social_note": "Net pay honours your social insurance selection. Leave the toggle on to subtract EFKA contributions automatically, or turn it off to see a tax-only projection.",
         "subheadings": {
           "pension": "Pension income"
         }
@@ -472,8 +476,8 @@
         "agricultural-professional-farmer": "Check this if you are registered as a professional farmer for the tax year. It enables any reliefs available for that status.",
         "children-eligibility": "Count dependent children recognised for the AADE family tax credit (minors, students up to 24, or dependents with a disability).",
         "employment-employee-contributions": "Add EFKA amounts you pay directly outside payroll (for example, voluntary top-ups). Most employees will leave this at 0 because payroll already covers EFKA.",
-        "employment-income": "Enter the total gross salary for the year when you have a single annual figure.",
         "employment-include-social": "Untick to see tax-only net income. EFKA amounts (employee and employer) will be treated as zero in the results.",
+        "employment-income": "Enter the total gross salary for the year when you have a single annual figure.",
         "employment-monthly-income": "Enter the gross amount per payslip (monthly or bonus). The calculator multiplies it by your payments per year.",
         "employment-net-note": "Net-to-gross salary conversion isn't supported. Choose annual or per-payment mode above and provide gross amounts only.",
         "employment-payments": "Most salaried roles use 14 payments (12 monthly plus bonuses). Adjust this to match the number of payslips you receive each year.",

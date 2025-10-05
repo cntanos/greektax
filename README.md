@@ -120,6 +120,17 @@ for guidance on interpreting the output.
   interactive forms, Sankey visualisations, and summaries with language and
   theme switching powered by the embedded translations.【F:src/frontend/index.html†L1-L560】【F:src/frontend/assets/scripts/main.js†L20-L2549】
 
+## Understanding Calculator Results
+
+- **Social insurance toggle** – Employment results respect the “Include social
+  insurance contributions in net pay” toggle. Leave it enabled for the default
+  EFKA deductions, or disable it to preview a tax-only scenario where both
+  automatic and manual EFKA amounts are zeroed out.
+- **Employer cost** – The summary highlights the employer’s total cost as the
+  gross salary plus statutory employer EFKA contributions (capped at the legal
+  salary ceiling). This helps align the Sankey diagram, donut chart, and totals
+  with real payroll slips.
+
 ## Tax Logic & Recent Updates
 
 - Charitable donations yield direct credits within the deduction engine while

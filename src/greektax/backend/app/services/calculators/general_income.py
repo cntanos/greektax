@@ -69,6 +69,8 @@ def _build_general_income_components(
             and payments_per_year
             and monthly_income is not None
         ):
+            # Clamp the annual contribution base to the statutory EFKA ceiling so
+            # auto-calculated contributions never exceed the legal maximum.
             capped_annual_income = salary_cap * payments_per_year
             contribution_base_income = min(payload.employment_income, capped_annual_income)
 
@@ -82,6 +84,9 @@ def _build_general_income_components(
             )
             employee_manual_contrib = payload.employment_manual_contributions
         else:
+            # When social insurance is excluded, suppress both the automatic and
+            # manual EFKA amounts so the downstream net calculations become
+            # purely tax-based.
             auto_employee_contrib = 0.0
             employer_contrib = 0.0
             employee_manual_contrib = 0.0
