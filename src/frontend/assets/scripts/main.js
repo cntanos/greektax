@@ -66,6 +66,7 @@ let currentYearToggleKeys = new Set();
 let dynamicFieldLabels = {};
 let deductionValidationByInput = {};
 let lastCalculation = null;
+let loadedCalculatorState = null;
 let pendingCalculatorState = null;
 let calculatorStatePersistHandle = null;
 let isApplyingYearMetadata = false;
@@ -745,6 +746,37 @@ function captureCalculatorState() {
   return values;
 }
 
+function assignLoadedCalculatorState(values) {
+  if (!values || typeof values !== "object") {
+    loadedCalculatorState = null;
+    return;
+  }
+
+  loadedCalculatorState = Object.assign({}, values);
+}
+
+function getStoredCalculatorValue(key) {
+  if (!key) {
+    return undefined;
+  }
+
+  if (
+    pendingCalculatorState &&
+    Object.prototype.hasOwnProperty.call(pendingCalculatorState, key)
+  ) {
+    return pendingCalculatorState[key];
+  }
+
+  if (
+    loadedCalculatorState &&
+    Object.prototype.hasOwnProperty.call(loadedCalculatorState, key)
+  ) {
+    return loadedCalculatorState[key];
+  }
+
+  return undefined;
+}
+
 function preserveCurrentFormValues() {
   if (!calculatorForm) {
     return;
@@ -776,6 +808,7 @@ function persistCalculatorState() {
       timestamp: Date.now(),
       values: captureCalculatorState(),
     };
+    assignLoadedCalculatorState(payload.values);
     window.localStorage.setItem(
       CALCULATOR_STORAGE_KEY,
       JSON.stringify(payload),
@@ -1038,6 +1071,47 @@ function sanitiseToggleMap(source) {
   return toggles;
 }
 
+function resolveStoredToggleValue(element) {
+  if (!element) {
+    return false;
+  }
+
+  const key = element.id;
+  if (!key) {
+    return Boolean(element.defaultChecked);
+  }
+
+  const storedValue = getStoredCalculatorValue(key);
+  if (storedValue !== undefined) {
+    return Boolean(storedValue);
+  }
+
+  return Boolean(element.defaultChecked);
+}
+
+function syncDemographicToggleState(key, control, toggleElement, isAvailable) {
+  if (control) {
+    control.hidden = !isAvailable;
+  }
+
+  if (!toggleElement) {
+    if (!isAvailable) {
+      delete currentYearToggles[key];
+    }
+    return;
+  }
+
+  if (!isAvailable) {
+    toggleElement.checked = Boolean(toggleElement.defaultChecked);
+    delete currentYearToggles[key];
+    return;
+  }
+
+  const desired = resolveStoredToggleValue(toggleElement);
+  toggleElement.checked = desired;
+  currentYearToggles[key] = desired;
+}
+
 function applyContributionDefaults(metadata) {
   const employmentDefaults =
     (metadata && metadata.employment && metadata.employment.defaults) || {};
@@ -1069,40 +1143,34 @@ function updateDemographicToggles(metadata, toggles) {
     toggles,
     "youth_eligibility",
   );
-  if (youthEligibilityControl) {
-    youthEligibilityControl.hidden = !hasYouthToggle;
-  }
-  if (youthEligibilityToggle) {
-    youthEligibilityToggle.checked = hasYouthToggle
-      ? Boolean(toggles.youth_eligibility)
-      : Boolean(youthEligibilityToggle.defaultChecked);
-  }
+  syncDemographicToggleState(
+    "youth_eligibility",
+    youthEligibilityControl,
+    youthEligibilityToggle,
+    hasYouthToggle,
+  );
 
   const hasSmallVillage = Object.prototype.hasOwnProperty.call(
     toggles,
     "small_village",
   );
-  if (smallVillageControl) {
-    smallVillageControl.hidden = !hasSmallVillage;
-  }
-  if (smallVillageToggle) {
-    smallVillageToggle.checked = hasSmallVillage
-      ? Boolean(toggles.small_village)
-      : Boolean(smallVillageToggle.defaultChecked);
-  }
+  syncDemographicToggleState(
+    "small_village",
+    smallVillageControl,
+    smallVillageToggle,
+    hasSmallVillage,
+  );
 
   const hasNewMother = Object.prototype.hasOwnProperty.call(
     toggles,
     "new_mother",
   );
-  if (newMotherControl) {
-    newMotherControl.hidden = !hasNewMother;
-  }
-  if (newMotherToggle) {
-    newMotherToggle.checked = hasNewMother
-      ? Boolean(toggles.new_mother)
-      : Boolean(newMotherToggle.defaultChecked);
-  }
+  syncDemographicToggleState(
+    "new_mother",
+    newMotherControl,
+    newMotherToggle,
+    hasNewMother,
+  );
 }
 
 function computeBracketRangeLabel(bracket, index, previousUpper) {
@@ -4038,6 +4106,7 @@ function clearCalculatorForm() {
   } catch (error) {
     console.warn("Unable to clear stored calculator state", error);
   }
+  assignLoadedCalculatorState(null);
   pendingCalculatorState = null;
   if (calculatorStatePersistHandle) {
     window.clearTimeout(calculatorStatePersistHandle);
@@ -4241,7 +4310,11 @@ function initialiseCalculator() {
     return;
   }
 
-  pendingCalculatorState = loadStoredCalculatorState();
+  const storedCalculatorState = loadStoredCalculatorState();
+  assignLoadedCalculatorState(storedCalculatorState);
+  pendingCalculatorState = loadedCalculatorState
+    ? Object.assign({}, loadedCalculatorState)
+    : null;
   applyPendingCalculatorState();
 
   if (pensionModeSelect) {
