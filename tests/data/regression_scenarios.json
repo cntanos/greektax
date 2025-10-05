@@ -325,15 +325,15 @@
     "expectations": {
       "summary": {
         "income_total": 54000.0,
-        "tax_total": 6708.97,
-        "net_income": 41547.43,
-        "average_monthly_tax": 559.08
+        "tax_total": 4996.66,
+        "net_income": 43259.74,
+        "average_monthly_tax": 416.39
       },
       "details": {
         "employment": {
-          "tax_before_credits": 2818.97,
+          "tax_before_credits": 1106.66,
           "credits": 910.0,
-          "total_tax": 1908.97,
+          "total_tax": 196.66,
           "employee_contributions": 3743.6
         },
         "rental": {
@@ -357,9 +357,9 @@
     "expectations": {
       "summary": {
         "income_total": 18000.0,
-        "tax_total": 1339.86,
-        "net_income": 12114.06,
-        "average_monthly_tax": 111.65
+        "tax_total": 1590.78,
+        "net_income": 11863.14,
+        "average_monthly_tax": 132.56
       },
       "details": {
         "freelance": {
@@ -368,7 +368,7 @@
           "category_contributions": 3946.08,
           "additional_contributions": 600.0,
           "trade_fee": 0.0,
-          "total_tax": 1339.86
+          "total_tax": 1590.78
         }
       }
     }
