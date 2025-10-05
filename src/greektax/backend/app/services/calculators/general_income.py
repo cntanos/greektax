@@ -204,7 +204,9 @@ def _apply_progressive_tax(
                     and youth_category
                     and youth_category in bracket.youth_rates
                 ):
-                    return bracket.youth_rates[youth_category]
+                    return bracket.youth_rate_for_dependants(
+                        youth_category, dependants
+                    )
                 return bracket.household.rate_for_dependants(dependants)
             return bracket.rate
 

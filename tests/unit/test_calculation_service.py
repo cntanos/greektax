@@ -997,6 +997,79 @@ def test_youth_relief_applies_when_toggle_and_age_match() -> None:
     assert baseline_detail["tax_before_credits"] > employment_detail["tax_before_credits"]
 
 
+def test_2026_youth_relief_second_band_matches_announced_rates() -> None:
+    """Youth relief for ages 26-30 limits the second band to 9%."""
+
+    base_payload = {
+        "year": 2026,
+        "dependents": {"children": 0},
+        "employment": {
+            "gross_income": 20_000,
+            "include_social_contributions": False,
+        },
+        "demographics": {"taxpayer_birth_year": 1999},
+    }
+
+    youth_request = CalculationRequest.model_validate(
+        {**base_payload, "toggles": {"youth_eligibility": True}}
+    )
+    youth_result = calculate_tax(youth_request)
+    youth_detail = next(
+        detail for detail in youth_result["details"] if detail["category"] == "employment"
+    )
+
+    assert youth_detail["taxable_income"] == pytest.approx(20_000)
+    assert youth_detail["tax_before_credits"] == pytest.approx(1_800, rel=1e-4)
+
+    baseline_request = CalculationRequest.model_validate(
+        {**base_payload, "toggles": {"youth_eligibility": False}}
+    )
+    baseline_result = calculate_tax(baseline_request)
+    baseline_detail = next(
+        detail for detail in baseline_result["details"] if detail["category"] == "employment"
+    )
+
+    assert baseline_detail["taxable_income"] == pytest.approx(20_000)
+    assert baseline_detail["tax_before_credits"] == pytest.approx(2_900, rel=1e-4)
+    assert youth_detail["tax_before_credits"] < baseline_detail["tax_before_credits"]
+
+
+def test_2026_under_25_dependant_rates_match_announced_scale() -> None:
+    """Dependants adjust youth relief brackets according to the 2026 scale."""
+
+    base_payload = {
+        "year": 2026,
+        "dependents": {"children": 2},
+        "employment": {
+            "gross_income": 30_000,
+            "include_social_contributions": False,
+        },
+        "demographics": {"taxpayer_birth_year": 2004},
+    }
+
+    youth_request = CalculationRequest.model_validate(
+        {**base_payload, "toggles": {"youth_eligibility": True}}
+    )
+    youth_result = calculate_tax(youth_request)
+    youth_detail = next(
+        detail for detail in youth_result["details"] if detail["category"] == "employment"
+    )
+
+    assert youth_detail["taxable_income"] == pytest.approx(30_000)
+    assert youth_detail["tax_before_credits"] == pytest.approx(2_200, rel=1e-4)
+
+    baseline_request = CalculationRequest.model_validate(
+        {**base_payload, "toggles": {"youth_eligibility": False}}
+    )
+    baseline_result = calculate_tax(baseline_request)
+    baseline_detail = next(
+        detail for detail in baseline_result["details"] if detail["category"] == "employment"
+    )
+
+    assert baseline_detail["tax_before_credits"] == pytest.approx(4_700, rel=1e-4)
+    assert youth_detail["tax_before_credits"] < baseline_detail["tax_before_credits"]
+
+
 def test_calculate_tax_combines_employment_and_pension_credit() -> None:
     """Salary and pension income share a single tax credit."""
 
@@ -1236,7 +1309,7 @@ def test_2026_rental_mid_band_cut() -> None:
     )
 
     taxable_income = 26_000.0
-    expected_tax = (12_000 * 0.15) + (13_000 * 0.25) + (1_000 * 0.35)
+    expected_tax = (12_000 * 0.15) + (12_000 * 0.25) + (2_000 * 0.35)
 
     assert rental_detail["taxable_income"] == pytest.approx(taxable_income)
     assert rental_detail["total_tax"] == pytest.approx(expected_tax)
