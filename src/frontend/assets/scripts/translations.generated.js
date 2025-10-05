@@ -17,14 +17,18 @@
           "deductions": "Εκπτώσεις",
           "employment_pension": "Εισόδημα από μισθωτή εργασία ή/και συντάξεις",
           "freelance": "Εισόδημα ελεύθερου επαγγελματία",
+          "income_sources": "Πηγές εισοδήματος",
           "investment": "Επενδυτικά εισοδήματα",
-          "obligations": "Πρόσθετες υποχρεώσεις",
+          "obligations": "Άλλοι φόροι",
           "other": "Λοιπά εισοδήματα",
           "rental": "Εισόδημα από ενοίκια",
           "year_household": "Έτος και νοικοκυριό"
         },
         "results_heading": "Αποτελέσματα",
-        "results_intro": "Σύνοψη αποτελεσμάτων: Το διάγραμμα και οι πίνακες που ακολουθούν δείχνουν το συνολικό εισόδημα, τους φόρους και το καθαρό ποσό. Τοποθετήστε τον δείκτη πάνω από το διάγραμμα για λεπτομέρειες και δείτε την ανάλυση κάθε κατηγορίας στη λίστα."
+        "results_intro": "Σύνοψη αποτελεσμάτων: Το διάγραμμα και οι πίνακες που ακολουθούν δείχνουν το συνολικό εισόδημα, τους φόρους και το καθαρό ποσό. Τοποθετήστε τον δείκτη πάνω από το διάγραμμα για λεπτομέρειες και δείτε την ανάλυση κάθε κατηγορίας στη λίστα.",
+        "subheadings": {
+          "pension": "Εισόδημα συντάξεων"
+        }
       },
       "detailFields": {
         "additional_contributions": "Επιπλέον εισφορές",
@@ -52,6 +56,15 @@
         "taxable_income": "Φορολογητέο εισόδημα",
         "total_tax": "Συνολικός φόρος",
         "trade_fee": "Τέλος επιτηδεύματος"
+      },
+      "distribution": {
+        "description": "Δείτε πώς κατανέμεται το συνολικό εισόδημα μεταξύ κερδών, φόρων, ασφαλιστικών εισφορών και εκπιπτόμενων δαπανών.",
+        "empty": "Προσθέστε φορολογητέο εισόδημα για να εμφανιστεί η κατανομή σε όλες τις κατηγορίες.",
+        "expenses": "Δαπάνες",
+        "heading": "Κατανομή συνολικού εισοδήματος",
+        "insurance": "Ασφαλιστικές εισφορές",
+        "profits": "Κέρδη",
+        "taxes": "Φόροι"
       },
       "errors": {
         "invalid_number": "Εισαγάγετε έγκυρο αριθμό για {{field}}.",
@@ -118,21 +131,22 @@
         "pension-mode-gross": "Καταχώρηση ακαθάριστων ποσών",
         "pension-mode-net": "Καταχώρηση καθαρών ποσών",
         "pension-net-income": "Ετήσιο καθαρό ποσό σύνταξης (€)",
+        "pension-net-input-mode": "Καταχώρηση καθαρής σύνταξης ως",
+        "pension-net-input-mode-annual": "Συνολικό ποσό έτους",
+        "pension-net-input-mode-per-payment": "Ανά καταβολή",
         "pension-net-monthly-income": "Καθαρό ποσό σύνταξης ανά καταβολή (€)",
         "pension-payments": "Καταβολές συντάξεων ανά έτος",
         "rental-expenses": "Εκπιπτόμενες δαπάνες ενοικίων (€)",
         "rental-income": "Ακαθάριστα έσοδα ενοικίων (€)",
-        "toggle-agricultural": "Συμπερίληψη αγροτικού εισοδήματος",
-        "toggle-deductions": "Συμπερίληψη εκπτώσεων",
-        "toggle-employment": "Συμπερίληψη εισοδήματος μισθωτών/συντάξεων",
-        "toggle-freelance": "Συμπερίληψη εισοδήματος ελευθέρων επαγγελματιών",
-        "toggle-investment": "Συμπερίληψη επενδυτικών εισοδημάτων",
-        "toggle-obligations": "Συμπερίληψη πρόσθετων υποχρεώσεων",
-        "toggle-other": "Συμπερίληψη λοιπών εισοδημάτων",
-        "toggle-pension": "Συμπερίληψη εισοδήματος συντάξεων",
-        "toggle-rental": "Συμπερίληψη εισοδήματος από ενοίκια",
-        "trade-fee-toggle": "Συμπερίληψη τέλους επιτηδεύματος",
-        "vat-due": "Οφειλόμενος ΦΠΑ (€)",
+        "toggle-agricultural": "Αγροτικό εισόδημα",
+        "toggle-deductions": "Εκπτώσεις",
+        "toggle-employment": "Εισόδημα μισθωτών/συντάξεων",
+        "toggle-freelance": "Εισόδημα ελευθέρων επαγγελματιών",
+        "toggle-investment": "Επενδυτικά εισοδήματα",
+        "toggle-obligations": "Άλλοι φόροι",
+        "toggle-other": "Λοιπά εισοδήματα",
+        "toggle-rental": "Εισόδημα από ενοίκια",
+        "trade-fee-toggle": "Τέλος επιτηδεύματος",
         "year-select": "Φορολογικό έτος"
       },
       "forms": {
@@ -183,22 +197,16 @@
         "freelance-trade-fee-new-expired": "Το παράθυρο μειωμένης χρέωσης έχει λήξει (πάνω από {{years}} έτη δραστηριότητας).",
         "freelance-trade-fee-sunset": "Το τέλος επιτηδεύματος αναμένεται να επανέλθει από το {{year}} (κατάσταση: {{status}}). Επιβεβαιώστε τις τρέχουσες οδηγίες με τον λογιστή σας.",
         "freelance-trade-fee-waived": "Για το συγκεκριμένο φορολογικό έτος δεν οφείλεται τέλος επιτηδεύματος, επομένως αφήστε τον διακόπτη απενεργοποιημένο.",
+        "income-toggle-intro": "Επιλέξτε κάθε κατηγορία εισοδήματος που σας αφορά για να εμφανιστούν τα αντίστοιχα πεδία.",
         "pension-income-gross": "Χρησιμοποιήστε το πεδίο ακαθάριστου όταν γνωρίζετε τη σύνταξη πριν από τις κρατήσεις.",
-        "pension-income-net": "Εισάγετε το καθαρό ποσό σύνταξης για όλο το έτος όταν δεν υπάρχουν διαθέσιμα ακαθάριστα στοιχεία.",
-        "pension-income-net-monthly": "Δώστε το καθαρό ποσό ανά καταβολή σύνταξης· θα πολλαπλασιαστεί με τις πληρωμές ανά έτος που επιλέξατε.",
+        "pension-income-net": "Συμπληρώστε το ετήσιο καθαρό ποσό μόνο αν επιλέξατε «Συνολικό ποσό έτους» παραπάνω.",
+        "pension-income-net-monthly": "Συμπληρώστε το καθαρό ποσό ανά καταβολή μόνο αν επιλέξατε «Ανά καταβολή» παραπάνω.",
+        "pension-net-input-mode": "Επιλέξτε αν θα δηλώσετε το συνολικό καθαρό ποσό του έτους ή το καθαρό ποσό κάθε καταβολής.",
+        "pension-section-intro": "Αν λαμβάνετε σύνταξη, συμπληρώστε τα πεδία παρακάτω· διαφορετικά αφήστε τα κενά.",
         "year-partial-note": "Αν δεν είχατε εισόδημα για ολόκληρο το έτος, καταχωρήστε ό,τι εισπράξατε· η ετήσια φορολογική πίστωση εφαρμόζεται κανονικά."
       },
       "links": {
         "trade_fee_sunset": "Ενημέρωση ΑΑΔΕ για τέλος επιτηδεύματος"
-      },
-      "distribution": {
-        "heading": "Κατανομή συνολικού εισοδήματος",
-        "description": "Δείτε πώς κατανέμεται το συνολικό εισόδημα μεταξύ κερδών, φόρων, ασφαλιστικών εισφορών και εκπιπτόμενων δαπανών.",
-        "empty": "Προσθέστε φορολογητέο εισόδημα για να εμφανιστεί η κατανομή σε όλες τις κατηγορίες.",
-        "profits": "Κέρδη",
-        "taxes": "Φόροι",
-        "insurance": "Ασφαλιστικές εισφορές",
-        "expenses": "Δαπάνες"
       },
       "sankey": {
         "aria_label": "Διάγραμμα Sankey που δείχνει τη ροή του ακαθάριστου εισοδήματος σε φόρους, εισφορές και καθαρά ποσά.",
@@ -282,14 +290,18 @@
           "deductions": "Deductions",
           "employment_pension": "Employment and/or pension income",
           "freelance": "Freelance income",
+          "income_sources": "Income sources",
           "investment": "Investment income",
-          "obligations": "Additional obligations",
+          "obligations": "Other taxes",
           "other": "Other income",
           "rental": "Rental income",
           "year_household": "Year and household"
         },
         "results_heading": "Results",
-        "results_intro": "Results Summary: The chart and tables below show your total income, taxes, and net income. Hover over the diagram for details and review each category in the list."
+        "results_intro": "Results Summary: The chart and tables below show your total income, taxes, and net income. Hover over the diagram for details and review each category in the list.",
+        "subheadings": {
+          "pension": "Pension income"
+        }
       },
       "detailFields": {
         "additional_contributions": "Additional contributions",
@@ -317,6 +329,15 @@
         "taxable_income": "Taxable income",
         "total_tax": "Total tax",
         "trade_fee": "Business activity fee"
+      },
+      "distribution": {
+        "description": "See how your total income is split between profits, taxes, insurance contributions, and deductible expenses.",
+        "empty": "Add taxable income above to reveal the allocation across all categories.",
+        "expenses": "Expenses",
+        "heading": "Income allocation summary",
+        "insurance": "Insurance contributions",
+        "profits": "Profits",
+        "taxes": "Taxes"
       },
       "errors": {
         "invalid_number": "Please enter a valid number for {{field}}.",
@@ -383,21 +404,22 @@
         "pension-mode-gross": "Enter gross amounts",
         "pension-mode-net": "Enter net amounts",
         "pension-net-income": "Annual net pension (€)",
+        "pension-net-input-mode": "Provide net pension as",
+        "pension-net-input-mode-annual": "Total for year",
+        "pension-net-input-mode-per-payment": "Per payment",
         "pension-net-monthly-income": "Net pension per payment (€)",
         "pension-payments": "Pension payments per year",
         "rental-expenses": "Rental deductible expenses (€)",
         "rental-income": "Rental gross income (€)",
-        "toggle-agricultural": "Include agricultural income",
-        "toggle-deductions": "Include deductions",
-        "toggle-employment": "Include salary/pension income",
-        "toggle-freelance": "Include freelance income",
-        "toggle-investment": "Include investment income",
-        "toggle-obligations": "Include additional obligations",
-        "toggle-other": "Include other income",
-        "toggle-pension": "Include pension income",
-        "toggle-rental": "Include rental income",
-        "trade-fee-toggle": "Include business activity fee",
-        "vat-due": "VAT due (€)",
+        "toggle-agricultural": "Agricultural income",
+        "toggle-deductions": "Deductions",
+        "toggle-employment": "Salary/pension income",
+        "toggle-freelance": "Freelance income",
+        "toggle-investment": "Investment income",
+        "toggle-obligations": "Other taxes",
+        "toggle-other": "Other income",
+        "toggle-rental": "Rental income",
+        "trade-fee-toggle": "Business activity fee",
         "year-select": "Tax year"
       },
       "forms": {
@@ -448,22 +470,16 @@
         "freelance-trade-fee-new-expired": "The reduced-rate window has ended (more than {{years}} years of activity).",
         "freelance-trade-fee-sunset": "The business activity fee is slated to return from {{year}} (status: {{status}}). Double-check the latest rules with your accountant.",
         "freelance-trade-fee-waived": "No business activity fee is due for this tax year, so you can leave this switched off.",
+        "income-toggle-intro": "Select each income type you receive to reveal its inputs.",
         "pension-income-gross": "Use the gross field when you know the annual pension before deductions.",
-        "pension-income-net": "Enter the total net pension paid over the year if gross information is unavailable.",
-        "pension-income-net-monthly": "Provide the net amount per pension payment; it will be multiplied by the payments per year selected above.",
+        "pension-income-net": "Enter the annual net pension only when you choose \"Total for year\" above.",
+        "pension-income-net-monthly": "Enter the per-payment net pension only when you choose \"Per payment\" above.",
+        "pension-net-input-mode": "Choose whether to enter the total net amount for the year or the net amount for each payment.",
+        "pension-section-intro": "If you receive a pension, fill in the fields below; otherwise leave them blank.",
         "year-partial-note": "If you didn't earn income for the full year, enter what you earned; the annual tax credit still applies in full."
       },
       "links": {
         "trade_fee_sunset": "AADE trade fee update"
-      },
-      "distribution": {
-        "heading": "Income allocation summary",
-        "description": "See how your total income is split between profits, taxes, insurance contributions, and deductible expenses.",
-        "empty": "Add taxable income above to reveal the allocation across all categories.",
-        "profits": "Profits",
-        "taxes": "Taxes",
-        "insurance": "Insurance contributions",
-        "expenses": "Expenses"
       },
       "sankey": {
         "aria_label": "Sankey diagram showing how gross income flows into taxes, contributions, and net amounts.",

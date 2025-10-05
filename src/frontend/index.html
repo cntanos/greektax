@@ -225,19 +225,122 @@
             ></div>
           </fieldset>
 
-          <div class="section-toggle">
-            <input
-              type="checkbox"
-              id="toggle-employment"
-              data-toggle-target="employment-section"
-            />
-            <label
-              for="toggle-employment"
-              data-i18n-key="fields.toggle-employment"
+          <fieldset class="fieldset section-toggle-group">
+            <legend data-i18n-key="calculator.legends.income_sources">
+              Income sources
+            </legend>
+            <p
+              class="form-hint"
+              data-i18n-key="hints.income-toggle-intro"
             >
-              Include salary/pension income
-            </label>
-          </div>
+              Select each income type you receive to reveal its inputs.
+            </p>
+            <div class="section-toggle">
+              <input
+                type="checkbox"
+                id="toggle-employment"
+                data-toggle-target="employment-section"
+              />
+              <label
+                for="toggle-employment"
+                data-i18n-key="fields.toggle-employment"
+              >
+                Salary/pension income
+              </label>
+            </div>
+            <div class="section-toggle">
+              <input
+                type="checkbox"
+                id="toggle-freelance"
+                data-toggle-target="freelance-section"
+              />
+              <label
+                for="toggle-freelance"
+                data-i18n-key="fields.toggle-freelance"
+              >
+                Freelance income
+              </label>
+            </div>
+            <div class="section-toggle">
+              <input
+                type="checkbox"
+                id="toggle-agricultural"
+                data-toggle-target="agricultural-section"
+              />
+              <label
+                for="toggle-agricultural"
+                data-i18n-key="fields.toggle-agricultural"
+              >
+                Agricultural income
+              </label>
+            </div>
+            <div class="section-toggle">
+              <input
+                type="checkbox"
+                id="toggle-other"
+                data-toggle-target="other-section"
+              />
+              <label
+                for="toggle-other"
+                data-i18n-key="fields.toggle-other"
+              >
+                Other income
+              </label>
+            </div>
+            <div class="section-toggle">
+              <input
+                type="checkbox"
+                id="toggle-rental"
+                data-toggle-target="rental-section"
+              />
+              <label
+                for="toggle-rental"
+                data-i18n-key="fields.toggle-rental"
+              >
+                Rental income
+              </label>
+            </div>
+            <div class="section-toggle">
+              <input
+                type="checkbox"
+                id="toggle-investment"
+                data-toggle-target="investment-section"
+              />
+              <label
+                for="toggle-investment"
+                data-i18n-key="fields.toggle-investment"
+              >
+                Investment income
+              </label>
+            </div>
+            <div class="section-toggle">
+              <input
+                type="checkbox"
+                id="toggle-deductions"
+                data-toggle-target="deductions-section"
+              />
+              <label
+                for="toggle-deductions"
+                data-i18n-key="fields.toggle-deductions"
+              >
+                Deductions
+              </label>
+            </div>
+            <div class="section-toggle">
+              <input
+                type="checkbox"
+                id="toggle-obligations"
+                data-toggle-target="obligations-section"
+              />
+              <label
+                for="toggle-obligations"
+                data-i18n-key="fields.toggle-obligations"
+              >
+                Other taxes
+              </label>
+            </div>
+          </fieldset>
+
           <fieldset
             class="fieldset"
             id="employment-section"
@@ -414,19 +517,20 @@
               Net-to-gross salary conversion isn't supported. Please enter gross
               amounts only.
             </p>
-            <div class="form-control">
-              <span class="inline-field">
-                <input
-                  id="toggle-pension"
-                  type="checkbox"
-                  name="pension.enabled"
-                />
-                <label for="toggle-pension" data-i18n-key="fields.toggle-pension">
-                  Include pension income
-                </label>
-              </span>
-            </div>
-            <div id="pension-fields" hidden aria-hidden="true">
+            <div class="form-subsection" id="pension-fields">
+              <h3
+                class="fieldset-subheading"
+                data-i18n-key="calculator.subheadings.pension"
+              >
+                Pension income
+              </h3>
+              <p
+                class="form-hint"
+                data-i18n-key="hints.pension-section-intro"
+              >
+                If you receive a pension, fill in the details below; otherwise
+                leave these fields blank.
+              </p>
               <div class="form-grid double">
                 <div class="form-control">
                   <label
@@ -495,6 +599,40 @@
                   class="form-control"
                   data-section="pension"
                   data-mode="net"
+                >
+                  <label
+                    for="pension-net-input-mode"
+                    data-i18n-key="fields.pension-net-input-mode"
+                  >
+                    Provide net pension as
+                  </label>
+                  <select id="pension-net-input-mode">
+                    <option
+                      value="annual"
+                      data-i18n-key="fields.pension-net-input-mode-annual"
+                    >
+                      Total for year
+                    </option>
+                    <option
+                      value="per_payment"
+                      data-i18n-key="fields.pension-net-input-mode-per-payment"
+                    >
+                      Per payment
+                    </option>
+                  </select>
+                  <p
+                    class="form-hint"
+                    data-i18n-key="hints.pension-net-input-mode"
+                  >
+                    Choose whether to enter the total net amount for the year
+                    or the net amount for each payment.
+                  </p>
+                </div>
+                <div
+                  class="form-control"
+                  data-section="pension"
+                  data-mode="net"
+                  data-net-input-mode="annual"
                   hidden
                 >
                   <label
@@ -517,14 +655,15 @@
                     class="form-hint"
                     data-i18n-key="hints.pension-income-net"
                   >
-                    Enter the total net pension paid over the year when gross
-                    figures are not available.
+                    Enter the annual net pension only when you choose "Total for
+                    year" above.
                   </p>
                 </div>
                 <div
                   class="form-control"
                   data-section="pension"
                   data-mode="net"
+                  data-net-input-mode="per_payment"
                   hidden
                 >
                   <label
@@ -547,24 +686,14 @@
                     class="form-hint"
                     data-i18n-key="hints.pension-income-net-monthly"
                   >
-                    Provide the net amount per pension payment; it will be
-                    multiplied by the number of payments you selected.
+                    Enter the per-payment net pension only when you choose "Per
+                    payment" above.
                   </p>
                 </div>
               </div>
             </div>
           </fieldset>
 
-          <div class="section-toggle">
-            <input
-              type="checkbox"
-              id="toggle-freelance"
-              data-toggle-target="freelance-section"
-            />
-            <label for="toggle-freelance" data-i18n-key="fields.toggle-freelance">
-              Include freelance income
-            </label>
-          </div>
           <fieldset class="fieldset" id="freelance-section" hidden>
             <legend data-i18n-key="calculator.legends.freelance">
               Freelance income
@@ -815,26 +944,13 @@
                     for="trade-fee-toggle"
                     data-i18n-key="fields.trade-fee-toggle"
                   >
-                    Include business activity fee
+              Business activity fee
                   </label>
                 </span>
               </div>
             </div>
           </fieldset>
 
-          <div class="section-toggle">
-            <input
-              type="checkbox"
-              id="toggle-agricultural"
-              data-toggle-target="agricultural-section"
-            />
-            <label
-              for="toggle-agricultural"
-              data-i18n-key="fields.toggle-agricultural"
-            >
-              Include agricultural income
-            </label>
-          </div>
           <fieldset class="fieldset" id="agricultural-section" hidden>
             <legend data-i18n-key="calculator.legends.agricultural">
               Agricultural income
@@ -875,16 +991,6 @@
             </div>
           </fieldset>
 
-          <div class="section-toggle">
-            <input
-              type="checkbox"
-              id="toggle-other"
-              data-toggle-target="other-section"
-            />
-            <label for="toggle-other" data-i18n-key="fields.toggle-other">
-              Include other income
-            </label>
-          </div>
           <fieldset class="fieldset" id="other-section" hidden>
             <legend data-i18n-key="calculator.legends.other">
               Other income
@@ -909,16 +1015,6 @@
             </div>
           </fieldset>
 
-          <div class="section-toggle">
-            <input
-              type="checkbox"
-              id="toggle-rental"
-              data-toggle-target="rental-section"
-            />
-            <label for="toggle-rental" data-i18n-key="fields.toggle-rental">
-              Include rental income
-            </label>
-          </div>
           <fieldset class="fieldset" id="rental-section" hidden>
             <legend data-i18n-key="calculator.legends.rental">
               Rental income
@@ -959,19 +1055,6 @@
             </div>
           </fieldset>
 
-          <div class="section-toggle">
-            <input
-              type="checkbox"
-              id="toggle-investment"
-              data-toggle-target="investment-section"
-            />
-            <label
-              for="toggle-investment"
-              data-i18n-key="fields.toggle-investment"
-            >
-              Include investment income
-            </label>
-          </div>
           <fieldset class="fieldset" id="investment-section" hidden>
             <legend data-i18n-key="calculator.legends.investment">
               Investment income
@@ -979,19 +1062,6 @@
             <div id="investment-fields" class="form-grid double"></div>
           </fieldset>
 
-          <div class="section-toggle">
-            <input
-              type="checkbox"
-              id="toggle-deductions"
-              data-toggle-target="deductions-section"
-            />
-            <label
-              for="toggle-deductions"
-              data-i18n-key="fields.toggle-deductions"
-            >
-              Include deductions
-            </label>
-          </div>
           <fieldset class="fieldset" id="deductions-section" hidden>
             <legend data-i18n-key="calculator.legends.deductions">
               Deductions
@@ -1078,37 +1148,11 @@
             </div>
           </fieldset>
 
-          <div class="section-toggle">
-            <input
-              type="checkbox"
-              id="toggle-obligations"
-              data-toggle-target="obligations-section"
-            />
-            <label
-              for="toggle-obligations"
-              data-i18n-key="fields.toggle-obligations"
-            >
-              Include additional obligations
-            </label>
-          </div>
           <fieldset class="fieldset" id="obligations-section" hidden>
             <legend data-i18n-key="calculator.legends.obligations">
-              Additional obligations
+              Other taxes
             </legend>
             <div class="form-grid double">
-              <div class="form-control">
-                <label for="vat-due" data-i18n-key="fields.vat-due">
-                  VAT due (€)
-                </label>
-                <input
-                  id="vat-due"
-                  name="obligations.vat"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value="0"
-                />
-              </div>
               <div class="form-control">
                 <label for="enfia-due" data-i18n-key="fields.enfia-due">
                   ENFIA amount (€)

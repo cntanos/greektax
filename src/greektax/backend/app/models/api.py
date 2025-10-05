@@ -159,11 +159,10 @@ class OtherIncomeInput(BaseModel):
 
 
 class ObligationsInput(BaseModel):
-    """Additional annual obligations (VAT, ENFIA, luxury tax)."""
+    """Additional annual obligations (ENFIA and luxury tax)."""
 
     model_config = ConfigDict(extra="forbid")
 
-    vat: float = Field(default=0.0, ge=0)
     enfia: float = Field(default=0.0, ge=0)
     luxury: float = Field(default=0.0, ge=0)
 

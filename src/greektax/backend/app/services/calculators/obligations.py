@@ -1,4 +1,4 @@
-"""Obligation calculators for VAT, ENFIA, and luxury taxes."""
+"""Obligation calculators for ENFIA and luxury taxes."""
 
 from __future__ import annotations
 
@@ -8,25 +8,6 @@ from greektax.backend.app.localization import Translator
 from greektax.backend.app.models import CalculationInput
 
 from .utils import round_currency
-
-
-def calculate_vat(payload: CalculationInput, translator: Translator) -> dict[str, Any] | None:
-    """Return VAT detail when the payload declares VAT obligations."""
-
-    if not payload.has_vat_obligation:
-        return None
-
-    amount = payload.vat_due
-    rounded = round_currency(amount)
-    return {
-        "category": "vat",
-        "label": translator("details.vat"),
-        "tax": rounded,
-        "total_tax": rounded,
-        "net_income": round_currency(-amount),
-    }
-
-
 def calculate_enfia(payload: CalculationInput, translator: Translator) -> dict[str, Any] | None:
     """Return ENFIA detail when the payload declares ENFIA obligations."""
 
@@ -61,4 +42,4 @@ def calculate_luxury(payload: CalculationInput, translator: Translator) -> dict[
     }
 
 
-__all__ = ["calculate_vat", "calculate_enfia", "calculate_luxury"]
+__all__ = ["calculate_enfia", "calculate_luxury"]

@@ -495,6 +495,31 @@ main {
   font-weight: 600;
 }
 
+.section-toggle-group {
+  margin: 1.5rem 0;
+}
+
+.section-toggle-group .section-toggle {
+  margin: 0.75rem 0 0;
+}
+
+.section-toggle-group .section-toggle:first-of-type {
+  margin-top: 0.5rem;
+}
+
+.form-subsection {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.fieldset-subheading {
+  margin: 0 0 0.35rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-subtle);
+}
+
 .form-grid {
   display: grid;
   gap: 0.9rem;

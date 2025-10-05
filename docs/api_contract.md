@@ -53,7 +53,7 @@ schema. Unknown top-level or nested keys are rejected (`extra="forbid"`).
 | `agricultural` | object | ❌ | Agricultural activity inputs. Defaults to zero amounts. |
 | `investment` | object | ❌ | Map of investment category identifiers to non-negative numeric amounts. Defaults to `{}`. |
 | `other` | object | ❌ | Miscellaneous taxable income inputs. Defaults to zero amounts. |
-| `obligations` | object | ❌ | Flat obligations such as VAT, ENFIA, and luxury tax. Defaults to zero amounts. |
+| `obligations` | object | ❌ | Flat obligations such as ENFIA and luxury tax. Defaults to zero amounts. |
 | `deductions` | object | ❌ | User-entered deduction amounts. Defaults to zero amounts. |
 | `withholding_tax` | number | ❌ | Amount of tax already withheld. Defaults to `0`. Must be non-negative. |
 
@@ -118,7 +118,6 @@ Each section shares the same structure:
 
 | Field | Type | Required | Rules |
 | --- | --- | --- | --- |
-| `vat` | number | ❌ | Defaults to `0`. Must be ≥ 0. |
 | `enfia` | number | ❌ | Defaults to `0`. Must be ≥ 0. |
 | `luxury` | number | ❌ | Defaults to `0`. Must be ≥ 0. |
 
@@ -226,18 +225,18 @@ Key characteristics of the new validation layer:
       ]
     },
     {
-      "category": "vat",
-      "label": "Value Added Tax",
-      "tax": 600.0,
-      "total_tax": 600.0,
-      "net_income": -600.0
-    },
-    {
       "category": "enfia",
       "label": "ENFIA property tax",
       "tax": 320.0,
       "total_tax": 320.0,
       "net_income": -320.0
+    },
+    {
+      "category": "luxury",
+      "label": "Luxury living tax",
+      "tax": 150.0,
+      "total_tax": 150.0,
+      "net_income": -150.0
     }
   ],
   "meta": {
@@ -254,7 +253,7 @@ The response always includes:
 - `details`: Per-category breakdowns. Additional fields appear depending on the
   income type (e.g., `monthly_gross_income`, `payments_per_year`, `trade_fee_label`,
   investment `items`). Flat obligations
-  such as VAT and ENFIA are returned as simple line items with negative
+  such as ENFIA and luxury taxes are returned as simple line items with negative
   `net_income` values to reflect their impact on take-home amounts.
 - `meta`: Echoes the tax `year` and the resolved `locale` used for labels.
 
