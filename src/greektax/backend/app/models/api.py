@@ -246,6 +246,7 @@ class SummaryLabels(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     income_total: str
+    taxable_income: str
     tax_total: str
     net_income: str
     net_monthly_income: str
@@ -263,6 +264,7 @@ class Summary(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     income_total: float
+    taxable_income: float
     tax_total: float
     net_income: float
     net_monthly_income: float

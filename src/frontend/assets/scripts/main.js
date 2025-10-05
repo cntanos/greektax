@@ -3091,6 +3091,7 @@ function renderSummary(summary) {
     { key: "net_monthly_income", formatter: formatCurrency },
     { key: "average_monthly_tax", formatter: formatCurrency },
     { key: "income_total", formatter: formatCurrency },
+    { key: "taxable_income", formatter: formatCurrency },
     { key: "effective_tax_rate", formatter: formatPercent },
   ];
 
@@ -3555,6 +3556,7 @@ function downloadCsvSummary() {
     { key: "net_monthly_income", formatter: formatCurrency },
     { key: "average_monthly_tax", formatter: formatCurrency },
     { key: "income_total", formatter: formatCurrency },
+    { key: "taxable_income", formatter: formatCurrency },
     { key: "effective_tax_rate", formatter: formatPercent },
   ];
 
