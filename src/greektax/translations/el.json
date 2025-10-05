@@ -75,6 +75,7 @@
   "frontend": {
     "actions": {
       "calculate": "Υπολογισμός φόρων",
+      "clear": "Καθαρισμός φόρμας",
       "download": "Λήψη σύνοψης (JSON)",
       "download_csv": "Λήψη σύνοψης (CSV)",
       "print": "Εκτύπωση σύνοψης"

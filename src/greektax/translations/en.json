@@ -75,6 +75,7 @@
   "frontend": {
     "actions": {
       "calculate": "Calculate taxes",
+      "clear": "Clear form",
       "download": "Download summary (JSON)",
       "download_csv": "Download summary (CSV)",
       "print": "Print summary"
