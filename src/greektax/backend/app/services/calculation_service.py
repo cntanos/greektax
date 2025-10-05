@@ -96,7 +96,47 @@ def _normalise_payload(
 
     children = request.dependents.children
     demographics = request.demographics
-    toggles = MappingProxyType(dict(request.toggles)) if request.toggles else MappingProxyType({})
+
+    meta_toggles_raw = config.meta.get("toggles")
+    meta_toggles: dict[str, bool] = {}
+    if isinstance(meta_toggles_raw, Mapping):
+        meta_toggles = {str(key): bool(value) for key, value in meta_toggles_raw.items()}
+
+    merged_toggles: dict[str, bool] = dict(meta_toggles)
+    if request.toggles:
+        merged_toggles.update({key: bool(value) for key, value in request.toggles.items()})
+
+    toggles = MappingProxyType(merged_toggles)
+
+    def _derive_youth_band(age: int | None) -> str | None:
+        if age is None:
+            return None
+        if age < 25:
+            return "under_25"
+        if age <= 30:
+            return "age26_30"
+        return None
+
+    birth_year = demographics.birth_year
+    taxpayer_age: int | None = None
+    if birth_year is not None:
+        computed_age = request.year - birth_year
+        if computed_age >= 0:
+            taxpayer_age = computed_age
+
+    taxpayer_age_band = demographics.age_band or _derive_youth_band(taxpayer_age)
+    youth_override = demographics.youth_employment_override
+
+    demo_fields_set = getattr(demographics, "model_fields_set", set())
+    if "small_village" in demo_fields_set:
+        small_village = bool(demographics.small_village)
+    else:
+        small_village = bool(merged_toggles.get("small_village"))
+
+    if "new_mother" in demo_fields_set:
+        new_mother = bool(demographics.new_mother)
+    else:
+        new_mother = bool(merged_toggles.get("new_mother"))
 
     employment_input = request.employment
     employment_payroll = config.employment.payroll
@@ -151,11 +191,19 @@ def _normalise_payload(
     category_months = freelance_input.efka_months
     if category_months is not None and category_months <= 0:
         category_months = None
-    if category_months is None and category_config is not None:
+    if (
+        category_months is None
+        and category_config is not None
+        and freelance_input.include_category_contributions
+    ):
         category_months = 12
 
     category_contribution = 0.0
-    if category_config is not None and category_months:
+    if (
+        category_config is not None
+        and category_months
+        and freelance_input.include_category_contributions
+    ):
         category_contribution = category_config.monthly_amount * category_months
 
     additional_contributions = freelance_input.mandatory_contributions
@@ -235,13 +283,23 @@ def _normalise_payload(
         year=request.year,
         locale=locale,
         children=children,
-        taxpayer_birth_year=demographics.taxpayer_birth_year,
+        taxpayer_birth_year=birth_year,
+        taxpayer_age_band=taxpayer_age_band,
+        youth_employment_override=youth_override,
+        small_village=small_village,
+        new_mother=new_mother,
         employment_income=employment_income,
         employment_monthly_income=employment_monthly_income,
         employment_payments_per_year=employment_payments,
         employment_manual_contributions=employment_manual_contributions,
         employment_include_social_contributions=
         request.employment.include_social_contributions,
+        employment_include_employee_contributions=
+        employment_input.include_employee_contributions,
+        employment_include_manual_contributions=
+        employment_input.include_manual_employee_contributions,
+        employment_include_employer_contributions=
+        employment_input.include_employer_contributions,
         withholding_tax=withholding_tax,
         pension_income=pension_income,
         pension_monthly_income=pension_monthly_income,
@@ -256,6 +314,14 @@ def _normalise_payload(
         freelance_additional_contributions=additional_contributions,
         freelance_auxiliary_contributions=auxiliary_contributions,
         freelance_lump_sum_contributions=lump_sum_contributions,
+        freelance_include_category_contributions=
+        freelance_input.include_category_contributions,
+        freelance_include_mandatory_contributions=
+        freelance_input.include_mandatory_contributions,
+        freelance_include_auxiliary_contributions=
+        freelance_input.include_auxiliary_contributions,
+        freelance_include_lump_sum_contributions=
+        freelance_input.include_lump_sum_contributions,
         include_trade_fee=include_trade_fee,
         freelance_trade_fee_location=trade_fee_location,
         freelance_years_active=years_active,
@@ -552,15 +618,26 @@ def calculate_tax(
             for entry in deduction_breakdown
         ]
 
+    meta_payload: dict[str, Any] = {
+        "year": normalised.year,
+        "locale": translator.locale,
+    }
+
+    youth_category = normalised.youth_rate_category
+    if youth_category:
+        meta_payload["youth_relief_category"] = youth_category
+
+    if normalised.presumptive_relief_applied:
+        adjustments = list(normalised.presumptive_adjustments)
+        if adjustments:
+            meta_payload["presumptive_adjustments"] = adjustments
+
     response_model = CalculationResponse.model_validate(
         {
             "summary": summary,
             "details": details,
-            "meta": {
-                "year": normalised.year,
-                "locale": translator.locale,
-            },
+            "meta": meta_payload,
         }
     )
 
-    return response_model.model_dump(mode="json")
+    return response_model.model_dump(mode="json", exclude_none=True)
