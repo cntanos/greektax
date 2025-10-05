@@ -98,6 +98,7 @@ def _build_general_income_components(
                 employee_contributions=employee_contrib,
                 employee_manual_contributions=employee_manual_contrib,
                 employer_contributions=employer_contrib,
+                include_employee_contributions=include_social,
                 payments_per_year=payload.employment_payments_per_year,
                 monthly_gross_income=payload.employment_monthly_income,
             )

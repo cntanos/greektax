@@ -245,6 +245,7 @@ class GeneralIncomeComponent:
     employee_contributions: float = 0.0
     employee_manual_contributions: float = 0.0
     employer_contributions: float = 0.0
+    include_employee_contributions: bool = True
     category_contributions: float = 0.0
     additional_contributions: float = 0.0
     auxiliary_contributions: float = 0.0
@@ -261,7 +262,10 @@ class GeneralIncomeComponent:
         net = self.gross_income - self.tax_after_credit
         if self.category == "freelance":
             net -= self.contributions + self.trade_fee
-        if self.category in {"employment", "pension"}:
+        if (
+            self.category in {"employment", "pension"}
+            and self.include_employee_contributions
+        ):
             net -= self.employee_contributions
         return net
 
