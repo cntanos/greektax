@@ -3728,9 +3728,6 @@ function renderDetailCard(detail) {
   const dl = document.createElement("dl");
   const fieldOrder = [
     "gross_income",
-    "monthly_gross_income",
-    "payments_per_year",
-    "gross_income_per_payment",
     "deductible_contributions",
     "category_contributions",
     "additional_contributions",
@@ -3738,9 +3735,7 @@ function renderDetailCard(detail) {
     "lump_sum_contributions",
     "employee_contributions",
     "employee_contributions_manual",
-    "employee_contributions_per_payment",
     "employer_contributions",
-    "employer_contributions_per_payment",
     "deductible_expenses",
     "taxable_income",
     "tax_before_credits",
@@ -3754,10 +3749,6 @@ function renderDetailCard(detail) {
   ];
   const labels = {
     gross_income: detailLabels.gross_income || "Gross income",
-    monthly_gross_income: detailLabels.monthly_gross_income || "Monthly gross income",
-    payments_per_year: detailLabels.payments_per_year || "Payments per year",
-    gross_income_per_payment:
-      detailLabels.gross_income_per_payment || "Gross per payment",
     deductible_contributions:
       detailLabels.deductible_contributions || "Mandatory contributions",
     category_contributions:
@@ -3773,14 +3764,8 @@ function renderDetailCard(detail) {
     employee_contributions_manual:
       detailLabels.employee_contributions_manual ||
       "Additional employee contributions",
-    employee_contributions_per_payment:
-      detailLabels.employee_contributions_per_payment ||
-      "Employee contributions per payment",
     employer_contributions:
       detailLabels.employer_contributions || "Employer contributions",
-    employer_contributions_per_payment:
-      detailLabels.employer_contributions_per_payment ||
-      "Employer contributions per payment",
     deductible_expenses:
       detailLabels.deductible_expenses || "Deductible expenses",
     taxable_income: detailLabels.taxable_income || "Taxable income",
@@ -3821,11 +3806,7 @@ function renderDetailCard(detail) {
     dt.dataset.field = key;
 
     const dd = document.createElement("dd");
-    if (key === "payments_per_year") {
-      dd.textContent = value;
-    } else {
-      dd.textContent = formatCurrency(value);
-    }
+    dd.textContent = formatCurrency(value);
     dd.dataset.field = key;
 
     dl.appendChild(dt);
@@ -4160,17 +4141,14 @@ function downloadCsvSummary() {
 
   const detailFieldOrder = [
     "gross_income",
-    "monthly_gross_income",
-    "payments_per_year",
-    "gross_income_per_payment",
     "deductible_contributions",
     "category_contributions",
     "additional_contributions",
     "auxiliary_contributions",
+    "lump_sum_contributions",
     "employee_contributions",
-    "employee_contributions_per_payment",
+    "employee_contributions_manual",
     "employer_contributions",
-    "employer_contributions_per_payment",
     "deductible_expenses",
     "taxable_income",
     "tax_before_credits",
@@ -4194,12 +4172,7 @@ function downloadCsvSummary() {
         ? detail.trade_fee_label
         : detailLabels[field] || field;
 
-      let value;
-      if (field === "payments_per_year") {
-        value = detail[field];
-      } else {
-        value = formatCurrency(detail[field]);
-      }
+      const value = formatCurrency(detail[field]);
 
       lines.push(["Detail", `${sectionLabel} – ${labelKey}`, value]);
     });
