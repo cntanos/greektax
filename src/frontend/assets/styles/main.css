@@ -457,6 +457,10 @@ main {
   color: var(--text-subtle);
 }
 
+.print-overview {
+  display: none;
+}
+
 .calculator-layout {
   display: grid;
   gap: 1.75rem;
@@ -1640,6 +1644,11 @@ main {
     color: #0b4aa1;
   }
 
+  #app-intro .intro-highlights,
+  #app-intro .disclaimer {
+    display: none !important;
+  }
+
   #calculator {
     display: block !important;
     grid-column: 1 / 2;
@@ -1747,7 +1756,7 @@ main {
     border-top: 1px solid #bfc4cb;
     color: #333;
     font-size: 0.85rem;
-    grid-column: 2 / 3;
+    grid-column: 1 / -1;
     grid-row: 3 / 4;
     align-self: end;
     page-break-inside: avoid;
@@ -1784,6 +1793,97 @@ main {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 0.75rem;
+  }
+
+  .print-overview {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.75rem;
+    border: 1px solid #bfc4cb;
+    background: linear-gradient(180deg, rgba(6, 18, 41, 0.06), rgba(6, 18, 41, 0));
+    padding: 1rem 1.1rem;
+    margin: 0;
+    color: #1a1f2b;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .print-overview__intro {
+    margin: 0;
+    font-size: 0.9rem;
+  }
+
+  .print-overview__steps {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 0.6rem;
+    counter-reset: print-step;
+  }
+
+  .print-overview__steps li {
+    counter-increment: print-step;
+    border: 1px solid #cdd2d9;
+    background: #fff;
+    padding: 0.6rem 0.7rem 0.6rem 1.4rem;
+    font-size: 0.82rem;
+    line-height: 1.45;
+    position: relative;
+  }
+
+  .print-overview__steps li::before {
+    content: counter(print-step);
+    position: absolute;
+    left: 0.5rem;
+    top: 0.55rem;
+    width: 0.85rem;
+    height: 0.85rem;
+    border-radius: 999px;
+    border: 1px solid #0b4aa1;
+    background: #e5ecf9;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.68rem;
+    color: #0b4aa1;
+  }
+
+  .print-overview__highlights {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 0.6rem;
+  }
+
+  .print-overview__highlight {
+    border: 1px solid #cdd2d9;
+    background: #fff;
+    padding: 0.6rem 0.7rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  .print-overview__highlight h5 {
+    margin: 0;
+    font-size: 0.88rem;
+    color: #0b4aa1;
+  }
+
+  .print-overview__highlight p {
+    margin: 0;
+    font-size: 0.78rem;
+    color: #333;
+  }
+
+  .print-overview__disclaimer {
+    margin: 0;
+    padding-top: 0.75rem;
+    border-top: 1px solid #cdd2d9;
+    font-size: 0.78rem;
+    color: #333;
   }
 
   .summary-item,
