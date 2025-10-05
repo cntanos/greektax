@@ -678,7 +678,9 @@ function captureElementValue(element) {
       return element.checked ? element.value : undefined;
     }
     if (isNumericInputElement(element)) {
-      return normaliseNumericString(element.value ?? "");
+      return normaliseNumericString(element.value ?? "", {
+        maxFractionDigits: getNumericPrecision(element),
+      });
     }
     return element.value ?? "";
   }
@@ -984,7 +986,10 @@ function getLocaleNumberSymbols(localeTag) {
   return symbols;
 }
 
-function normaliseNumericString(value, localeTag = resolveLocaleTag(currentLocale)) {
+function normaliseNumericString(
+  value,
+  { localeTag = resolveLocaleTag(currentLocale), maxFractionDigits = Infinity } = {},
+) {
   const raw = value == null ? "" : value.toString();
   let normalised = raw.trim();
   if (!normalised) {
@@ -1037,6 +1042,30 @@ function normaliseNumericString(value, localeTag = resolveLocaleTag(currentLocal
   integerPart = integerPart.replace(/[^0-9]/g, "");
   fractionalPart = fractionalPart.replace(/[^0-9]/g, "");
 
+  if (Number.isFinite(maxFractionDigits)) {
+    if (maxFractionDigits <= 0) {
+      if (fractionalPart) {
+        integerPart = `${integerPart}${fractionalPart}`;
+        fractionalPart = "";
+      }
+    } else if (fractionalPart.length > maxFractionDigits) {
+      const treatAsGrouping =
+        (decimalChar &&
+          decimal &&
+          decimalChar === decimal &&
+          decimalChar !== ".") ||
+        (decimal === "," && decimalChar === ".");
+      if (treatAsGrouping) {
+        integerPart = `${integerPart}${fractionalPart}`;
+        fractionalPart = "";
+      } else {
+        fractionalPart = fractionalPart.slice(0, maxFractionDigits);
+      }
+    } else if (fractionalPart.length > 0) {
+      fractionalPart = fractionalPart.slice(0, maxFractionDigits);
+    }
+  }
+
   if (!integerPart && !fractionalPart) {
     return "";
   }
@@ -1054,9 +1083,18 @@ function normaliseNumericString(value, localeTag = resolveLocaleTag(currentLocal
   return `${sign}${integerPart}${decimalPart}`;
 }
 
-function parseNumericFromString(value, { allowNegative = false } = {}) {
-  const localeTag = resolveLocaleTag(currentLocale);
-  const normalised = normaliseNumericString(value, localeTag);
+function parseNumericFromString(
+  value,
+  {
+    allowNegative = false,
+    maxFractionDigits = Infinity,
+    localeTag = resolveLocaleTag(currentLocale),
+  } = {},
+) {
+  const normalised = normaliseNumericString(value, {
+    localeTag,
+    maxFractionDigits,
+  });
   if (!normalised || normalised === "-" || normalised === "+") {
     return Number.NaN;
   }
@@ -1108,7 +1146,9 @@ function formatNumericInput(input, { treatEmptyAsZero = true } = {}) {
     return;
   }
 
-  const number = parseNumericFromString(rawValue);
+  const number = parseNumericFromString(rawValue, {
+    maxFractionDigits: precision,
+  });
   if (!Number.isFinite(number)) {
     return;
   }
@@ -1129,7 +1169,9 @@ function buildEditableNumericValue(input) {
   }
 
   const precision = getNumericPrecision(input);
-  const normalised = normaliseNumericString(input.value ?? "");
+  const normalised = normaliseNumericString(input.value ?? "", {
+    maxFractionDigits: precision,
+  });
   if (!normalised) {
     return "";
   }
@@ -2326,7 +2368,9 @@ function validateNumberInput(input) {
     return true;
   }
 
-  const number = parseNumericFromString(rawValue);
+  const number = parseNumericFromString(rawValue, {
+    maxFractionDigits: getNumericPrecision(input),
+  });
   const fieldLabel = getFieldLabel(input);
 
   if (!Number.isFinite(number)) {
@@ -2474,7 +2518,10 @@ function readNumber(input) {
   if (!isInputVisible(input)) {
     return 0;
   }
-  const value = parseNumericFromString(input.value);
+  const precision = getNumericPrecision(input);
+  const value = parseNumericFromString(input.value, {
+    maxFractionDigits: precision,
+  });
   if (!Number.isFinite(value) || value < 0) {
     return 0;
   }
@@ -2488,7 +2535,9 @@ function readInteger(input) {
   if (!isInputVisible(input)) {
     return 0;
   }
-  const normalised = normaliseNumericString(input.value ?? "");
+  const normalised = normaliseNumericString(input.value ?? "", {
+    maxFractionDigits: 0,
+  });
   const value = Number.parseInt(normalised || "0", 10);
   if (!Number.isFinite(value) || value < 0) {
     return 0;
