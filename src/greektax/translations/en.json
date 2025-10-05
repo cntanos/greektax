@@ -349,7 +349,7 @@
       "deductions_help_body": "Only enter amounts supported by official receipts or payment slips.",
       "deductions_help_limits": "Statutory limits are applied automatically—donation credits depend on income, while medical, education, and insurance costs follow AADE caps.",
       "deductions_help_summary": "Deductions help",
-      "disclaimer": "Disclaimer: This tool is unofficial and provided as-is. Inputs are stored locally on your device for up to two hours and are never sent to a server. Please consult a professional accountant for formal filings.",
+      "disclaimer": "Disclaimer: The tool is provided as is. Consult an accountant for specific details. Input data are stored locally on your device for up to two hours and are not stored on a server.",
       "freelance_help_body": "Report gross turnover before VAT and only claim expenses you can document (rent, utilities, equipment, professional fees).",
       "freelance_help_contributions": "Choosing an EFKA category preloads mandatory contributions; override with your actual payments if they differ.",
       "freelance_help_summary": "Freelance help",
@@ -397,25 +397,17 @@
         "pending_tax_credit_2026": "Family tax credit amounts for {{year}} remain provisional until AADE confirms the final schedule."
       },
       "employment": {
-        "partial_year_review": "Partial-year payroll scenarios may require manual EFKA and tax credit adjustments. Validate the figures for {{year}} if your contract ended early.",
-        "youth_relief_toggle": "Confirm youth eligibility before applying the reduced employment tax brackets for {{year}}."
+        "partial_year_review": "Partial-year payroll scenarios may require manual EFKA and tax credit adjustments. Validate the figures for {{year}} if your contract ended early."
       },
-      "family": {
-        "new_mother_toggle": "AADE offers enhanced credits for new mothers. Enable the toggle only when the birth occurred within the relief window for {{year}}."
-      },
+      "family": {},
       "freelance": {
         "trade_fee_sunset": "AADE plans to bring back the business activity fee in stages. For {{year}}, confirm whether it applies to your activity before you submit."
       },
-      "residence": {
-        "small_village_toggle": "Small-village residency relief applies to settlements under statutory population limits. Verify eligibility before enabling the toggle for {{year}}."
-      },
+      "residence": {},
       "learn_more": "Learn more",
       "links": {
         "partial_year_review": "Guidance on partial-year payroll",
-        "pending_deductions": "AADE deduction guidance",
-        "youth_relief": "Youth employment relief criteria",
-        "small_village_relief": "Residency relief for small villages",
-        "new_mother_relief": "AADE guidance for new mothers"
+        "pending_deductions": "AADE deduction guidance"
       }
     }
   }

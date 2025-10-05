@@ -216,9 +216,9 @@
         "income-toggle-intro": "Επιλέξτε κάθε κατηγορία εισοδήματος που σας αφορά για να εμφανιστούν τα αντίστοιχα πεδία.",
         "new-mother": "Δηλώστε πρόσφατη γέννα ώστε να εφαρμοστούν ενισχυμένες οικογενειακές εκπτώσεις και μειώσεις τεκμηρίων.",
         "other-income": "Περιλάβετε φορολογητέα ποσά όπως επίδομα ανεργίας, διατροφή που εισπράττετε, φορολογητέες υποτροφίες, έπαθλα ή άλλο εισόδημα που δεν καλύπτεται παραπάνω.",
+        "pension-gross-note": "Η μετατροπή καθαρών σε ακαθάριστα ποσά σύνταξης δεν υποστηρίζεται. Δηλώστε μόνο ακαθάριστα ποσά.",
         "pension-income-gross": "Χρησιμοποιήστε το πεδίο ακαθάριστου όταν γνωρίζετε τη σύνταξη πριν από τις κρατήσεις.",
         "pension-monthly-income": "Καταχωρήστε το ακαθάριστο ποσό κάθε καταβολής σύνταξης. Ο υπολογιστής το πολλαπλασιάζει με τις καταβολές ανά έτος που επιλέξατε.",
-        "pension-gross-note": "Η μετατροπή καθαρών σε ακαθάριστα ποσά σύνταξης δεν υποστηρίζεται. Δηλώστε μόνο ακαθάριστα ποσά.",
         "pension-section-intro": "Αν λαμβάνετε σύνταξη, συμπληρώστε τα πεδία παρακάτω· διαφορετικά αφήστε τα κενά.",
         "small-village": "Οι μόνιμοι κάτοικοι οικισμών κάτω των 500 κατοίκων μπορούν να μειώσουν το τεκμαρτό εισόδημα.",
         "tekmiria-note": "Η μείωση τεκμηρίων {{reduction}} εφαρμόζεται όταν ενεργοποιηθούν οι σχετικές επιλογές (μικρός οικισμός ή νέα μητέρα).",
@@ -285,7 +285,7 @@
         "deductions_help_body": "Καταχωρήστε μόνο ποσά με νόμιμες αποδείξεις ή αποδεικτικά πληρωμής.",
         "deductions_help_limits": "Εφαρμόζονται αυτόματα τα νόμιμα όρια—η πίστωση για δωρεές εξαρτάται από το εισόδημα, ενώ ιατρικές, εκπαιδευτικές και ασφαλιστικές δαπάνες ακολουθούν τα όρια της ΑΑΔΕ.",
         "deductions_help_summary": "Βοήθεια για εκπτώσεις",
-        "disclaimer": "Αποποίηση ευθύνης: Το εργαλείο είναι ανεπίσημο και παρέχεται ως έχει. Τα δεδομένα εισόδου αποθηκεύονται τοπικά στη συσκευή σας για έως δύο ώρες και δεν αποστέλλονται σε διακομιστή. Συμβουλευτείτε λογιστή για επίσημες δηλώσεις.",
+        "disclaimer": "Αποποίηση ευθύνης: Το εργαλείο παρέχεται ως έχει. Για συγκεκριμένα στοιχεία συμβουλευτείτε λογιστή. Τα δεδομένα εισόδου αποθηκεύονται τοπικά στη συσκευή σας για έως δύο ώρες και δεν αποθηκεύονται σε διακομιστή.",
         "estimate_tag": "≈ εκτίμηση",
         "freelance_help_body": "Δηλώστε τον ακαθάριστο κύκλο εργασιών πριν τον ΦΠΑ και καταχωρήστε μόνο τεκμηριωμένες δαπάνες (ενοίκιο, ΔΕΚΟ, εξοπλισμός, αμοιβές).",
         "freelance_help_contributions": "Η επιλογή κατηγορίας ΕΦΚΑ προ-συμπληρώνει τις υποχρεωτικές εισφορές· προσαρμόστε τα ποσά με βάση τα πραγματικά σας παραστατικά.",
@@ -320,26 +320,18 @@
           "pending_tax_credit_2026": "Τα ποσά της οικογενειακής έκπτωσης για το {{year}} παραμένουν προσωρινά έως ότου η ΑΑΔΕ επιβεβαιώσει το τελικό πρόγραμμα."
         },
         "employment": {
-          "partial_year_review": "Τα σενάρια με μερική απασχόληση ενδέχεται να απαιτούν χειροκίνητη προσαρμογή εισφορών και πιστώσεων. Επαληθεύστε τα ποσά για το {{year}} αν η σύμβασή σας έληξε νωρίτερα.",
-          "youth_relief_toggle": "Επιβεβαιώστε την ιδιότητα νεανικής απασχόλησης πριν εφαρμόσετε τους μειωμένους συντελεστές για το {{year}}."
+          "partial_year_review": "Τα σενάρια με μερική απασχόληση ενδέχεται να απαιτούν χειροκίνητη προσαρμογή εισφορών και πιστώσεων. Επαληθεύστε τα ποσά για το {{year}} αν η σύμβασή σας έληξε νωρίτερα."
         },
-        "family": {
-          "new_mother_toggle": "Η ΑΑΔΕ παρέχει ενισχυμένες εκπτώσεις για νέες μητέρες. Ενεργοποιήστε το μόνο αν η γέννα συνέβη εντός του προβλεπόμενου διαστήματος για το {{year}}."
-        },
+        "family": {},
         "freelance": {
           "trade_fee_sunset": "Η ΑΑΔΕ σχεδιάζει την επαναφορά του τέλους επιτηδεύματος σταδιακά. Για το {{year}} επιβεβαιώστε αν ισχύει για τη δραστηριότητά σας πριν από την υποβολή."
         },
         "learn_more": "Μάθετε περισσότερα",
         "links": {
-          "new_mother_relief": "Οδηγίες ΑΑΔΕ για νέες μητέρες",
           "partial_year_review": "Οδηγίες για μερική απασχόληση",
-          "pending_deductions": "Οδηγός εκπτώσεων ΑΑΔΕ",
-          "small_village_relief": "Ελάφρυνση κατοικίας σε μικρούς οικισμούς",
-          "youth_relief": "Κριτήρια έκπτωσης νεανικής απασχόλησης"
+          "pending_deductions": "Οδηγός εκπτώσεων ΑΑΔΕ"
         },
-        "residence": {
-          "small_village_toggle": "Η ελάφρυνση μικρού οικισμού αφορά οικισμούς με πληθυσμό κάτω από τα νόμιμα όρια. Επιβεβαιώστε τη μόνιμη κατοικία πριν την ενεργοποίηση για το {{year}}."
-        }
+        "residence": {}
       }
     },
     "en": {
@@ -556,9 +548,9 @@
         "income-toggle-intro": "Select each income type you receive to reveal its inputs.",
         "new-mother": "Flag recent childbirth to surface enhanced family credits and tekmiria reductions.",
         "other-income": "Include taxable amounts such as unemployment benefits, alimony received, taxable scholarships, prizes, or other income not covered above.",
+        "pension-gross-note": "Net-to-gross pension conversion isn't supported. Please enter gross amounts only.",
         "pension-income-gross": "Use the gross field when you know the annual pension before deductions.",
         "pension-monthly-income": "Enter the gross amount per pension payment. The calculator multiplies it by the payments per year you selected.",
-        "pension-gross-note": "Net-to-gross pension conversion isn't supported. Please enter gross amounts only.",
         "pension-section-intro": "If you receive a pension, fill in the fields below; otherwise leave them blank.",
         "small-village": "Residents of settlements under 500 inhabitants can reduce presumptive income imputation.",
         "tekmiria-note": "Tekmiria reductions of {{reduction}} apply when qualifying relief toggles (small village or new mother) are enabled.",
@@ -625,7 +617,7 @@
         "deductions_help_body": "Only enter amounts supported by official receipts or payment slips.",
         "deductions_help_limits": "Statutory limits are applied automatically—donation credits depend on income, while medical, education, and insurance costs follow AADE caps.",
         "deductions_help_summary": "Deductions help",
-        "disclaimer": "Disclaimer: This tool is unofficial and provided as-is. Inputs are stored locally on your device for up to two hours and are never sent to a server. Please consult a professional accountant for formal filings.",
+        "disclaimer": "Disclaimer: The tool is provided as is. Consult an accountant for specific details. Input data are stored locally on your device for up to two hours and are not stored on a server.",
         "estimate_tag": "≈ estimate",
         "freelance_help_body": "Report gross turnover before VAT and only claim expenses you can document (rent, utilities, equipment, professional fees).",
         "freelance_help_contributions": "Choosing an EFKA category preloads mandatory contributions; override with your actual payments if they differ.",
@@ -660,26 +652,18 @@
           "pending_tax_credit_2026": "Family tax credit amounts for {{year}} remain provisional until AADE confirms the final schedule."
         },
         "employment": {
-          "partial_year_review": "Partial-year payroll scenarios may require manual EFKA and tax credit adjustments. Validate the figures for {{year}} if your contract ended early.",
-          "youth_relief_toggle": "Confirm youth eligibility before applying the reduced employment tax brackets for {{year}}."
+          "partial_year_review": "Partial-year payroll scenarios may require manual EFKA and tax credit adjustments. Validate the figures for {{year}} if your contract ended early."
         },
-        "family": {
-          "new_mother_toggle": "AADE offers enhanced credits for new mothers. Enable the toggle only when the birth occurred within the relief window for {{year}}."
-        },
+        "family": {},
         "freelance": {
           "trade_fee_sunset": "AADE plans to bring back the business activity fee in stages. For {{year}}, confirm whether it applies to your activity before you submit."
         },
         "learn_more": "Learn more",
         "links": {
-          "new_mother_relief": "AADE guidance for new mothers",
           "partial_year_review": "Guidance on partial-year payroll",
-          "pending_deductions": "AADE deduction guidance",
-          "small_village_relief": "Residency relief for small villages",
-          "youth_relief": "Youth employment relief criteria"
+          "pending_deductions": "AADE deduction guidance"
         },
-        "residence": {
-          "small_village_toggle": "Small-village residency relief applies to settlements under statutory population limits. Verify eligibility before enabling the toggle for {{year}}."
-        }
+        "residence": {}
       }
     }
   };
