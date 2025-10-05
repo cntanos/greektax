@@ -13,10 +13,11 @@ from greektax.backend.app.models import (
 from greektax.backend.config.year_config import (
     DeductionRuleConfig,
     FreelanceConfig,
+    MultiRateBracket,
     YearConfiguration,
 )
 
-from .utils import calculate_progressive_tax, format_percentage, round_currency
+from .utils import allocate_progressive_tax, format_percentage, round_currency
 
 
 def calculate_general_income_details(
@@ -185,9 +186,31 @@ def _apply_progressive_tax(
         return
 
     total_taxable = sum(component.taxable_income for component in components)
-    tax_before_credit = calculate_progressive_tax(
-        total_taxable, config.employment.brackets
-    )
+    taxes_before_credit: list[float]
+
+    if total_taxable <= 0:
+        taxes_before_credit = [0.0 for _ in components]
+    else:
+        dependants = payload.children if payload.children > 0 else 0
+        youth_category = payload.youth_rate_category
+
+        def _resolve_rate(index: int, bracket) -> float:
+            component = components[index]
+            if isinstance(bracket, MultiRateBracket):
+                if (
+                    component.category == "employment"
+                    and youth_category
+                    and youth_category in bracket.youth_rates
+                ):
+                    return bracket.youth_rates[youth_category]
+                return bracket.household.rate_for_dependants(dependants)
+            return bracket.rate
+
+        taxes_before_credit = allocate_progressive_tax(
+            [component.taxable_income for component in components],
+            config.employment.brackets,
+            _resolve_rate,
+        )
 
     credit_candidates: list[float] = []
     if any(component.category == "employment" for component in components):
@@ -207,15 +230,11 @@ def _apply_progressive_tax(
         )
 
     credit_requested = max(credit_candidates) if credit_candidates else 0.0
-    credit_applied = min(credit_requested, tax_before_credit)
+    total_tax_before_credit = sum(taxes_before_credit)
+    credit_applied = min(credit_requested, total_tax_before_credit)
 
-    if total_taxable > 0:
-        for component in components:
-            share = component.taxable_income / total_taxable
-            component.tax_before_credit = tax_before_credit * share
-    else:
-        for component in components:
-            component.tax_before_credit = 0.0
+    for component, tax_before_credit in zip(components, taxes_before_credit):
+        component.tax_before_credit = tax_before_credit
 
     eligible_tax = sum(
         component.tax_before_credit
@@ -548,6 +567,9 @@ def _calculate_trade_fee(payload: CalculationInput, config: FreelanceConfig) -> 
     if not payload.include_trade_fee:
         return 0.0
     if payload.freelance_taxable_income <= 0:
+        return 0.0
+
+    if config.trade_fee.fee_sunset:
         return 0.0
 
     sunset = config.trade_fee.sunset

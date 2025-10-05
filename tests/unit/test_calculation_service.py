@@ -788,6 +788,60 @@ def test_calculate_tax_respects_locale_toggle() -> None:
     assert result["summary"]["labels"]["income_total"] == "Συνολικό εισόδημα"
 
 
+def test_youth_relief_applies_when_toggle_and_age_match() -> None:
+    """Employment youth relief applies reduced bracket rates when confirmed."""
+
+    base_payload = {
+        "year": 2026,
+        "dependents": {"children": 0},
+        "employment": {"gross_income": 20_000},
+        "demographics": {"taxpayer_birth_year": 2003},
+    }
+
+    youth_request = CalculationRequest.model_validate(
+        {**base_payload, "toggles": {"youth_eligibility": True}}
+    )
+    youth_result = calculate_tax(youth_request)
+
+    employment_detail = next(
+        detail for detail in youth_result["details"] if detail["category"] == "employment"
+    )
+
+    # Gross income less statutory employee contributions defines the taxable base.
+    expected_employee_contrib = employment_detail["employee_contributions"]
+    taxable_income = base_payload["employment"]["gross_income"] - expected_employee_contrib
+    assert employment_detail["taxable_income"] == pytest.approx(taxable_income)
+
+    # Youth bracket rates: 12k at 5%, remainder at 18%.
+    remaining = taxable_income - 12_000
+    expected_tax_before_credit = 12_000 * 0.05
+    if remaining > 0:
+        expected_tax_before_credit += remaining * 0.18
+
+    assert employment_detail["tax_before_credits"] == pytest.approx(
+        expected_tax_before_credit, rel=1e-4
+    )
+
+    baseline_request = CalculationRequest.model_validate(
+        {**base_payload, "toggles": {"youth_eligibility": False}}
+    )
+    baseline_result = calculate_tax(baseline_request)
+    baseline_detail = next(
+        detail for detail in baseline_result["details"] if detail["category"] == "employment"
+    )
+
+    # Household rates without youth relief: 12k at 8.5%, remainder at 22%.
+    expected_baseline_tax = 12_000 * 0.085
+    remaining_baseline = taxable_income - 12_000
+    if remaining_baseline > 0:
+        expected_baseline_tax += remaining_baseline * 0.22
+
+    assert baseline_detail["tax_before_credits"] == pytest.approx(
+        expected_baseline_tax, rel=1e-4
+    )
+    assert baseline_detail["tax_before_credits"] > employment_detail["tax_before_credits"]
+
+
 def test_calculate_tax_combines_employment_and_pension_credit() -> None:
     """Salary and pension income share a single tax credit."""
 
