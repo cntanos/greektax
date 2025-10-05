@@ -796,7 +796,7 @@ main {
   box-shadow: 0 0 0 1px rgba(var(--danger-rgb), 0.2);
 }
 
-.form-control input,
+.form-control input:not([type="checkbox"]):not([type="radio"]),
 .form-control select {
   padding: 0.5rem 0.75rem;
   border-radius: 0.5rem;
@@ -811,8 +811,23 @@ main {
   color: var(--text-body);
 }
 
-.form-control input {
+.form-control input:not([type="checkbox"]):not([type="radio"]) {
   appearance: none;
+}
+
+.form-control input[type="checkbox"] {
+  width: auto;
+  max-width: none;
+  margin: 0;
+  box-shadow: none;
+  background-color: transparent;
+  border-radius: 0.35rem;
+  accent-color: var(--primary-color, var(--field-focus));
+}
+
+.form-control input[type="checkbox"]:focus {
+  outline: 2px solid var(--field-focus);
+  outline-offset: 2px;
 }
 
 .form-control input[data-numeric-input] {
