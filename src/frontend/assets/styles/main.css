@@ -1492,40 +1492,172 @@ main {
 }
 
 @media print {
-  body {
-    padding: 1rem;
-    background: #fff;
-    color: #000;
+  @page {
+    margin: 1.6cm;
   }
 
-  .site-header,
-  #calculator-form,
-  .actions,
-  .disclaimer,
-  .no-print {
+  :root {
+    color-scheme: light;
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    background: #fff !important;
+    color: #000 !important;
+    font-size: 11pt;
+    line-height: 1.5;
+  }
+
+  main {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    display: block;
+  }
+
+  #app-intro {
+    display: none !important;
+  }
+
+  #calculator {
+    display: block !important;
+  }
+
+  #calculator > h2 {
+    display: none !important;
+  }
+
+  .calculator-layout {
+    display: block !important;
+  }
+
+  .calculator-layout > :not(#calculation-results) {
     display: none !important;
   }
 
   #calculation-results {
     display: block !important;
-    border: none;
-    background: transparent;
+    border: none !important;
+    background: transparent !important;
     padding: 0;
+    margin: 0;
+    color: #000;
   }
 
-  .summary-item,
-  .detail-card {
-    border: 1px solid #dee2e6;
-    page-break-inside: avoid;
-    break-inside: avoid;
+  .card {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 0;
+    margin: 0;
   }
 
-  .detail-card h3 {
-    border-bottom: 1px solid #dee2e6;
-    padding-bottom: 0.5rem;
+  .site-header,
+  .site-footer,
+  #calculator-form,
+  .actions,
+  .disclaimer,
+  .results-visualisation,
+  #sankey-wrapper,
+  #distribution-wrapper,
+  .distribution-card,
+  .no-print {
+    display: none !important;
   }
 
   #calculation-results h3 {
-    margin-top: 0;
+    margin: 0 0 0.5rem;
+    font-size: 1.4rem;
+  }
+
+  .results-intro {
+    margin: 0 0 1rem;
+    color: #000 !important;
+  }
+
+  .summary-grid,
+  .details-list,
+  .detail-breakdown {
+    display: block;
+    margin: 0;
+  }
+
+  .summary-item,
+  .detail-card,
+  .detail-breakdown__item {
+    border: 1px solid #bfc4cb;
+    border-radius: 0;
+    background: transparent !important;
+    padding: 0.75rem 0.75rem;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    margin-bottom: 0.75rem;
+  }
+
+  .summary-item dt,
+  .summary-item dd,
+  .detail-card h3,
+  .detail-card dt,
+  .detail-card dd,
+  .detail-breakdown__label,
+  .detail-breakdown__flow,
+  .detail-breakdown__amount,
+  .detail-breakdown__tax,
+  .detail-breakdown__rate,
+  .detail-breakdown__arrow {
+    color: #000 !important;
+    background: transparent !important;
+  }
+
+  .summary-item dd,
+  .detail-card dd {
+    text-align: left;
+    font-size: 1.05rem;
+  }
+
+  .summary-grid > * + *,
+  .detail-card + .detail-card,
+  .detail-breakdown__item + .detail-breakdown__item {
+    margin-top: 0.75rem;
+  }
+
+  .detail-card h3 {
+    margin: 0 0 0.5rem;
+    padding-bottom: 0.35rem;
+    border-bottom: 1px solid #bfc4cb;
+    font-size: 1.15rem;
+  }
+
+  .detail-card dl {
+    display: grid;
+    grid-template-columns: minmax(0, 60%) minmax(0, 40%);
+    column-gap: 0.75rem;
+    row-gap: 0.4rem;
+    margin: 0;
+  }
+
+  .detail-card dt[data-field="breakdown"],
+  .detail-card dd[data-field="breakdown"] {
+    grid-column: 1 / -1;
+  }
+
+  .detail-breakdown__rate {
+    border: 1px solid #bfc4cb;
+    border-radius: 999px;
+    padding: 0.2rem 0.55rem;
+    font-size: 0.85rem;
+  }
+
+  .summary-item dd[data-field],
+  .detail-card dd[data-field] {
+    font-weight: 600;
   }
 }
