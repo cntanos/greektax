@@ -54,16 +54,15 @@
         "capital_gains": 3500
       },
       "obligations": {
-        "vat": 1800,
         "enfia": 350
       }
     },
     "expectations": {
       "summary": {
         "income_total": 38100.0,
-        "tax_total": 6705.0,
-        "net_income": 29395.0,
-        "average_monthly_tax": 558.75
+        "tax_total": 4905.0,
+        "net_income": 31195.0,
+        "average_monthly_tax": 408.75
       },
       "details": {
         "pension": {
@@ -77,10 +76,6 @@
           "gross_income": 5100.0,
           "total_tax": 645.0
         },
-        "vat": {
-          "total_tax": 1800.0,
-          "net_income": -1800.0
-        },
         "enfia": {
           "total_tax": 350.0,
           "net_income": -350.0
@@ -93,22 +88,17 @@
     "payload": {
       "year": 2024,
       "obligations": {
-        "vat": 1500,
         "enfia": 275
       }
     },
     "expectations": {
       "summary": {
         "income_total": 0.0,
-        "tax_total": 1775.0,
-        "net_income": -1775.0,
-        "average_monthly_tax": 147.92
+        "tax_total": 275.0,
+        "net_income": -275.0,
+        "average_monthly_tax": 22.92
       },
       "details": {
-        "vat": {
-          "total_tax": 1500.0,
-          "net_income": -1500.0
-        },
         "enfia": {
           "total_tax": 275.0,
           "net_income": -275.0

@@ -14,7 +14,6 @@
     "details.pension": "Συντάξεις",
     "details.rental": "Εισόδημα από ενοίκια",
     "details.trade_fee": "Τέλος επιτηδεύματος",
-    "details.vat": "Φόρος Προστιθέμενης Αξίας",
     "forms.deductions.donations": "Δωρεές",
     "forms.deductions.donations_hint": "Τεκμηριωμένες δωρεές σε επιλέξιμους φορείς δικαιούνται τη νόμιμη έκπτωση φόρου (τηρείτε τα νόμιμα παραστατικά).",
     "forms.deductions.education": "Εκπαιδευτικές δαπάνες",
@@ -210,7 +209,6 @@
       "toggle-other": "Λοιπά εισοδήματα",
       "toggle-rental": "Εισόδημα από ενοίκια",
       "trade-fee-toggle": "Τέλος επιτηδεύματος",
-      "vat-due": "Οφειλόμενος ΦΠΑ (€)",
       "year-select": "Φορολογικό έτος"
     },
     "forms": {

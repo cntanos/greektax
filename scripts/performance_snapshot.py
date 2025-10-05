@@ -31,7 +31,7 @@ SAMPLE_PAYLOAD = {
     },
     "rental": {"gross_income": 7200, "deductible_expenses": 1200},
     "investment": {"dividends": 1500, "interest": 450},
-    "obligations": {"vat": 600, "enfia": 320},
+    "obligations": {"enfia": 320},
     "deductions": {"donations": 200, "medical": 350},
 }
 

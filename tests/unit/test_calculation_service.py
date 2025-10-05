@@ -601,7 +601,7 @@ def test_calculate_tax_includes_additional_obligations() -> None:
     request = CalculationRequest.model_validate(
         {
             "year": 2024,
-            "obligations": {"vat": 1_250, "enfia": 320, "luxury": 880},
+            "obligations": {"enfia": 320, "luxury": 880},
         }
     )
 
@@ -609,12 +609,10 @@ def test_calculate_tax_includes_additional_obligations() -> None:
 
     summary = result["summary"]
     assert summary["income_total"] == 0.0
-    assert summary["tax_total"] == pytest.approx(2_450.0)
-    assert summary["net_income"] == pytest.approx(-2_450.0)
+    assert summary["tax_total"] == pytest.approx(1_200.0)
+    assert summary["net_income"] == pytest.approx(-1_200.0)
 
     details = {detail["category"]: detail for detail in result["details"]}
-    assert details["vat"]["total_tax"] == pytest.approx(1_250.0)
-    assert details["vat"]["net_income"] == pytest.approx(-1_250.0)
     assert details["enfia"]["total_tax"] == pytest.approx(320.0)
     assert details["enfia"]["net_income"] == pytest.approx(-320.0)
     assert details["luxury"]["total_tax"] == pytest.approx(880.0)

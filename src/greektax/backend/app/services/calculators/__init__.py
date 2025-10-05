@@ -2,7 +2,7 @@
 
 from .general_income import calculate_general_income_details
 from .investment import calculate_investment
-from .obligations import calculate_enfia, calculate_luxury, calculate_vat
+from .obligations import calculate_enfia, calculate_luxury
 from .rental import calculate_rental
 from .utils import calculate_progressive_tax, format_percentage, round_currency, round_rate
 
@@ -13,7 +13,6 @@ __all__ = [
     "calculate_luxury",
     "calculate_progressive_tax",
     "calculate_rental",
-    "calculate_vat",
     "format_percentage",
     "round_currency",
     "round_rate",

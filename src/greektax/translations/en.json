@@ -14,7 +14,6 @@
     "details.pension": "Pension income",
     "details.rental": "Rental income",
     "details.trade_fee": "Business activity fee",
-    "details.vat": "Value Added Tax",
     "forms.deductions.donations": "Charitable donations",
     "forms.deductions.donations_hint": "Documented donations to eligible charities qualify for the statutory tax credit (retain official receipts).",
     "forms.deductions.education": "Education expenses",
@@ -210,7 +209,6 @@
       "toggle-other": "Other income",
       "toggle-rental": "Rental income",
       "trade-fee-toggle": "Business activity fee",
-      "vat-due": "VAT due (€)",
       "year-select": "Tax year"
     },
     "forms": {

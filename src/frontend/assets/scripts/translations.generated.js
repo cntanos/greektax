@@ -148,7 +148,6 @@
         "toggle-other": "Λοιπά εισοδήματα",
         "toggle-rental": "Εισόδημα από ενοίκια",
         "trade-fee-toggle": "Τέλος επιτηδεύματος",
-        "vat-due": "Οφειλόμενος ΦΠΑ (€)",
         "year-select": "Φορολογικό έτος"
       },
       "forms": {
@@ -426,7 +425,6 @@
         "toggle-other": "Other income",
         "toggle-rental": "Rental income",
         "trade-fee-toggle": "Business activity fee",
-        "vat-due": "VAT due (€)",
         "year-select": "Tax year"
       },
       "forms": {
