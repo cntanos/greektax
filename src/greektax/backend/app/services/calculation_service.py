@@ -237,6 +237,8 @@ def _normalise_payload(
         employment_monthly_income=employment_monthly_income,
         employment_payments_per_year=employment_payments,
         employment_manual_contributions=employment_manual_contributions,
+        employment_include_social_contributions=
+        request.employment.include_social_contributions,
         withholding_tax=withholding_tax,
         pension_income=pension_income,
         pension_monthly_income=pension_monthly_income,

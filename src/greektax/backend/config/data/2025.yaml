@@ -12,8 +12,9 @@ income:
         - 10
       default_payments_per_year: 14
     contributions:
-      employee_rate: 0.1387
-      employer_rate: 0.2243
+      employee_rate: 0.1337
+      employer_rate: 0.2179
+      monthly_salary_cap: 7572.62
     tax_brackets:
       - upper: 10000
         rate: 0.09

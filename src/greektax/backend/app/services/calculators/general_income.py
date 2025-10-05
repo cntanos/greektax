@@ -53,14 +53,45 @@ def _build_general_income_components(
     components: list[GeneralIncomeComponent] = []
 
     if payload.has_employment_income:
-        auto_employee_contrib = (
-            payload.employment_income * config.employment.contributions.employee_rate
-        )
-        employee_manual_contrib = payload.employment_manual_contributions
+        payments_per_year = payload.employment_payments_per_year
+        if not payments_per_year or payments_per_year <= 0:
+            payments_per_year = config.employment.payroll.default_payments_per_year
+
+        monthly_income = payload.employment_monthly_income
+        if monthly_income is None and payments_per_year:
+            monthly_income = payload.employment_income / payments_per_year
+
+        salary_cap = config.employment.contributions.monthly_salary_cap
+        contribution_base_income = payload.employment_income
+        if (
+            salary_cap is not None
+            and salary_cap > 0
+            and payments_per_year
+            and monthly_income is not None
+        ):
+            # Clamp the annual contribution base to the statutory EFKA ceiling so
+            # auto-calculated contributions never exceed the legal maximum.
+            capped_annual_income = salary_cap * payments_per_year
+            contribution_base_income = min(payload.employment_income, capped_annual_income)
+
+        include_social = payload.employment_include_social_contributions
+        if include_social:
+            auto_employee_contrib = (
+                contribution_base_income * config.employment.contributions.employee_rate
+            )
+            employer_contrib = (
+                contribution_base_income * config.employment.contributions.employer_rate
+            )
+            employee_manual_contrib = payload.employment_manual_contributions
+        else:
+            # When social insurance is excluded, suppress both the automatic and
+            # manual EFKA amounts so the downstream net calculations become
+            # purely tax-based.
+            auto_employee_contrib = 0.0
+            employer_contrib = 0.0
+            employee_manual_contrib = 0.0
+
         employee_contrib = auto_employee_contrib + employee_manual_contrib
-        employer_contrib = (
-            payload.employment_income * config.employment.contributions.employer_rate
-        )
         components.append(
             GeneralIncomeComponent(
                 category="employment",
@@ -72,6 +103,7 @@ def _build_general_income_components(
                 employee_contributions=employee_contrib,
                 employee_manual_contributions=employee_manual_contrib,
                 employer_contributions=employer_contrib,
+                include_employee_contributions=include_social,
                 payments_per_year=payload.employment_payments_per_year,
                 monthly_gross_income=payload.employment_monthly_income,
             )

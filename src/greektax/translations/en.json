@@ -99,7 +99,9 @@
       "pension": "Pension income"
     },
       "results_heading": "Results",
-      "results_intro": "Results Summary: The chart and tables below show your total income, taxes, and net income. Hover over the diagram for details and review each category in the list."
+      "results_intro": "Results Summary: The chart and tables below show your total income, taxes, and net income. Hover over the diagram for details and review each category in the list.",
+      "results_social_note": "Net pay honours your social insurance selection. Leave the toggle on to subtract EFKA contributions automatically, or turn it off to see a tax-only projection.",
+      "results_employer_note": "Employer cost represents the gross salary plus employer EFKA contributions, capped at the statutory salary ceiling."
     },
     "detailFields": {
       "additional_contributions": "Additional contributions",
@@ -145,6 +147,7 @@
       "deductions-insurance": "Insurance premiums (€)",
       "deductions-medical": "Medical expenses (€)",
       "employment-employee-contributions": "Employee EFKA contributions (outside payroll) (€)",
+      "employment-include-social": "Include social insurance contributions in net pay",
       "employment-income": "Employment gross income (€)",
       "employment-mode": "Salary input type",
       "employment-mode-annual": "Enter annual gross salary",
@@ -240,6 +243,7 @@
       "employment-employee-contributions": "Add EFKA amounts you pay directly outside payroll (for example, voluntary top-ups). Most employees will leave this at 0 because payroll already covers EFKA.",
       "agricultural-professional-farmer": "Check this if you are registered as a professional farmer for the tax year. It enables any reliefs available for that status.",
       "employment-income": "Enter the total gross salary for the year when you have a single annual figure.",
+      "employment-include-social": "Untick to see tax-only net income. EFKA amounts (employee and employer) will be treated as zero in the results.",
       "employment-monthly-income": "Enter the gross amount per payslip (monthly or bonus). The calculator multiplies it by your payments per year.",
       "employment-net-note": "Net-to-gross salary conversion isn't supported. Choose annual or per-payment mode above and provide gross amounts only.",
       "employment-payments": "Most salaried roles use 14 payments (12 monthly plus bonuses). Adjust this to match the number of payslips you receive each year.",
