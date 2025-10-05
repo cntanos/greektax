@@ -225,19 +225,122 @@
             ></div>
           </fieldset>
 
-          <div class="section-toggle">
-            <input
-              type="checkbox"
-              id="toggle-employment"
-              data-toggle-target="employment-section"
-            />
-            <label
-              for="toggle-employment"
-              data-i18n-key="fields.toggle-employment"
+          <fieldset class="fieldset section-toggle-group">
+            <legend data-i18n-key="calculator.legends.income_sources">
+              Income sources
+            </legend>
+            <p
+              class="form-hint"
+              data-i18n-key="hints.income-toggle-intro"
             >
-              Include salary/pension income
-            </label>
-          </div>
+              Select each income type you receive to reveal its inputs.
+            </p>
+            <div class="section-toggle">
+              <input
+                type="checkbox"
+                id="toggle-employment"
+                data-toggle-target="employment-section"
+              />
+              <label
+                for="toggle-employment"
+                data-i18n-key="fields.toggle-employment"
+              >
+                Salary/pension income
+              </label>
+            </div>
+            <div class="section-toggle">
+              <input
+                type="checkbox"
+                id="toggle-freelance"
+                data-toggle-target="freelance-section"
+              />
+              <label
+                for="toggle-freelance"
+                data-i18n-key="fields.toggle-freelance"
+              >
+                Freelance income
+              </label>
+            </div>
+            <div class="section-toggle">
+              <input
+                type="checkbox"
+                id="toggle-agricultural"
+                data-toggle-target="agricultural-section"
+              />
+              <label
+                for="toggle-agricultural"
+                data-i18n-key="fields.toggle-agricultural"
+              >
+                Agricultural income
+              </label>
+            </div>
+            <div class="section-toggle">
+              <input
+                type="checkbox"
+                id="toggle-other"
+                data-toggle-target="other-section"
+              />
+              <label
+                for="toggle-other"
+                data-i18n-key="fields.toggle-other"
+              >
+                Other income
+              </label>
+            </div>
+            <div class="section-toggle">
+              <input
+                type="checkbox"
+                id="toggle-rental"
+                data-toggle-target="rental-section"
+              />
+              <label
+                for="toggle-rental"
+                data-i18n-key="fields.toggle-rental"
+              >
+                Rental income
+              </label>
+            </div>
+            <div class="section-toggle">
+              <input
+                type="checkbox"
+                id="toggle-investment"
+                data-toggle-target="investment-section"
+              />
+              <label
+                for="toggle-investment"
+                data-i18n-key="fields.toggle-investment"
+              >
+                Investment income
+              </label>
+            </div>
+            <div class="section-toggle">
+              <input
+                type="checkbox"
+                id="toggle-deductions"
+                data-toggle-target="deductions-section"
+              />
+              <label
+                for="toggle-deductions"
+                data-i18n-key="fields.toggle-deductions"
+              >
+                Deductions
+              </label>
+            </div>
+            <div class="section-toggle">
+              <input
+                type="checkbox"
+                id="toggle-obligations"
+                data-toggle-target="obligations-section"
+              />
+              <label
+                for="toggle-obligations"
+                data-i18n-key="fields.toggle-obligations"
+              >
+                Additional obligations
+              </label>
+            </div>
+          </fieldset>
+
           <fieldset
             class="fieldset"
             id="employment-section"
@@ -422,7 +525,7 @@
                   name="pension.enabled"
                 />
                 <label for="toggle-pension" data-i18n-key="fields.toggle-pension">
-                  Include pension income
+              Pension income
                 </label>
               </span>
             </div>
@@ -555,16 +658,6 @@
             </div>
           </fieldset>
 
-          <div class="section-toggle">
-            <input
-              type="checkbox"
-              id="toggle-freelance"
-              data-toggle-target="freelance-section"
-            />
-            <label for="toggle-freelance" data-i18n-key="fields.toggle-freelance">
-              Include freelance income
-            </label>
-          </div>
           <fieldset class="fieldset" id="freelance-section" hidden>
             <legend data-i18n-key="calculator.legends.freelance">
               Freelance income
@@ -815,26 +908,13 @@
                     for="trade-fee-toggle"
                     data-i18n-key="fields.trade-fee-toggle"
                   >
-                    Include business activity fee
+              Business activity fee
                   </label>
                 </span>
               </div>
             </div>
           </fieldset>
 
-          <div class="section-toggle">
-            <input
-              type="checkbox"
-              id="toggle-agricultural"
-              data-toggle-target="agricultural-section"
-            />
-            <label
-              for="toggle-agricultural"
-              data-i18n-key="fields.toggle-agricultural"
-            >
-              Include agricultural income
-            </label>
-          </div>
           <fieldset class="fieldset" id="agricultural-section" hidden>
             <legend data-i18n-key="calculator.legends.agricultural">
               Agricultural income
@@ -875,16 +955,6 @@
             </div>
           </fieldset>
 
-          <div class="section-toggle">
-            <input
-              type="checkbox"
-              id="toggle-other"
-              data-toggle-target="other-section"
-            />
-            <label for="toggle-other" data-i18n-key="fields.toggle-other">
-              Include other income
-            </label>
-          </div>
           <fieldset class="fieldset" id="other-section" hidden>
             <legend data-i18n-key="calculator.legends.other">
               Other income
@@ -909,16 +979,6 @@
             </div>
           </fieldset>
 
-          <div class="section-toggle">
-            <input
-              type="checkbox"
-              id="toggle-rental"
-              data-toggle-target="rental-section"
-            />
-            <label for="toggle-rental" data-i18n-key="fields.toggle-rental">
-              Include rental income
-            </label>
-          </div>
           <fieldset class="fieldset" id="rental-section" hidden>
             <legend data-i18n-key="calculator.legends.rental">
               Rental income
@@ -959,19 +1019,6 @@
             </div>
           </fieldset>
 
-          <div class="section-toggle">
-            <input
-              type="checkbox"
-              id="toggle-investment"
-              data-toggle-target="investment-section"
-            />
-            <label
-              for="toggle-investment"
-              data-i18n-key="fields.toggle-investment"
-            >
-              Include investment income
-            </label>
-          </div>
           <fieldset class="fieldset" id="investment-section" hidden>
             <legend data-i18n-key="calculator.legends.investment">
               Investment income
@@ -979,19 +1026,6 @@
             <div id="investment-fields" class="form-grid double"></div>
           </fieldset>
 
-          <div class="section-toggle">
-            <input
-              type="checkbox"
-              id="toggle-deductions"
-              data-toggle-target="deductions-section"
-            />
-            <label
-              for="toggle-deductions"
-              data-i18n-key="fields.toggle-deductions"
-            >
-              Include deductions
-            </label>
-          </div>
           <fieldset class="fieldset" id="deductions-section" hidden>
             <legend data-i18n-key="calculator.legends.deductions">
               Deductions
@@ -1078,19 +1112,6 @@
             </div>
           </fieldset>
 
-          <div class="section-toggle">
-            <input
-              type="checkbox"
-              id="toggle-obligations"
-              data-toggle-target="obligations-section"
-            />
-            <label
-              for="toggle-obligations"
-              data-i18n-key="fields.toggle-obligations"
-            >
-              Include additional obligations
-            </label>
-          </div>
           <fieldset class="fieldset" id="obligations-section" hidden>
             <legend data-i18n-key="calculator.legends.obligations">
               Additional obligations

@@ -495,6 +495,18 @@ main {
   font-weight: 600;
 }
 
+.section-toggle-group {
+  margin: 1.5rem 0;
+}
+
+.section-toggle-group .section-toggle {
+  margin: 0.75rem 0 0;
+}
+
+.section-toggle-group .section-toggle:first-of-type {
+  margin-top: 0.5rem;
+}
+
 .form-grid {
   display: grid;
   gap: 0.9rem;
