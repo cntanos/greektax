@@ -55,6 +55,7 @@ const yearMetadataByYear = new Map();
 let currentYearMetadata = null;
 let currentEmploymentMode = "annual";
 let currentPensionMode = "gross";
+let currentPensionNetInputMode = "annual";
 let currentInvestmentCategories = [];
 let currentDeductionHints = [];
 let currentFreelanceMetadata = null;
@@ -201,6 +202,9 @@ const employmentWithholdingInput = document.getElementById(
 const employmentModeSelect = document.getElementById("employment-mode");
 const yearAlertsContainer = document.getElementById("year-alerts");
 const pensionModeSelect = document.getElementById("pension-mode");
+const pensionNetInputModeSelect = document.getElementById(
+  "pension-net-input-mode",
+);
 const pensionPaymentsInput = document.getElementById("pension-payments");
 const pensionIncomeInput = document.getElementById("pension-income");
 const pensionNetIncomeInput = document.getElementById("pension-net-income");
@@ -1014,6 +1018,10 @@ function hasPartialYearSelection(select) {
   return currentValue < defaultValue;
 }
 
+function isPensionEnabled() {
+  return Boolean(pensionModeSelect);
+}
+
 function shouldDisplayPartialYearWarning() {
   if (!isSectionActive(employmentSection)) {
     return false;
@@ -1028,11 +1036,13 @@ function shouldDisplayPartialYearWarning() {
 }
 
 function hasPensionEntries() {
-  return (
-    readNumber(pensionIncomeInput) > 0 ||
-    readNumber(pensionNetIncomeInput) > 0 ||
-    readNumber(pensionNetMonthlyIncomeInput) > 0
-  );
+  if (currentPensionMode === "net") {
+    if (currentPensionNetInputMode === "per_payment") {
+      return readNumber(pensionNetMonthlyIncomeInput) > 0;
+    }
+    return readNumber(pensionNetIncomeInput) > 0;
+  }
+  return readNumber(pensionIncomeInput) > 0;
 }
 
 function updatePartialYearWarningState() {
@@ -1214,6 +1224,31 @@ function updatePensionMode(mode) {
     pensionModeSelect.value = currentPensionMode;
   }
   updateSectionMode("pension", currentPensionMode, "gross");
+  updatePensionNetInputMode(pensionNetInputModeSelect?.value);
+}
+
+function updatePensionNetInputMode(mode) {
+  const resolvedMode = mode === "per_payment" ? "per_payment" : "annual";
+  currentPensionNetInputMode = resolvedMode;
+  if (pensionNetInputModeSelect) {
+    pensionNetInputModeSelect.value = currentPensionNetInputMode;
+  }
+  const shouldDisplayNetControls = currentPensionMode === "net";
+  document
+    .querySelectorAll(
+      '.form-control[data-section="pension"][data-net-input-mode]',
+    )
+    .forEach((control) => {
+      const controlMode = control.getAttribute("data-net-input-mode");
+      const isVisible = shouldDisplayNetControls && controlMode === resolvedMode;
+      control.hidden = !isVisible;
+      if (!isVisible) {
+        const input = control.querySelector("input");
+        if (input) {
+          clearFieldError(input);
+        }
+      }
+    });
 }
 
 function updateEmploymentMode(mode) {
@@ -2294,13 +2329,20 @@ function buildCalculationPayload() {
     const pensionPayload = {};
     const pensionMode = pensionModeSelect?.value || currentPensionMode;
     if (pensionMode === "net") {
-      const netIncome = readNumber(pensionNetIncomeInput);
-      if (netIncome > 0) {
-        pensionPayload.net_income = netIncome;
-      }
-      const netMonthly = readNumber(pensionNetMonthlyIncomeInput);
-      if (netMonthly > 0) {
-        pensionPayload.net_monthly_income = netMonthly;
+      const netMode =
+        pensionNetInputModeSelect?.value === "per_payment"
+          ? "per_payment"
+          : currentPensionNetInputMode;
+      if (netMode === "per_payment") {
+        const netMonthly = readNumber(pensionNetMonthlyIncomeInput);
+        if (netMonthly > 0) {
+          pensionPayload.net_monthly_income = netMonthly;
+        }
+      } else {
+        const netIncome = readNumber(pensionNetIncomeInput);
+        if (netIncome > 0) {
+          pensionPayload.net_income = netIncome;
+        }
       }
     } else {
       const pensionGross = readNumber(pensionIncomeInput);
@@ -3563,6 +3605,12 @@ function initialiseCalculator() {
     const target = event.target;
     const value = typeof target?.value === "string" ? target.value : "gross";
     updatePensionMode(value);
+    updatePartialYearWarningState();
+  });
+  pensionNetInputModeSelect?.addEventListener("change", (event) => {
+    const target = event.target;
+    const value = typeof target?.value === "string" ? target.value : "annual";
+    updatePensionNetInputMode(value);
     updatePartialYearWarningState();
   });
   pensionIncomeInput?.addEventListener("input", updatePartialYearWarningState);

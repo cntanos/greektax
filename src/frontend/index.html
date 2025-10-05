@@ -599,6 +599,40 @@
                   class="form-control"
                   data-section="pension"
                   data-mode="net"
+                >
+                  <label
+                    for="pension-net-input-mode"
+                    data-i18n-key="fields.pension-net-input-mode"
+                  >
+                    Provide net pension as
+                  </label>
+                  <select id="pension-net-input-mode">
+                    <option
+                      value="annual"
+                      data-i18n-key="fields.pension-net-input-mode-annual"
+                    >
+                      Total for year
+                    </option>
+                    <option
+                      value="per_payment"
+                      data-i18n-key="fields.pension-net-input-mode-per-payment"
+                    >
+                      Per payment
+                    </option>
+                  </select>
+                  <p
+                    class="form-hint"
+                    data-i18n-key="hints.pension-net-input-mode"
+                  >
+                    Choose whether to enter the total net amount for the year
+                    or the net amount for each payment.
+                  </p>
+                </div>
+                <div
+                  class="form-control"
+                  data-section="pension"
+                  data-mode="net"
+                  data-net-input-mode="annual"
                   hidden
                 >
                   <label
@@ -621,14 +655,15 @@
                     class="form-hint"
                     data-i18n-key="hints.pension-income-net"
                   >
-                    Enter the total net pension paid over the year when gross
-                    figures are not available.
+                    Enter the annual net pension only when you choose "Total for
+                    year" above.
                   </p>
                 </div>
                 <div
                   class="form-control"
                   data-section="pension"
                   data-mode="net"
+                  data-net-input-mode="per_payment"
                   hidden
                 >
                   <label
@@ -651,8 +686,8 @@
                     class="form-hint"
                     data-i18n-key="hints.pension-income-net-monthly"
                   >
-                    Provide the net amount per pension payment; it will be
-                    multiplied by the number of payments you selected.
+                    Enter the per-payment net pension only when you choose "Per
+                    payment" above.
                   </p>
                 </div>
               </div>

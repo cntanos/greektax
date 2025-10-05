@@ -192,6 +192,9 @@
       "pension-mode": "Pension input type",
       "pension-mode-gross": "Enter gross amounts",
       "pension-mode-net": "Enter net amounts",
+      "pension-net-input-mode": "Provide net pension as",
+      "pension-net-input-mode-annual": "Total for year",
+      "pension-net-input-mode-per-payment": "Per payment",
       "pension-net-income": "Annual net pension (€)",
       "pension-net-monthly-income": "Net pension per payment (€)",
       "pension-payments": "Pension payments per year",
@@ -260,8 +263,9 @@
       "freelance-trade-fee-sunset": "The business activity fee is slated to return from {{year}} (status: {{status}}). Double-check the latest rules with your accountant.",
       "freelance-trade-fee-waived": "No business activity fee is due for this tax year, so you can leave this switched off.",
       "pension-income-gross": "Use the gross field when you know the annual pension before deductions.",
-      "pension-income-net": "Enter the total net pension paid over the year if gross information is unavailable.",
-      "pension-income-net-monthly": "Provide the net amount per pension payment; it will be multiplied by the payments per year selected above.",
+      "pension-income-net": "Enter the annual net pension only when you choose \"Total for year\" above.",
+      "pension-income-net-monthly": "Enter the per-payment net pension only when you choose \"Per payment\" above.",
+      "pension-net-input-mode": "Choose whether to enter the total net amount for the year or the net amount for each payment.",
       "year-partial-note": "If you didn't earn income for the full year, enter what you earned; the annual tax credit still applies in full."
     },
     "links": {
