@@ -782,10 +782,14 @@ function resolveLocaleTag(locale) {
   return locale || "en-GB";
 }
 
-const NUMERIC_LOCALE_TAG = "el-GR";
+const GREEK_GROUP_SEPARATOR = ".";
+const GREEK_DECIMAL_SEPARATOR = ",";
+const NON_BREAKING_SPACE = "\u00a0";
+const GROUPING_REGEX = /\B(?=(\d{3})+(?!\d))/g;
 
-function resolveNumericLocaleTag() {
-  return NUMERIC_LOCALE_TAG;
+function coerceFiniteNumber(value) {
+  const parsed = Number.parseFloat(value ?? 0);
+  return Number.isFinite(parsed) ? parsed : 0;
 }
 
 function updateLocaleButtonState(locale) {
@@ -932,35 +936,41 @@ function setCalculatorStatus(message, { isError = false } = {}) {
 }
 
 function formatNumber(value) {
-  const formatter = new Intl.NumberFormat(resolveNumericLocaleTag(), {
-    style: "decimal",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  });
-  return formatter.format(value || 0);
+  const numeric = coerceFiniteNumber(value);
+  const rounded = Math.round(numeric * 100) / 100;
+  const sign = rounded < 0 ? "-" : "";
+  const absolute = Math.abs(rounded);
+  let [integerPart, fractionPart = ""] = absolute.toFixed(2).split(".");
+  integerPart = integerPart.replace(GROUPING_REGEX, GREEK_GROUP_SEPARATOR);
+  fractionPart = fractionPart.replace(/0+$/, "");
+  const decimalPart = fractionPart
+    ? `${GREEK_DECIMAL_SEPARATOR}${fractionPart}`
+    : "";
+  return `${sign}${integerPart}${decimalPart}`;
 }
 
 function formatCurrency(value) {
-  const localeTag = resolveNumericLocaleTag();
-  const parsed = Number.parseFloat(value ?? 0);
-  const numeric = Number.isFinite(parsed) ? parsed : 0;
-  const formatter = new Intl.NumberFormat(localeTag, {
-    style: "decimal",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-  const formatted = formatter.format(Math.abs(numeric));
+  const numeric = coerceFiniteNumber(value);
   const sign = numeric < 0 ? "-" : "";
-  return `${sign}${formatted}\u00a0€`;
+  const absolute = Math.abs(numeric);
+  let [integerPart, fractionPart = ""] = absolute.toFixed(2).split(".");
+  integerPart = integerPart.replace(GROUPING_REGEX, GREEK_GROUP_SEPARATOR);
+  const formatted = `${integerPart}${GREEK_DECIMAL_SEPARATOR}${fractionPart}`;
+  return `${sign}${formatted}${NON_BREAKING_SPACE}€`;
 }
 
 function formatPercent(value) {
-  const formatter = new Intl.NumberFormat(resolveNumericLocaleTag(), {
-    style: "percent",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 1,
-  });
-  return formatter.format(value);
+  const numeric = coerceFiniteNumber(value) * 100;
+  const rounded = Math.round(numeric * 10) / 10;
+  const sign = rounded < 0 ? "-" : "";
+  const absolute = Math.abs(rounded);
+  let [integerPart, fractionPart = ""] = absolute.toFixed(1).split(".");
+  integerPart = integerPart.replace(GROUPING_REGEX, GREEK_GROUP_SEPARATOR);
+  fractionPart = fractionPart.replace(/0+$/, "");
+  const decimalPart = fractionPart
+    ? `${GREEK_DECIMAL_SEPARATOR}${fractionPart}`
+    : "";
+  return `${sign}${integerPart}${decimalPart}%`;
 }
 
 function isNumericInputElement(element) {
@@ -976,51 +986,110 @@ function getNumericInputs() {
 
 function normaliseNumericString(value, { maxFractionDigits = Infinity } = {}) {
   const raw = value == null ? "" : value.toString();
-  let normalised = raw.trim();
-  if (!normalised) {
+  let text = raw.trim();
+  if (!text) {
     return "";
   }
 
-  normalised = normalised.replace(/[\s\u00a0\u202f]+/g, "");
+  text = text.replace(/[\s\u00a0\u202f]+/g, "");
 
   let isNegative = false;
-  if (/^[\-−]/.test(normalised)) {
+  if (/^[\-−]/.test(text)) {
     isNegative = true;
-    normalised = normalised.slice(1);
-  } else if (normalised.startsWith("+")) {
-    normalised = normalised.slice(1);
+    text = text.slice(1);
+  } else if (text.startsWith("+")) {
+    text = text.slice(1);
   }
 
-  const lastCommaIndex = normalised.lastIndexOf(",");
-  let integerPart = normalised;
-  let fractionalPart = "";
+  if (!text) {
+    return isNegative ? "-" : "";
+  }
 
-  if (lastCommaIndex !== -1) {
-    integerPart = normalised.slice(0, lastCommaIndex);
-    fractionalPart = normalised.slice(lastCommaIndex + 1);
-  } else {
-    const lastDotIndex = normalised.lastIndexOf(".");
+  const fallbackLimit = Number.isFinite(maxFractionDigits)
+    ? Math.max(maxFractionDigits, 2)
+    : 2;
+
+  const commaMatches = text.match(/,/g);
+  const commaCount = commaMatches ? commaMatches.length : 0;
+  let decimalIndex = -1;
+  let decimalChar = null;
+
+  if (commaCount === 1) {
+    const lastCommaIndex = text.lastIndexOf(GREEK_DECIMAL_SEPARATOR);
+    const digitsAfterComma = text
+      .slice(lastCommaIndex + 1)
+      .replace(/[^0-9]/g, "");
+    const digitsBeforeComma = text
+      .slice(0, lastCommaIndex)
+      .replace(/[^0-9]/g, "");
+    const hasGroupingDot = text.includes(GREEK_GROUP_SEPARATOR);
+    const treatCommaAsDecimal =
+      digitsAfterComma.length > 0 &&
+      (digitsAfterComma.length <= fallbackLimit ||
+        hasGroupingDot ||
+        digitsBeforeComma.startsWith("0") ||
+        digitsBeforeComma.length === 0);
+
+    if (treatCommaAsDecimal) {
+      decimalChar = GREEK_DECIMAL_SEPARATOR;
+      decimalIndex = lastCommaIndex;
+    }
+  }
+
+  if (decimalChar === null) {
+    const lastDotIndex = text.lastIndexOf(".");
     if (lastDotIndex !== -1) {
-      const fallbackLimit = Number.isFinite(maxFractionDigits)
-        ? Math.max(maxFractionDigits, 2)
-        : 2;
-      const digitsAfterDot = normalised.slice(lastDotIndex + 1).replace(/[^0-9]/g, "");
+      const digitsAfterDot = text
+        .slice(lastDotIndex + 1)
+        .replace(/[^0-9]/g, "");
       if (digitsAfterDot.length > 0 && digitsAfterDot.length <= fallbackLimit) {
-        integerPart = normalised.slice(0, lastDotIndex);
-        fractionalPart = normalised.slice(lastDotIndex + 1);
+        decimalChar = ".";
+        decimalIndex = lastDotIndex;
       }
     }
   }
 
-  const cleanupPattern = /[.,'’\u2019\s\u00a0\u202f]/g;
-  integerPart = integerPart.replace(cleanupPattern, "");
-  fractionalPart = fractionalPart.replace(cleanupPattern, "");
+  let integerPart = "";
+  let fractionalPart = "";
 
-  integerPart = integerPart.replace(/[^0-9]/g, "");
-  fractionalPart = fractionalPart.replace(/[^0-9]/g, "");
+  for (let index = 0; index < text.length; index += 1) {
+    const character = text[index];
+
+    if (decimalChar && index === decimalIndex) {
+      continue;
+    }
+
+    if (character >= "0" && character <= "9") {
+      if (decimalChar && index > decimalIndex) {
+        fractionalPart += character;
+      } else {
+        integerPart += character;
+      }
+      continue;
+    }
+
+    if (
+      character === GREEK_GROUP_SEPARATOR ||
+      character === "'" ||
+      character === "’" ||
+      character === "\u2019"
+    ) {
+      continue;
+    }
+
+    if (character === "." || character === ",") {
+      continue;
+    }
+  }
 
   if (!integerPart && !fractionalPart) {
-    return "";
+    return isNegative ? "-" : "";
+  }
+
+  if (!integerPart) {
+    integerPart = "0";
+  } else {
+    integerPart = integerPart.replace(/^0+(?=\d)/, "") || "0";
   }
 
   if (Number.isFinite(maxFractionDigits)) {
@@ -1034,14 +1103,8 @@ function normaliseNumericString(value, { maxFractionDigits = Infinity } = {}) {
     }
   }
 
-  if (!integerPart) {
-    integerPart = "0";
-  } else {
-    integerPart = integerPart.replace(/^0+(?=\d)/, "") || "0";
-  }
-
   let result = fractionalPart ? `${integerPart}.${fractionalPart}` : integerPart;
-  if (isNegative) {
+  if (isNegative && result !== "0") {
     result = `-${result}`;
   }
 
@@ -1092,15 +1155,16 @@ function shouldGroupNumericInput(input) {
 }
 
 function formatNumberForInput(value, precision = 2, { useGrouping = true } = {}) {
-  const localeTag = resolveNumericLocaleTag();
-  const minimumFractionDigits = precision > 0 ? precision : 0;
-  const maximumFractionDigits = precision > 0 ? precision : 0;
-  const formatter = new Intl.NumberFormat(localeTag, {
-    useGrouping,
-    minimumFractionDigits,
-    maximumFractionDigits,
-  });
-  return formatter.format(value);
+  const resolvedPrecision = Number.isFinite(precision) && precision > 0 ? precision : 0;
+  const numeric = coerceFiniteNumber(value);
+  const absolute = Math.abs(numeric);
+  let [integerPart, fractionPart = ""] = absolute.toFixed(resolvedPrecision).split(".");
+  if (useGrouping) {
+    integerPart = integerPart.replace(GROUPING_REGEX, GREEK_GROUP_SEPARATOR);
+  }
+  const decimalPart = resolvedPrecision > 0 ? `${GREEK_DECIMAL_SEPARATOR}${fractionPart}` : "";
+  const formatted = `${integerPart}${decimalPart}`;
+  return numeric < 0 ? `-${formatted}` : formatted;
 }
 
 function formatNumericInput(input, { treatEmptyAsZero = true } = {}) {
