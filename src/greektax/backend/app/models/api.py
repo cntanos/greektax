@@ -173,8 +173,6 @@ class PensionInput(BaseModel):
 
     gross_income: float = Field(default=0.0, ge=0)
     monthly_income: float | None = Field(default=None, ge=0)
-    net_income: float | None = Field(default=None, ge=0)
-    net_monthly_income: float | None = Field(default=None, ge=0)
     payments_per_year: int | None = Field(default=None, ge=0)
 
 

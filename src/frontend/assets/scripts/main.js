@@ -54,8 +54,7 @@ let currentTheme = DEFAULT_THEME;
 const yearMetadataByYear = new Map();
 let currentYearMetadata = null;
 let currentEmploymentMode = "annual";
-let currentPensionMode = "gross";
-let currentPensionNetInputMode = "annual";
+let currentPensionMode = "annual";
 let currentInvestmentCategories = [];
 let currentDeductionHints = [];
 let currentFreelanceMetadata = null;
@@ -222,14 +221,10 @@ const employmentWithholdingInput = document.getElementById(
 const employmentModeSelect = document.getElementById("employment-mode");
 const yearAlertsContainer = document.getElementById("year-alerts");
 const pensionModeSelect = document.getElementById("pension-mode");
-const pensionNetInputModeSelect = document.getElementById(
-  "pension-net-input-mode",
-);
 const pensionPaymentsInput = document.getElementById("pension-payments");
 const pensionIncomeInput = document.getElementById("pension-income");
-const pensionNetIncomeInput = document.getElementById("pension-net-income");
-const pensionNetMonthlyIncomeInput = document.getElementById(
-  "pension-net-monthly-income",
+const pensionMonthlyIncomeInput = document.getElementById(
+  "pension-monthly-income",
 );
 const freelanceRevenueInput = document.getElementById("freelance-revenue");
 const freelanceExpensesInput = document.getElementById("freelance-expenses");
@@ -1548,11 +1543,8 @@ function shouldDisplayPartialYearWarning() {
 }
 
 function hasPensionEntries() {
-  if (currentPensionMode === "net") {
-    if (currentPensionNetInputMode === "per_payment") {
-      return readNumber(pensionNetMonthlyIncomeInput) > 0;
-    }
-    return readNumber(pensionNetIncomeInput) > 0;
+  if (currentPensionMode === "monthly") {
+    return readNumber(pensionMonthlyIncomeInput) > 0;
   }
   return readNumber(pensionIncomeInput) > 0;
 }
@@ -1680,7 +1672,7 @@ function applyPendingCalculatorState() {
   }
 
   if (pensionModeSelect) {
-    updatePensionMode(pensionModeSelect.value || "gross");
+    updatePensionMode(pensionModeSelect.value || "annual");
   }
 
   if (employmentModeSelect) {
@@ -1736,36 +1728,11 @@ function updateSectionMode(section, mode, defaultMode = "") {
 }
 
 function updatePensionMode(mode) {
-  currentPensionMode = mode === "net" ? "net" : "gross";
+  currentPensionMode = mode === "monthly" ? "monthly" : "annual";
   if (pensionModeSelect) {
     pensionModeSelect.value = currentPensionMode;
   }
-  updateSectionMode("pension", currentPensionMode, "gross");
-  updatePensionNetInputMode(pensionNetInputModeSelect?.value);
-}
-
-function updatePensionNetInputMode(mode) {
-  const resolvedMode = mode === "per_payment" ? "per_payment" : "annual";
-  currentPensionNetInputMode = resolvedMode;
-  if (pensionNetInputModeSelect) {
-    pensionNetInputModeSelect.value = currentPensionNetInputMode;
-  }
-  const shouldDisplayNetControls = currentPensionMode === "net";
-  document
-    .querySelectorAll(
-      '.form-control[data-section="pension"][data-net-input-mode]',
-    )
-    .forEach((control) => {
-      const controlMode = control.getAttribute("data-net-input-mode");
-      const isVisible = shouldDisplayNetControls && controlMode === resolvedMode;
-      control.hidden = !isVisible;
-      if (!isVisible) {
-        const input = control.querySelector("input");
-        if (input) {
-          clearFieldError(input);
-        }
-      }
-    });
+  updateSectionMode("pension", currentPensionMode, "annual");
 }
 
 function updateEmploymentMode(mode) {
@@ -2878,21 +2845,10 @@ function buildCalculationPayload() {
   if (isSectionActive(employmentSection) && isPensionEnabled()) {
     const pensionPayload = {};
     const pensionMode = pensionModeSelect?.value || currentPensionMode;
-    if (pensionMode === "net") {
-      const netMode =
-        pensionNetInputModeSelect?.value === "per_payment"
-          ? "per_payment"
-          : currentPensionNetInputMode;
-      if (netMode === "per_payment") {
-        const netMonthly = readNumber(pensionNetMonthlyIncomeInput);
-        if (netMonthly > 0) {
-          pensionPayload.net_monthly_income = netMonthly;
-        }
-      } else {
-        const netIncome = readNumber(pensionNetIncomeInput);
-        if (netIncome > 0) {
-          pensionPayload.net_income = netIncome;
-        }
+    if (pensionMode === "monthly") {
+      const pensionMonthly = readNumber(pensionMonthlyIncomeInput);
+      if (pensionMonthly > 0) {
+        pensionPayload.monthly_income = pensionMonthly;
       }
     } else {
       const pensionGross = readNumber(pensionIncomeInput);
@@ -2907,9 +2863,8 @@ function buildCalculationPayload() {
     );
     if (
       pensionPayments &&
-      (pensionPayload.net_income !== undefined ||
-        pensionPayload.net_monthly_income !== undefined ||
-        pensionPayload.gross_income !== undefined)
+      (pensionPayload.gross_income !== undefined ||
+        pensionPayload.monthly_income !== undefined)
     ) {
       pensionPayload.payments_per_year = pensionPayments;
     }
@@ -4332,19 +4287,12 @@ function initialiseCalculator() {
 
   pensionModeSelect?.addEventListener("change", (event) => {
     const target = event.target;
-    const value = typeof target?.value === "string" ? target.value : "gross";
+    const value = typeof target?.value === "string" ? target.value : "annual";
     updatePensionMode(value);
     updatePartialYearWarningState();
   });
-  pensionNetInputModeSelect?.addEventListener("change", (event) => {
-    const target = event.target;
-    const value = typeof target?.value === "string" ? target.value : "annual";
-    updatePensionNetInputMode(value);
-    updatePartialYearWarningState();
-  });
   pensionIncomeInput?.addEventListener("input", updatePartialYearWarningState);
-  pensionNetIncomeInput?.addEventListener("input", updatePartialYearWarningState);
-  pensionNetMonthlyIncomeInput?.addEventListener(
+  pensionMonthlyIncomeInput?.addEventListener(
     "input",
     updatePartialYearWarningState,
   );

@@ -225,7 +225,6 @@ def _normalise_payload(
 
     pension_monthly_income: float | None = None
     pension_income = 0.0
-    pension_net_target: float | None = None
 
     if pension_input.monthly_income is not None and pension_input.monthly_income > 0:
         payments = pension_payments or pension_payroll.default_payments_per_year
@@ -237,24 +236,6 @@ def _normalise_payload(
         pension_income = pension_input.gross_income
         if pension_payments and pension_monthly_income is None:
             pension_monthly_income = pension_income / pension_payments
-
-    if pension_input.net_income is not None and pension_input.net_income > 0:
-        pension_net_target = pension_input.net_income
-
-    if pension_input.net_monthly_income is not None and pension_input.net_monthly_income > 0:
-        payments = pension_payments or pension_payroll.default_payments_per_year
-        pension_payments = payments
-        pension_net_target = pension_input.net_monthly_income * payments
-
-    if pension_net_target is not None:
-        if pension_income > 0 or (
-            pension_monthly_income is not None and pension_monthly_income > 0
-        ):
-            raise ValueError("Provide either gross or net pension income, not both")
-        if pension_payments is None:
-            pension_payments = pension_payroll.default_payments_per_year
-        pension_monthly_income = None
-        pension_income = 0.0
 
     rental_input = request.rental
     rental_gross = rental_input.gross_income
@@ -304,7 +285,6 @@ def _normalise_payload(
         pension_income=pension_income,
         pension_monthly_income=pension_monthly_income,
         pension_payments_per_year=pension_payments,
-        pension_net_target_income=pension_net_target,
         freelance_profit=profit,
         freelance_gross_revenue=freelance_gross_revenue,
         freelance_deductible_expenses=freelance_deductible_expenses,
@@ -342,115 +322,7 @@ def _normalise_payload(
         toggles=toggles,
     )
 
-    return _apply_net_targets(normalised, config)
-
-
-def _apply_net_targets(
-    payload: CalculationInput, config: YearConfiguration
-) -> CalculationInput:
-    adjusted = payload
-
-    if adjusted.pension_net_target_income:
-        adjusted = _solve_net_target(
-            adjusted,
-            config,
-            category="pension",
-            target=adjusted.pension_net_target_income,
-        )
-
-    return adjusted
-
-
-def _set_component_income(
-    payload: CalculationInput, category: str, gross_income: float, payments: int
-) -> CalculationInput:
-    monthly_income = gross_income / payments if payments > 0 else None
-    if category == "employment":
-        return payload.model_copy(
-            update={
-                "employment_income": gross_income,
-                "employment_monthly_income": monthly_income,
-                "employment_payments_per_year": payments,
-            }
-        )
-
-    if category == "pension":
-        return payload.model_copy(
-            update={
-                "pension_income": gross_income,
-                "pension_monthly_income": monthly_income,
-                "pension_payments_per_year": payments,
-            }
-        )
-
-    raise ValueError(f"Unsupported category for net target resolution: {category}")
-
-
-def _solve_net_target(
-    payload: CalculationInput,
-    config: YearConfiguration,
-    *,
-    category: str,
-    target: float,
-) -> CalculationInput:
-    if category == "employment":
-        raise ValueError("Employment net income inputs are not supported")
-
-    if target <= 0:
-        return payload.model_copy(
-            update={
-                "pension_income": 0.0,
-                "pension_monthly_income": None,
-                "pension_net_target_income": None,
-            }
-        )
-
-    payments = (
-        payload.pension_payments_per_year
-        or config.pension.payroll.default_payments_per_year
-    )
-    contribution_rate = config.pension.contributions.employee_rate
-
-    highest_rate = max(bracket.rate for bracket in config.employment.brackets)
-
-    denominator = 1.0 - contribution_rate - highest_rate
-    if denominator <= 0:
-        upper = target * 5 if target > 0 else 1.0
-    else:
-        upper = target / denominator
-    upper = max(upper, target + 1.0)
-
-    lower = max(target, 0.01)
-    best_payload = payload
-    best_difference = float("inf")
-
-    for _ in range(50):
-        mid = (lower + upper) / 2
-        candidate = _set_component_income(payload, category, mid, payments)
-        components = _build_general_income_components(candidate, config)
-        _apply_progressive_tax(components, candidate, config)
-
-        component = next(
-            (entry for entry in components if entry.category == category), None
-        )
-        if component is None:
-            break
-
-        net_income = component.net_income()
-        difference = abs(net_income - target)
-        if difference < best_difference:
-            best_difference = difference
-            best_payload = candidate
-
-        if difference <= 0.01:
-            break
-
-        if net_income > target:
-            upper = mid
-        else:
-            lower = mid
-
-    return best_payload.model_copy(update={"pension_net_target_income": None})
+    return normalised
 
 
 def _update_totals_from_detail(
