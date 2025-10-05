@@ -254,7 +254,6 @@ const obligationsSection = document.getElementById("obligations-section");
 const employmentSection = document.getElementById("employment-section");
 const toggleFreelance = document.getElementById("toggle-freelance");
 const toggleEmployment = document.getElementById("toggle-employment");
-const togglePension = document.getElementById("toggle-pension");
 const toggleAgricultural = document.getElementById("toggle-agricultural");
 const toggleOther = document.getElementById("toggle-other");
 const toggleRental = document.getElementById("toggle-rental");
@@ -279,7 +278,6 @@ const detailsList = document.getElementById("details-list");
 const downloadButton = document.getElementById("download-button");
 const downloadCsvButton = document.getElementById("download-csv-button");
 const printButton = document.getElementById("print-button");
-const pensionFieldsContainer = document.getElementById("pension-fields");
 
 function lookupMessage(locale, keyParts) {
   let cursor = getFrontendCatalog(locale);
@@ -997,22 +995,6 @@ function resetSectionInputs(section) {
   });
 }
 
-function isPensionEnabled() {
-  return Boolean(togglePension && togglePension.checked);
-}
-
-function updatePensionFieldsVisibility() {
-  const enabled = isPensionEnabled();
-  if (pensionFieldsContainer) {
-    pensionFieldsContainer.hidden = !enabled;
-    pensionFieldsContainer.setAttribute("aria-hidden", String(!enabled));
-  }
-  if (enabled) {
-    updatePensionMode(pensionModeSelect?.value || currentPensionMode);
-  }
-  updatePartialYearWarningState();
-}
-
 function hasPartialYearSelection(select) {
   if (!select || select.disabled) {
     return false;
@@ -1039,10 +1021,18 @@ function shouldDisplayPartialYearWarning() {
   if (hasPartialYearSelection(employmentPaymentsInput)) {
     return true;
   }
-  if (!isPensionEnabled()) {
+  if (!hasPensionEntries()) {
     return false;
   }
   return hasPartialYearSelection(pensionPaymentsInput);
+}
+
+function hasPensionEntries() {
+  return (
+    readNumber(pensionIncomeInput) > 0 ||
+    readNumber(pensionNetIncomeInput) > 0 ||
+    readNumber(pensionNetMonthlyIncomeInput) > 0
+  );
 }
 
 function updatePartialYearWarningState() {
@@ -1190,7 +1180,6 @@ function applyPendingCalculatorState() {
 
   updateFreelanceCategoryHint();
   updateTradeFeeHint();
-  updatePensionFieldsVisibility();
 }
 
 function handleCalculatorStateChange() {
@@ -3529,7 +3518,6 @@ function initialiseCalculator() {
 
   pendingCalculatorState = loadStoredCalculatorState();
   applyPendingCalculatorState();
-  updatePensionFieldsVisibility();
 
   if (pensionModeSelect) {
     currentPensionMode = pensionModeSelect.value || "gross";
@@ -3545,7 +3533,6 @@ function initialiseCalculator() {
 
   initialiseSectionToggles();
   applyPendingCalculatorState();
-  updatePensionFieldsVisibility();
   freelanceEfkaSelect?.addEventListener("change", updateFreelanceCategoryHint);
   freelanceEfkaMonthsInput?.addEventListener("input", updateFreelanceCategoryHint);
   freelanceActivityStartInput?.addEventListener("input", () => {
@@ -3576,11 +3563,14 @@ function initialiseCalculator() {
     const target = event.target;
     const value = typeof target?.value === "string" ? target.value : "gross";
     updatePensionMode(value);
+    updatePartialYearWarningState();
   });
-  togglePension?.addEventListener("change", () => {
-    updatePensionFieldsVisibility();
-    handleCalculatorStateChange();
-  });
+  pensionIncomeInput?.addEventListener("input", updatePartialYearWarningState);
+  pensionNetIncomeInput?.addEventListener("input", updatePartialYearWarningState);
+  pensionNetMonthlyIncomeInput?.addEventListener(
+    "input",
+    updatePartialYearWarningState,
+  );
   employmentPaymentsInput?.addEventListener("change", updatePartialYearWarningState);
   pensionPaymentsInput?.addEventListener("change", updatePartialYearWarningState);
   employmentModeSelect?.addEventListener("change", (event) => {

@@ -25,7 +25,10 @@
           "year_household": "Έτος και νοικοκυριό"
         },
         "results_heading": "Αποτελέσματα",
-        "results_intro": "Σύνοψη αποτελεσμάτων: Το διάγραμμα και οι πίνακες που ακολουθούν δείχνουν το συνολικό εισόδημα, τους φόρους και το καθαρό ποσό. Τοποθετήστε τον δείκτη πάνω από το διάγραμμα για λεπτομέρειες και δείτε την ανάλυση κάθε κατηγορίας στη λίστα."
+        "results_intro": "Σύνοψη αποτελεσμάτων: Το διάγραμμα και οι πίνακες που ακολουθούν δείχνουν το συνολικό εισόδημα, τους φόρους και το καθαρό ποσό. Τοποθετήστε τον δείκτη πάνω από το διάγραμμα για λεπτομέρειες και δείτε την ανάλυση κάθε κατηγορίας στη λίστα.",
+        "subheadings": {
+          "pension": "Εισόδημα συντάξεων"
+        }
       },
       "detailFields": {
         "additional_contributions": "Επιπλέον εισφορές",
@@ -139,7 +142,6 @@
         "toggle-investment": "Επενδυτικά εισοδήματα",
         "toggle-obligations": "Πρόσθετες υποχρεώσεις",
         "toggle-other": "Λοιπά εισοδήματα",
-        "toggle-pension": "Εισόδημα συντάξεων",
         "toggle-rental": "Εισόδημα από ενοίκια",
         "trade-fee-toggle": "Τέλος επιτηδεύματος",
         "vat-due": "Οφειλόμενος ΦΠΑ (€)",
@@ -197,6 +199,7 @@
         "pension-income-gross": "Χρησιμοποιήστε το πεδίο ακαθάριστου όταν γνωρίζετε τη σύνταξη πριν από τις κρατήσεις.",
         "pension-income-net": "Εισάγετε το καθαρό ποσό σύνταξης για όλο το έτος όταν δεν υπάρχουν διαθέσιμα ακαθάριστα στοιχεία.",
         "pension-income-net-monthly": "Δώστε το καθαρό ποσό ανά καταβολή σύνταξης· θα πολλαπλασιαστεί με τις πληρωμές ανά έτος που επιλέξατε.",
+        "pension-section-intro": "Αν λαμβάνετε σύνταξη, συμπληρώστε τα πεδία παρακάτω· διαφορετικά αφήστε τα κενά.",
         "year-partial-note": "Αν δεν είχατε εισόδημα για ολόκληρο το έτος, καταχωρήστε ό,τι εισπράξατε· η ετήσια φορολογική πίστωση εφαρμόζεται κανονικά."
       },
       "links": {
@@ -292,7 +295,10 @@
           "year_household": "Year and household"
         },
         "results_heading": "Results",
-        "results_intro": "Results Summary: The chart and tables below show your total income, taxes, and net income. Hover over the diagram for details and review each category in the list."
+        "results_intro": "Results Summary: The chart and tables below show your total income, taxes, and net income. Hover over the diagram for details and review each category in the list.",
+        "subheadings": {
+          "pension": "Pension income"
+        }
       },
       "detailFields": {
         "additional_contributions": "Additional contributions",
@@ -406,7 +412,6 @@
         "toggle-investment": "Investment income",
         "toggle-obligations": "Additional obligations",
         "toggle-other": "Other income",
-        "toggle-pension": "Pension income",
         "toggle-rental": "Rental income",
         "trade-fee-toggle": "Business activity fee",
         "vat-due": "VAT due (€)",
@@ -464,6 +469,7 @@
         "pension-income-gross": "Use the gross field when you know the annual pension before deductions.",
         "pension-income-net": "Enter the total net pension paid over the year if gross information is unavailable.",
         "pension-income-net-monthly": "Provide the net amount per pension payment; it will be multiplied by the payments per year selected above.",
+        "pension-section-intro": "If you receive a pension, fill in the fields below; otherwise leave them blank.",
         "year-partial-note": "If you didn't earn income for the full year, enter what you earned; the annual tax credit still applies in full."
       },
       "links": {

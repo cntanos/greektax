@@ -517,19 +517,20 @@
               Net-to-gross salary conversion isn't supported. Please enter gross
               amounts only.
             </p>
-            <div class="form-control">
-              <span class="inline-field">
-                <input
-                  id="toggle-pension"
-                  type="checkbox"
-                  name="pension.enabled"
-                />
-                <label for="toggle-pension" data-i18n-key="fields.toggle-pension">
-              Pension income
-                </label>
-              </span>
-            </div>
-            <div id="pension-fields" hidden aria-hidden="true">
+            <div class="form-subsection" id="pension-fields">
+              <h3
+                class="fieldset-subheading"
+                data-i18n-key="calculator.subheadings.pension"
+              >
+                Pension income
+              </h3>
+              <p
+                class="form-hint"
+                data-i18n-key="hints.pension-section-intro"
+              >
+                If you receive a pension, fill in the details below; otherwise
+                leave these fields blank.
+              </p>
               <div class="form-grid double">
                 <div class="form-control">
                   <label
