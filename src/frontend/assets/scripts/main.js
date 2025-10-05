@@ -2806,18 +2806,6 @@ function renderSankey(result) {
   }
 }
 
-const DISTRIBUTION_CONTRIBUTION_FIELDS = [
-  "deductible_contributions",
-  "category_contributions",
-  "additional_contributions",
-  "auxiliary_contributions",
-  "lump_sum_contributions",
-  "mandatory_contributions",
-  "employee_contributions",
-  "employee_contributions_manual",
-  "employer_contributions",
-];
-
 const DISTRIBUTION_EXPENSE_FIELDS = ["deductible_expenses"];
 
 const DISTRIBUTION_CATEGORIES = [
@@ -2868,47 +2856,57 @@ function computeDistributionTotals(details) {
         : detail.tax;
     let taxValue = Math.max(toFiniteNumber(taxCandidate), 0);
 
-    let insuranceValue = sumDetailFields(
-      detail,
-      DISTRIBUTION_CONTRIBUTION_FIELDS,
-    );
+    const explicitContributionCandidates = [
+      toFiniteNumber(detail.employee_contributions),
+      toFiniteNumber(detail.deductible_contributions),
+      toFiniteNumber(detail.contributions),
+    ];
+    let insuranceValue = 0;
     let expenseValue = sumDetailFields(detail, DISTRIBUTION_EXPENSE_FIELDS);
 
     if (rawNet < 0) {
       expenseValue += Math.abs(rawNet);
+      profitValue = 0;
     }
 
-    const allocated = taxValue + insuranceValue + expenseValue + profitValue;
+    if (gross > 0) {
+      const residual = gross - taxValue - profitValue;
+      if (residual > 0.01) {
+        insuranceValue = residual;
+      } else if (residual > 0) {
+        insuranceValue = residual;
+      }
+    }
+
+    const explicitContribution = explicitContributionCandidates.reduce(
+      (max, value) => (value > max ? value : max),
+      0,
+    );
+    if (explicitContribution > 0 && explicitContribution > insuranceValue) {
+      insuranceValue = explicitContribution;
+    }
 
     if (gross > 0) {
+      const allocated = taxValue + insuranceValue + expenseValue + profitValue;
       const difference = gross - allocated;
       if (difference > 0.01) {
         profitValue += difference;
       } else if (difference < -0.01) {
         let remaining = Math.abs(difference);
 
-        if (profitValue > 0) {
-          const reduction = Math.min(profitValue, remaining);
-          profitValue -= reduction;
+        const reduceValue = (current) => {
+          if (current <= 0 || remaining <= 0) {
+            return current;
+          }
+          const reduction = Math.min(current, remaining);
           remaining -= reduction;
-        }
+          return current - reduction;
+        };
 
-        if (remaining > 0 && expenseValue > 0) {
-          const reduction = Math.min(expenseValue, remaining);
-          expenseValue -= reduction;
-          remaining -= reduction;
-        }
-
-        if (remaining > 0 && insuranceValue > 0) {
-          const reduction = Math.min(insuranceValue, remaining);
-          insuranceValue -= reduction;
-          remaining -= reduction;
-        }
-
-        if (remaining > 0 && taxValue > 0) {
-          const reduction = Math.min(taxValue, remaining);
-          taxValue -= reduction;
-        }
+        insuranceValue = reduceValue(insuranceValue);
+        expenseValue = reduceValue(expenseValue);
+        taxValue = reduceValue(taxValue);
+        profitValue = reduceValue(profitValue);
       }
     }
 

@@ -564,6 +564,56 @@ def test_employment_social_contributions_can_be_excluded(
     )
 
 
+@pytest.mark.parametrize(
+    "year,payments_per_year,include_social",
+    [
+        (2024, 14, True),
+        (2024, 12, False),
+        (2025, 14, True),
+        (2025, 12, False),
+    ],
+)
+def test_employment_breakdown_remains_balanced(
+    year: int, payments_per_year: int, include_social: bool
+) -> None:
+    """Employment detail rows reconcile gross, tax, and contributions."""
+
+    employment_payload: dict[str, Any] = {
+        "gross_income": 60_000,
+        "payments_per_year": payments_per_year,
+        "employee_contributions": 200.0,
+    }
+    if not include_social:
+        employment_payload["include_social_contributions"] = False
+
+    request = CalculationRequest.model_validate(
+        {
+            "year": year,
+            "employment": employment_payload,
+        }
+    )
+
+    result = calculate_tax(request)
+
+    employment_detail = next(
+        detail for detail in result["details"] if detail["category"] == "employment"
+    )
+
+    gross_income = employment_detail["gross_income"]
+    total_tax = employment_detail["total_tax"]
+    net_income = employment_detail["net_income"]
+    employee_contributions = employment_detail.get("employee_contributions", 0.0)
+
+    if include_social:
+        assert employee_contributions > 0
+        expected_total = total_tax + net_income + employee_contributions
+    else:
+        assert employee_contributions == pytest.approx(0.0)
+        expected_total = total_tax + net_income
+
+    assert gross_income == pytest.approx(expected_total, rel=1e-4, abs=0.05)
+
+
 def test_calculate_tax_with_freelance_income() -> None:
     """Freelance profit combines progressive tax and trade fee."""
 
