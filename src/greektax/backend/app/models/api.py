@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any
+from typing import Any, ClassVar
 
 from pydantic import (
     BaseModel,
@@ -12,6 +12,7 @@ from pydantic import (
     ValidationError,
     ValidationInfo,
     field_validator,
+    model_validator,
 )
 
 __all__ = [
@@ -55,7 +56,68 @@ class DemographicsInput(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
+    AGE_BAND_ALIASES: ClassVar[dict[str, str]] = {
+        "under25": "under_25",
+        "under-25": "under_25",
+        "under_25": "under_25",
+        "26-30": "age26_30",
+        "26_30": "age26_30",
+        "age26_30": "age26_30",
+        "26-30_workforce": "age26_30",
+        "none": "",
+        "standard": "",
+        "": "",
+    }
+
+    ALLOWED_YOUTH_BANDS: ClassVar[set[str]] = {"under_25", "age26_30"}
+
     taxpayer_birth_year: int | None = Field(default=None, ge=1900, le=2100)
+    birth_year: int | None = Field(default=None, ge=1900, le=2100)
+    age_band: str | None = None
+    youth_employment_override: str | None = None
+    small_village: bool = False
+    new_mother: bool = False
+
+    @staticmethod
+    def _normalise_age_band(value: Any) -> str | None:
+        if value is None:
+            return None
+        text = str(value).strip().lower().replace(" ", "_")
+        mapped = DemographicsInput.AGE_BAND_ALIASES.get(text, text)
+        if mapped == "":
+            return None
+        if mapped not in DemographicsInput.ALLOWED_YOUTH_BANDS:
+            raise ValueError(
+                "Age band must match a recognised youth relief category when provided"
+            )
+        return mapped
+
+    @field_validator("age_band", "youth_employment_override", mode="before")
+    @classmethod
+    def _validate_age_band_fields(cls, value: Any) -> str | None:
+        return cls._normalise_age_band(value)
+
+    @field_validator("small_village", "new_mother", mode="before")
+    @classmethod
+    def _normalise_boolean_flags(cls, value: Any) -> bool:
+        if value is None:
+            return False
+        return bool(value)
+
+    @model_validator(mode="after")
+    def _align_birth_year_aliases(self) -> "DemographicsInput":
+        birth_year = self.birth_year or self.taxpayer_birth_year
+        if (
+            self.birth_year is not None
+            and self.taxpayer_birth_year is not None
+            and self.birth_year != self.taxpayer_birth_year
+        ):
+            raise ValueError(
+                "birth_year and taxpayer_birth_year must match when both are provided"
+            )
+        object.__setattr__(self, "birth_year", birth_year)
+        object.__setattr__(self, "taxpayer_birth_year", birth_year)
+        return self
 
 
 class EmploymentInput(BaseModel):
@@ -70,6 +132,9 @@ class EmploymentInput(BaseModel):
     payments_per_year: int | None = Field(default=None, ge=0)
     employee_contributions: float = Field(default=0.0, ge=0)
     include_social_contributions: bool = True
+    include_employee_contributions: bool = True
+    include_manual_employee_contributions: bool = True
+    include_employer_contributions: bool = True
 
     @field_validator("net_income", "net_monthly_income")
     @classmethod
@@ -77,6 +142,28 @@ class EmploymentInput(BaseModel):
         if value is not None and value > 0:
             raise ValueError(NET_INCOME_INPUT_ERROR)
         return value
+
+    @model_validator(mode="after")
+    def _synchronise_contribution_flags(self) -> "EmploymentInput":
+        fields_set = getattr(self, "model_fields_set", set())
+        if "include_social_contributions" in fields_set:
+            base = bool(self.include_social_contributions)
+            if "include_employee_contributions" not in fields_set:
+                object.__setattr__(self, "include_employee_contributions", base)
+            if "include_manual_employee_contributions" not in fields_set:
+                object.__setattr__(
+                    self, "include_manual_employee_contributions", base
+                )
+            if "include_employer_contributions" not in fields_set:
+                object.__setattr__(self, "include_employer_contributions", base)
+        else:
+            combined = (
+                bool(self.include_employee_contributions)
+                or bool(self.include_manual_employee_contributions)
+                or bool(self.include_employer_contributions)
+            )
+            object.__setattr__(self, "include_social_contributions", combined)
+        return self
 
 
 class PensionInput(BaseModel):
@@ -105,16 +192,36 @@ class FreelanceInput(BaseModel):
     auxiliary_contributions: float = Field(default=0.0, ge=0)
     lump_sum_contributions: float = Field(default=0.0, ge=0)
     include_trade_fee: bool = True
+    include_category_contributions: bool = True
+    include_mandatory_contributions: bool = True
+    include_auxiliary_contributions: bool = True
+    include_lump_sum_contributions: bool = True
     trade_fee_location: str = "standard"
     years_active: int | None = Field(default=None, ge=0)
     newly_self_employed: bool = False
 
-    @field_validator("include_trade_fee", "newly_self_employed", mode="before")
+    @field_validator(
+        "include_trade_fee",
+        "newly_self_employed",
+        "include_category_contributions",
+        "include_mandatory_contributions",
+        "include_auxiliary_contributions",
+        "include_lump_sum_contributions",
+        mode="before",
+    )
     @classmethod
     def _normalise_optional_bool(cls, value: Any, info: ValidationInfo) -> bool:
         if value is None:
-            return True if info.field_name == "include_trade_fee" else False
-        return value
+            defaults = {
+                "include_trade_fee": True,
+                "include_category_contributions": True,
+                "include_mandatory_contributions": True,
+                "include_auxiliary_contributions": True,
+                "include_lump_sum_contributions": True,
+                "newly_self_employed": False,
+            }
+            return defaults.get(info.field_name, False)
+        return bool(value)
 
     @field_validator("trade_fee_location", mode="before")
     @classmethod
@@ -325,6 +432,8 @@ class ResponseMeta(BaseModel):
 
     year: int
     locale: str
+    youth_relief_category: str | None = None
+    presumptive_adjustments: list[str] | None = None
 
 
 class CalculationResponse(BaseModel):

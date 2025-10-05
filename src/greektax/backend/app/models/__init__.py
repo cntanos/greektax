@@ -75,6 +75,9 @@ class CalculationInput(BaseModel):
     employment_payments_per_year: int | None
     employment_manual_contributions: float
     employment_include_social_contributions: bool
+    employment_include_employee_contributions: bool
+    employment_include_manual_contributions: bool
+    employment_include_employer_contributions: bool
     withholding_tax: float
     pension_income: float
     pension_monthly_income: float | None
@@ -89,6 +92,10 @@ class CalculationInput(BaseModel):
     freelance_additional_contributions: float
     freelance_auxiliary_contributions: float
     freelance_lump_sum_contributions: float
+    freelance_include_category_contributions: bool
+    freelance_include_mandatory_contributions: bool
+    freelance_include_auxiliary_contributions: bool
+    freelance_include_lump_sum_contributions: bool
     include_trade_fee: bool
     freelance_trade_fee_location: str
     freelance_years_active: int | None
@@ -108,6 +115,10 @@ class CalculationInput(BaseModel):
     deductions_insurance: float
     toggles: Mapping[str, bool] = Field(default_factory=dict)
     taxpayer_birth_year: int | None = None
+    taxpayer_age_band: str | None = None
+    youth_employment_override: str | None = None
+    small_village: bool = False
+    new_mother: bool = False
 
     @property
     def freelance_taxable_income(self) -> float:
@@ -117,10 +128,10 @@ class CalculationInput(BaseModel):
     @property
     def total_freelance_contributions(self) -> float:
         return (
-            self.freelance_category_contribution
-            + self.freelance_additional_contributions
-            + self.freelance_auxiliary_contributions
-            + self.freelance_lump_sum_contributions
+            self.freelance_effective_category_contribution
+            + self.freelance_effective_mandatory_contribution
+            + self.freelance_effective_auxiliary_contribution
+            + self.freelance_effective_lump_sum_contribution
         )
 
     @property
@@ -128,6 +139,30 @@ class CalculationInput(BaseModel):
         """Maintain backwards-compatible naming for total contributions."""
 
         return self.total_freelance_contributions
+
+    @property
+    def freelance_effective_category_contribution(self) -> float:
+        if not self.freelance_include_category_contributions:
+            return 0.0
+        return self.freelance_category_contribution
+
+    @property
+    def freelance_effective_mandatory_contribution(self) -> float:
+        if not self.freelance_include_mandatory_contributions:
+            return 0.0
+        return self.freelance_additional_contributions
+
+    @property
+    def freelance_effective_auxiliary_contribution(self) -> float:
+        if not self.freelance_include_auxiliary_contributions:
+            return 0.0
+        return self.freelance_auxiliary_contributions
+
+    @property
+    def freelance_effective_lump_sum_contribution(self) -> float:
+        if not self.freelance_include_lump_sum_contributions:
+            return 0.0
+        return self.freelance_lump_sum_contributions
 
     @property
     def has_employment_income(self) -> bool:
@@ -221,8 +256,15 @@ class CalculationInput(BaseModel):
 
     @property
     def youth_rate_category(self) -> str | None:
+        override = self.youth_employment_override
+        if override:
+            return override
+
         if not self.toggle_enabled("youth_eligibility"):
             return None
+
+        if self.taxpayer_age_band in {"under_25", "age26_30"}:
+            return self.taxpayer_age_band
 
         age = self.taxpayer_age
         if age is None:
@@ -232,6 +274,10 @@ class CalculationInput(BaseModel):
         if age <= 30:
             return "age26_30"
         return None
+
+    @property
+    def youth_relief_applied(self) -> bool:
+        return self.youth_rate_category is not None
 
     @property
     def rental_taxable_income(self) -> float:
@@ -249,6 +295,24 @@ class CalculationInput(BaseModel):
     @property
     def has_investment_income(self) -> bool:
         return any(amount > 0 for amount in self.investment_amounts.values())
+
+    @property
+    def presumptive_adjustments(self) -> tuple[str, ...]:
+        if not self.toggle_enabled("presumptive_relief"):
+            return tuple()
+
+        adjustments: list[str] = []
+        if self.small_village:
+            adjustments.append("small_village")
+        if self.new_mother:
+            adjustments.append("new_mother")
+        return tuple(adjustments)
+
+    @property
+    def presumptive_relief_applied(self) -> bool:
+        if not self.toggle_enabled("tekmiria_reduction"):
+            return False
+        return bool(self.presumptive_adjustments)
 
     @property
     def has_enfia_obligation(self) -> bool:

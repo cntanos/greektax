@@ -81,27 +81,29 @@ def _build_general_income_components(
             capped_annual_income = salary_cap * payments_per_year
             contribution_base_income = min(payload.employment_income, capped_annual_income)
 
-        include_social = payload.employment_include_social_contributions
-        if include_social:
-            auto_employee_contrib = (
-                contribution_base_income * config.employment.contributions.employee_rate
-            )
-            employer_contrib = (
-                contribution_base_income * config.employment.contributions.employer_rate
-            )
-            employee_manual_contrib = payload.employment_manual_contributions
-        else:
-            # When social insurance is excluded, suppress both the automatic and
-            # manual EFKA amounts so the downstream net calculations become
-            # purely tax-based.
-            auto_employee_contrib = 0.0
-            employer_contrib = 0.0
-            employee_manual_contrib = 0.0
+        include_auto = payload.employment_include_employee_contributions
+        include_manual = payload.employment_include_manual_contributions
+        include_employer = payload.employment_include_employer_contributions
+
+        auto_employee_contrib = (
+            contribution_base_income * config.employment.contributions.employee_rate
+            if include_auto
+            else 0.0
+        )
+        employer_contrib = (
+            contribution_base_income * config.employment.contributions.employer_rate
+            if include_employer
+            else 0.0
+        )
+        employee_manual_contrib = (
+            payload.employment_manual_contributions if include_manual else 0.0
+        )
 
         employee_contrib = auto_employee_contrib + employee_manual_contrib
         taxable_income = payload.employment_income - employee_contrib
         if taxable_income < 0:
             taxable_income = 0.0
+        include_employee_total = include_auto or include_manual
         components.append(
             GeneralIncomeComponent(
                 category="employment",
@@ -113,7 +115,7 @@ def _build_general_income_components(
                 employee_contributions=employee_contrib,
                 employee_manual_contributions=employee_manual_contrib,
                 employer_contributions=employer_contrib,
-                include_employee_contributions=include_social,
+                include_employee_contributions=include_employee_total,
                 payments_per_year=payload.employment_payments_per_year,
                 monthly_gross_income=payload.employment_monthly_income,
             )
@@ -144,10 +146,10 @@ def _build_general_income_components(
                 deductible_expenses=payload.freelance_deductible_expenses,
                 contributions=payload.freelance_total_contributions,
                 trade_fee=trade_fee,
-                category_contributions=payload.freelance_category_contribution,
-                additional_contributions=payload.freelance_additional_contributions,
-                auxiliary_contributions=payload.freelance_auxiliary_contributions,
-                lump_sum_contributions=payload.freelance_lump_sum_contributions,
+                category_contributions=payload.freelance_effective_category_contribution,
+                additional_contributions=payload.freelance_effective_mandatory_contribution,
+                auxiliary_contributions=payload.freelance_effective_auxiliary_contribution,
+                lump_sum_contributions=payload.freelance_effective_lump_sum_contribution,
             )
         )
 
