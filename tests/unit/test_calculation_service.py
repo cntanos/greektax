@@ -337,13 +337,19 @@ def test_calculate_tax_with_withholding_tax_refund() -> None:
     assert summary["labels"]["balance_due"] == "Refund due"
 
 
-def test_calculate_tax_accepts_monthly_employment_income() -> None:
+@pytest.mark.parametrize("payments_per_year", [14, 12])
+def test_calculate_tax_accepts_monthly_employment_income(
+    payments_per_year: int,
+) -> None:
     """Monthly salary inputs convert to annual totals and per-payment nets."""
 
     request = CalculationRequest.model_validate(
         {
             "year": 2024,
-            "employment": {"monthly_income": 1_500, "payments_per_year": 14},
+            "employment": {
+                "monthly_income": 1_500,
+                "payments_per_year": payments_per_year,
+            },
         }
     )
 
@@ -352,7 +358,12 @@ def test_calculate_tax_accepts_monthly_employment_income() -> None:
     monthly_income = request.employment.monthly_income or 0.0
     payments = request.employment.payments_per_year or 0
     gross_income = monthly_income * payments
-    expected = _employment_expectations(2024, gross_income)
+    expected = _employment_expectations(
+        2024,
+        gross_income,
+        monthly_income=monthly_income,
+        payments_per_year=payments,
+    )
     expected_employee_per_payment = expected["employee_contrib"] / payments
     expected_employer_per_payment = expected["employer_contrib"] / payments
     expected_net_per_payment = expected["net_income"] / payments
@@ -389,13 +400,22 @@ def test_calculate_tax_accepts_monthly_employment_income() -> None:
     )
 
 
-def test_employment_contributions_respect_salary_cap() -> None:
+@pytest.mark.parametrize(
+    ("year", "payments_per_year"),
+    [(2024, 14), (2024, 12), (2025, 14), (2025, 12)],
+)
+def test_employment_contributions_respect_salary_cap(
+    year: int, payments_per_year: int
+) -> None:
     """Employment contributions stop increasing once the statutory cap is reached."""
 
     request = CalculationRequest.model_validate(
         {
-            "year": 2024,
-            "employment": {"monthly_income": 9_000, "payments_per_year": 14},
+            "year": year,
+            "employment": {
+                "monthly_income": 9_000,
+                "payments_per_year": payments_per_year,
+            },
         }
     )
 
@@ -414,6 +434,8 @@ def test_employment_contributions_respect_salary_cap() -> None:
     config = load_year_configuration(request.year)
     salary_cap = config.employment.contributions.monthly_salary_cap or 0.0
     capped_annual_income = min(gross_income, salary_cap * payments)
+    expected_employee_per_payment = expected["employee_contrib"] / payments
+    expected_employer_per_payment = expected["employer_contrib"] / payments
 
     employment_detail = result["details"][0]
     assert employment_detail["employee_contributions"] == pytest.approx(
@@ -424,6 +446,18 @@ def test_employment_contributions_respect_salary_cap() -> None:
         expected["employer_contrib"],
         rel=1e-4,
     )
+    assert employment_detail["employee_contributions_per_payment"] == pytest.approx(
+        expected_employee_per_payment,
+        rel=1e-4,
+    )
+    assert employment_detail["employer_contributions_per_payment"] == pytest.approx(
+        expected_employer_per_payment,
+        rel=1e-4,
+    )
+    assert employment_detail["gross_income_per_payment"] == pytest.approx(
+        gross_income / payments
+    )
+    assert employment_detail["monthly_gross_income"] == pytest.approx(monthly_income)
     assert expected["employee_contrib"] == pytest.approx(
         capped_annual_income * config.employment.contributions.employee_rate,
         rel=1e-4,
@@ -471,7 +505,10 @@ def test_calculate_tax_supports_manual_employee_contributions() -> None:
     )
 
 
-def test_employment_social_contributions_can_be_excluded() -> None:
+@pytest.mark.parametrize("payments_per_year", [14, 12])
+def test_employment_social_contributions_can_be_excluded(
+    payments_per_year: int,
+) -> None:
     """Users can opt out of including EFKA contributions in the net result."""
 
     base_request = CalculationRequest.model_validate(
@@ -479,7 +516,7 @@ def test_employment_social_contributions_can_be_excluded() -> None:
             "year": 2024,
             "employment": {
                 "monthly_income": 2_000,
-                "payments_per_year": 14,
+                "payments_per_year": payments_per_year,
                 "employee_contributions": 250,
             },
         }
@@ -490,7 +527,7 @@ def test_employment_social_contributions_can_be_excluded() -> None:
             "year": 2024,
             "employment": {
                 "monthly_income": 2_000,
-                "payments_per_year": 14,
+                "payments_per_year": payments_per_year,
                 "employee_contributions": 250,
                 "include_social_contributions": False,
             },
