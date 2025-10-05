@@ -5,8 +5,9 @@ from __future__ import annotations
 from typing import Any
 
 import pytest
+from pydantic import ValidationError
 
-from greektax.backend.app.models import CalculationRequest
+from greektax.backend.app.models import CalculationRequest, NET_INCOME_INPUT_ERROR
 from greektax.backend.app.services.calculation_service import calculate_tax
 from greektax.backend.config.year_config import YearConfiguration, load_year_configuration
 
@@ -244,6 +245,30 @@ def test_calculate_tax_rejects_invalid_numbers() -> None:
     message = str(error.value)
     assert "employment.gross_income" in message
     assert "Invalid calculation payload" in message
+
+
+@pytest.mark.parametrize("field", ["net_income", "net_monthly_income"])
+def test_calculation_request_rejects_net_income_inputs(field: str) -> None:
+    """Employment payloads should reject legacy net income fields."""
+
+    with pytest.raises(ValidationError) as exc_info:
+        CalculationRequest.model_validate({"year": 2024, "employment": {field: 1_000}})
+
+    message = str(exc_info.value)
+    assert NET_INCOME_INPUT_ERROR in message
+
+
+@pytest.mark.parametrize("field", ["net_income", "net_monthly_income"])
+def test_calculate_tax_preserves_net_income_validation_error(field: str) -> None:
+    """Service-level validation should surface the net income error message."""
+
+    payload = {"year": 2024, "employment": {field: 1_000}}
+
+    with pytest.raises(ValueError) as exc_info:
+        calculate_tax(payload)
+
+    message = str(exc_info.value)
+    assert NET_INCOME_INPUT_ERROR in message
 
 
 def test_calculate_tax_accepts_request_model_instance() -> None:

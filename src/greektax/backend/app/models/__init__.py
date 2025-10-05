@@ -35,6 +35,7 @@ from .api import (
     Summary,
     SummaryLabels,
     format_validation_error,
+    NET_INCOME_INPUT_ERROR,
 )
 
 __all__ = [
@@ -59,6 +60,7 @@ __all__ = [
     "DetailEntry",
     "ResponseMeta",
     "format_validation_error",
+    "NET_INCOME_INPUT_ERROR",
 ]
 
 
