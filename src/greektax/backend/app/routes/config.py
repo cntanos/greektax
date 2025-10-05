@@ -7,7 +7,7 @@ messages without duplicating business rules.
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from typing import Any
 
 from flask import Blueprint, jsonify, request
@@ -17,8 +17,11 @@ from greektax.backend.config.year_config import (
     ContributionRates,
     EFKACategoryConfig,
     EmploymentConfig,
+    MultiRateBracket,
     PayrollConfig,
+    ProgressiveTaxBracket,
     TradeFeeConfig,
+    TaxBracket,
     YearWarning,
     available_years,
     load_year_configuration,
@@ -41,6 +44,21 @@ def _serialise_contributions(contributions: ContributionRates) -> dict[str, Any]
         "employer_rate": contributions.employer_rate,
         "monthly_salary_cap": contributions.monthly_salary_cap,
     }
+
+
+def _serialise_defaults(meta: Mapping[str, Any], section: str) -> dict[str, bool]:
+    defaults_raw = meta.get("defaults")
+    if not isinstance(defaults_raw, Mapping):
+        return {}
+
+    section_raw = defaults_raw.get(section)
+    if not isinstance(section_raw, Mapping):
+        return {}
+
+    defaults: dict[str, bool] = {}
+    for key, value in section_raw.items():
+        defaults[str(key)] = bool(value)
+    return defaults
 
 
 def _serialise_family_tax_credit(config: EmploymentConfig) -> dict[str, Any]:
@@ -101,20 +119,107 @@ def _serialise_warning(entry: YearWarning) -> dict[str, Any]:
     }
 
 
+def _serialise_multi_rate_bracket(bracket: MultiRateBracket) -> dict[str, Any]:
+    household_rates = [
+        {"dependants": dependants, "rate": rate}
+        for dependants, rate in sorted(bracket.household.dependants.items())
+    ]
+
+    youth_rates = [
+        {"band": band, "rate": rate}
+        for band, rate in sorted(bracket.youth_rates.items())
+    ]
+
+    return {
+        "type": "multi",
+        "upper": bracket.upper_bound,
+        "base_rate": bracket.rate,
+        "household": {
+            "rates": household_rates,
+            "reduction_factor": bracket.household.reduction_factor,
+        },
+        "youth": youth_rates,
+        "pending_confirmation": bracket.pending_confirmation,
+        "estimate": bracket.estimate,
+    }
+
+
+def _serialise_tax_bracket(bracket: TaxBracket) -> dict[str, Any]:
+    return {
+        "type": "single",
+        "upper": bracket.upper_bound,
+        "rate": bracket.rate,
+    }
+
+
+def _serialise_progressive_brackets(
+    brackets: Sequence[ProgressiveTaxBracket],
+) -> list[dict[str, Any]]:
+    serialised: list[dict[str, Any]] = []
+    for bracket in brackets:
+        if isinstance(bracket, MultiRateBracket):
+            serialised.append(_serialise_multi_rate_bracket(bracket))
+        else:
+            serialised.append(_serialise_tax_bracket(bracket))
+    return serialised
+
+
+def _collect_youth_bands(brackets: Sequence[ProgressiveTaxBracket]) -> list[str]:
+    bands: set[str] = set()
+    for bracket in brackets:
+        if isinstance(bracket, MultiRateBracket):
+            bands.update(bracket.youth_rates.keys())
+    return sorted(bands)
+
+
 def _serialise_year(year: int) -> dict[str, Any]:
     config = load_year_configuration(year)
+    meta = dict(config.meta)
+    toggles_raw = meta.get("toggles") if isinstance(meta, Mapping) else None
+    toggles: dict[str, bool] = {}
+    if isinstance(toggles_raw, Mapping):
+        toggles = {str(key): bool(value) for key, value in toggles_raw.items()}
+
+    employment_brackets = _serialise_progressive_brackets(config.employment.brackets)
+    pension_brackets = _serialise_progressive_brackets(config.pension.brackets)
+    freelance_brackets = _serialise_progressive_brackets(config.freelance.brackets)
+    agricultural_brackets = _serialise_progressive_brackets(
+        config.agricultural.brackets
+    )
+    other_brackets = _serialise_progressive_brackets(config.other.brackets)
+    rental_brackets = _serialise_progressive_brackets(config.rental.brackets)
+
+    employment_defaults = _serialise_defaults(meta, "employment")
+    freelance_defaults = _serialise_defaults(meta, "freelance")
+
     return {
         "year": year,
-        "meta": dict(config.meta),
+        "meta": meta,
+        "toggles": toggles,
         "employment": {
             "payroll": _serialise_payroll_config(config.employment.payroll),
             "contributions": _serialise_contributions(config.employment.contributions),
             "family_tax_credit": _serialise_family_tax_credit(config.employment),
             "tekmiria_reduction_factor": config.employment.tekmiria_reduction_factor,
+            "brackets": employment_brackets,
+            "defaults": employment_defaults,
+            "youth": {
+                "bands": _collect_youth_bands(config.employment.brackets),
+                "enabled": bool(toggles.get("youth_eligibility")),
+            },
+            "tekmiria": {
+                "enabled": bool(toggles.get("tekmiria_reduction")),
+                "reduction_factor": config.employment.tekmiria_reduction_factor,
+            },
         },
         "pension": {
             "payroll": _serialise_payroll_config(config.pension.payroll),
             "contributions": _serialise_contributions(config.pension.contributions),
+            "brackets": pension_brackets,
+            "youth": {
+                "bands": _collect_youth_bands(config.pension.brackets),
+                "enabled": bool(toggles.get("youth_eligibility")),
+            },
         },
         "freelance": {
             "trade_fee": _serialise_trade_fee(config.freelance.trade_fee),
@@ -122,7 +227,16 @@ def _serialise_year(year: int) -> dict[str, Any]:
                 config.freelance.efka_categories
             ),
             "pending_contribution_update": config.freelance.pending_contribution_update,
+            "brackets": freelance_brackets,
+            "defaults": freelance_defaults,
+            "youth": {
+                "bands": _collect_youth_bands(config.freelance.brackets),
+                "enabled": bool(toggles.get("youth_eligibility")),
+            },
         },
+        "agricultural": {"brackets": agricultural_brackets},
+        "other": {"brackets": other_brackets},
+        "rental": {"brackets": rental_brackets},
         "warnings": [_serialise_warning(entry) for entry in config.warnings],
     }
 
