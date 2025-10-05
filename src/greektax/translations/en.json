@@ -280,6 +280,7 @@
     },
     "distribution": {
       "heading": "Income allocation summary",
+      "total_income": "Total income",
       "description": "See how your total income is split between profits, taxes, insurance contributions, and deductible expenses.",
       "empty": "Add taxable income above to reveal the allocation across all categories.",
       "profits": "Profits",
