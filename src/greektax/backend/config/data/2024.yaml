@@ -14,6 +14,7 @@ income:
     contributions:
       employee_rate: 0.1387
       employer_rate: 0.2229
+      monthly_salary_cap: 7126.94
     tax_brackets:
       - upper: 10000
         rate: 0.09

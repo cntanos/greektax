@@ -38,6 +38,7 @@ def _serialise_contributions(contributions: ContributionRates) -> dict[str, Any]
     return {
         "employee_rate": contributions.employee_rate,
         "employer_rate": contributions.employer_rate,
+        "monthly_salary_cap": contributions.monthly_salary_cap,
     }
 
 

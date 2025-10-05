@@ -79,6 +79,7 @@ class ContributionRates:
 
     employee_rate: float
     employer_rate: float
+    monthly_salary_cap: float | None = None
 
 
 @dataclass(frozen=True)
@@ -408,11 +409,20 @@ def _parse_contribution_rates(
 
     employee = float(raw.get("employee_rate", 0.0))
     employer = float(raw.get("employer_rate", 0.0))
+    salary_cap_raw = raw.get("monthly_salary_cap")
+    salary_cap = float(salary_cap_raw) if salary_cap_raw is not None else None
 
     if employee < 0 or employer < 0:
         raise ConfigurationError("Contribution rates must be non-negative")
 
-    return ContributionRates(employee_rate=employee, employer_rate=employer)
+    if salary_cap is not None and salary_cap < 0:
+        raise ConfigurationError("Contribution salary caps must be non-negative")
+
+    return ContributionRates(
+        employee_rate=employee,
+        employer_rate=employer,
+        monthly_salary_cap=salary_cap,
+    )
 
 
 def _parse_employment_config(raw: Mapping[str, Any]) -> EmploymentConfig:

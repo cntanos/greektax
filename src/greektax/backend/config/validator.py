@@ -86,6 +86,15 @@ def _validate_contributions(scope: str, contributions: ContributionRates) -> lis
                 )
             )
 
+    salary_cap = contributions.monthly_salary_cap
+    if salary_cap is not None and salary_cap < 0:
+        errors.append(
+            _format_scope(
+                scope,
+                f"monthly salary cap {salary_cap} must be non-negative",
+            )
+        )
+
     return errors
 
 

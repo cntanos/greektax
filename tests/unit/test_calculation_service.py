@@ -8,7 +8,7 @@ import pytest
 
 from greektax.backend.app.models import CalculationRequest
 from greektax.backend.app.services.calculation_service import calculate_tax
-from greektax.backend.config.year_config import load_year_configuration
+from greektax.backend.config.year_config import YearConfiguration, load_year_configuration
 
 
 def _progressive_tax(amount: float, brackets) -> float:
@@ -30,10 +30,41 @@ def _progressive_tax(amount: float, brackets) -> float:
     return total
 
 
+def _employment_contribution_base(
+    config: YearConfiguration,
+    gross_income: float,
+    monthly_income: float | None,
+    payments_per_year: int | None,
+) -> float:
+    """Return the annual income base used for employment contributions."""
+
+    salary_cap = config.employment.contributions.monthly_salary_cap
+    payments = payments_per_year or config.employment.payroll.default_payments_per_year
+
+    if not payments or payments <= 0:
+        return gross_income
+
+    monthly = monthly_income
+    if monthly is None:
+        monthly = gross_income / payments if payments else None
+
+    if (
+        salary_cap is not None
+        and salary_cap > 0
+        and monthly is not None
+    ):
+        capped_annual = salary_cap * payments
+        return min(gross_income, capped_annual)
+
+    return gross_income
+
+
 def _employment_expectations(
     year: int,
     gross_income: float,
     children: int = 0,
+    monthly_income: float | None = None,
+    payments_per_year: int | None = None,
 ) -> dict[str, float]:
     """Return expected employment tax metrics for the given inputs."""
 
@@ -47,8 +78,11 @@ def _employment_expectations(
 
     employee_rate = employment.contributions.employee_rate
     employer_rate = employment.contributions.employer_rate
-    employee_contrib = gross_income * employee_rate
-    employer_contrib = gross_income * employer_rate
+    contribution_base = _employment_contribution_base(
+        config, gross_income, monthly_income, payments_per_year
+    )
+    employee_contrib = contribution_base * employee_rate
+    employer_contrib = contribution_base * employer_rate
     net_income = gross_income - tax_after_credit - employee_contrib
 
     effective_rate = (tax_after_credit / gross_income) if gross_income else 0.0
@@ -109,11 +143,17 @@ def _freelance_expectations(request: CalculationRequest) -> dict[str, Any]:
     employment_tax = employment_tax_before_credit - employment_credit
     freelance_tax = freelance_tax_before_credit - freelance_credit
 
+    contribution_base = _employment_contribution_base(
+        config,
+        employment_gross,
+        request.employment.monthly_income,
+        request.employment.payments_per_year,
+    )
     employment_employee_contrib = (
-        employment_gross * config.employment.contributions.employee_rate
+        contribution_base * config.employment.contributions.employee_rate
     )
     employment_employer_contrib = (
-        employment_gross * config.employment.contributions.employer_rate
+        contribution_base * config.employment.contributions.employer_rate
     )
 
     employment_net = employment_gross - employment_tax - employment_employee_contrib
@@ -347,6 +387,48 @@ def test_calculate_tax_accepts_monthly_employment_income() -> None:
     assert employment_detail["employer_contributions_per_payment"] == pytest.approx(
         expected_employer_per_payment, rel=1e-4
     )
+
+
+def test_employment_contributions_respect_salary_cap() -> None:
+    """Employment contributions stop increasing once the statutory cap is reached."""
+
+    request = CalculationRequest.model_validate(
+        {
+            "year": 2024,
+            "employment": {"monthly_income": 9_000, "payments_per_year": 14},
+        }
+    )
+
+    result = calculate_tax(request)
+
+    monthly_income = request.employment.monthly_income or 0.0
+    payments = request.employment.payments_per_year or 0
+    gross_income = monthly_income * payments
+    expected = _employment_expectations(
+        request.year,
+        gross_income,
+        monthly_income=monthly_income,
+        payments_per_year=payments,
+    )
+
+    config = load_year_configuration(request.year)
+    salary_cap = config.employment.contributions.monthly_salary_cap or 0.0
+    capped_annual_income = min(gross_income, salary_cap * payments)
+
+    employment_detail = result["details"][0]
+    assert employment_detail["employee_contributions"] == pytest.approx(
+        expected["employee_contrib"],
+        rel=1e-4,
+    )
+    assert employment_detail["employer_contributions"] == pytest.approx(
+        expected["employer_contrib"],
+        rel=1e-4,
+    )
+    assert expected["employee_contrib"] == pytest.approx(
+        capped_annual_income * config.employment.contributions.employee_rate,
+        rel=1e-4,
+    )
+    assert expected["employee_contrib"] < gross_income * config.employment.contributions.employee_rate
 
 
 def test_calculate_tax_supports_manual_employee_contributions() -> None:
