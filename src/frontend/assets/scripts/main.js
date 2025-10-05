@@ -2064,12 +2064,35 @@ async function loadYearOptions() {
       }
     });
 
-    if (payload.default_year) {
-      yearSelect.value = String(payload.default_year);
+    const currentYear = new Date().getFullYear();
+    let selectedYear = null;
+
+    if (yearMetadataByYear.has(currentYear)) {
+      yearSelect.value = String(currentYear);
+      selectedYear = currentYear;
+    } else if (
+      payload.default_year &&
+      yearMetadataByYear.has(Number.parseInt(payload.default_year, 10))
+    ) {
+      const defaultYear = Number.parseInt(payload.default_year, 10);
+      yearSelect.value = String(defaultYear);
+      selectedYear = defaultYear;
+    } else if (years.length) {
+      const firstYear = Number.parseInt(years[0]?.year ?? "", 10);
+      if (Number.isFinite(firstYear)) {
+        yearSelect.value = String(firstYear);
+        selectedYear = firstYear;
+      }
     }
 
-    const selectedYear = Number.parseInt(yearSelect.value ?? "", 10);
-    if (Number.isFinite(selectedYear)) {
+    if (selectedYear === null) {
+      const parsed = Number.parseInt(yearSelect.value ?? "", 10);
+      if (Number.isFinite(parsed)) {
+        selectedYear = parsed;
+      }
+    }
+
+    if (selectedYear !== null) {
       applyYearMetadata(selectedYear);
     }
 
