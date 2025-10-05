@@ -207,6 +207,7 @@ class TradeFeeConfig:
     reduced_amount: float | None = None
     newly_self_employed_reduction_years: int | None = None
     sunset: TradeFeeSunset | None = None
+    fee_sunset: bool = False
 
 
 @dataclass(frozen=True)
@@ -221,6 +222,7 @@ class EFKACategoryConfig:
     pension_monthly_amount: float | None = None
     health_monthly_amount: float | None = None
     lump_sum_monthly_amount: float | None = None
+    estimate: bool = False
 
 
 @dataclass(frozen=True)
@@ -821,11 +823,17 @@ def _parse_trade_fee(raw: Mapping[str, Any]) -> TradeFeeConfig:
             documentation_url=documentation_url_raw,
         )
 
+    fee_sunset = _parse_boolean_flag(
+        raw.get("fee_sunset"),
+        context="freelance.trade_fee 'fee_sunset'",
+    )
+
     return TradeFeeConfig(
         standard_amount=standard_amount,
         reduced_amount=reduced_amount,
         newly_self_employed_reduction_years=reduction_years,
         sunset=sunset,
+        fee_sunset=fee_sunset,
     )
 
 
@@ -894,6 +902,11 @@ def _parse_efka_categories(
                 "EFKA category 'description_key' must be a string when provided"
             )
 
+        estimate = _parse_boolean_flag(
+            entry.get("estimate"),
+            context=f"freelance.efka_categories '{category_id}' estimate",
+        )
+
         categories.append(
             EFKACategoryConfig(
                 id=category_id,
@@ -904,6 +917,7 @@ def _parse_efka_categories(
                 pension_monthly_amount=pension_value,
                 health_monthly_amount=health_value,
                 lump_sum_monthly_amount=lump_sum_value,
+                estimate=estimate,
             )
         )
 

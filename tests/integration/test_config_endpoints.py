@@ -28,15 +28,21 @@ def test_list_years_endpoint(client: FlaskClient) -> None:
     years = payload["years"]
     assert any(entry["year"] == 2024 for entry in years)
     assert any(entry["year"] == 2025 for entry in years)
-    assert payload["default_year"] == 2025
+    assert any(entry["year"] == 2026 for entry in years)
+    assert payload["default_year"] == 2026
 
-    current_year = next(entry for entry in years if entry["year"] == 2025)
-    previous_year = next(entry for entry in years if entry["year"] == 2024)
+    current_year = next(entry for entry in years if entry["year"] == 2026)
+    transition_year = next(entry for entry in years if entry["year"] == 2025)
+    legacy_year = next(entry for entry in years if entry["year"] == 2024)
 
     employment_meta = current_year["employment"]
     assert employment_meta["payroll"]["default_payments_per_year"] == 14
     assert 12 in employment_meta["payroll"]["allowed_payments_per_year"]
     assert employment_meta["contributions"]["employee_rate"] >= 0
+    toggles = current_year["meta"].get("toggles", {})
+    assert toggles.get("youth_eligibility") is True
+    assert toggles.get("small_village") is True
+    assert toggles.get("new_mother") is True
 
     pension_meta = current_year["pension"]
     assert pension_meta["payroll"]["allowed_payments_per_year"]
@@ -47,6 +53,9 @@ def test_list_years_endpoint(client: FlaskClient) -> None:
     assert trade_fee["standard_amount"] == 0
     assert trade_fee.get("reduced_amount") in {None, 0}
     assert trade_fee.get("sunset") is None
+    transition_trade_fee = transition_year["freelance"]["trade_fee"]
+    assert transition_trade_fee["standard_amount"] == 0
+    assert transition_trade_fee["fee_sunset"] is False
     categories = freelance_meta["efka_categories"]
     assert isinstance(categories, list)
     general_category = next(
@@ -55,23 +64,28 @@ def test_list_years_endpoint(client: FlaskClient) -> None:
     assert general_category["monthly_amount"] > 0
     assert "pension_monthly_amount" in general_category
     assert "health_monthly_amount" in general_category
+    assert general_category["estimate"] is True
 
     warnings = current_year["warnings"]
     assert isinstance(warnings, list) and warnings
-    assert all(entry["id"] != "config.pending_deduction_updates" for entry in warnings)
-    assert all(entry["id"] != "freelance.trade_fee_sunset" for entry in warnings)
+    warning_ids = {entry["id"] for entry in warnings}
+    assert "employment.youth_relief_toggle" in warning_ids
+    assert "residence.small_village_toggle" in warning_ids
+    assert "family.new_mother_toggle" in warning_ids
+    assert all(entry not in warning_ids for entry in {"config.pending_deduction_updates", "freelance.trade_fee_sunset"})
 
-    legacy_trade_fee = previous_year["freelance"]["trade_fee"]
+    legacy_trade_fee = legacy_year["freelance"]["trade_fee"]
     assert legacy_trade_fee["standard_amount"] > 0
     assert "sunset" in legacy_trade_fee
     assert legacy_trade_fee["sunset"]["year"] == 2025
     assert legacy_trade_fee["sunset"]["description_key"]
-    legacy_warnings = previous_year["warnings"]
+    legacy_warnings = legacy_year["warnings"]
     assert any(entry["id"] == "freelance.trade_fee_sunset" for entry in legacy_warnings)
 
     modern_trade_fee = current_year["freelance"]["trade_fee"]
     assert modern_trade_fee["standard_amount"] == 0
     assert modern_trade_fee.get("sunset") is None
+    assert modern_trade_fee["fee_sunset"] is True
 
 
 def test_list_years_endpoint_discovers_new_config_file(

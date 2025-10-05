@@ -31,6 +31,12 @@
     "forms.dependents.children_allowance.threshold.three_plus_note": "Plus €220 for each additional child beyond three.",
     "forms.dependents.children_allowance.threshold.two": "2 dependent children",
     "forms.dependents.children_hint": "Count dependent children who qualify for the AADE family tax credit (typically under 18, full-time students up to 24, or children with a disability). Impacts salary and pension tax credits.",
+    "hints.toggles.new_mother.description": "Flag recent childbirth to surface AADE guidance on enhanced family credits and presumptive relief.",
+    "hints.toggles.new_mother.label": "New mother allowance",
+    "hints.toggles.small_village.description": "Available to residents of settlements under 500 inhabitants; may reduce presumptive income imputation.",
+    "hints.toggles.small_village.label": "Small village residency relief",
+    "hints.toggles.youth_eligibility.description": "Toggle if the worker qualifies for the reduced youth rates (under 25 or age 26–30 entering the workforce).",
+    "hints.toggles.youth_eligibility.label": "Youth employment relief",
     "forms.freelance.efka.category.engineer_class_1": "Engineers (TSMEDE) — Class 1",
     "forms.freelance.efka.category.engineer_class_2": "Engineers (TSMEDE) — Class 2",
     "forms.freelance.efka.category.engineer_class_3": "Engineers (TSMEDE) — Class 3",
@@ -157,6 +163,9 @@
       "employment-payments": "Salary payments per year",
       "employment-withholding": "Tax already withheld (PAYE) (€)",
       "enfia-due": "ENFIA amount (€)",
+      "new-mother-toggle": "New mother allowance",
+      "small-village-toggle": "Small village residency relief",
+      "youth-eligibility-toggle": "Youth employment relief",
       "freelance": {
         "efka": {
           "category": {
@@ -358,15 +367,25 @@
         "pending_deductions_2025": "Tax deduction rules for {{year}} are subject to change. Confirm eligible amounts before submitting returns."
       },
       "employment": {
-        "partial_year_review": "Partial-year payroll scenarios may require manual EFKA and tax credit adjustments. Validate the figures for {{year}} if your contract ended early."
+        "partial_year_review": "Partial-year payroll scenarios may require manual EFKA and tax credit adjustments. Validate the figures for {{year}} if your contract ended early.",
+        "youth_relief_toggle": "Confirm youth eligibility before applying the reduced employment tax brackets for {{year}}."
+      },
+      "family": {
+        "new_mother_toggle": "AADE offers enhanced credits for new mothers. Enable the toggle only when the birth occurred within the relief window for {{year}}."
       },
       "freelance": {
         "trade_fee_sunset": "AADE plans to bring back the business activity fee in stages. For {{year}}, confirm whether it applies to your activity before you submit."
       },
+      "residence": {
+        "small_village_toggle": "Small-village residency relief applies to settlements under statutory population limits. Verify eligibility before enabling the toggle for {{year}}."
+      },
       "learn_more": "Learn more",
       "links": {
         "partial_year_review": "Guidance on partial-year payroll",
-        "pending_deductions": "AADE deduction guidance"
+        "pending_deductions": "AADE deduction guidance",
+        "youth_relief": "Youth employment relief criteria",
+        "small_village_relief": "Residency relief for small villages",
+        "new_mother_relief": "AADE guidance for new mothers"
       }
     }
   }

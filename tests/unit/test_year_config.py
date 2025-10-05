@@ -15,7 +15,7 @@ def isolated_config_directory(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -
     """Return a temporary configuration directory patched into ``year_config``."""
 
     original_directory = year_config.CONFIG_DIRECTORY
-    for filename in ("2024.yaml", "2025.yaml"):
+    for filename in ("2024.yaml", "2025.yaml", "2026.yaml"):
         copy2(original_directory / filename, tmp_path / filename)
 
     monkeypatch.setattr(year_config, "CONFIG_DIRECTORY", tmp_path)
@@ -32,11 +32,11 @@ def test_available_years_discovers_new_config_file(
     """The helper should surface any new ``*.yaml`` files without code changes."""
 
     new_year_path = isolated_config_directory / "2030.yaml"
-    new_year_path.write_text((isolated_config_directory / "2025.yaml").read_text())
+    new_year_path.write_text((isolated_config_directory / "2026.yaml").read_text())
 
     years = year_config.available_years()
 
-    assert years == (2024, 2025, 2030)
+    assert years == (2024, 2025, 2026, 2030)
 
 
 def test_available_years_ignores_non_numeric_filenames(
@@ -46,7 +46,8 @@ def test_available_years_ignores_non_numeric_filenames(
 
     (isolated_config_directory / "legacy.yaml").write_text("meta: {}\n")
     (isolated_config_directory / "2025.backup").write_text("meta: {}\n")
+    (isolated_config_directory / "2026.backup").write_text("meta: {}\n")
 
     years = year_config.available_years()
 
-    assert years == (2024, 2025)
+    assert years == (2024, 2025, 2026)
