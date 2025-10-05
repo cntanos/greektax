@@ -9,7 +9,7 @@ requires only configuration changes.
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping, MutableMapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -38,11 +38,72 @@ class TaxBracket:
 
 
 @dataclass(frozen=True)
+class HouseholdRateTable:
+    """Structured rates for household brackets by dependant count."""
+
+    dependants: dict[int, float]
+    reduction_factor: float | None = None
+
+    def rate_for_dependants(self, dependants: int) -> float:
+        """Return the applicable rate for ``dependants`` children."""
+
+        if not self.dependants:
+            raise ConfigurationError("Household rate tables require dependant mappings")
+
+        if dependants in self.dependants:
+            return self.dependants[dependants]
+
+        ordered_counts = sorted(self.dependants)
+        for count in ordered_counts:
+            if dependants < count:
+                return self.dependants[count]
+
+        return self.dependants[ordered_counts[-1]]
+
+
+@dataclass(frozen=True)
+class MultiRateBracket:
+    """Progressive bracket exposing household and youth rates."""
+
+    upper_bound: float | None
+    household: HouseholdRateTable
+    youth_rates: dict[str, float]
+    pending_confirmation: bool = False
+    estimate: bool = False
+
+    @property
+    def rate(self) -> float:
+        """Fallback base rate compatible with single-rate calculations."""
+
+        return self.household.rate_for_dependants(0)
+
+    def rate_for_dependants(self, dependants: int) -> float:
+        """Return the household rate for a dependant count."""
+
+        return self.household.rate_for_dependants(dependants)
+
+
+ProgressiveTaxBracket = TaxBracket | MultiRateBracket
+
+
+def _parse_boolean_flag(value: Any, *, context: str) -> bool:
+    """Coerce ``value`` into a boolean or raise a configuration error."""
+
+    if value is None:
+        return False
+    if isinstance(value, bool):
+        return value
+    raise ConfigurationError(f"{context} must be provided as a boolean value")
+
+
+@dataclass(frozen=True)
 class EmploymentTaxCredit:
     """Year-specific reduction applied to employment income tax."""
 
     amounts_by_children: dict[int, float]
     incremental_amount_per_child: float
+    pending_confirmation: bool = False
+    estimate: bool = False
 
     def amount_for_children(self, dependants: int) -> float:
         """Return the tax credit amount for the provided dependant count."""
@@ -66,6 +127,15 @@ class EmploymentTaxCredit:
 
 
 @dataclass(frozen=True)
+class FamilyTaxCreditMetadata:
+    """Metadata surfaced for the family tax credit presentation."""
+
+    pending_confirmation: bool = False
+    estimate: bool = False
+    reduction_factor: float | None = None
+
+
+@dataclass(frozen=True)
 class PayrollConfig:
     """Supported payroll frequencies for an income category."""
 
@@ -86,17 +156,33 @@ class ContributionRates:
 class EmploymentConfig:
     """Configuration for salaried/pension income."""
 
-    brackets: Sequence[TaxBracket]
+    brackets: Sequence[ProgressiveTaxBracket]
     tax_credit: EmploymentTaxCredit
     payroll: PayrollConfig
     contributions: ContributionRates
+    family_tax_credit: FamilyTaxCreditMetadata = field(
+        default_factory=FamilyTaxCreditMetadata
+    )
+    tekmiria_reduction_factor: float | None = None
+
+    @property
+    def family_tax_credit_info(self) -> FamilyTaxCreditMetadata:
+        """Backwards compatible alias for metadata lookups."""
+
+        return self.family_tax_credit
+
+    @property
+    def tax_credit_metadata(self) -> FamilyTaxCreditMetadata:
+        """Alias maintained for callers expecting metadata naming."""
+
+        return self.family_tax_credit
 
 
 @dataclass(frozen=True)
 class PensionConfig:
     """Configuration for pension income."""
 
-    brackets: Sequence[TaxBracket]
+    brackets: Sequence[ProgressiveTaxBracket]
     tax_credit: EmploymentTaxCredit
     payroll: PayrollConfig
     contributions: ContributionRates
@@ -141,30 +227,31 @@ class EFKACategoryConfig:
 class FreelanceConfig:
     """Configuration for freelance/business income."""
 
-    brackets: Sequence[TaxBracket]
+    brackets: Sequence[ProgressiveTaxBracket]
     trade_fee: TradeFeeConfig
     efka_categories: Sequence[EFKACategoryConfig]
+    pending_contribution_update: bool = False
 
 
 @dataclass(frozen=True)
 class AgriculturalConfig:
     """Configuration for agricultural income taxed on the progressive scale."""
 
-    brackets: Sequence[TaxBracket]
+    brackets: Sequence[ProgressiveTaxBracket]
 
 
 @dataclass(frozen=True)
 class OtherIncomeConfig:
     """Configuration for other progressive income categories."""
 
-    brackets: Sequence[TaxBracket]
+    brackets: Sequence[ProgressiveTaxBracket]
 
 
 @dataclass(frozen=True)
 class RentalConfig:
     """Configuration for rental income."""
 
-    brackets: Sequence[TaxBracket]
+    brackets: Sequence[ProgressiveTaxBracket]
 
 
 @dataclass(frozen=True)
@@ -311,25 +398,129 @@ class YearConfiguration:
     warnings: Sequence[YearWarning]
 
 
-def _parse_tax_brackets(brackets: Iterable[Mapping[str, Any]]) -> Sequence[TaxBracket]:
-    parsed: list[TaxBracket] = []
+def _parse_progressive_brackets(
+    brackets: Iterable[Mapping[str, Any]], *, year: int, context: str
+) -> Sequence[ProgressiveTaxBracket]:
+    parsed: list[ProgressiveTaxBracket] = []
     last_upper: float | None = None
 
-    for bracket in brackets:
-        if "rate" not in bracket:
-            raise ConfigurationError("Each tax bracket must define a 'rate'")
+    for index, bracket in enumerate(brackets, start=1):
+        upper_raw = bracket.get("upper")
+        upper_bound = float(upper_raw) if upper_raw is not None else None
 
-        rate = float(bracket["rate"])
-        upper = bracket.get("upper")
-        upper_bound = float(upper) if upper is not None else None
+        pending_confirmation = _parse_boolean_flag(
+            bracket.get("pending_confirmation"),
+            context=f"{context} bracket {index} 'pending_confirmation'",
+        )
+        estimate = _parse_boolean_flag(
+            bracket.get("estimate"),
+            context=f"{context} bracket {index} 'estimate'",
+        )
 
-        tax_bracket = TaxBracket(upper_bound=upper_bound, rate=rate)
-        if last_upper is not None and tax_bracket.upper_bound is not None:
-            if tax_bracket.upper_bound <= last_upper:
+        if "rates" in bracket:
+            rates_raw = bracket["rates"]
+            if not isinstance(rates_raw, Mapping):
+                raise ConfigurationError(
+                    f"{context} brackets must define 'rates' using a mapping"
+                )
+
+            household_raw = rates_raw.get("household")
+            if not isinstance(household_raw, Mapping):
+                raise ConfigurationError(
+                    f"{context} brackets require a 'household' rate mapping"
+                )
+
+            dependants_raw = household_raw.get("dependants")
+            if not isinstance(dependants_raw, Mapping) or not dependants_raw:
+                raise ConfigurationError(
+                    f"{context} household rates must define dependant mappings"
+                )
+
+            dependants: dict[int, float] = {}
+            for key, value in dependants_raw.items():
+                try:
+                    dependant_count = int(key)
+                except (TypeError, ValueError) as exc:  # pragma: no cover - defensive
+                    raise ConfigurationError(
+                        f"{context} dependant keys must be integers"
+                    ) from exc
+
+                dependant_rate = float(value)
+                if dependant_rate < 0:
+                    raise ConfigurationError(
+                        f"{context} dependant rates must be non-negative"
+                    )
+
+                dependants[dependant_count] = dependant_rate
+
+            reduction_factor_raw = household_raw.get("reduction_factor")
+            reduction_factor = (
+                float(reduction_factor_raw)
+                if reduction_factor_raw is not None
+                else None
+            )
+            if reduction_factor is not None and reduction_factor < 0:
+                raise ConfigurationError(
+                    f"{context} household reduction factors must be non-negative"
+                )
+
+            youth_raw = rates_raw.get("youth")
+            youth_rates: dict[str, float] = {}
+            if youth_raw is not None:
+                if not isinstance(youth_raw, Mapping):
+                    raise ConfigurationError(
+                        f"{context} youth rates must be provided as a mapping"
+                    )
+                for key, value in youth_raw.items():
+                    youth_rate = float(value)
+                    if youth_rate < 0:
+                        raise ConfigurationError(
+                            f"{context} youth rates must be non-negative"
+                        )
+                    youth_rates[str(key)] = youth_rate
+
+            if year >= 2026:
+                required_dependants = {0, 1, 2, 3, 4}
+                missing_dependants = required_dependants - dependants.keys()
+                if missing_dependants:
+                    missing_list = ", ".join(str(item) for item in sorted(missing_dependants))
+                    raise ConfigurationError(
+                        f"{context} bracket {index} missing dependant rate(s) for: {missing_list}"
+                    )
+
+                required_youth = {"under_25", "age26_30"}
+                missing_youth = required_youth - youth_rates.keys()
+                if missing_youth:
+                    missing_list = ", ".join(sorted(missing_youth))
+                    raise ConfigurationError(
+                        f"{context} bracket {index} missing youth rate(s) for: {missing_list}"
+                    )
+
+            bracket_obj: ProgressiveTaxBracket = MultiRateBracket(
+                upper_bound=upper_bound,
+                household=HouseholdRateTable(
+                    dependants=dependants,
+                    reduction_factor=reduction_factor,
+                ),
+                youth_rates=youth_rates,
+                pending_confirmation=pending_confirmation,
+                estimate=estimate,
+            )
+
+        elif "rate" in bracket:
+            rate = float(bracket["rate"])
+            bracket_obj = TaxBracket(upper_bound=upper_bound, rate=rate)
+        else:
+            raise ConfigurationError(
+                f"{context} brackets must define either 'rate' or 'rates' entries"
+            )
+
+        if last_upper is not None and bracket_obj.upper_bound is not None:
+            if bracket_obj.upper_bound <= last_upper:
                 raise ConfigurationError("Tax brackets must be in ascending order")
 
-        parsed.append(tax_bracket)
-        last_upper = tax_bracket.upper_bound or last_upper
+        parsed.append(bracket_obj)
+        last_upper = bracket_obj.upper_bound or last_upper
 
     if not parsed:
         raise ConfigurationError("At least one tax bracket must be defined")
@@ -337,7 +528,7 @@ def _parse_tax_brackets(brackets: Iterable[Mapping[str, Any]]) -> Sequence[TaxBr
     if parsed[-1].upper_bound is not None:
         raise ConfigurationError("Final tax bracket must have an open upper bound")
 
-    return parsed
+    return tuple(parsed)
 
 
 def _parse_tax_credit(raw: Mapping[str, Any]) -> EmploymentTaxCredit:
@@ -351,10 +542,71 @@ def _parse_tax_credit(raw: Mapping[str, Any]) -> EmploymentTaxCredit:
         amounts[child_count] = float(value)
 
     incremental = float(raw.get("incremental_amount_per_child", 0.0))
+    pending = _parse_boolean_flag(
+        raw.get("pending_confirmation"),
+        context="employment.tax_credit 'pending_confirmation'",
+    )
+    estimate = _parse_boolean_flag(
+        raw.get("estimate"),
+        context="employment.tax_credit 'estimate'",
+    )
 
     return EmploymentTaxCredit(
         amounts_by_children=amounts,
         incremental_amount_per_child=incremental,
+        pending_confirmation=pending,
+        estimate=estimate,
+    )
+
+
+def _parse_family_tax_credit_metadata(
+    raw: Mapping[str, Any] | None,
+    *,
+    context: str,
+    fallback_pending: bool,
+    fallback_estimate: bool,
+) -> FamilyTaxCreditMetadata:
+    if raw is None:
+        return FamilyTaxCreditMetadata(
+            pending_confirmation=fallback_pending,
+            estimate=fallback_estimate,
+        )
+
+    if not isinstance(raw, Mapping):
+        raise ConfigurationError(f"{context} metadata must be a mapping")
+
+    pending_value = raw.get("pending_confirmation")
+    if pending_value is None:
+        pending = fallback_pending
+    else:
+        pending = _parse_boolean_flag(
+            pending_value,
+            context=f"{context} 'pending_confirmation'",
+        )
+
+    estimate_value = raw.get("estimate")
+    if estimate_value is None:
+        estimate = fallback_estimate
+    else:
+        estimate = _parse_boolean_flag(
+            estimate_value,
+            context=f"{context} 'estimate'",
+        )
+    reduction_factor_raw = raw.get("reduction_factor")
+    reduction_factor = (
+        float(reduction_factor_raw)
+        if reduction_factor_raw is not None
+        else None
+    )
+    if reduction_factor is not None and reduction_factor < 0:
+        raise ConfigurationError(
+            f"{context} 'reduction_factor' must be non-negative when provided"
+        )
+
+    return FamilyTaxCreditMetadata(
+        pending_confirmation=pending,
+        estimate=estimate,
+        reduction_factor=reduction_factor,
     )
 
 
@@ -425,7 +677,7 @@ def _parse_contribution_rates(
     )
 
 
-def _parse_employment_config(raw: Mapping[str, Any]) -> EmploymentConfig:
+def _parse_employment_config(year: int, raw: Mapping[str, Any]) -> EmploymentConfig:
     brackets_raw = raw.get("tax_brackets")
     if not isinstance(brackets_raw, Iterable):
         raise ConfigurationError("Employment configuration must include 'tax_brackets'")
@@ -440,15 +692,38 @@ def _parse_employment_config(raw: Mapping[str, Any]) -> EmploymentConfig:
 
     contributions_raw = raw.get("contributions")
 
+    tax_credit = _parse_tax_credit(credit_raw)
+
+    family_credit_meta = _parse_family_tax_credit_metadata(
+        raw.get("family_tax_credit"),
+        context="employment.family_tax_credit",
+        fallback_pending=tax_credit.pending_confirmation,
+        fallback_estimate=tax_credit.estimate,
+    )
+
+    tekmiria_raw = raw.get("tekmiria_reduction_factor")
+    tekmiria_reduction = (
+        float(tekmiria_raw) if tekmiria_raw is not None else None
+    )
+    if tekmiria_reduction is not None and tekmiria_reduction < 0:
+        raise ConfigurationError(
+            "employment.tekmiria_reduction_factor must be non-negative when provided"
+        )
+
     return EmploymentConfig(
-        brackets=_parse_tax_brackets(brackets_raw),
-        tax_credit=_parse_tax_credit(credit_raw),
+        brackets=_parse_progressive_brackets(
+            brackets_raw, year=year, context="employment.tax_brackets"
+        ),
+        tax_credit=tax_credit,
         payroll=_parse_payroll_config(payroll_raw, "Employment"),
         contributions=_parse_contribution_rates(contributions_raw, "Employment"),
+        family_tax_credit=family_credit_meta,
+        tekmiria_reduction_factor=tekmiria_reduction,
     )
 
 
 def _parse_pension_config(
+    year: int,
     raw: Mapping[str, Any],
     fallback_credit: EmploymentTaxCredit,
     fallback_payroll: PayrollConfig,
@@ -474,7 +749,9 @@ def _parse_pension_config(
     contributions = _parse_contribution_rates(raw.get("contributions"), "Pension")
 
     return PensionConfig(
-        brackets=_parse_tax_brackets(brackets_raw),
+        brackets=_parse_progressive_brackets(
+            brackets_raw, year=year, context="pension.tax_brackets"
+        ),
         tax_credit=credit,
         payroll=payroll,
         contributions=contributions,
@@ -633,7 +910,7 @@ def _parse_efka_categories(
     return tuple(categories)
 
 
-def _parse_freelance_config(raw: Mapping[str, Any]) -> FreelanceConfig:
+def _parse_freelance_config(year: int, raw: Mapping[str, Any]) -> FreelanceConfig:
     brackets_raw = raw.get("tax_brackets")
     if not isinstance(brackets_raw, Iterable):
         raise ConfigurationError("Freelance configuration must include 'tax_brackets'")
@@ -650,37 +927,57 @@ def _parse_freelance_config(raw: Mapping[str, Any]) -> FreelanceConfig:
     else:
         efka_categories = _parse_efka_categories(efka_categories_raw)
 
+    pending_update = _parse_boolean_flag(
+        raw.get("pending_contribution_update"),
+        context="freelance.pending_contribution_update",
+    )
+
     return FreelanceConfig(
-        brackets=_parse_tax_brackets(brackets_raw),
+        brackets=_parse_progressive_brackets(
+            brackets_raw, year=year, context="freelance.tax_brackets"
+        ),
         trade_fee=_parse_trade_fee(trade_fee_raw),
         efka_categories=efka_categories,
+        pending_contribution_update=pending_update,
     )
 
 
-def _parse_agricultural_config(raw: Mapping[str, Any]) -> AgriculturalConfig:
+def _parse_agricultural_config(year: int, raw: Mapping[str, Any]) -> AgriculturalConfig:
     brackets_raw = raw.get("tax_brackets")
     if not isinstance(brackets_raw, Iterable):
         raise ConfigurationError(
             "Agricultural configuration must include 'tax_brackets'"
         )
 
-    return AgriculturalConfig(brackets=_parse_tax_brackets(brackets_raw))
+    return AgriculturalConfig(
+        brackets=_parse_progressive_brackets(
+            brackets_raw, year=year, context="agricultural.tax_brackets"
+        )
+    )
 
 
-def _parse_other_income_config(raw: Mapping[str, Any]) -> OtherIncomeConfig:
+def _parse_other_income_config(year: int, raw: Mapping[str, Any]) -> OtherIncomeConfig:
     brackets_raw = raw.get("tax_brackets")
     if not isinstance(brackets_raw, Iterable):
         raise ConfigurationError("Other income configuration must include 'tax_brackets'")
 
-    return OtherIncomeConfig(brackets=_parse_tax_brackets(brackets_raw))
+    return OtherIncomeConfig(
+        brackets=_parse_progressive_brackets(
+            brackets_raw, year=year, context="other.tax_brackets"
+        )
+    )
 
 
-def _parse_rental_config(raw: Mapping[str, Any]) -> RentalConfig:
+def _parse_rental_config(year: int, raw: Mapping[str, Any]) -> RentalConfig:
     brackets_raw = raw.get("tax_brackets")
     if not isinstance(brackets_raw, Iterable):
         raise ConfigurationError("Rental configuration must include 'tax_brackets'")
 
-    return RentalConfig(brackets=_parse_tax_brackets(brackets_raw))
+    return RentalConfig(
+        brackets=_parse_progressive_brackets(
+            brackets_raw, year=year, context="rental.tax_brackets"
+        )
+    )
 
 
 def _parse_investment_config(raw: Mapping[str, Any]) -> InvestmentConfig:
@@ -1048,19 +1345,22 @@ def _parse_year_configuration(year: int, raw: Mapping[str, Any]) -> YearConfigur
             f"Configuration year mismatch: expected {year}, found {config_year}"
         )
 
-    employment_config = _parse_employment_config(employment_raw)
+    employment_config = _parse_employment_config(year, employment_raw)
 
     return YearConfiguration(
         year=year,
         meta=dict(meta),
         employment=employment_config,
         pension=_parse_pension_config(
-            pension_raw, employment_config.tax_credit, employment_config.payroll
+            year,
+            pension_raw,
+            employment_config.tax_credit,
+            employment_config.payroll,
         ),
-        freelance=_parse_freelance_config(freelance_raw),
-        agricultural=_parse_agricultural_config(agricultural_raw),
-        other=_parse_other_income_config(other_raw),
-        rental=_parse_rental_config(rental_raw),
+        freelance=_parse_freelance_config(year, freelance_raw),
+        agricultural=_parse_agricultural_config(year, agricultural_raw),
+        other=_parse_other_income_config(year, other_raw),
+        rental=_parse_rental_config(year, rental_raw),
         investment=_parse_investment_config(investment_raw),
         deductions=_parse_deductions_config(raw.get("deductions")),
         warnings=_parse_year_warnings(raw.get("warnings")),
