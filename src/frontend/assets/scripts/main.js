@@ -782,6 +782,12 @@ function resolveLocaleTag(locale) {
   return locale || "en-GB";
 }
 
+const NUMERIC_LOCALE_TAG = "el-GR";
+
+function resolveNumericLocaleTag() {
+  return NUMERIC_LOCALE_TAG;
+}
+
 function updateLocaleButtonState(locale) {
   if (!localeButtons.length) {
     return;
@@ -926,7 +932,7 @@ function setCalculatorStatus(message, { isError = false } = {}) {
 }
 
 function formatNumber(value) {
-  const formatter = new Intl.NumberFormat(resolveLocaleTag(currentLocale), {
+  const formatter = new Intl.NumberFormat(resolveNumericLocaleTag(), {
     style: "decimal",
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
@@ -935,7 +941,7 @@ function formatNumber(value) {
 }
 
 function formatCurrency(value) {
-  const localeTag = resolveLocaleTag(currentLocale);
+  const localeTag = resolveNumericLocaleTag();
   const parsed = Number.parseFloat(value ?? 0);
   const numeric = Number.isFinite(parsed) ? parsed : 0;
   const formatter = new Intl.NumberFormat(localeTag, {
@@ -949,15 +955,13 @@ function formatCurrency(value) {
 }
 
 function formatPercent(value) {
-  const formatter = new Intl.NumberFormat(resolveLocaleTag(currentLocale), {
+  const formatter = new Intl.NumberFormat(resolveNumericLocaleTag(), {
     style: "percent",
     minimumFractionDigits: 0,
     maximumFractionDigits: 1,
   });
   return formatter.format(value);
 }
-
-const numberSymbolCache = new Map();
 
 function isNumericInputElement(element) {
   return element instanceof HTMLInputElement && element.hasAttribute("data-numeric-input");
@@ -970,82 +974,54 @@ function getNumericInputs() {
   return Array.from(calculatorForm.querySelectorAll("[data-numeric-input]"));
 }
 
-function getLocaleNumberSymbols(localeTag) {
-  const cached = numberSymbolCache.get(localeTag);
-  if (cached) {
-    return cached;
-  }
-
-  const formatter = new Intl.NumberFormat(localeTag, {
-    useGrouping: true,
-    minimumFractionDigits: 1,
-  });
-  const parts = formatter.formatToParts(-12345.6);
-  const symbols = {
-    decimal: parts.find((part) => part.type === "decimal")?.value || ".",
-    group: parts.find((part) => part.type === "group")?.value || ",",
-    minus: parts.find((part) => part.type === "minusSign")?.value || "-",
-  };
-
-  numberSymbolCache.set(localeTag, symbols);
-  return symbols;
-}
-
-function normaliseNumericString(
-  value,
-  { localeTag = resolveLocaleTag(currentLocale), maxFractionDigits = Infinity } = {},
-) {
+function normaliseNumericString(value, { maxFractionDigits = Infinity } = {}) {
   const raw = value == null ? "" : value.toString();
   let normalised = raw.trim();
   if (!normalised) {
     return "";
   }
 
-  const { decimal, minus } = getLocaleNumberSymbols(localeTag);
   normalised = normalised.replace(/[\s\u00a0\u202f]+/g, "");
 
-  let sign = "";
-  if (normalised.startsWith("-")) {
-    sign = "-";
+  let isNegative = false;
+  if (/^[\-−]/.test(normalised)) {
+    isNegative = true;
     normalised = normalised.slice(1);
-  } else if (minus && normalised.startsWith(minus)) {
-    sign = "-";
-    normalised = normalised.slice(minus.length);
   } else if (normalised.startsWith("+")) {
     normalised = normalised.slice(1);
   }
 
-  const decimalOccurrences = decimal
-    ? normalised.split(decimal).length - 1
-    : 0;
-  const dotCount = decimal === "."
-    ? 0
-    : (normalised.match(/\./g) || []).length;
-  const commaCount = decimal === ","
-    ? 0
-    : (normalised.match(/,/g) || []).length;
-  let decimalChar = null;
-  if (decimal && decimalOccurrences === 1) {
-    decimalChar = decimal;
-  } else if (dotCount && commaCount) {
-    decimalChar = normalised.lastIndexOf(".") > normalised.lastIndexOf(",") ? "." : ",";
-  } else if (dotCount === 1) {
-    decimalChar = ".";
-  } else if (commaCount === 1) {
-    decimalChar = ",";
-  }
-
-  let decimalIndex = decimalChar ? normalised.lastIndexOf(decimalChar) : -1;
-
+  const lastCommaIndex = normalised.lastIndexOf(",");
   let integerPart = normalised;
   let fractionalPart = "";
-  if (decimalIndex !== -1) {
-    integerPart = normalised.slice(0, decimalIndex);
-    fractionalPart = normalised.slice(decimalIndex + 1);
+
+  if (lastCommaIndex !== -1) {
+    integerPart = normalised.slice(0, lastCommaIndex);
+    fractionalPart = normalised.slice(lastCommaIndex + 1);
+  } else {
+    const lastDotIndex = normalised.lastIndexOf(".");
+    if (lastDotIndex !== -1) {
+      const fallbackLimit = Number.isFinite(maxFractionDigits)
+        ? Math.max(maxFractionDigits, 2)
+        : 2;
+      const digitsAfterDot = normalised.slice(lastDotIndex + 1).replace(/[^0-9]/g, "");
+      if (digitsAfterDot.length > 0 && digitsAfterDot.length <= fallbackLimit) {
+        integerPart = normalised.slice(0, lastDotIndex);
+        fractionalPart = normalised.slice(lastDotIndex + 1);
+      }
+    }
   }
+
+  const cleanupPattern = /[.,'’\u2019\s\u00a0\u202f]/g;
+  integerPart = integerPart.replace(cleanupPattern, "");
+  fractionalPart = fractionalPart.replace(cleanupPattern, "");
 
   integerPart = integerPart.replace(/[^0-9]/g, "");
   fractionalPart = fractionalPart.replace(/[^0-9]/g, "");
+
+  if (!integerPart && !fractionalPart) {
+    return "";
+  }
 
   if (Number.isFinite(maxFractionDigits)) {
     if (maxFractionDigits <= 0) {
@@ -1054,50 +1030,29 @@ function normaliseNumericString(
         fractionalPart = "";
       }
     } else if (fractionalPart.length > maxFractionDigits) {
-      const treatAsGrouping =
-        (decimalChar &&
-          decimal &&
-          decimalChar === decimal &&
-          decimalChar !== ".") ||
-        (decimal === "," && decimalChar === ".");
-      if (treatAsGrouping) {
-        integerPart = `${integerPart}${fractionalPart}`;
-        fractionalPart = "";
-      } else {
-        fractionalPart = fractionalPart.slice(0, maxFractionDigits);
-      }
-    } else if (fractionalPart.length > 0) {
       fractionalPart = fractionalPart.slice(0, maxFractionDigits);
     }
   }
 
-  if (!integerPart && !fractionalPart) {
-    return "";
-  }
-
   if (!integerPart) {
     integerPart = "0";
+  } else {
+    integerPart = integerPart.replace(/^0+(?=\d)/, "") || "0";
   }
 
-  integerPart = integerPart.replace(/^0+(?=\d)/, "");
-  if (!integerPart) {
-    integerPart = "0";
+  let result = fractionalPart ? `${integerPart}.${fractionalPart}` : integerPart;
+  if (isNegative) {
+    result = `-${result}`;
   }
 
-  const decimalPart = fractionalPart ? `.${fractionalPart}` : "";
-  return `${sign}${integerPart}${decimalPart}`;
+  return result;
 }
 
 function parseNumericFromString(
   value,
-  {
-    allowNegative = false,
-    maxFractionDigits = Infinity,
-    localeTag = resolveLocaleTag(currentLocale),
-  } = {},
+  { allowNegative = false, maxFractionDigits = Infinity } = {},
 ) {
   const normalised = normaliseNumericString(value, {
-    localeTag,
     maxFractionDigits,
   });
   if (!normalised || normalised === "-" || normalised === "+") {
@@ -1125,12 +1080,23 @@ function getNumericPrecision(input) {
   return 2;
 }
 
-function formatNumberForInput(value, precision = 2) {
-  const localeTag = resolveLocaleTag(currentLocale);
-  const minimumFractionDigits = precision > 0 ? 0 : 0;
+function shouldGroupNumericInput(input) {
+  if (!isNumericInputElement(input)) {
+    return true;
+  }
+  const groupingAttr = (input.getAttribute("data-grouping") || "").toLowerCase();
+  if (groupingAttr === "false" || groupingAttr === "0" || groupingAttr === "no") {
+    return false;
+  }
+  return true;
+}
+
+function formatNumberForInput(value, precision = 2, { useGrouping = true } = {}) {
+  const localeTag = resolveNumericLocaleTag();
+  const minimumFractionDigits = precision > 0 ? precision : 0;
   const maximumFractionDigits = precision > 0 ? precision : 0;
   const formatter = new Intl.NumberFormat(localeTag, {
-    useGrouping: true,
+    useGrouping,
     minimumFractionDigits,
     maximumFractionDigits,
   });
@@ -1143,10 +1109,11 @@ function formatNumericInput(input, { treatEmptyAsZero = true } = {}) {
   }
 
   const precision = getNumericPrecision(input);
+  const useGrouping = shouldGroupNumericInput(input);
   const rawValue = (input.value ?? "").toString().trim();
   if (!rawValue) {
     if (treatEmptyAsZero) {
-      input.value = formatNumberForInput(0, precision);
+      input.value = formatNumberForInput(0, precision, { useGrouping });
     }
     return;
   }
@@ -1159,7 +1126,7 @@ function formatNumericInput(input, { treatEmptyAsZero = true } = {}) {
   }
 
   const safeValue = Math.max(0, number);
-  input.value = formatNumberForInput(safeValue, precision);
+  input.value = formatNumberForInput(safeValue, precision, { useGrouping });
 }
 
 function formatAllNumericInputs(options = {}) {
