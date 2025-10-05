@@ -959,6 +959,18 @@ function formatPercent(value) {
 
 const numberSymbolCache = new Map();
 
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function replaceLastOccurrence(value, search, replacement) {
+  const index = value.lastIndexOf(search);
+  if (index === -1) {
+    return value;
+  }
+  return `${value.slice(0, index)}${replacement}${value.slice(index + search.length)}`;
+}
+
 function isNumericInputElement(element) {
   return element instanceof HTMLInputElement && element.hasAttribute("data-numeric-input");
 }
@@ -1001,7 +1013,7 @@ function normaliseNumericString(
     return "";
   }
 
-  const { decimal, minus } = getLocaleNumberSymbols(localeTag);
+  const { decimal, group, minus } = getLocaleNumberSymbols(localeTag);
   normalised = normalised.replace(/[\s\u00a0\u202f]+/g, "");
 
   let sign = "";
@@ -1015,37 +1027,58 @@ function normaliseNumericString(
     normalised = normalised.slice(1);
   }
 
-  const decimalOccurrences = decimal
-    ? normalised.split(decimal).length - 1
-    : 0;
-  const dotCount = decimal === "."
-    ? 0
-    : (normalised.match(/\./g) || []).length;
-  const commaCount = decimal === ","
-    ? 0
-    : (normalised.match(/,/g) || []).length;
-  let decimalChar = null;
-  if (decimal && decimalOccurrences === 1) {
-    decimalChar = decimal;
-  } else if (dotCount && commaCount) {
-    decimalChar = normalised.lastIndexOf(".") > normalised.lastIndexOf(",") ? "." : ",";
-  } else if (dotCount === 1) {
-    decimalChar = ".";
-  } else if (commaCount === 1) {
-    decimalChar = ",";
+  if (group) {
+    const groupPattern = new RegExp(escapeRegExp(group), "g");
+    normalised = normalised.replace(groupPattern, "");
   }
 
-  let decimalIndex = decimalChar ? normalised.lastIndexOf(decimalChar) : -1;
+  ["'", "’", "\u00a0", "\u202f"].forEach((char) => {
+    const pattern = new RegExp(char, "g");
+    normalised = normalised.replace(pattern, "");
+  });
+
+  if (decimal === ",") {
+    normalised = normalised.replace(/\./g, "");
+  } else if (decimal === ".") {
+    normalised = normalised.replace(/,/g, "");
+  } else {
+    normalised = normalised.replace(/[.,]/g, "");
+  }
+
+  if (decimal && decimal !== ".") {
+    normalised = replaceLastOccurrence(normalised, decimal, ".");
+    const leftoverDecimalPattern = new RegExp(escapeRegExp(decimal), "g");
+    normalised = normalised.replace(leftoverDecimalPattern, "");
+  }
+
+  normalised = normalised.replace(/[^0-9.]/g, "");
+
+  if (!normalised) {
+    return "";
+  }
+
+  const dotIndex = normalised.indexOf(".");
+  if (dotIndex !== -1) {
+    const before = normalised.slice(0, dotIndex + 1);
+    const after = normalised.slice(dotIndex + 1).replace(/\./g, "");
+    normalised = `${before}${after}`;
+  }
+
+  if (!normalised) {
+    return "";
+  }
+
+  if (normalised.startsWith(".")) {
+    normalised = `0${normalised}`;
+  }
 
   let integerPart = normalised;
   let fractionalPart = "";
+  const decimalIndex = normalised.indexOf(".");
   if (decimalIndex !== -1) {
     integerPart = normalised.slice(0, decimalIndex);
     fractionalPart = normalised.slice(decimalIndex + 1);
   }
-
-  integerPart = integerPart.replace(/[^0-9]/g, "");
-  fractionalPart = fractionalPart.replace(/[^0-9]/g, "");
 
   if (Number.isFinite(maxFractionDigits)) {
     if (maxFractionDigits <= 0) {
@@ -1054,22 +1087,12 @@ function normaliseNumericString(
         fractionalPart = "";
       }
     } else if (fractionalPart.length > maxFractionDigits) {
-      const treatAsGrouping =
-        (decimalChar &&
-          decimal &&
-          decimalChar === decimal &&
-          decimalChar !== ".") ||
-        (decimal === "," && decimalChar === ".");
-      if (treatAsGrouping) {
-        integerPart = `${integerPart}${fractionalPart}`;
-        fractionalPart = "";
-      } else {
-        fractionalPart = fractionalPart.slice(0, maxFractionDigits);
-      }
-    } else if (fractionalPart.length > 0) {
       fractionalPart = fractionalPart.slice(0, maxFractionDigits);
     }
   }
+
+  integerPart = integerPart.replace(/[^0-9]/g, "");
+  fractionalPart = fractionalPart.replace(/[^0-9]/g, "");
 
   if (!integerPart && !fractionalPart) {
     return "";
