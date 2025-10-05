@@ -90,7 +90,7 @@
       "freelance": "Freelance income",
       "income_sources": "Income sources",
       "investment": "Investment income",
-      "obligations": "Additional obligations",
+      "obligations": "Other taxes",
       "other": "Other income",
       "rental": "Rental income",
       "year_household": "Year and household"
@@ -205,7 +205,7 @@
       "toggle-employment": "Salary/pension income",
       "toggle-freelance": "Freelance income",
       "toggle-investment": "Investment income",
-      "toggle-obligations": "Additional obligations",
+      "toggle-obligations": "Other taxes",
       "toggle-other": "Other income",
       "toggle-rental": "Rental income",
       "trade-fee-toggle": "Business activity fee",
