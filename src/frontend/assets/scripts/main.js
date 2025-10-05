@@ -2932,6 +2932,101 @@ function renderDistributionChart(details) {
   distributionChart.removeAttribute("aria-label");
   distributionChart.setAttribute("aria-hidden", "true");
 
+  let tooltip = distributionWrapper.querySelector(".distribution-chart__tooltip");
+  if (!tooltip) {
+    tooltip = document.createElement("div");
+    tooltip.className = "distribution-chart__tooltip";
+    tooltip.setAttribute("role", "tooltip");
+    tooltip.hidden = true;
+    const tooltipLabel = document.createElement("span");
+    tooltipLabel.className = "distribution-chart__tooltip-label";
+    tooltip.appendChild(tooltipLabel);
+    const tooltipValue = document.createElement("span");
+    tooltipValue.className = "distribution-chart__tooltip-value";
+    tooltip.appendChild(tooltipValue);
+    distributionWrapper.appendChild(tooltip);
+  }
+
+  const tooltipLabel = tooltip.querySelector(".distribution-chart__tooltip-label");
+  const tooltipValue = tooltip.querySelector(".distribution-chart__tooltip-value");
+  let activeSegment = null;
+
+  const hideTooltip = () => {
+    if (activeSegment) {
+      activeSegment.classList.remove("distribution-chart__segment--active");
+      activeSegment = null;
+    }
+    if (tooltipLabel) {
+      tooltipLabel.textContent = "";
+    }
+    if (tooltipValue) {
+      tooltipValue.textContent = "";
+    }
+    tooltip.hidden = true;
+    tooltip.removeAttribute("data-visible");
+  };
+
+  const updateTooltipPosition = (event, fallbackTarget) => {
+    if (tooltip.hidden) {
+      return;
+    }
+    const reference =
+      (event && event.currentTarget instanceof SVGElement
+        ? event.currentTarget
+        : null) || fallbackTarget;
+    const wrapperRect = distributionWrapper.getBoundingClientRect();
+    let clientX = null;
+    let clientY = null;
+    if (event && typeof event.clientX === "number" && typeof event.clientY === "number") {
+      clientX = event.clientX;
+      clientY = event.clientY;
+    }
+    if ((clientX === null || clientY === null) && reference) {
+      const rect = reference.getBoundingClientRect();
+      clientX = rect.left + rect.width / 2;
+      clientY = rect.top + rect.height / 2;
+    }
+    if (clientX === null || clientY === null) {
+      return;
+    }
+    const x = clientX - wrapperRect.left;
+    const y = clientY - wrapperRect.top;
+    tooltip.style.setProperty("--tooltip-x", `${x}px`);
+    tooltip.style.setProperty("--tooltip-y", `${y}px`);
+  };
+
+  const showTooltip = (event) => {
+    const target = event.currentTarget;
+    if (!(target instanceof SVGElement)) {
+      return;
+    }
+    const label = target.dataset.tooltipLabel || "";
+    const amount = target.dataset.tooltipAmount || "";
+    const percent = target.dataset.tooltipPercent || "";
+    if (tooltipLabel) {
+      tooltipLabel.textContent = label;
+    }
+    if (tooltipValue) {
+      tooltipValue.textContent = amount && percent ? `${amount} · ${percent}` : amount || percent;
+    }
+    if (activeSegment) {
+      activeSegment.classList.remove("distribution-chart__segment--active");
+    }
+    activeSegment = target;
+    activeSegment.classList.add("distribution-chart__segment--active");
+    tooltip.hidden = false;
+    tooltip.setAttribute("data-visible", "true");
+    updateTooltipPosition(event, target);
+  };
+
+  const trackPointer = (event) => {
+    if (activeSegment) {
+      updateTooltipPosition(event, activeSegment);
+    }
+  };
+
+  hideTooltip();
+
   const { totals, totalValue } = computeDistributionTotals(details);
   const safeTotal = totalValue > 0 ? totalValue : 0;
 
@@ -2970,6 +3065,7 @@ function renderDistributionChart(details) {
     const ratio = safeTotal > 0 ? value / safeTotal : 0;
     const clampedRatio = Math.max(0, Math.min(ratio, 1));
     const strokeLength = clampedRatio * circumference;
+    const labelText = t(`distribution.${key}`);
 
     const cssColor = rootStyles ? rootStyles.getPropertyValue(colorVar) : "";
     const normalizedColor = cssColor && cssColor.trim().length
@@ -2989,6 +3085,23 @@ function renderDistributionChart(details) {
         `${strokeLength} ${Math.max(circumference - strokeLength, 0)}`,
       );
       segment.setAttribute("stroke-dashoffset", `${-offset}`);
+      segment.setAttribute("tabindex", "0");
+      segment.setAttribute("focusable", "true");
+      segment.setAttribute("role", "img");
+      const formattedAmount = formatCurrency(value);
+      const formattedPercent = formatPercent(ratio);
+      segment.dataset.tooltipLabel = labelText;
+      segment.dataset.tooltipAmount = formattedAmount;
+      segment.dataset.tooltipPercent = formattedPercent;
+      segment.setAttribute(
+        "aria-label",
+        `${labelText}: ${formattedAmount} (${formattedPercent})`,
+      );
+      segment.addEventListener("mouseenter", showTooltip);
+      segment.addEventListener("mouseleave", hideTooltip);
+      segment.addEventListener("focus", showTooltip);
+      segment.addEventListener("blur", hideTooltip);
+      segment.addEventListener("mousemove", trackPointer);
       distributionChart.appendChild(segment);
     }
 
@@ -3006,7 +3119,6 @@ function renderDistributionChart(details) {
 
     const labelSpan = document.createElement("span");
     labelSpan.className = "distribution-legend__label";
-    const labelText = t(`distribution.${key}`);
     labelSpan.textContent = labelText;
     item.appendChild(labelSpan);
 
