@@ -804,9 +804,25 @@ main {
   font-size: 1rem;
   width: 100%;
   max-width: 100%;
+  background-color: var(--surface-raised);
+  box-shadow: 0 0.75rem 1.6rem rgba(15, 109, 255, 0.08);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease,
+    background-color 0.2s ease, transform 0.2s ease;
+  color: var(--text-body);
 }
 
-.form-control input[type="number"] {
+.form-control input {
+  appearance: none;
+}
+
+.form-control input[data-numeric-input] {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  letter-spacing: 0.01em;
+}
+
+.form-control input[data-numeric-input]:focus {
   text-align: right;
 }
 
@@ -814,6 +830,8 @@ main {
 .form-control select:focus {
   outline: 2px solid var(--field-focus);
   outline-offset: 2px;
+  border-color: var(--field-focus);
+  box-shadow: 0 1rem 2rem rgba(15, 109, 255, 0.16);
 }
 
 .inline-field {
