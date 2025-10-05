@@ -400,29 +400,37 @@
                   </option>
                 </select>
               </div>
-              <div class="form-control">
-                <label
-                  for="employment-employee-contributions"
-                  data-i18n-key="fields.employment-employee-contributions"
-                >
-                  Employee EFKA contributions (€)
-                </label>
-                <input
-                  id="employment-employee-contributions"
-                  name="employment.employee_contributions"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value="0"
-                  aria-describedby="employment-employee-contributions-hint"
-                />
-                <p
-                  id="employment-employee-contributions-hint"
-                  class="form-hint"
-                  data-i18n-key="hints.employment-employee-contributions"
-                >
-                  Include any EFKA payments you cover outside payroll (optional).
-                </p>
+              <div class="form-control form-control--advanced">
+                <details class="help-panel">
+                  <summary data-i18n-key="ui.advanced_options">
+                    Advanced options
+                  </summary>
+                  <div class="form-control form-control--nested">
+                    <label
+                      for="employment-employee-contributions"
+                      data-i18n-key="fields.employment-employee-contributions"
+                    >
+                      Employee EFKA contributions (outside payroll) (€)
+                    </label>
+                    <input
+                      id="employment-employee-contributions"
+                      name="employment.employee_contributions"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value="0"
+                      aria-describedby="employment-employee-contributions-hint"
+                    />
+                    <p
+                      id="employment-employee-contributions-hint"
+                      class="form-hint"
+                      data-i18n-key="hints.employment-employee-contributions"
+                    >
+                      Add EFKA amounts you pay directly outside payroll (for example, voluntary top-ups). Most
+                      employees will leave this at 0 because payroll already covers EFKA.
+                    </p>
+                  </div>
+                </details>
               </div>
               <div class="form-control">
                 <label
@@ -988,6 +996,30 @@
                   value="0"
                 />
               </div>
+              <div class="form-control">
+                <span class="inline-field">
+                  <input
+                    id="agricultural-professional-farmer"
+                    name="agricultural.professional_farmer"
+                    type="checkbox"
+                    aria-describedby="agricultural-professional-farmer-hint"
+                  />
+                  <label
+                    for="agricultural-professional-farmer"
+                    data-i18n-key="fields.agricultural-professional-farmer"
+                  >
+                    Professional farmer status
+                  </label>
+                </span>
+                <p
+                  id="agricultural-professional-farmer-hint"
+                  class="form-hint"
+                  data-static-hint="true"
+                  data-i18n-key="hints.agricultural-professional-farmer"
+                >
+                  Check if you are registered as a professional farmer for the tax year to apply any available reliefs.
+                </p>
+              </div>
             </div>
           </fieldset>
 
@@ -1011,6 +1043,15 @@
                   step="0.01"
                   value="0"
                 />
+                <p
+                  id="other-income-hint"
+                  class="form-hint"
+                  data-static-hint="true"
+                  data-i18n-key="hints.other-income"
+                >
+                  e.g. unemployment benefits, alimony received, taxable
+                  scholarships, prizes, or other income not listed above.
+                </p>
               </div>
             </div>
           </fieldset>
