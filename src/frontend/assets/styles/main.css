@@ -1514,63 +1514,112 @@ main {
     color: #000 !important;
     font-size: 11pt;
     line-height: 1.5;
+    display: grid;
+    grid-template-columns: minmax(0, 1.85fr) minmax(0, 1.05fr);
+    grid-template-rows: auto auto auto;
+    column-gap: 1.25rem;
+    row-gap: 1.25rem;
+    align-items: stretch;
   }
 
   main {
     margin: 0;
     padding: 0;
     width: 100%;
-    display: grid;
-    grid-template-columns: minmax(0, 2.35fr) minmax(0, 1fr);
-    column-gap: 1.25rem;
-    row-gap: 0;
-    align-items: start;
+    display: contents;
   }
 
   #app-intro {
     display: flex !important;
     flex-direction: column;
-    gap: 0.75rem;
+    justify-content: space-between;
+    gap: 1.1rem;
     grid-column: 2 / 3;
-    align-self: start;
+    grid-row: 2 / 3;
     border: 1px solid #bfc4cb;
-    padding: 0.9rem 1rem;
-    background: rgba(6, 18, 41, 0.04);
+    padding: 1.1rem 1.25rem;
+    background: linear-gradient(135deg, rgba(6, 18, 41, 0.05), rgba(6, 18, 41, 0));
     color: #000;
     page-break-inside: avoid;
+    min-height: 100%;
   }
 
-  #app-intro > *:not(h2):not(p):not(.intro-highlights):not(.disclaimer) {
+  #app-intro > *:not(h2):not(p):not(.overview-steps):not(.intro-highlights):not(.disclaimer) {
     display: none !important;
   }
 
   #app-intro h2 {
-    margin: 0;
-    font-size: 1.1rem;
+    margin: 0 0 0.25rem;
+    font-size: 1.15rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
   }
 
   #app-intro > p {
-    margin: 0;
+    margin: 0 0 0.25rem;
     font-size: 0.95rem;
+  }
+
+  #app-intro .overview-steps {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 0.5rem;
+    counter-reset: step;
+  }
+
+  #app-intro .overview-steps li {
+    counter-increment: step;
+    border: 1px solid #cdd2d9;
+    background: #fff;
+    padding: 0.6rem 0.7rem 0.6rem 1.45rem;
+    font-size: 0.84rem;
+    line-height: 1.4;
+    position: relative;
+    color: #1a1f2b;
+  }
+
+  #app-intro .overview-steps li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0.5rem;
+    top: 0.55rem;
+    width: 0.9rem;
+    height: 0.9rem;
+    border-radius: 999px;
+    border: 1px solid #0b4aa1;
+    background: #e5ecf9;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.7rem;
+    color: #0b4aa1;
   }
 
   #app-intro .intro-highlights {
     display: grid;
     gap: 0.6rem;
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
   }
 
   #app-intro .intro-highlight {
     border: 1px solid #cdd2d9;
     border-radius: 0.35rem;
-    padding: 0.6rem 0.7rem;
+    padding: 0.65rem 0.7rem;
     background: #fff;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
   }
 
   #app-intro .intro-highlight__title {
-    margin: 0 0 0.2rem;
-    font-size: 0.95rem;
-    color: #000;
+    margin: 0;
+    font-size: 0.9rem;
+    color: #0b4aa1;
+    font-weight: 600;
   }
 
   #app-intro .intro-highlight__copy {
@@ -1580,16 +1629,21 @@ main {
   }
 
   #app-intro .disclaimer {
-    margin: 0;
+    margin: auto 0 0;
     padding-top: 0.75rem;
     border-top: 1px solid #cdd2d9;
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     color: #333;
+  }
+
+  #app-intro .disclaimer strong {
+    color: #0b4aa1;
   }
 
   #calculator {
     display: block !important;
     grid-column: 1 / 2;
+    grid-row: 2 / 4;
   }
 
   #calculator > h2 {
@@ -1639,10 +1693,12 @@ main {
     flex-direction: column;
     gap: 0.75rem;
     padding: 0 0 1rem;
-    margin: 0 0 1.4rem;
+    margin: 0;
     background: transparent !important;
     color: #000 !important;
     border-bottom: 1px solid #bfc4cb;
+    grid-column: 1 / -1;
+    grid-row: 1 / 2;
   }
 
   .site-header::before {
@@ -1686,11 +1742,19 @@ main {
 
   .site-footer {
     display: block !important;
-    margin-top: 1.5rem;
+    margin: 0;
     padding-top: 0.9rem;
     border-top: 1px solid #bfc4cb;
     color: #333;
     font-size: 0.85rem;
+    grid-column: 2 / 3;
+    grid-row: 3 / 4;
+    align-self: end;
+    page-break-inside: avoid;
+  }
+
+  .site-footer p {
+    margin: 0;
   }
 
   #calculation-results h3 {
