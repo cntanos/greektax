@@ -98,12 +98,15 @@ def _build_general_income_components(
             employee_manual_contrib = 0.0
 
         employee_contrib = auto_employee_contrib + employee_manual_contrib
+        taxable_income = payload.employment_income - employee_contrib
+        if taxable_income < 0:
+            taxable_income = 0.0
         components.append(
             GeneralIncomeComponent(
                 category="employment",
                 label_key="details.employment",
                 gross_income=payload.employment_income,
-                taxable_income=payload.employment_income,
+                taxable_income=taxable_income,
                 credit_eligible=True,
                 deductible_expenses=0.0,
                 employee_contributions=employee_contrib,

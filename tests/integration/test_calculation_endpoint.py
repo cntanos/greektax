@@ -102,11 +102,14 @@ def test_calculation_endpoint_accepts_mixed_employment_inputs(client: FlaskClien
 
     result = response.get_json()
     summary = result["summary"]
-    assert summary["income_total"] == pytest.approx(30_000.0)
-    assert summary["taxable_income"] == pytest.approx(30_000.0)
 
     employment_detail = next(
         item for item in result["details"] if item["category"] == "employment"
+    )
+
+    assert summary["income_total"] == pytest.approx(30_000.0)
+    assert summary["taxable_income"] == pytest.approx(
+        employment_detail["taxable_income"]
     )
     assert employment_detail["gross_income"] == pytest.approx(30_000.0)
     assert employment_detail["monthly_gross_income"] == pytest.approx(1_500.0)

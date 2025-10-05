@@ -19,17 +19,17 @@
     "expectations": {
       "summary": {
         "income_total": 34000.0,
-        "tax_total": 5483.0,
-        "net_income": 22743.0,
-        "average_monthly_tax": 456.92
+        "tax_total": 4626.28,
+        "net_income": 23599.72,
+        "average_monthly_tax": 385.52
       },
       "details": {
         "employment": {
-          "total_tax": 3537.42
+          "total_tax": 2823.36
         },
         "freelance": {
           "taxable_income": 11000.0,
-          "total_tax": 1945.58
+          "total_tax": 1802.92
         }
       }
     }
@@ -142,18 +142,18 @@
     "expectations": {
       "summary": {
         "income_total": 25900.0,
-        "tax_total": 3975.0,
-        "net_income": 18332.67,
-        "average_monthly_tax": 331.25
+        "tax_total": 2969.15,
+        "net_income": 19338.52,
+        "average_monthly_tax": 247.43
       },
       "details": {
         "employment": {
-          "tax_before_credits": 4752.0,
+          "tax_before_credits": 3746.15,
           "credits": 777.0,
-          "total_tax": 3975.0,
+          "total_tax": 2969.15,
           "payments_per_year": 14,
           "gross_income_per_payment": 1850.0,
-          "net_income_per_payment": 1309.48
+          "net_income_per_payment": 1381.32
         }
       }
     }
@@ -172,15 +172,15 @@
     "expectations": {
       "summary": {
         "income_total": 42000.0,
-        "tax_total": 9260.0,
-        "net_income": 26914.6,
-        "average_monthly_tax": 771.67
+        "tax_total": 7002.86,
+        "net_income": 29171.74,
+        "average_monthly_tax": 583.57
       },
       "details": {
         "employment": {
-          "tax_before_credits": 10380.0,
+          "tax_before_credits": 8122.86,
           "credits": 1120.0,
-          "total_tax": 9260.0
+          "total_tax": 7002.86
         }
       }
     }
@@ -202,20 +202,20 @@
     "expectations": {
       "summary": {
         "income_total": 30000.0,
-        "tax_total": 5090.0,
-        "net_income": 21858.6,
-        "average_monthly_tax": 424.17
+        "tax_total": 4235.61,
+        "net_income": 22712.99,
+        "average_monthly_tax": 352.97
       },
       "details": {
         "employment": {
-          "tax_before_credits": 4326.67,
-          "credits": 594.0,
-          "total_tax": 3732.67
+          "tax_before_credits": 3547.76,
+          "credits": 569.54,
+          "total_tax": 2978.22
         },
         "pension": {
-          "tax_before_credits": 1573.33,
-          "credits": 216.0,
-          "total_tax": 1357.33
+          "tax_before_credits": 1497.85,
+          "credits": 240.46,
+          "total_tax": 1257.39
         }
       }
     }
@@ -232,16 +232,16 @@
     "expectations": {
       "summary": {
         "income_total": 18000.0,
-        "tax_total": 1883.0,
-        "net_income": 13620.4,
-        "average_monthly_tax": 156.92
+        "tax_total": 1333.75,
+        "net_income": 14169.65,
+        "average_monthly_tax": 111.15
       },
       "details": {
         "employment": {
           "payments_per_year": 10,
           "gross_income_per_payment": 1800.0,
-          "net_income_per_payment": 1362.04,
-          "total_tax": 1883.0
+          "net_income_per_payment": 1416.97,
+          "total_tax": 1333.75
         }
       }
     }
