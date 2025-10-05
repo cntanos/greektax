@@ -11,7 +11,7 @@ from greektax.backend.app.services.calculation_service import calculate_tax
 from greektax.backend.config.year_config import YearConfiguration, load_year_configuration
 
 
-def _progressive_tax(amount: float, brackets) -> float:
+def _progressive_tax(amount: float, brackets, *, dependants: int = 0) -> float:
     """Compute progressive tax for the provided amount using the supplied brackets."""
 
     total = 0.0
@@ -20,6 +20,9 @@ def _progressive_tax(amount: float, brackets) -> float:
     for bracket in brackets:
         upper = bracket.upper_bound
         rate = bracket.rate
+        rate_for_dependants = getattr(bracket, "rate_for_dependants", None)
+        if callable(rate_for_dependants):
+            rate = rate_for_dependants(dependants)
         if upper is None or amount <= upper:
             total += (amount - lower_bound) * rate
             break
@@ -91,7 +94,9 @@ def _employment_expectations(
     if taxable_income < 0:
         taxable_income = 0.0
 
-    tax_before_credit = _progressive_tax(taxable_income, employment.brackets)
+    tax_before_credit = _progressive_tax(
+        taxable_income, employment.brackets, dependants=children
+    )
     credit_amount = employment.tax_credit.amount_for_children(children)
     credit_applied = min(credit_amount, tax_before_credit)
     tax_after_credit = tax_before_credit - credit_applied
@@ -165,6 +170,7 @@ def _freelance_expectations(request: CalculationRequest) -> dict[str, Any]:
     total_tax_before_credit = _progressive_tax(
         total_taxable,
         config.employment.brackets,
+        dependants=dependents,
     )
     credit_amount = config.employment.tax_credit.amount_for_children(dependents)
     credit_applied = min(credit_amount, total_tax_before_credit)
@@ -971,24 +977,80 @@ def test_calculate_tax_multi_year_credit_difference() -> None:
         "employment": {"gross_income": 25_000},
     }
 
-    current_year_request = CalculationRequest.model_validate(
-        {"year": 2024, **base_payload}
-    )
-    next_year_request = CalculationRequest.model_validate({"year": 2025, **base_payload})
+    request_2024 = CalculationRequest.model_validate({"year": 2024, **base_payload})
+    request_2025 = CalculationRequest.model_validate({"year": 2025, **base_payload})
+    request_2026 = CalculationRequest.model_validate({"year": 2026, **base_payload})
 
-    result_2024 = calculate_tax(current_year_request)
-    result_2025 = calculate_tax(next_year_request)
-
-    tax_2024 = result_2024["summary"]["tax_total"]
-    tax_2025 = result_2025["summary"]["tax_total"]
+    result_2024 = calculate_tax(request_2024)
+    result_2025 = calculate_tax(request_2025)
+    result_2026 = calculate_tax(request_2026)
 
     expected_2024 = _employment_expectations(2024, 25_000, children=2)
     expected_2025 = _employment_expectations(2025, 25_000, children=2)
+    expected_2026 = _employment_expectations(2026, 25_000, children=2)
 
-    assert tax_2024 == pytest.approx(expected_2024["tax"], rel=1e-4)
-    assert tax_2025 == pytest.approx(expected_2025["tax"], rel=1e-4)
+    assert result_2024["summary"]["tax_total"] == pytest.approx(
+        expected_2024["tax"], rel=1e-4
+    )
+    assert result_2025["summary"]["tax_total"] == pytest.approx(
+        expected_2025["tax"], rel=1e-4
+    )
+    assert result_2026["summary"]["tax_total"] == pytest.approx(
+        expected_2026["tax"], rel=1e-4
+    )
+
     assert expected_2025["credit"] > expected_2024["credit"]
-    assert result_2025["meta"]["year"] == next_year_request.year
+    assert expected_2026["credit"] >= expected_2025["credit"]
+    assert result_2026["meta"]["year"] == request_2026.year
+
+
+def test_2026_dependant_credit_tiers_are_pending_confirmation() -> None:
+    """Dependent credit tiers for 2026 are provisional but expose concrete amounts."""
+
+    config = load_year_configuration(2026)
+    credit = config.employment.tax_credit
+
+    assert credit.pending_confirmation is True
+    assert credit.incremental_amount_per_child == pytest.approx(230.0)
+    assert credit.amount_for_children(0) == pytest.approx(778.0)
+    assert credit.amount_for_children(1) == pytest.approx(820.0)
+    assert credit.amount_for_children(2) == pytest.approx(910.0)
+    assert credit.amount_for_children(3) == pytest.approx(1_140.0)
+    # Additional children continue the incremental increase.
+    assert credit.amount_for_children(5) == pytest.approx(1_600.0)
+
+
+def test_2026_rental_mid_band_cut() -> None:
+    """Rental income applies the reduced mid-band threshold introduced for 2026."""
+
+    request = CalculationRequest.model_validate(
+        {
+            "year": 2026,
+            "rental": {"gross_income": 28_000, "deductible_expenses": 2_000},
+        }
+    )
+
+    result = calculate_tax(request)
+    rental_detail = next(
+        detail for detail in result["details"] if detail["category"] == "rental"
+    )
+
+    taxable_income = 26_000.0
+    expected_tax = (12_000 * 0.15) + (13_000 * 0.25) + (1_000 * 0.35)
+
+    assert rental_detail["taxable_income"] == pytest.approx(taxable_income)
+    assert rental_detail["total_tax"] == pytest.approx(expected_tax)
+    assert result["summary"]["tax_total"] == pytest.approx(expected_tax)
+
+
+def test_2026_efka_categories_marked_as_estimates() -> None:
+    """All 2026 EFKA categories surface the provisional estimate flag."""
+
+    config = load_year_configuration(2026)
+    categories = config.freelance.efka_categories
+
+    assert categories, "Expected EFKA categories for 2026"
+    assert all(category.estimate for category in categories)
 
 
 def test_calculate_tax_with_freelance_category_contributions() -> None:

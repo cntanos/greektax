@@ -137,6 +137,9 @@ for guidance on interpreting the output.
   maintaining audit-friendly detail rows in the response payload.【F:src/greektax/backend/app/services/calculation_service.py†L904-L1020】
 - Trade fee handling reflects the latest filing guidance, only adding the charge
   for professions or start years that require it.【F:src/greektax/backend/app/services/calculation_service.py†L702-L776】
+- Preliminary 2026 brackets include youth-rate relief, refreshed dependant credit
+  tiers pending confirmation, and a lower rental mid-band while freelance EFKA
+  categories remain flagged as estimates pending confirmation from EFKA.【F:src/greektax/backend/config/data/2026.yaml†L5-L141】【F:src/greektax/backend/config/data/2026.yaml†L220-L333】【F:src/greektax/backend/config/data/2026.yaml†L450-L520】
 
 ## Configuring the API endpoint
 
@@ -192,4 +195,4 @@ everywhere.
 
 GreekTax is released under the [GNU General Public License v3.0](LICENSE).
 
-&copy; 2025 Christos Ntanos for CogniSys. Released under the GNU GPL v3 License.
+&copy; 2026 Christos Ntanos for CogniSys. Released under the GNU GPL v3 License.

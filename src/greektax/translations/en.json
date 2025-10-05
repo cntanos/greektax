@@ -398,7 +398,8 @@
     },
     "warnings": {
       "configuration": {
-        "pending_deductions_2025": "Tax deduction rules for {{year}} are subject to change. Confirm eligible amounts before submitting returns."
+        "pending_deductions_2025": "Tax deduction rules for {{year}} are subject to change. Confirm eligible amounts before submitting returns.",
+        "pending_tax_credit_2026": "Family tax credit amounts for {{year}} remain provisional until AADE confirms the final schedule."
       },
       "employment": {
         "partial_year_review": "Partial-year payroll scenarios may require manual EFKA and tax credit adjustments. Validate the figures for {{year}} if your contract ended early.",

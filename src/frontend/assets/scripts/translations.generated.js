@@ -321,7 +321,8 @@
       },
       "warnings": {
         "configuration": {
-          "pending_deductions_2025": "Οι κανόνες φορολογικών εκπτώσεων για το {{year}} ενδέχεται να αλλάξουν. Ελέγξτε τα επιλέξιμα ποσά πριν την υποβολή."
+          "pending_deductions_2025": "Οι κανόνες φορολογικών εκπτώσεων για το {{year}} ενδέχεται να αλλάξουν. Ελέγξτε τα επιλέξιμα ποσά πριν την υποβολή.",
+          "pending_tax_credit_2026": "Τα ποσά της οικογενειακής έκπτωσης για το {{year}} παραμένουν προσωρινά έως ότου η ΑΑΔΕ επιβεβαιώσει το τελικό πρόγραμμα."
         },
         "employment": {
           "partial_year_review": "Τα σενάρια με μερική απασχόληση ενδέχεται να απαιτούν χειροκίνητη προσαρμογή εισφορών και πιστώσεων. Επαληθεύστε τα ποσά για το {{year}} αν η σύμβασή σας έληξε νωρίτερα.",
@@ -665,7 +666,8 @@
       },
       "warnings": {
         "configuration": {
-          "pending_deductions_2025": "Tax deduction rules for {{year}} are subject to change. Confirm eligible amounts before submitting returns."
+          "pending_deductions_2025": "Tax deduction rules for {{year}} are subject to change. Confirm eligible amounts before submitting returns.",
+          "pending_tax_credit_2026": "Family tax credit amounts for {{year}} remain provisional until AADE confirms the final schedule."
         },
         "employment": {
           "partial_year_review": "Partial-year payroll scenarios may require manual EFKA and tax credit adjustments. Validate the figures for {{year}} if your contract ended early.",
