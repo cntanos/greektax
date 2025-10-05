@@ -282,6 +282,19 @@
       "insurance": "Insurance contributions",
       "expenses": "Expenses"
     },
+    "summary": {
+      "average_monthly_tax": "Average tax per month",
+      "balance_due": "Net tax due",
+      "deductions_applied": "Deductions applied",
+      "deductions_entered": "Deductions entered",
+      "effective_tax_rate": "Effective tax rate",
+      "income_total": "Total income",
+      "net_income": "Net income",
+      "net_monthly_income": "Net income per month",
+      "refund_due": "Refund due",
+      "tax_total": "Total taxes",
+      "withholding_tax": "Tax already withheld"
+    },
     "sankey": {
       "aria_label": "Sankey diagram showing how gross income flows into taxes, contributions, and net amounts.",
       "contributions": "Contributions & expenses",
