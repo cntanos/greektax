@@ -3082,16 +3082,16 @@ function renderSummary(summary) {
   summaryGrid.innerHTML = "";
   const labels = summary.labels || {};
   const summaryFields = [
-    { key: "net_income", formatter: formatCurrency, className: "primary" },
+    { key: "income_total", formatter: formatCurrency },
+    { key: "taxable_income", formatter: formatCurrency },
+    { key: "deductions_entered", formatter: formatCurrency },
+    { key: "deductions_applied", formatter: formatCurrency },
     { key: "tax_total", formatter: formatCurrency, className: "accent" },
     { key: "withholding_tax", formatter: formatCurrency },
     { key: "balance_due", formatter: formatCurrency, className: "accent" },
-    { key: "deductions_applied", formatter: formatCurrency },
-    { key: "deductions_entered", formatter: formatCurrency },
+    { key: "net_income", formatter: formatCurrency, className: "primary" },
     { key: "net_monthly_income", formatter: formatCurrency },
     { key: "average_monthly_tax", formatter: formatCurrency },
-    { key: "income_total", formatter: formatCurrency },
-    { key: "taxable_income", formatter: formatCurrency },
     { key: "effective_tax_rate", formatter: formatPercent },
   ];
 
