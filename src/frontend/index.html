@@ -1261,6 +1261,79 @@
           </div>
           <div class="summary-grid" id="summary-grid"></div>
           <div class="details-list" id="details-list"></div>
+          <aside
+            class="print-overview"
+            aria-labelledby="print-overview-title"
+          >
+            <h4
+              id="print-overview-title"
+              data-i18n-key="ui.overview_heading"
+            >
+              Overview
+            </h4>
+            <p
+              class="print-overview__intro"
+              data-i18n-key="calculator.instructions_intro"
+            >
+              Toggle the sections that apply, enter your annual or monthly
+              amounts, then press calculate to see the breakdown.
+            </p>
+            <ol class="print-overview__steps">
+              <li data-i18n-key="ui.overview_step_select_year">
+                Choose the tax year and confirm the language above.
+              </li>
+              <li data-i18n-key="ui.overview_step_toggle_sections">
+                Enable the income sections that match your situation.
+              </li>
+              <li data-i18n-key="ui.overview_step_enter_values">
+                Enter the amounts requested for each active section.
+              </li>
+              <li data-i18n-key="ui.overview_step_calculate">
+                Press Calculate to view your results and download a copy.
+              </li>
+            </ol>
+            <div class="print-overview__highlights">
+              <section class="print-overview__highlight">
+                <h5
+                  data-i18n-key="ui.highlight_inputs_title"
+                >
+                  Guided calculator inputs
+                </h5>
+                <p data-i18n-key="ui.highlight_inputs_copy">
+                  Toggle income types as you need them, with inline hints and
+                  validation.
+                </p>
+              </section>
+              <section class="print-overview__highlight">
+                <h5
+                  data-i18n-key="ui.highlight_localisation_title"
+                >
+                  Bilingual header controls
+                </h5>
+                <p data-i18n-key="ui.highlight_localisation_copy">
+                  Use the top controls to switch between English and Greek
+                  without losing your data.
+                </p>
+              </section>
+              <section class="print-overview__highlight">
+                <h5
+                  data-i18n-key="ui.highlight_visual_title"
+                >
+                  Visual income breakdown
+                </h5>
+                <p data-i18n-key="ui.highlight_visual_copy">
+                  Follow taxes, contributions, and take-home pay through a
+                  colour-coded Sankey diagram.
+                </p>
+              </section>
+            </div>
+            <p class="print-overview__disclaimer" data-i18n-key="ui.disclaimer">
+              Disclaimer: This tool is unofficial and provided as-is. Inputs are
+              stored locally on your device for up to two hours and are never
+              sent to a server. Please consult a professional accountant for
+              formal filings.
+            </p>
+          </aside>
           </section>
         </div>
       </section>
