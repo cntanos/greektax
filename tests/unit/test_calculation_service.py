@@ -246,6 +246,39 @@ def test_calculate_tax_rejects_invalid_numbers() -> None:
     assert "Invalid calculation payload" in message
 
 
+def test_calculate_tax_rejects_negative_employment_payments_per_year() -> None:
+    """Negative payroll frequencies are rejected with a clear error."""
+
+    with pytest.raises(ValueError) as error:
+        calculate_tax({"year": 2024, "employment": {"payments_per_year": -1}})
+
+    message = str(error.value)
+    assert "employment.payments_per_year" in message
+    assert "value cannot be negative" in message
+
+
+@pytest.mark.parametrize(
+    "field_path,payload",
+    [
+        ("employment.payments_per_year", {"employment": {"payments_per_year": 11}}),
+        ("pension.payments_per_year", {"pension": {"payments_per_year": 11}}),
+    ],
+)
+def test_calculate_tax_rejects_unsupported_payroll_frequency(
+    field_path: str, payload: dict[str, Any]
+) -> None:
+    """Payroll frequencies must match the configured whitelist."""
+
+    request_payload: dict[str, Any] = {"year": 2024, **payload}
+
+    with pytest.raises(ValueError) as error:
+        calculate_tax(request_payload)
+
+    message = str(error.value)
+    assert field_path in message
+    assert "allowed payroll frequency" in message
+
+
 def test_calculate_tax_accepts_request_model_instance() -> None:
     """The service can operate directly on a validated request model."""
 
