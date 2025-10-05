@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
 from typing import Any
 
 import pytest
@@ -804,6 +805,130 @@ def test_calculate_tax_with_freelance_income() -> None:
         expected["freelance"]["contributions"]
     )
 
+
+@pytest.mark.parametrize(
+    ("toggle_field", "detail_field"),
+    [
+        ("include_category_contributions", "category_contributions"),
+        ("include_mandatory_contributions", "additional_contributions"),
+        ("include_auxiliary_contributions", "auxiliary_contributions"),
+        ("include_lump_sum_contributions", "lump_sum_contributions"),
+    ],
+)
+def test_freelance_contribution_toggle_excludes_amount(
+    toggle_field: str, detail_field: str
+) -> None:
+    """Disabling a freelance contribution removes it from the taxable offsets."""
+
+    base_payload = {
+        "year": 2024,
+        "employment": {"gross_income": 15_000},
+        "freelance": {
+            "gross_revenue": 40_000,
+            "deductible_expenses": 10_000,
+            "mandatory_contributions": 2_000,
+            "auxiliary_contributions": 1_200,
+            "lump_sum_contributions": 600,
+            "efka_category": "general_class_1",
+            "include_trade_fee": False,
+        },
+    }
+
+    base_request = CalculationRequest.model_validate(base_payload)
+    base_result = calculate_tax(base_request)
+    base_detail = next(
+        detail for detail in base_result["details"] if detail["category"] == "freelance"
+    )
+
+    removed_amount = base_detail.get(detail_field, 0.0)
+    assert removed_amount > 0
+
+    toggled_payload = deepcopy(base_payload)
+    toggled_payload["freelance"][toggle_field] = False
+    toggled_request = CalculationRequest.model_validate(toggled_payload)
+    toggled_result = calculate_tax(toggled_request)
+    toggled_detail = next(
+        detail for detail in toggled_result["details"] if detail["category"] == "freelance"
+    )
+
+    assert toggled_detail.get(detail_field, 0.0) == pytest.approx(0.0)
+
+    taxable_delta = (
+        toggled_detail["taxable_income"] - base_detail["taxable_income"]
+    )
+    assert taxable_delta == pytest.approx(removed_amount, abs=0.05, rel=1e-4)
+
+    deductible_delta = (
+        base_detail["deductible_contributions"]
+        - toggled_detail["deductible_contributions"]
+    )
+    assert deductible_delta == pytest.approx(removed_amount, abs=0.05, rel=1e-4)
+
+
+def test_freelance_contribution_toggle_combination() -> None:
+    """Multiple contribution toggles combine to raise taxable income proportionally."""
+
+    base_payload = {
+        "year": 2024,
+        "employment": {"gross_income": 15_000},
+        "freelance": {
+            "gross_revenue": 40_000,
+            "deductible_expenses": 10_000,
+            "mandatory_contributions": 2_000,
+            "auxiliary_contributions": 1_200,
+            "lump_sum_contributions": 600,
+            "efka_category": "general_class_1",
+            "include_trade_fee": False,
+        },
+    }
+
+    base_detail = next(
+        detail
+        for detail in calculate_tax(CalculationRequest.model_validate(base_payload))["details"]
+        if detail["category"] == "freelance"
+    )
+
+    combined_payload = deepcopy(base_payload)
+    combined_payload["freelance"].update(
+        {
+            "include_category_contributions": False,
+            "include_auxiliary_contributions": False,
+        }
+    )
+
+    combined_detail = next(
+        detail
+        for detail in calculate_tax(
+            CalculationRequest.model_validate(combined_payload)
+        )["details"]
+        if detail["category"] == "freelance"
+    )
+
+    category_amount = base_detail.get("category_contributions", 0.0)
+    auxiliary_amount = base_detail.get("auxiliary_contributions", 0.0)
+    assert category_amount > 0
+    assert auxiliary_amount > 0
+
+    expected_removed = category_amount + auxiliary_amount
+
+    assert combined_detail.get("category_contributions", 0.0) == pytest.approx(0.0)
+    assert combined_detail.get("auxiliary_contributions", 0.0) == pytest.approx(0.0)
+    # Unaffected contributions remain present.
+    assert combined_detail.get("additional_contributions", 0.0) == pytest.approx(
+        base_detail.get("additional_contributions", 0.0), rel=1e-4
+    )
+    assert combined_detail.get("lump_sum_contributions", 0.0) == pytest.approx(
+        base_detail.get("lump_sum_contributions", 0.0), rel=1e-4
+    )
+
+    taxable_delta = combined_detail["taxable_income"] - base_detail["taxable_income"]
+    assert taxable_delta == pytest.approx(expected_removed, abs=0.05, rel=1e-4)
+
+    deductible_delta = (
+        base_detail["deductible_contributions"]
+        - combined_detail["deductible_contributions"]
+    )
+    assert deductible_delta == pytest.approx(expected_removed, abs=0.05, rel=1e-4)
 
 def test_calculate_tax_respects_locale_toggle() -> None:
     """Locale toggle switches translation catalogue."""
