@@ -67,7 +67,8 @@
         "heading": "Κατανομή συνολικού εισοδήματος",
         "insurance": "Ασφαλιστικές εισφορές",
         "profits": "Κέρδη",
-        "taxes": "Φόροι"
+        "taxes": "Φόροι",
+        "total_income": "Συνολικό εισόδημα"
       },
       "errors": {
         "invalid_number": "Εισαγάγετε έγκυρο αριθμό για {{field}}.",
@@ -363,7 +364,8 @@
         "heading": "Income allocation summary",
         "insurance": "Insurance contributions",
         "profits": "Profits",
-        "taxes": "Taxes"
+        "taxes": "Taxes",
+        "total_income": "Total income"
       },
       "errors": {
         "invalid_number": "Please enter a valid number for {{field}}.",

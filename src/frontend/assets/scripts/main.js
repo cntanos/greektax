@@ -2809,10 +2809,10 @@ function renderSankey(result) {
 const DISTRIBUTION_EXPENSE_FIELDS = ["deductible_expenses"];
 
 const DISTRIBUTION_CATEGORIES = [
-  { key: "profits", colorVar: "--flow-net" },
   { key: "taxes", colorVar: "--flow-taxes" },
   { key: "insurance", colorVar: "--flow-contributions" },
   { key: "expenses", colorVar: "--flow-expenses" },
+  { key: "profits", colorVar: "--flow-net" },
 ];
 
 const DISTRIBUTION_FALLBACK_COLORS = {
@@ -3032,7 +3032,7 @@ function renderDistributionChart(details) {
   totalLabel.setAttribute("x", center);
   totalLabel.setAttribute("y", center - 6);
   totalLabel.setAttribute("text-anchor", "middle");
-  totalLabel.textContent = t("calculator.results_heading");
+  totalLabel.textContent = t("distribution.total_income");
   distributionChart.appendChild(totalLabel);
 
   const totalValueText = document.createElementNS(SVG_NS, "text");
