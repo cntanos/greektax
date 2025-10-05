@@ -683,9 +683,7 @@ function captureElementValue(element) {
       return element.checked ? element.value : undefined;
     }
     if (isNumericInputElement(element)) {
-      return normaliseNumericString(element.value ?? "", {
-        maxFractionDigits: getNumericPrecision(element),
-      });
+      return element.value ?? "";
     }
     return element.value ?? "";
   }
@@ -858,7 +856,6 @@ async function applyLocale(locale) {
   document.documentElement.lang = resolved;
   updateLocaleButtonState(resolved);
   localiseStaticText();
-  formatAllNumericInputs({ treatEmptyAsZero: true });
   renderYearWarnings(currentYearMetadata, {
     showPartialYearWarning: partialYearWarningActive,
   });
@@ -974,254 +971,14 @@ function formatPercent(value) {
 }
 
 function isNumericInputElement(element) {
-  return element instanceof HTMLInputElement && element.hasAttribute("data-numeric-input");
+  return element instanceof HTMLInputElement && element.type === "number";
 }
 
 function getNumericInputs() {
   if (!calculatorForm) {
     return [];
   }
-  return Array.from(calculatorForm.querySelectorAll("[data-numeric-input]"));
-}
-
-function normaliseNumericString(value, { maxFractionDigits = Infinity } = {}) {
-  const raw = value == null ? "" : value.toString();
-  let text = raw.trim();
-  if (!text) {
-    return "";
-  }
-
-  text = text.replace(/[\s\u00a0\u202f]+/g, "");
-
-  let isNegative = false;
-  if (/^[\-−]/.test(text)) {
-    isNegative = true;
-    text = text.slice(1);
-  } else if (text.startsWith("+")) {
-    text = text.slice(1);
-  }
-
-  if (!text) {
-    return isNegative ? "-" : "";
-  }
-
-  const fallbackLimit = Number.isFinite(maxFractionDigits)
-    ? Math.max(maxFractionDigits, 2)
-    : 2;
-
-  const commaMatches = text.match(/,/g);
-  const commaCount = commaMatches ? commaMatches.length : 0;
-  let decimalIndex = -1;
-  let decimalChar = null;
-
-  if (commaCount === 1) {
-    const lastCommaIndex = text.lastIndexOf(GREEK_DECIMAL_SEPARATOR);
-    const digitsAfterComma = text
-      .slice(lastCommaIndex + 1)
-      .replace(/[^0-9]/g, "");
-    const digitsBeforeComma = text
-      .slice(0, lastCommaIndex)
-      .replace(/[^0-9]/g, "");
-    const hasGroupingDot = text.includes(GREEK_GROUP_SEPARATOR);
-    const treatCommaAsDecimal =
-      digitsAfterComma.length > 0 &&
-      (digitsAfterComma.length <= fallbackLimit ||
-        hasGroupingDot ||
-        digitsBeforeComma.startsWith("0") ||
-        digitsBeforeComma.length === 0);
-
-    if (treatCommaAsDecimal) {
-      decimalChar = GREEK_DECIMAL_SEPARATOR;
-      decimalIndex = lastCommaIndex;
-    }
-  }
-
-  if (decimalChar === null) {
-    const lastDotIndex = text.lastIndexOf(".");
-    if (lastDotIndex !== -1) {
-      const digitsAfterDot = text
-        .slice(lastDotIndex + 1)
-        .replace(/[^0-9]/g, "");
-      if (digitsAfterDot.length > 0 && digitsAfterDot.length <= fallbackLimit) {
-        decimalChar = ".";
-        decimalIndex = lastDotIndex;
-      }
-    }
-  }
-
-  let integerPart = "";
-  let fractionalPart = "";
-
-  for (let index = 0; index < text.length; index += 1) {
-    const character = text[index];
-
-    if (decimalChar && index === decimalIndex) {
-      continue;
-    }
-
-    if (character >= "0" && character <= "9") {
-      if (decimalChar && index > decimalIndex) {
-        fractionalPart += character;
-      } else {
-        integerPart += character;
-      }
-      continue;
-    }
-
-    if (
-      character === GREEK_GROUP_SEPARATOR ||
-      character === "'" ||
-      character === "’" ||
-      character === "\u2019"
-    ) {
-      continue;
-    }
-
-    if (character === "." || character === ",") {
-      continue;
-    }
-  }
-
-  if (!integerPart && !fractionalPart) {
-    return isNegative ? "-" : "";
-  }
-
-  if (!integerPart) {
-    integerPart = "0";
-  } else {
-    integerPart = integerPart.replace(/^0+(?=\d)/, "") || "0";
-  }
-
-  if (Number.isFinite(maxFractionDigits)) {
-    if (maxFractionDigits <= 0) {
-      if (fractionalPart) {
-        integerPart = `${integerPart}${fractionalPart}`;
-        fractionalPart = "";
-      }
-    } else if (fractionalPart.length > maxFractionDigits) {
-      fractionalPart = fractionalPart.slice(0, maxFractionDigits);
-    }
-  }
-
-  let result = fractionalPart ? `${integerPart}.${fractionalPart}` : integerPart;
-  if (isNegative && result !== "0") {
-    result = `-${result}`;
-  }
-
-  return result;
-}
-
-function parseNumericFromString(
-  value,
-  { allowNegative = false, maxFractionDigits = Infinity } = {},
-) {
-  const normalised = normaliseNumericString(value, {
-    maxFractionDigits,
-  });
-  if (!normalised || normalised === "-" || normalised === "+") {
-    return Number.NaN;
-  }
-  const number = Number.parseFloat(normalised);
-  if (!Number.isFinite(number)) {
-    return Number.NaN;
-  }
-  if (!allowNegative && number < 0) {
-    return Number.NaN;
-  }
-  return number;
-}
-
-function getNumericPrecision(input) {
-  if (!isNumericInputElement(input)) {
-    return 2;
-  }
-  const precisionAttr = input.getAttribute("data-precision");
-  const precision = Number.parseInt(precisionAttr ?? "", 10);
-  if (Number.isFinite(precision) && precision >= 0) {
-    return precision;
-  }
-  return 2;
-}
-
-function shouldGroupNumericInput(input) {
-  if (!isNumericInputElement(input)) {
-    return true;
-  }
-  const groupingAttr = (input.getAttribute("data-grouping") || "").toLowerCase();
-  if (groupingAttr === "false" || groupingAttr === "0" || groupingAttr === "no") {
-    return false;
-  }
-  return true;
-}
-
-function formatNumberForInput(value, precision = 2, { useGrouping = true } = {}) {
-  const resolvedPrecision = Number.isFinite(precision) && precision > 0 ? precision : 0;
-  const numeric = coerceFiniteNumber(value);
-  const absolute = Math.abs(numeric);
-  let [integerPart, fractionPart = ""] = absolute.toFixed(resolvedPrecision).split(".");
-  if (useGrouping) {
-    integerPart = integerPart.replace(GROUPING_REGEX, GREEK_GROUP_SEPARATOR);
-  }
-  const decimalPart = resolvedPrecision > 0 ? `${GREEK_DECIMAL_SEPARATOR}${fractionPart}` : "";
-  const formatted = `${integerPart}${decimalPart}`;
-  return numeric < 0 ? `-${formatted}` : formatted;
-}
-
-function formatNumericInput(input, { treatEmptyAsZero = true } = {}) {
-  if (!isNumericInputElement(input)) {
-    return;
-  }
-
-  const precision = getNumericPrecision(input);
-  const useGrouping = shouldGroupNumericInput(input);
-  const rawValue = (input.value ?? "").toString().trim();
-  if (!rawValue) {
-    if (treatEmptyAsZero) {
-      input.value = formatNumberForInput(0, precision, { useGrouping });
-    }
-    return;
-  }
-
-  const number = parseNumericFromString(rawValue, {
-    maxFractionDigits: precision,
-  });
-  if (!Number.isFinite(number)) {
-    return;
-  }
-
-  const safeValue = Math.max(0, number);
-  input.value = formatNumberForInput(safeValue, precision, { useGrouping });
-}
-
-function formatAllNumericInputs(options = {}) {
-  getNumericInputs().forEach((input) => {
-    formatNumericInput(input, options);
-  });
-}
-
-function buildEditableNumericValue(input) {
-  if (!isNumericInputElement(input)) {
-    return "";
-  }
-
-  const precision = getNumericPrecision(input);
-  const normalised = normaliseNumericString(input.value ?? "", {
-    maxFractionDigits: precision,
-  });
-  if (!normalised) {
-    return "";
-  }
-
-  if (precision === 0) {
-    const integerValue = Number.parseInt(normalised, 10);
-    return Number.isFinite(integerValue) ? String(integerValue) : "";
-  }
-
-  if (!normalised.includes(".")) {
-    return normalised;
-  }
-
-  return normalised.replace(/(\.\d*?)0+$/, "$1").replace(/\.$/, "");
+  return Array.from(calculatorForm.querySelectorAll('input[type="number"]'));
 }
 
 function isInputVisible(input) {
@@ -1252,13 +1009,12 @@ function resetSectionInputs(section) {
   if (!section) {
     return;
   }
-  section.querySelectorAll('[data-numeric-input]').forEach((input) => {
+  section.querySelectorAll('input[type="number"]').forEach((input) => {
     if (!input) {
       return;
     }
-    const defaultValue = input.defaultValue ?? "0";
-    input.value = defaultValue || "0";
-    formatNumericInput(input);
+    const defaultValue = input.defaultValue ?? "";
+    input.value = defaultValue;
   });
   section.querySelectorAll('input[type="checkbox"]').forEach((input) => {
     if (!input) {
@@ -1392,8 +1148,7 @@ function applyValueToElement(element, value) {
     if (isNumericInputElement(element)) {
       const stringValue = value === null || value === undefined ? "" : String(value);
       element.value = stringValue;
-      formatNumericInput(element, { treatEmptyAsZero: true });
-      return true;
+      return element.value === stringValue;
     }
     const stringValue = value === null || value === undefined ? "" : String(value);
     element.value = stringValue;
@@ -1478,7 +1233,6 @@ function applyPendingCalculatorState() {
 
   updateFreelanceCategoryHint();
   updateTradeFeeHint();
-  formatAllNumericInputs({ treatEmptyAsZero: true });
 }
 
 function handleCalculatorStateChange() {
@@ -1924,10 +1678,7 @@ function renderInvestmentFields(categories) {
     label.textContent = `${category.label} (${formatPercent(category.rate)})`;
 
     const input = document.createElement("input");
-    input.type = "text";
-    input.setAttribute("inputmode", "decimal");
-    input.setAttribute("data-numeric-input", "true");
-    input.setAttribute("data-precision", "2");
+    input.type = "number";
     input.min = "0";
     input.step = "0.01";
     input.id = `investment-${category.id}`;
@@ -1937,7 +1688,6 @@ function renderInvestmentFields(categories) {
     wrapper.appendChild(label);
     wrapper.appendChild(input);
     investmentFieldsContainer.appendChild(wrapper);
-    formatNumericInput(input, { treatEmptyAsZero: true });
   });
 
   applyPendingCalculatorState();
@@ -2400,13 +2150,10 @@ function validateNumberInput(input) {
 
   const rawValue = (input.value ?? "").trim();
   if (rawValue === "") {
-    formatNumericInput(input, { treatEmptyAsZero: true });
     return true;
   }
 
-  const number = parseNumericFromString(rawValue, {
-    maxFractionDigits: getNumericPrecision(input),
-  });
+  const number = input.valueAsNumber;
   const fieldLabel = getFieldLabel(input);
 
   if (!Number.isFinite(number)) {
@@ -2449,8 +2196,6 @@ function validateNumberInput(input) {
     return false;
   }
 
-  input.value = String(number);
-  formatNumericInput(input);
   return true;
 }
 
@@ -2459,7 +2204,7 @@ function validateForm() {
     return true;
   }
 
-  const inputs = calculatorForm.querySelectorAll('[data-numeric-input]');
+  const inputs = calculatorForm.querySelectorAll('input[type="number"]');
   let isValid = true;
   inputs.forEach((input) => {
     if (!isInputVisible(input)) {
@@ -2496,57 +2241,6 @@ function attachValidationHandlers() {
   );
 }
 
-function shouldAutoSelectValue(input) {
-  if (!isNumericInputElement(input)) {
-    return false;
-  }
-
-  if (input.readOnly || input.disabled) {
-    return false;
-  }
-
-  const value = input.value ?? "";
-  return value.toString().length > 0;
-}
-
-function handleNumericFocus(event) {
-  const target = event.target;
-  if (!isNumericInputElement(target)) {
-    return;
-  }
-
-  const editableValue = buildEditableNumericValue(target);
-  if (editableValue !== undefined) {
-    target.value = editableValue;
-  }
-
-  if (!shouldAutoSelectValue(target)) {
-    return;
-  }
-
-  requestAnimationFrame(() => {
-    if (document.activeElement !== target) {
-      return;
-    }
-
-    try {
-      target.select();
-    } catch (error) {
-      if (typeof target.setSelectionRange === "function") {
-        target.setSelectionRange(0, target.value.length);
-      }
-    }
-  });
-}
-
-function initialiseNumericAutoSelect() {
-  if (!calculatorForm) {
-    return;
-  }
-
-  calculatorForm.addEventListener("focusin", handleNumericFocus);
-}
-
 function readNumber(input) {
   if (!input) {
     return 0;
@@ -2554,10 +2248,7 @@ function readNumber(input) {
   if (!isInputVisible(input)) {
     return 0;
   }
-  const precision = getNumericPrecision(input);
-  const value = parseNumericFromString(input.value, {
-    maxFractionDigits: precision,
-  });
+  const value = input.valueAsNumber;
   if (!Number.isFinite(value) || value < 0) {
     return 0;
   }
@@ -2571,10 +2262,11 @@ function readInteger(input) {
   if (!isInputVisible(input)) {
     return 0;
   }
-  const normalised = normaliseNumericString(input.value ?? "", {
-    maxFractionDigits: 0,
-  });
-  const value = Number.parseInt(normalised || "0", 10);
+  const raw = (input.value ?? "").trim();
+  if (!raw) {
+    return 0;
+  }
+  const value = Number.parseInt(raw, 10);
   if (!Number.isFinite(value) || value < 0) {
     return 0;
   }
@@ -3362,6 +3054,18 @@ function renderDistributionChart(details) {
   distributionWrapper.hidden = false;
 }
 
+function resolveSummaryLabel(key, labels = {}) {
+  if (labels && typeof labels[key] === "string" && labels[key].trim()) {
+    return labels[key];
+  }
+  const translationKey = `summary.${key}`;
+  const translated = t(translationKey);
+  if (translated && translated !== translationKey) {
+    return translated;
+  }
+  return key;
+}
+
 function renderSummary(summary) {
   if (!summaryGrid) {
     return;
@@ -3398,7 +3102,7 @@ function renderSummary(summary) {
     }
 
     const dt = document.createElement("dt");
-    dt.textContent = labels[key] || key;
+    dt.textContent = resolveSummaryLabel(key, labels);
     dt.dataset.field = key;
 
     const dd = document.createElement("dd");
@@ -3702,7 +3406,6 @@ function clearCalculatorForm() {
     clearFieldError(input);
     const defaultValue = input.defaultValue ?? "0";
     input.value = defaultValue;
-    formatNumericInput(input, { treatEmptyAsZero: true });
   });
 
   calculatorForm
@@ -3729,7 +3432,6 @@ function clearCalculatorForm() {
   updateFreelanceCategoryHint();
   updateTradeFeeHint();
   updatePartialYearWarningState();
-  formatAllNumericInputs({ treatEmptyAsZero: true });
 
   try {
     window.localStorage.removeItem(CALCULATOR_STORAGE_KEY);
@@ -3850,7 +3552,7 @@ function downloadCsvSummary() {
 
   summaryFields.forEach(({ key, formatter }) => {
     if (summary[key] !== undefined && summary[key] !== null) {
-      const label = summaryLabels[key] || key;
+      const label = resolveSummaryLabel(key, summaryLabels);
       lines.push(["Summary", label, formatter(summary[key])]);
     }
   });
@@ -4013,8 +3715,6 @@ function initialiseCalculator() {
   clearButton?.addEventListener("click", clearCalculatorForm);
 
   attachValidationHandlers();
-  initialiseNumericAutoSelect();
-  formatAllNumericInputs({ treatEmptyAsZero: true });
   updatePartialYearWarningState();
 
   loadYearOptions().then(async () => {
