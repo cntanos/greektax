@@ -281,6 +281,7 @@ const distributionList = document.getElementById("distribution-list");
 const distributionEmptyState = document.getElementById("distribution-empty");
 const summaryGrid = document.getElementById("summary-grid");
 const detailsList = document.getElementById("details-list");
+const clearButton = document.getElementById("clear-button");
 const downloadButton = document.getElementById("download-button");
 const downloadCsvButton = document.getElementById("download-csv-button");
 const printButton = document.getElementById("print-button");
@@ -676,6 +677,9 @@ function captureElementValue(element) {
     if (element.type === "radio") {
       return element.checked ? element.value : undefined;
     }
+    if (isNumericInputElement(element)) {
+      return normaliseNumericString(element.value ?? "");
+    }
     return element.value ?? "";
   }
 
@@ -837,6 +841,7 @@ async function applyLocale(locale) {
   document.documentElement.lang = resolved;
   updateLocaleButtonState(resolved);
   localiseStaticText();
+  formatAllNumericInputs({ treatEmptyAsZero: true });
   renderYearWarnings(currentYearMetadata, {
     showPartialYearWarning: partialYearWarningActive,
   });
@@ -945,6 +950,202 @@ function formatPercent(value) {
   return formatter.format(value);
 }
 
+const numberSymbolCache = new Map();
+
+function isNumericInputElement(element) {
+  return element instanceof HTMLInputElement && element.hasAttribute("data-numeric-input");
+}
+
+function getNumericInputs() {
+  if (!calculatorForm) {
+    return [];
+  }
+  return Array.from(calculatorForm.querySelectorAll("[data-numeric-input]"));
+}
+
+function getLocaleNumberSymbols(localeTag) {
+  const cached = numberSymbolCache.get(localeTag);
+  if (cached) {
+    return cached;
+  }
+
+  const formatter = new Intl.NumberFormat(localeTag, {
+    useGrouping: true,
+    minimumFractionDigits: 1,
+  });
+  const parts = formatter.formatToParts(-12345.6);
+  const symbols = {
+    decimal: parts.find((part) => part.type === "decimal")?.value || ".",
+    group: parts.find((part) => part.type === "group")?.value || ",",
+    minus: parts.find((part) => part.type === "minusSign")?.value || "-",
+  };
+
+  numberSymbolCache.set(localeTag, symbols);
+  return symbols;
+}
+
+function normaliseNumericString(value, localeTag = resolveLocaleTag(currentLocale)) {
+  const raw = value == null ? "" : value.toString();
+  let normalised = raw.trim();
+  if (!normalised) {
+    return "";
+  }
+
+  const { decimal, minus } = getLocaleNumberSymbols(localeTag);
+  normalised = normalised.replace(/[\s\u00a0\u202f]+/g, "");
+
+  let sign = "";
+  if (normalised.startsWith("-")) {
+    sign = "-";
+    normalised = normalised.slice(1);
+  } else if (minus && normalised.startsWith(minus)) {
+    sign = "-";
+    normalised = normalised.slice(minus.length);
+  } else if (normalised.startsWith("+")) {
+    normalised = normalised.slice(1);
+  }
+
+  const decimalOccurrences = decimal
+    ? normalised.split(decimal).length - 1
+    : 0;
+  const dotCount = decimal === "."
+    ? 0
+    : (normalised.match(/\./g) || []).length;
+  const commaCount = decimal === ","
+    ? 0
+    : (normalised.match(/,/g) || []).length;
+  let decimalChar = null;
+  if (decimal && decimalOccurrences === 1) {
+    decimalChar = decimal;
+  } else if (dotCount && commaCount) {
+    decimalChar = normalised.lastIndexOf(".") > normalised.lastIndexOf(",") ? "." : ",";
+  } else if (dotCount === 1) {
+    decimalChar = ".";
+  } else if (commaCount === 1) {
+    decimalChar = ",";
+  }
+
+  let decimalIndex = decimalChar ? normalised.lastIndexOf(decimalChar) : -1;
+
+  let integerPart = normalised;
+  let fractionalPart = "";
+  if (decimalIndex !== -1) {
+    integerPart = normalised.slice(0, decimalIndex);
+    fractionalPart = normalised.slice(decimalIndex + 1);
+  }
+
+  integerPart = integerPart.replace(/[^0-9]/g, "");
+  fractionalPart = fractionalPart.replace(/[^0-9]/g, "");
+
+  if (!integerPart && !fractionalPart) {
+    return "";
+  }
+
+  if (!integerPart) {
+    integerPart = "0";
+  }
+
+  integerPart = integerPart.replace(/^0+(?=\d)/, "");
+  if (!integerPart) {
+    integerPart = "0";
+  }
+
+  const decimalPart = fractionalPart ? `.${fractionalPart}` : "";
+  return `${sign}${integerPart}${decimalPart}`;
+}
+
+function parseNumericFromString(value, { allowNegative = false } = {}) {
+  const localeTag = resolveLocaleTag(currentLocale);
+  const normalised = normaliseNumericString(value, localeTag);
+  if (!normalised || normalised === "-" || normalised === "+") {
+    return Number.NaN;
+  }
+  const number = Number.parseFloat(normalised);
+  if (!Number.isFinite(number)) {
+    return Number.NaN;
+  }
+  if (!allowNegative && number < 0) {
+    return Number.NaN;
+  }
+  return number;
+}
+
+function getNumericPrecision(input) {
+  if (!isNumericInputElement(input)) {
+    return 2;
+  }
+  const precisionAttr = input.getAttribute("data-precision");
+  const precision = Number.parseInt(precisionAttr ?? "", 10);
+  if (Number.isFinite(precision) && precision >= 0) {
+    return precision;
+  }
+  return 2;
+}
+
+function formatNumberForInput(value, precision = 2) {
+  const localeTag = resolveLocaleTag(currentLocale);
+  const minimumFractionDigits = precision > 0 ? 0 : 0;
+  const maximumFractionDigits = precision > 0 ? precision : 0;
+  const formatter = new Intl.NumberFormat(localeTag, {
+    useGrouping: true,
+    minimumFractionDigits,
+    maximumFractionDigits,
+  });
+  return formatter.format(value);
+}
+
+function formatNumericInput(input, { treatEmptyAsZero = true } = {}) {
+  if (!isNumericInputElement(input)) {
+    return;
+  }
+
+  const precision = getNumericPrecision(input);
+  const rawValue = (input.value ?? "").toString().trim();
+  if (!rawValue) {
+    if (treatEmptyAsZero) {
+      input.value = formatNumberForInput(0, precision);
+    }
+    return;
+  }
+
+  const number = parseNumericFromString(rawValue);
+  if (!Number.isFinite(number)) {
+    return;
+  }
+
+  const safeValue = Math.max(0, number);
+  input.value = formatNumberForInput(safeValue, precision);
+}
+
+function formatAllNumericInputs(options = {}) {
+  getNumericInputs().forEach((input) => {
+    formatNumericInput(input, options);
+  });
+}
+
+function buildEditableNumericValue(input) {
+  if (!isNumericInputElement(input)) {
+    return "";
+  }
+
+  const precision = getNumericPrecision(input);
+  const normalised = normaliseNumericString(input.value ?? "");
+  if (!normalised) {
+    return "";
+  }
+
+  if (precision === 0) {
+    const integerValue = Number.parseInt(normalised, 10);
+    return Number.isFinite(integerValue) ? String(integerValue) : "";
+  }
+
+  if (!normalised.includes(".")) {
+    return normalised;
+  }
+
+  return normalised.replace(/(\.\d*?)0+$/, "$1").replace(/\.$/, "");
+}
+
 function isInputVisible(input) {
   if (!input) {
     return false;
@@ -973,12 +1174,13 @@ function resetSectionInputs(section) {
   if (!section) {
     return;
   }
-  section.querySelectorAll('input[type="number"]').forEach((input) => {
+  section.querySelectorAll('[data-numeric-input]').forEach((input) => {
     if (!input) {
       return;
     }
     const defaultValue = input.defaultValue ?? "0";
     input.value = defaultValue || "0";
+    formatNumericInput(input);
   });
   section.querySelectorAll('input[type="checkbox"]').forEach((input) => {
     if (!input) {
@@ -1109,6 +1311,12 @@ function applyValueToElement(element, value) {
       element.checked = desired;
       return element.checked === desired;
     }
+    if (isNumericInputElement(element)) {
+      const stringValue = value === null || value === undefined ? "" : String(value);
+      element.value = stringValue;
+      formatNumericInput(element, { treatEmptyAsZero: true });
+      return true;
+    }
     const stringValue = value === null || value === undefined ? "" : String(value);
     element.value = stringValue;
     return element.value === stringValue;
@@ -1192,6 +1400,7 @@ function applyPendingCalculatorState() {
 
   updateFreelanceCategoryHint();
   updateTradeFeeHint();
+  formatAllNumericInputs({ treatEmptyAsZero: true });
 }
 
 function handleCalculatorStateChange() {
@@ -1637,7 +1846,10 @@ function renderInvestmentFields(categories) {
     label.textContent = `${category.label} (${formatPercent(category.rate)})`;
 
     const input = document.createElement("input");
-    input.type = "number";
+    input.type = "text";
+    input.setAttribute("inputmode", "decimal");
+    input.setAttribute("data-numeric-input", "true");
+    input.setAttribute("data-precision", "2");
     input.min = "0";
     input.step = "0.01";
     input.id = `investment-${category.id}`;
@@ -1647,6 +1859,7 @@ function renderInvestmentFields(categories) {
     wrapper.appendChild(label);
     wrapper.appendChild(input);
     investmentFieldsContainer.appendChild(wrapper);
+    formatNumericInput(input, { treatEmptyAsZero: true });
   });
 
   applyPendingCalculatorState();
@@ -2097,7 +2310,7 @@ function setFieldError(input, message) {
 }
 
 function validateNumberInput(input) {
-  if (!input) {
+  if (!isNumericInputElement(input)) {
     return true;
   }
 
@@ -2109,12 +2322,11 @@ function validateNumberInput(input) {
 
   const rawValue = (input.value ?? "").trim();
   if (rawValue === "") {
-    input.value = "0";
+    formatNumericInput(input, { treatEmptyAsZero: true });
     return true;
   }
 
-  const normalised = rawValue.replace(",", ".");
-  const number = Number.parseFloat(normalised);
+  const number = parseNumericFromString(rawValue);
   const fieldLabel = getFieldLabel(input);
 
   if (!Number.isFinite(number)) {
@@ -2158,6 +2370,7 @@ function validateNumberInput(input) {
   }
 
   input.value = String(number);
+  formatNumericInput(input);
   return true;
 }
 
@@ -2166,7 +2379,7 @@ function validateForm() {
     return true;
   }
 
-  const inputs = calculatorForm.querySelectorAll('input[type="number"]');
+  const inputs = calculatorForm.querySelectorAll('[data-numeric-input]');
   let isValid = true;
   inputs.forEach((input) => {
     if (!isInputVisible(input)) {
@@ -2184,27 +2397,27 @@ function attachValidationHandlers() {
     return;
   }
 
-  const inputs = calculatorForm.querySelectorAll('input[type="number"]');
-  inputs.forEach((input) => {
-    input.addEventListener("input", () => {
-      clearFieldError(input);
-    });
-    input.addEventListener("blur", () => {
-      validateNumberInput(input);
-    });
+  calculatorForm.addEventListener("input", (event) => {
+    const target = event.target;
+    if (isNumericInputElement(target)) {
+      clearFieldError(target);
+    }
   });
+
+  calculatorForm.addEventListener(
+    "blur",
+    (event) => {
+      const target = event.target;
+      if (isNumericInputElement(target)) {
+        validateNumberInput(target);
+      }
+    },
+    true,
+  );
 }
 
 function shouldAutoSelectValue(input) {
-  if (!input) {
-    return false;
-  }
-
-  if (!(input instanceof HTMLInputElement)) {
-    return false;
-  }
-
-  if (input.type !== "number") {
+  if (!isNumericInputElement(input)) {
     return false;
   }
 
@@ -2218,8 +2431,13 @@ function shouldAutoSelectValue(input) {
 
 function handleNumericFocus(event) {
   const target = event.target;
-  if (!(target instanceof HTMLInputElement)) {
+  if (!isNumericInputElement(target)) {
     return;
+  }
+
+  const editableValue = buildEditableNumericValue(target);
+  if (editableValue !== undefined) {
+    target.value = editableValue;
   }
 
   if (!shouldAutoSelectValue(target)) {
@@ -2256,8 +2474,7 @@ function readNumber(input) {
   if (!isInputVisible(input)) {
     return 0;
   }
-  const normalised = (input.value ?? "0").toString().replace(",", ".");
-  const value = Number.parseFloat(normalised);
+  const value = parseNumericFromString(input.value);
   if (!Number.isFinite(value) || value < 0) {
     return 0;
   }
@@ -2271,8 +2488,8 @@ function readInteger(input) {
   if (!isInputVisible(input)) {
     return 0;
   }
-  const normalised = (input.value ?? "0").toString().trim();
-  const value = Number.parseInt(normalised, 10);
+  const normalised = normaliseNumericString(input.value ?? "");
+  const value = Number.parseInt(normalised || "0", 10);
   if (!Number.isFinite(value) || value < 0) {
     return 0;
   }
@@ -2728,9 +2945,7 @@ function renderSankey(result) {
         label: linkLabels,
         color: linkColors,
         line: { color: linkOutlineColor, width: 1.2 },
-        text: linkLabels,
-        hoverinfo: "text",
-        hovertemplate: "%{text}<extra></extra>",
+        hovertemplate: "%{label}<extra></extra>",
       },
       hoverlabel: {
         bgcolor: tooltipBackground,
@@ -3370,6 +3585,79 @@ function resetResults() {
   lastCalculation = null;
 }
 
+function clearCalculatorForm() {
+  if (!calculatorForm) {
+    return;
+  }
+
+  calculatorForm.reset();
+
+  const toggles = [
+    toggleEmployment,
+    toggleFreelance,
+    toggleAgricultural,
+    toggleOther,
+    toggleRental,
+    toggleInvestment,
+    toggleDeductions,
+    toggleObligations,
+  ];
+
+  toggles.forEach((toggle) => {
+    if (!toggle) {
+      return;
+    }
+    if (typeof toggle.defaultChecked === "boolean") {
+      toggle.checked = toggle.defaultChecked;
+    }
+    handleSectionToggle(toggle);
+  });
+
+  getNumericInputs().forEach((input) => {
+    clearFieldError(input);
+    const defaultValue = input.defaultValue ?? "0";
+    input.value = defaultValue;
+    formatNumericInput(input, { treatEmptyAsZero: true });
+  });
+
+  calculatorForm
+    .querySelectorAll(".form-control.has-error")
+    .forEach((control) => control.classList.remove("has-error"));
+
+  calculatorForm
+    .querySelectorAll(".form-error")
+    .forEach((element) => element.remove());
+
+  resetResults();
+  setCalculatorStatus(t("status.ready"));
+
+  if (yearSelect) {
+    const selectedYear = Number.parseInt(yearSelect.value ?? "", 10);
+    if (Number.isFinite(selectedYear)) {
+      applyYearMetadata(selectedYear);
+    }
+  }
+
+  refreshInvestmentCategories();
+  refreshDeductionHints();
+  syncFreelanceActivityDerivedState();
+  updateFreelanceCategoryHint();
+  updateTradeFeeHint();
+  updatePartialYearWarningState();
+  formatAllNumericInputs({ treatEmptyAsZero: true });
+
+  try {
+    window.localStorage.removeItem(CALCULATOR_STORAGE_KEY);
+  } catch (error) {
+    console.warn("Unable to clear stored calculator state", error);
+  }
+  pendingCalculatorState = null;
+  if (calculatorStatePersistHandle) {
+    window.clearTimeout(calculatorStatePersistHandle);
+    calculatorStatePersistHandle = null;
+  }
+}
+
 async function submitCalculation(event) {
   event.preventDefault();
   resetResults();
@@ -3637,9 +3925,11 @@ function initialiseCalculator() {
   downloadButton?.addEventListener("click", downloadJsonSummary);
   downloadCsvButton?.addEventListener("click", downloadCsvSummary);
   printButton?.addEventListener("click", printSummary);
+  clearButton?.addEventListener("click", clearCalculatorForm);
 
   attachValidationHandlers();
   initialiseNumericAutoSelect();
+  formatAllNumericInputs({ treatEmptyAsZero: true });
   updatePartialYearWarningState();
 
   loadYearOptions().then(async () => {

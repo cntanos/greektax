@@ -5,6 +5,7 @@
     "el": {
       "actions": {
         "calculate": "Υπολογισμός φόρων",
+        "clear": "Καθαρισμός φόρμας",
         "download": "Λήψη σύνοψης (JSON)",
         "download_csv": "Λήψη σύνοψης (CSV)",
         "print": "Εκτύπωση σύνοψης"
@@ -282,6 +283,7 @@
     "en": {
       "actions": {
         "calculate": "Calculate taxes",
+        "clear": "Clear form",
         "download": "Download summary (JSON)",
         "download_csv": "Download summary (CSV)",
         "print": "Print summary"
