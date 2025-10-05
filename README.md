@@ -180,7 +180,7 @@ GreekTax tracks releases with the semantic pattern **R.X.Y**:
 - **Minor version** (`Y`) – iterations for hot-fixes or polish delivered within
   a sprint. Increment this for follow-up patches within the same sprint.
 
-The current milestone is **R.6.2** (version `0.6.2` in `pyproject.toml`),
+The current milestone is **R.7.1** (version `0.7.1` in `pyproject.toml`),
 reflecting the sixth major sprint within the initial release cycle.
 
 The canonical version is declared once in [`pyproject.toml`](pyproject.toml) and

@@ -287,13 +287,22 @@ class DetailTotals:
     income: float = 0.0
     tax: float = 0.0
     net: float = 0.0
+    taxable: float = 0.0
 
-    def add(self, income: float = 0.0, tax: float = 0.0, net: float = 0.0) -> None:
+    def add(
+        self,
+        income: float = 0.0,
+        tax: float = 0.0,
+        net: float = 0.0,
+        taxable: float = 0.0,
+    ) -> None:
         self.income += income
         self.tax += tax
         self.net += net
+        self.taxable += taxable
 
     def merge(self, other: DetailTotals) -> None:
         self.income += other.income
         self.tax += other.tax
         self.net += other.net
+        self.taxable += other.taxable
