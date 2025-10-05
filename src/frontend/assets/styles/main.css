@@ -460,6 +460,7 @@ main {
 .calculator-layout {
   display: grid;
   gap: 1.75rem;
+  grid-template-columns: minmax(0, 1fr);
 }
 
 #calculator-form {
@@ -1269,50 +1270,27 @@ main {
 
 @media (min-width: 1340px) {
   .calculator-layout {
-    grid-template-columns: minmax(0, 0.68fr) minmax(380px, 0.32fr);
     align-items: start;
   }
 
   .calculator-results {
-    position: sticky;
-    top: 1.5rem;
-  }
-}
-
-@media (min-width: 1600px) {
-  .calculator-layout {
-    grid-template-columns: minmax(0, 0.7fr) minmax(420px, 0.3fr);
+    position: static;
   }
 }
 
 @media (min-width: 1920px) {
-  .calculator-layout {
-    grid-template-columns: minmax(0, 0.72fr) minmax(460px, 0.28fr);
-    gap: 2.35rem;
-  }
-
   .distribution-chart {
     width: min(100%, 420px);
   }
 }
 
 @media (min-width: 2200px) {
-  .calculator-layout {
-    grid-template-columns: minmax(0, 0.74fr) minmax(520px, 0.26fr);
-    gap: 2.5rem;
-  }
-
   .distribution-chart {
     width: min(100%, 460px);
   }
 }
 
 @media (min-width: 2560px) {
-  .calculator-layout {
-    grid-template-columns: minmax(0, 0.76fr) minmax(560px, 0.24fr);
-    gap: 2.75rem;
-  }
-
   .distribution-chart {
     width: min(100%, 480px);
   }
