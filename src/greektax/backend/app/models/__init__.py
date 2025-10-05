@@ -84,7 +84,6 @@ class CalculationInput(BaseModel):
     pension_income: float
     pension_monthly_income: float | None
     pension_payments_per_year: int | None
-    pension_net_target_income: float | None
     freelance_profit: float
     freelance_gross_revenue: float
     freelance_deductible_expenses: float

@@ -745,20 +745,20 @@
                     for="pension-mode"
                     data-i18n-key="fields.pension-mode"
                   >
-                    Pension input type
+                    Pension input mode
                   </label>
                   <select id="pension-mode">
                     <option
-                      value="gross"
-                      data-i18n-key="fields.pension-mode-gross"
+                      value="annual"
+                      data-i18n-key="fields.pension-mode-annual"
                     >
-                      Enter gross amounts
+                      Enter annual amount
                     </option>
                     <option
-                      value="net"
-                      data-i18n-key="fields.pension-mode-net"
+                      value="monthly"
+                      data-i18n-key="fields.pension-mode-monthly"
                     >
-                      Enter net amounts
+                      Enter gross amount per payment
                     </option>
                   </select>
                 </div>
@@ -777,7 +777,7 @@
                 <div
                   class="form-control"
                   data-section="pension"
-                  data-mode="gross"
+                  data-mode="annual"
                 >
                   <label
                     for="pension-income"
@@ -806,99 +806,41 @@
                 <div
                   class="form-control"
                   data-section="pension"
-                  data-mode="net"
-                >
-                  <label
-                    for="pension-net-input-mode"
-                    data-i18n-key="fields.pension-net-input-mode"
-                  >
-                    Provide net pension as
-                  </label>
-                  <select id="pension-net-input-mode">
-                    <option
-                      value="annual"
-                      data-i18n-key="fields.pension-net-input-mode-annual"
-                    >
-                      Total for year
-                    </option>
-                    <option
-                      value="per_payment"
-                      data-i18n-key="fields.pension-net-input-mode-per-payment"
-                    >
-                      Per payment
-                    </option>
-                  </select>
-                  <p
-                    class="form-hint"
-                    data-i18n-key="hints.pension-net-input-mode"
-                  >
-                    Choose whether to enter the total net amount for the year
-                    or the net amount for each payment.
-                  </p>
-                </div>
-                <div
-                  class="form-control"
-                  data-section="pension"
-                  data-mode="net"
-                  data-net-input-mode="annual"
+                  data-mode="monthly"
                   hidden
                 >
                   <label
-                    for="pension-net-income"
-                    data-i18n-key="fields.pension-net-income"
+                    for="pension-monthly-income"
+                    data-i18n-key="fields.pension-monthly-income"
                   >
-                    Annual net pension (€)
+                    Monthly gross pension (€)
                   </label>
                   <input
-                    id="pension-net-income"
-                    name="pension.net_income"
+                    id="pension-monthly-income"
+                    name="pension.monthly_income"
                     type="number"
                     min="0"
                     step="0.01"
                     value="0"
-                    aria-describedby="pension-net-income-hint"
+                    aria-describedby="pension-monthly-income-hint"
                   />
                   <p
-                    id="pension-net-income-hint"
+                    id="pension-monthly-income-hint"
                     class="form-hint"
-                    data-i18n-key="hints.pension-income-net"
+                    data-i18n-key="hints.pension-monthly-income"
                   >
-                    Enter the annual net pension only when you choose "Total for
-                    year" above.
-                  </p>
-                </div>
-                <div
-                  class="form-control"
-                  data-section="pension"
-                  data-mode="net"
-                  data-net-input-mode="per_payment"
-                  hidden
-                >
-                  <label
-                    for="pension-net-monthly-income"
-                    data-i18n-key="fields.pension-net-monthly-income"
-                  >
-                    Net pension per payment (€)
-                  </label>
-                  <input
-                    id="pension-net-monthly-income"
-                    name="pension.net_monthly_income"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value="0"
-                    aria-describedby="pension-net-monthly-income-hint"
-                  />
-                  <p
-                    id="pension-net-monthly-income-hint"
-                    class="form-hint"
-                    data-i18n-key="hints.pension-income-net-monthly"
-                  >
-                    Enter the per-payment net pension only when you choose "Per
-                    payment" above.
+                    Enter the gross amount per pension payment. The calculator
+                    multiplies it by the payments per year you selected.
                   </p>
                 </div>
               </div>
+              <p
+                class="form-hint"
+                data-i18n-key="hints.pension-gross-note"
+              >
+                Net-to-gross pension conversion isn't supported. Please enter
+                gross amounts only.
+              </p>
             </div>
           </fieldset>
 
