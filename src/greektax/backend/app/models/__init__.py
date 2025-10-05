@@ -11,8 +11,10 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass
+from types import MappingProxyType
+from typing import Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from .api import (
     AgriculturalIncomeInput,
@@ -22,6 +24,7 @@ from .api import (
     DeductionsInput,
     DetailEntry,
     DependentsInput,
+    DemographicsInput,
     EmploymentInput,
     FreelanceInput,
     PensionInput,
@@ -41,6 +44,7 @@ __all__ = [
     "CalculationRequest",
     "CalculationResponse",
     "DependentsInput",
+    "DemographicsInput",
     "EmploymentInput",
     "PensionInput",
     "FreelanceInput",
@@ -102,6 +106,8 @@ class CalculationInput(BaseModel):
     deductions_medical: float
     deductions_education: float
     deductions_insurance: float
+    toggles: Mapping[str, bool] = Field(default_factory=dict)
+    taxpayer_birth_year: int | None = None
 
     @property
     def freelance_taxable_income(self) -> float:
@@ -198,6 +204,34 @@ class CalculationInput(BaseModel):
             + self.deductions_insurance
         )
         return total if total > 0 else 0.0
+
+    def model_post_init(self, __context: Any) -> None:  # type: ignore[override]
+        object.__setattr__(self, "toggles", MappingProxyType(dict(self.toggles)))
+
+    def toggle_enabled(self, key: str) -> bool:
+        value = self.toggles.get(key)
+        return bool(value) if value is not None else False
+
+    @property
+    def taxpayer_age(self) -> int | None:
+        if self.taxpayer_birth_year is None:
+            return None
+        age = self.year - self.taxpayer_birth_year
+        return age if age >= 0 else None
+
+    @property
+    def youth_rate_category(self) -> str | None:
+        if not self.toggle_enabled("youth_eligibility"):
+            return None
+
+        age = self.taxpayer_age
+        if age is None:
+            return None
+        if age < 25:
+            return "under_25"
+        if age <= 30:
+            return "age26_30"
+        return None
 
     @property
     def rental_taxable_income(self) -> float:

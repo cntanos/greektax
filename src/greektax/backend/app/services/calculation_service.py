@@ -95,6 +95,8 @@ def _normalise_payload(
     locale = request.locale or "en"
 
     children = request.dependents.children
+    demographics = request.demographics
+    toggles = MappingProxyType(dict(request.toggles)) if request.toggles else MappingProxyType({})
 
     employment_input = request.employment
     employment_payroll = config.employment.payroll
@@ -233,6 +235,7 @@ def _normalise_payload(
         year=request.year,
         locale=locale,
         children=children,
+        taxpayer_birth_year=demographics.taxpayer_birth_year,
         employment_income=employment_income,
         employment_monthly_income=employment_monthly_income,
         employment_payments_per_year=employment_payments,
@@ -270,6 +273,7 @@ def _normalise_payload(
         deductions_medical=deductions_medical,
         deductions_education=deductions_education,
         deductions_insurance=deductions_insurance,
+        toggles=toggles,
     )
 
     return _apply_net_targets(normalised, config)

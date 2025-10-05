@@ -16,6 +16,7 @@ from pydantic import (
 
 __all__ = [
     "DependentsInput",
+    "DemographicsInput",
     "EmploymentInput",
     "PensionInput",
     "FreelanceInput",
@@ -47,6 +48,14 @@ class DependentsInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     children: int = Field(default=0, ge=0)
+
+
+class DemographicsInput(BaseModel):
+    """Basic taxpayer demographics used for relief eligibility."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    taxpayer_birth_year: int | None = Field(default=None, ge=1900, le=2100)
 
 
 class EmploymentInput(BaseModel):
@@ -176,6 +185,7 @@ class CalculationRequest(BaseModel):
     year: int = Field(..., ge=0)
     locale: str = Field(default="en")
     dependents: DependentsInput = Field(default_factory=DependentsInput)
+    demographics: DemographicsInput = Field(default_factory=DemographicsInput)
     employment: EmploymentInput = Field(default_factory=EmploymentInput)
     pension: PensionInput = Field(default_factory=PensionInput)
     freelance: FreelanceInput = Field(default_factory=FreelanceInput)
@@ -187,6 +197,7 @@ class CalculationRequest(BaseModel):
     other: OtherIncomeInput = Field(default_factory=OtherIncomeInput)
     obligations: ObligationsInput = Field(default_factory=ObligationsInput)
     deductions: DeductionsInput = Field(default_factory=DeductionsInput)
+    toggles: dict[str, bool] = Field(default_factory=dict)
     withholding_tax: float = Field(default=0.0, ge=0)
 
     @field_validator("locale", mode="before")
@@ -223,6 +234,25 @@ class CalculationRequest(BaseModel):
                 )
             amounts[str(key)] = amount
         return amounts
+
+    @field_validator("toggles", mode="before")
+    @classmethod
+    def _normalise_toggles(cls, value: Any) -> Mapping[str, Any]:
+        if value is None:
+            return {}
+        if isinstance(value, Mapping):
+            return value
+        raise TypeError(
+            "Toggles section must be an object mapping identifiers to booleans"
+        )
+
+    @field_validator("toggles", mode="after")
+    @classmethod
+    def _coerce_toggles(cls, value: Mapping[str, Any]) -> dict[str, bool]:
+        toggles: dict[str, bool] = {}
+        for key, raw in value.items():
+            toggles[str(key)] = bool(raw)
+        return toggles
 
 
 class DeductionBreakdownEntry(BaseModel):

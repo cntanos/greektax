@@ -46,6 +46,7 @@ schema. Unknown top-level or nested keys are rejected (`extra="forbid"`).
 | `year` | integer | ✅ | Tax year to evaluate. Must reference an available configuration file. |
 | `locale` | string | ❌ | BCP-47 locale code (`"en"` by default, `"el"` supported). Whitespace-only values default to `"en"`. |
 | `dependents` | object | ❌ | Household dependent information. Defaults to no dependents. |
+| `demographics` | object | ❌ | Taxpayer demographic data used for relief eligibility. Defaults to empty values. |
 | `employment` | object | ❌ | Employment income inputs. Defaults to zero amounts. |
 | `pension` | object | ❌ | Pension income inputs. Defaults to zero amounts. |
 | `freelance` | object | ❌ | Freelance/self-employment inputs. Defaults to zero amounts. |
@@ -55,6 +56,7 @@ schema. Unknown top-level or nested keys are rejected (`extra="forbid"`).
 | `other` | object | ❌ | Miscellaneous taxable income inputs. Defaults to zero amounts. |
 | `obligations` | object | ❌ | Flat obligations such as ENFIA and luxury tax. Defaults to zero amounts. |
 | `deductions` | object | ❌ | User-entered deduction amounts. Defaults to zero amounts. |
+| `toggles` | object | ❌ | Optional boolean feature flags (e.g., youth relief confirmation). Defaults to `{}`. |
 | `withholding_tax` | number | ❌ | Amount of tax already withheld. Defaults to `0`. Must be non-negative. |
 
 ### Dependents
@@ -62,6 +64,12 @@ schema. Unknown top-level or nested keys are rejected (`extra="forbid"`).
 | Field | Type | Required | Rules |
 | --- | --- | --- | --- |
 | `children` | integer | ❌ | Defaults to `0`. Must be ≥ 0. |
+
+### Demographics
+
+| Field | Type | Required | Rules |
+| --- | --- | --- | --- |
+| `taxpayer_birth_year` | integer | ❌ | Defaults to `null`. When provided it must be between 1900 and 2100. Used to derive age brackets for youth relief calculations. |
 
 ### Employment & Pension sections
 
