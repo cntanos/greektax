@@ -635,6 +635,11 @@ function loadStoredCalculatorState() {
       return null;
     }
 
+    if (typeof raw !== "string" || !raw.trim().startsWith("{")) {
+      window.localStorage.removeItem(CALCULATOR_STORAGE_KEY);
+      return null;
+    }
+
     const parsed = JSON.parse(raw);
     if (!parsed || typeof parsed !== "object") {
       window.localStorage.removeItem(CALCULATOR_STORAGE_KEY);
