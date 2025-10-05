@@ -236,6 +236,19 @@
           "scheduled": "προγραμματισμένο"
         }
       },
+      "summary": {
+        "average_monthly_tax": "Μέσος φόρος ανά μήνα",
+        "balance_due": "Καθαρός φόρος προς πληρωμή",
+        "deductions_applied": "Εφαρμοσμένες εκπτώσεις",
+        "deductions_entered": "Καταχωρημένες εκπτώσεις",
+        "effective_tax_rate": "Συνολικός φορολογικός συντελεστής",
+        "income_total": "Συνολικό εισόδημα",
+        "net_income": "Καθαρό εισόδημα",
+        "net_monthly_income": "Καθαρό εισόδημα ανά μήνα",
+        "refund_due": "Επιστροφή φόρου",
+        "tax_total": "Συνολικοί φόροι",
+        "withholding_tax": "Παρακρατηθείς φόρος"
+      },
       "ui": {
         "advanced_options": "Προχωρημένες επιλογές",
         "deductions_help_body": "Καταχωρήστε μόνο ποσά με νόμιμες αποδείξεις ή αποδεικτικά πληρωμής.",
@@ -513,6 +526,19 @@
           "proposed": "proposed",
           "scheduled": "scheduled"
         }
+      },
+      "summary": {
+        "average_monthly_tax": "Average tax per month",
+        "balance_due": "Net tax due",
+        "deductions_applied": "Deductions applied",
+        "deductions_entered": "Deductions entered",
+        "effective_tax_rate": "Effective tax rate",
+        "income_total": "Total income",
+        "net_income": "Net income",
+        "net_monthly_income": "Net income per month",
+        "refund_due": "Refund due",
+        "tax_total": "Total taxes",
+        "withholding_tax": "Tax already withheld"
       },
       "ui": {
         "advanced_options": "Advanced options",
