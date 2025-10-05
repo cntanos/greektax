@@ -131,6 +131,7 @@
         "freelance-trade-fee-standard": "Τυπικό ποσό",
         "freelance-years-active": "Έτη ως ελεύθερος επαγγελματίας",
         "luxury-due": "Φόρος πολυτελούς διαβίωσης (€)",
+        "new-mother-toggle": "Επίδομα νέας μητέρας",
         "other-income": "Λοιπά φορολογητέα εισοδήματα (€)",
         "pension-income": "Ακαθάριστο εισόδημα συντάξεων (€)",
         "pension-mode": "Τύπος εισαγωγής σύνταξης",
@@ -144,6 +145,7 @@
         "pension-payments": "Καταβολές συντάξεων ανά έτος",
         "rental-expenses": "Εκπιπτόμενες δαπάνες ενοικίων (€)",
         "rental-income": "Ακαθάριστα έσοδα ενοικίων (€)",
+        "small-village-toggle": "Ελάφρυνση μικρού οικισμού",
         "toggle-agricultural": "Αγροτικό εισόδημα",
         "toggle-deductions": "Εκπτώσεις",
         "toggle-employment": "Εισόδημα μισθωτών/συντάξεων",
@@ -153,7 +155,8 @@
         "toggle-other": "Λοιπά εισοδήματα",
         "toggle-rental": "Εισόδημα από ενοίκια",
         "trade-fee-toggle": "Τέλος επιτηδεύματος",
-        "year-select": "Φορολογικό έτος"
+        "year-select": "Φορολογικό έτος",
+        "youth-eligibility-toggle": "Έκπτωση νεανικής απασχόλησης"
       },
       "forms": {
         "freelance": {
@@ -287,15 +290,25 @@
           "pending_deductions_2025": "Οι κανόνες φορολογικών εκπτώσεων για το {{year}} ενδέχεται να αλλάξουν. Ελέγξτε τα επιλέξιμα ποσά πριν την υποβολή."
         },
         "employment": {
-          "partial_year_review": "Τα σενάρια με μερική απασχόληση ενδέχεται να απαιτούν χειροκίνητη προσαρμογή εισφορών και πιστώσεων. Επαληθεύστε τα ποσά για το {{year}} αν η σύμβασή σας έληξε νωρίτερα."
+          "partial_year_review": "Τα σενάρια με μερική απασχόληση ενδέχεται να απαιτούν χειροκίνητη προσαρμογή εισφορών και πιστώσεων. Επαληθεύστε τα ποσά για το {{year}} αν η σύμβασή σας έληξε νωρίτερα.",
+          "youth_relief_toggle": "Επιβεβαιώστε την ιδιότητα νεανικής απασχόλησης πριν εφαρμόσετε τους μειωμένους συντελεστές για το {{year}}."
+        },
+        "family": {
+          "new_mother_toggle": "Η ΑΑΔΕ παρέχει ενισχυμένες εκπτώσεις για νέες μητέρες. Ενεργοποιήστε το μόνο αν η γέννα συνέβη εντός του προβλεπόμενου διαστήματος για το {{year}}."
         },
         "freelance": {
           "trade_fee_sunset": "Η ΑΑΔΕ σχεδιάζει την επαναφορά του τέλους επιτηδεύματος σταδιακά. Για το {{year}} επιβεβαιώστε αν ισχύει για τη δραστηριότητά σας πριν από την υποβολή."
         },
         "learn_more": "Μάθετε περισσότερα",
         "links": {
+          "new_mother_relief": "Οδηγίες ΑΑΔΕ για νέες μητέρες",
           "partial_year_review": "Οδηγίες για μερική απασχόληση",
-          "pending_deductions": "Οδηγός εκπτώσεων ΑΑΔΕ"
+          "pending_deductions": "Οδηγός εκπτώσεων ΑΑΔΕ",
+          "small_village_relief": "Ελάφρυνση κατοικίας σε μικρούς οικισμούς",
+          "youth_relief": "Κριτήρια έκπτωσης νεανικής απασχόλησης"
+        },
+        "residence": {
+          "small_village_toggle": "Η ελάφρυνση μικρού οικισμού αφορά οικισμούς με πληθυσμό κάτω από τα νόμιμα όρια. Επιβεβαιώστε τη μόνιμη κατοικία πριν την ενεργοποίηση για το {{year}}."
         }
       }
     },
@@ -428,6 +441,7 @@
         "freelance-trade-fee-standard": "Standard amount",
         "freelance-years-active": "Years self-employed",
         "luxury-due": "Luxury living tax (€)",
+        "new-mother-toggle": "New mother allowance",
         "other-income": "Other taxable income (€)",
         "pension-income": "Pension gross income (€)",
         "pension-mode": "Pension input type",
@@ -441,6 +455,7 @@
         "pension-payments": "Pension payments per year",
         "rental-expenses": "Rental deductible expenses (€)",
         "rental-income": "Rental gross income (€)",
+        "small-village-toggle": "Small village residency relief",
         "toggle-agricultural": "Agricultural income",
         "toggle-deductions": "Deductions",
         "toggle-employment": "Salary/pension income",
@@ -450,7 +465,8 @@
         "toggle-other": "Other income",
         "toggle-rental": "Rental income",
         "trade-fee-toggle": "Business activity fee",
-        "year-select": "Tax year"
+        "year-select": "Tax year",
+        "youth-eligibility-toggle": "Youth employment relief"
       },
       "forms": {
         "freelance": {
@@ -584,15 +600,25 @@
           "pending_deductions_2025": "Tax deduction rules for {{year}} are subject to change. Confirm eligible amounts before submitting returns."
         },
         "employment": {
-          "partial_year_review": "Partial-year payroll scenarios may require manual EFKA and tax credit adjustments. Validate the figures for {{year}} if your contract ended early."
+          "partial_year_review": "Partial-year payroll scenarios may require manual EFKA and tax credit adjustments. Validate the figures for {{year}} if your contract ended early.",
+          "youth_relief_toggle": "Confirm youth eligibility before applying the reduced employment tax brackets for {{year}}."
+        },
+        "family": {
+          "new_mother_toggle": "AADE offers enhanced credits for new mothers. Enable the toggle only when the birth occurred within the relief window for {{year}}."
         },
         "freelance": {
           "trade_fee_sunset": "AADE plans to bring back the business activity fee in stages. For {{year}}, confirm whether it applies to your activity before you submit."
         },
         "learn_more": "Learn more",
         "links": {
+          "new_mother_relief": "AADE guidance for new mothers",
           "partial_year_review": "Guidance on partial-year payroll",
-          "pending_deductions": "AADE deduction guidance"
+          "pending_deductions": "AADE deduction guidance",
+          "small_village_relief": "Residency relief for small villages",
+          "youth_relief": "Youth employment relief criteria"
+        },
+        "residence": {
+          "small_village_toggle": "Small-village residency relief applies to settlements under statutory population limits. Verify eligibility before enabling the toggle for {{year}}."
         }
       }
     }

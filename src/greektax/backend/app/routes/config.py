@@ -56,6 +56,7 @@ def _serialise_trade_fee(config: TradeFeeConfig) -> dict[str, Any]:
         "standard_amount": config.standard_amount,
         "reduced_amount": config.reduced_amount,
         "newly_self_employed_reduction_years": config.newly_self_employed_reduction_years,
+        "fee_sunset": config.fee_sunset,
     }
     if config.sunset:
         payload["sunset"] = {
@@ -83,6 +84,7 @@ def _serialise_efka_categories(
                 "pension_monthly_amount": category.pension_monthly_amount,
                 "health_monthly_amount": category.health_monthly_amount,
                 "lump_sum_monthly_amount": category.lump_sum_monthly_amount,
+                "estimate": category.estimate,
             }
         )
     return serialised

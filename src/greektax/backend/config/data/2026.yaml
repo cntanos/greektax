@@ -1,0 +1,571 @@
+year: 2026
+meta:
+  version: 1
+  status: draft
+  notes: "Preliminary 2026 configuration with household brackets and youth relief toggles"
+  toggles:
+    youth_eligibility: true
+    small_village: true
+    new_mother: true
+    tekmiria_reduction: true
+    presumptive_relief: true
+income:
+  employment:
+    payroll:
+      allowed_payments_per_year:
+        - 14
+        - 12
+        - 10
+      default_payments_per_year: 14
+    contributions:
+      employee_rate: 0.1337
+      employer_rate: 0.2179
+      monthly_salary_cap: 7572.62
+    tax_brackets:
+      - upper: 12000
+        rates:
+          household:
+            dependants:
+              0: 0.085
+              1: 0.08
+              2: 0.075
+              3: 0.07
+              4: 0.065
+            reduction_factor: 0.02
+          youth:
+            under_25: 0.05
+            age26_30: 0.06
+      - upper: 24000
+        rates:
+          household:
+            dependants:
+              0: 0.22
+              1: 0.215
+              2: 0.205
+              3: 0.195
+              4: 0.185
+            reduction_factor: 0.015
+          youth:
+            under_25: 0.18
+            age26_30: 0.195
+      - upper: 36000
+        rates:
+          household:
+            dependants:
+              0: 0.29
+              1: 0.285
+              2: 0.275
+              3: 0.265
+              4: 0.255
+            reduction_factor: 0.01
+          youth:
+            under_25: 0.23
+            age26_30: 0.255
+      - upper: 50000
+        rates:
+          household:
+            dependants:
+              0: 0.37
+              1: 0.365
+              2: 0.355
+              3: 0.345
+              4: 0.335
+            reduction_factor: 0.01
+          youth:
+            under_25: 0.3
+            age26_30: 0.32
+      - rates:
+          household:
+            dependants:
+              0: 0.45
+              1: 0.445
+              2: 0.435
+              3: 0.425
+              4: 0.415
+            reduction_factor: 0.01
+          youth:
+            under_25: 0.36
+            age26_30: 0.38
+        pending_confirmation: true
+    tax_credit:
+      amounts_by_children:
+        "0": 778
+        "1": 820
+        "2": 910
+        "3": 1140
+      incremental_amount_per_child: 230
+      pending_confirmation: true
+    family_tax_credit:
+      pending_confirmation: true
+      estimate: true
+      reduction_factor: 0.95
+    tekmiria_reduction_factor: 0.9
+  pension:
+    payroll:
+      allowed_payments_per_year:
+        - 14
+        - 12
+        - 10
+      default_payments_per_year: 14
+    contributions:
+      employee_rate: 0.0
+      employer_rate: 0.0
+    tax_brackets:
+      - upper: 12000
+        rates:
+          household:
+            dependants:
+              0: 0.085
+              1: 0.08
+              2: 0.075
+              3: 0.07
+              4: 0.065
+            reduction_factor: 0.02
+          youth:
+            under_25: 0.05
+            age26_30: 0.06
+      - upper: 24000
+        rates:
+          household:
+            dependants:
+              0: 0.22
+              1: 0.215
+              2: 0.205
+              3: 0.195
+              4: 0.185
+            reduction_factor: 0.015
+          youth:
+            under_25: 0.18
+            age26_30: 0.195
+      - upper: 36000
+        rates:
+          household:
+            dependants:
+              0: 0.29
+              1: 0.285
+              2: 0.275
+              3: 0.265
+              4: 0.255
+            reduction_factor: 0.01
+          youth:
+            under_25: 0.23
+            age26_30: 0.255
+      - upper: 50000
+        rates:
+          household:
+            dependants:
+              0: 0.37
+              1: 0.365
+              2: 0.355
+              3: 0.345
+              4: 0.335
+            reduction_factor: 0.01
+          youth:
+            under_25: 0.3
+            age26_30: 0.32
+      - rates:
+          household:
+            dependants:
+              0: 0.45
+              1: 0.445
+              2: 0.435
+              3: 0.425
+              4: 0.415
+            reduction_factor: 0.01
+          youth:
+            under_25: 0.36
+            age26_30: 0.38
+        pending_confirmation: true
+  freelance:
+    tax_brackets:
+      - upper: 12000
+        rates:
+          household:
+            dependants:
+              0: 0.085
+              1: 0.08
+              2: 0.075
+              3: 0.07
+              4: 0.065
+            reduction_factor: 0.02
+          youth:
+            under_25: 0.05
+            age26_30: 0.06
+      - upper: 24000
+        rates:
+          household:
+            dependants:
+              0: 0.22
+              1: 0.215
+              2: 0.205
+              3: 0.195
+              4: 0.185
+            reduction_factor: 0.015
+          youth:
+            under_25: 0.18
+            age26_30: 0.195
+      - upper: 36000
+        rates:
+          household:
+            dependants:
+              0: 0.29
+              1: 0.285
+              2: 0.275
+              3: 0.265
+              4: 0.255
+            reduction_factor: 0.01
+          youth:
+            under_25: 0.23
+            age26_30: 0.255
+      - upper: 50000
+        rates:
+          household:
+            dependants:
+              0: 0.37
+              1: 0.365
+              2: 0.355
+              3: 0.345
+              4: 0.335
+            reduction_factor: 0.01
+          youth:
+            under_25: 0.3
+            age26_30: 0.32
+      - rates:
+          household:
+            dependants:
+              0: 0.45
+              1: 0.445
+              2: 0.435
+              3: 0.425
+              4: 0.415
+            reduction_factor: 0.01
+          youth:
+            under_25: 0.36
+            age26_30: 0.38
+        pending_confirmation: true
+    trade_fee:
+      standard_amount: 0
+      reduced_amount: 0
+      newly_self_employed_reduction_years: null
+      fee_sunset: true
+    efka_categories:
+      - id: general_class_1
+        label_key: forms.freelance.efka.category.general_class_1
+        monthly_amount: 273.94
+        pension_monthly_amount: 220.4
+        health_monthly_amount: 53.55
+        estimate: true
+      - id: general_class_2
+        label_key: forms.freelance.efka.category.general_class_2
+        monthly_amount: 328.84
+        pension_monthly_amount: 263.74
+        health_monthly_amount: 65.1
+        estimate: true
+      - id: general_class_3
+        label_key: forms.freelance.efka.category.general_class_3
+        monthly_amount: 395.0
+        pension_monthly_amount: 319.4
+        health_monthly_amount: 75.6
+        estimate: true
+      - id: general_class_4
+        label_key: forms.freelance.efka.category.general_class_4
+        monthly_amount: 475.58
+        pension_monthly_amount: 384.23
+        health_monthly_amount: 91.35
+        estimate: true
+      - id: general_class_5
+        label_key: forms.freelance.efka.category.general_class_5
+        monthly_amount: 561.28
+        pension_monthly_amount: 458.38
+        health_monthly_amount: 102.9
+        estimate: true
+      - id: general_class_6
+        label_key: forms.freelance.efka.category.general_class_6
+        monthly_amount: 660.7
+        pension_monthly_amount: 542.05
+        health_monthly_amount: 118.65
+        estimate: true
+      - id: general_reduced
+        label_key: forms.freelance.efka.category.general_reduced
+        monthly_amount: 164.37
+        pension_monthly_amount: 120.27
+        health_monthly_amount: 44.1
+        description_key: forms.freelance.efka.category.general_reduced_description
+        estimate: true
+      - id: engineer_class_1
+        label_key: forms.freelance.efka.category.engineer_class_1
+        monthly_amount: 355.69
+        pension_monthly_amount: 277.23
+        health_monthly_amount: 78.46
+        auxiliary_monthly_amount: 46.19
+        lump_sum_monthly_amount: 30.04
+        description_key: forms.freelance.efka.category.engineer_description
+        estimate: true
+      - id: engineer_class_2
+        label_key: forms.freelance.efka.category.engineer_class_2
+        monthly_amount: 423.54
+        pension_monthly_amount: 328.95
+        health_monthly_amount: 94.58
+        auxiliary_monthly_amount: 53.92
+        lump_sum_monthly_amount: 35.13
+        description_key: forms.freelance.efka.category.engineer_description
+        estimate: true
+      - id: engineer_class_3
+        label_key: forms.freelance.efka.category.engineer_class_3
+        monthly_amount: 504.84
+        pension_monthly_amount: 393.44
+        health_monthly_amount: 111.41
+        auxiliary_monthly_amount: 63.06
+        lump_sum_monthly_amount: 41.86
+        description_key: forms.freelance.efka.category.engineer_description
+        estimate: true
+    pending_contribution_update: true
+  agricultural:
+    tax_brackets:
+      - upper: 12000
+        rates:
+          household:
+            dependants:
+              0: 0.085
+              1: 0.08
+              2: 0.075
+              3: 0.07
+              4: 0.065
+            reduction_factor: 0.02
+          youth:
+            under_25: 0.05
+            age26_30: 0.06
+      - upper: 24000
+        rates:
+          household:
+            dependants:
+              0: 0.22
+              1: 0.215
+              2: 0.205
+              3: 0.195
+              4: 0.185
+            reduction_factor: 0.015
+          youth:
+            under_25: 0.18
+            age26_30: 0.195
+      - upper: 36000
+        rates:
+          household:
+            dependants:
+              0: 0.29
+              1: 0.285
+              2: 0.275
+              3: 0.265
+              4: 0.255
+            reduction_factor: 0.01
+          youth:
+            under_25: 0.23
+            age26_30: 0.255
+      - upper: 50000
+        rates:
+          household:
+            dependants:
+              0: 0.37
+              1: 0.365
+              2: 0.355
+              3: 0.345
+              4: 0.335
+            reduction_factor: 0.01
+          youth:
+            under_25: 0.3
+            age26_30: 0.32
+      - rates:
+          household:
+            dependants:
+              0: 0.45
+              1: 0.445
+              2: 0.435
+              3: 0.425
+              4: 0.415
+            reduction_factor: 0.01
+          youth:
+            under_25: 0.36
+            age26_30: 0.38
+        pending_confirmation: true
+  other:
+    tax_brackets:
+      - upper: 12000
+        rates:
+          household:
+            dependants:
+              0: 0.085
+              1: 0.08
+              2: 0.075
+              3: 0.07
+              4: 0.065
+            reduction_factor: 0.02
+          youth:
+            under_25: 0.05
+            age26_30: 0.06
+      - upper: 24000
+        rates:
+          household:
+            dependants:
+              0: 0.22
+              1: 0.215
+              2: 0.205
+              3: 0.195
+              4: 0.185
+            reduction_factor: 0.015
+          youth:
+            under_25: 0.18
+            age26_30: 0.195
+      - upper: 36000
+        rates:
+          household:
+            dependants:
+              0: 0.29
+              1: 0.285
+              2: 0.275
+              3: 0.265
+              4: 0.255
+            reduction_factor: 0.01
+          youth:
+            under_25: 0.23
+            age26_30: 0.255
+      - upper: 50000
+        rates:
+          household:
+            dependants:
+              0: 0.37
+              1: 0.365
+              2: 0.355
+              3: 0.345
+              4: 0.335
+            reduction_factor: 0.01
+          youth:
+            under_25: 0.3
+            age26_30: 0.32
+      - rates:
+          household:
+            dependants:
+              0: 0.45
+              1: 0.445
+              2: 0.435
+              3: 0.425
+              4: 0.415
+            reduction_factor: 0.01
+          youth:
+            under_25: 0.36
+            age26_30: 0.38
+        pending_confirmation: true
+  rental:
+    tax_brackets:
+      - upper: 12000
+        rate: 0.15
+      - upper: 25000
+        rate: 0.25
+      - upper: 45000
+        rate: 0.35
+      - rate: 0.45
+  investment:
+    rates:
+      dividends: 0.05
+      interest: 0.15
+      capital_gains: 0.15
+      royalties: 0.20
+deductions:
+  rules:
+    donations:
+      credit_rate: 0.20
+      income_cap_rate: 0.10
+    medical:
+      credit_rate: 0.10
+      income_threshold_rate: 0.05
+      max_credit: 3000
+    education:
+      credit_rate: 0.10
+      max_eligible_expense: 1000
+    insurance:
+      credit_rate: 0.10
+      max_eligible_expense: 1200
+  hints:
+    - id: dependents.children
+      applies_to:
+        - employment
+        - pension
+      label_key: forms.dependents.children
+      description_key: forms.dependents.children_hint
+      input_id: children-input
+      validation:
+        type: integer
+        min: 0
+        max: 10
+      allowances:
+        - label_key: forms.dependents.children_allowance.label
+          description_key: forms.dependents.children_allowance.description
+          thresholds:
+            - label_key: forms.dependents.children_allowance.threshold.none
+              amount: 780
+            - label_key: forms.dependents.children_allowance.threshold.one
+              amount: 820
+            - label_key: forms.dependents.children_allowance.threshold.two
+              amount: 910
+            - label_key: forms.dependents.children_allowance.threshold.three_plus
+              amount: 1140
+              notes_key: forms.dependents.children_allowance.threshold.three_plus_note
+    - id: toggles.youth_eligibility
+      applies_to:
+        - employment
+        - pension
+      label_key: hints.toggles.youth_eligibility.label
+      description_key: hints.toggles.youth_eligibility.description
+      input_id: youth-eligibility-toggle
+      validation:
+        type: boolean
+      allowances: []
+    - id: toggles.small_village
+      applies_to:
+        - freelance
+        - agricultural
+      label_key: hints.toggles.small_village.label
+      description_key: hints.toggles.small_village.description
+      input_id: small-village-toggle
+      validation:
+        type: boolean
+      allowances: []
+    - id: toggles.new_mother
+      applies_to:
+        - employment
+      label_key: hints.toggles.new_mother.label
+      description_key: hints.toggles.new_mother.description
+      input_id: new-mother-toggle
+      validation:
+        type: boolean
+      allowances: []
+warnings:
+  - id: employment.partial_year_review
+    severity: warning
+    applies_to:
+      - employment
+      - pension
+    message_key: warnings.employment.partial_year_review
+    documentation_key: warnings.links.partial_year_review
+    documentation_url: https://www.sepenet.gr/el/library/content/apolysi-symvasi-ergasias
+  - id: employment.youth_relief_toggle
+    severity: info
+    applies_to:
+      - employment
+    message_key: warnings.employment.youth_relief_toggle
+    documentation_key: links.youth_relief
+    documentation_url: https://www.aade.gr/epiheiriseis/forologia-eisodimatos/forologikes-elafryseis-neon
+  - id: residence.small_village_toggle
+    severity: info
+    applies_to:
+      - freelance
+      - agricultural
+    message_key: warnings.residence.small_village_toggle
+    documentation_key: links.small_village_relief
+    documentation_url: https://www.aade.gr/adeiodotisi-epiheiriseon/katoikia-se-mikra-choria
+  - id: family.new_mother_toggle
+    severity: info
+    applies_to:
+      - employment
+    message_key: warnings.family.new_mother_toggle
+    documentation_key: links.new_mother_relief
+    documentation_url: https://www.aade.gr/polites/forologia-eisodimatos/forologikes-elafrynseis-neon-miteron
