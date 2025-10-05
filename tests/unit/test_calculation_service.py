@@ -6,8 +6,9 @@ from copy import deepcopy
 from typing import Any
 
 import pytest
+from pydantic import ValidationError
 
-from greektax.backend.app.models import CalculationRequest
+from greektax.backend.app.models import CalculationRequest, NET_INCOME_INPUT_ERROR
 from greektax.backend.app.services.calculation_service import calculate_tax
 from greektax.backend.config.year_config import YearConfiguration, load_year_configuration
 
@@ -247,37 +248,28 @@ def test_calculate_tax_rejects_invalid_numbers() -> None:
     assert "Invalid calculation payload" in message
 
 
-def test_calculate_tax_rejects_negative_employment_payments_per_year() -> None:
-    """Negative payroll frequencies are rejected with a clear error."""
+@pytest.mark.parametrize("field", ["net_income", "net_monthly_income"])
+def test_calculation_request_rejects_net_income_inputs(field: str) -> None:
+    """Employment payloads should reject legacy net income fields."""
 
-    with pytest.raises(ValueError) as error:
-        calculate_tax({"year": 2024, "employment": {"payments_per_year": -1}})
+    with pytest.raises(ValidationError) as exc_info:
+        CalculationRequest.model_validate({"year": 2024, "employment": {field: 1_000}})
 
-    message = str(error.value)
-    assert "employment.payments_per_year" in message
-    assert "value cannot be negative" in message
+    message = str(exc_info.value)
+    assert NET_INCOME_INPUT_ERROR in message
 
 
-@pytest.mark.parametrize(
-    "field_path,payload",
-    [
-        ("employment.payments_per_year", {"employment": {"payments_per_year": 11}}),
-        ("pension.payments_per_year", {"pension": {"payments_per_year": 11}}),
-    ],
-)
-def test_calculate_tax_rejects_unsupported_payroll_frequency(
-    field_path: str, payload: dict[str, Any]
-) -> None:
-    """Payroll frequencies must match the configured whitelist."""
+@pytest.mark.parametrize("field", ["net_income", "net_monthly_income"])
+def test_calculate_tax_preserves_net_income_validation_error(field: str) -> None:
+    """Service-level validation should surface the net income error message."""
 
-    request_payload: dict[str, Any] = {"year": 2024, **payload}
+    payload = {"year": 2024, "employment": {field: 1_000}}
 
-    with pytest.raises(ValueError) as error:
-        calculate_tax(request_payload)
+    with pytest.raises(ValueError) as exc_info:
+        calculate_tax(payload)
 
-    message = str(error.value)
-    assert field_path in message
-    assert "allowed payroll frequency" in message
+    message = str(exc_info.value)
+    assert NET_INCOME_INPUT_ERROR in message
 
 
 def test_calculate_tax_accepts_request_model_instance() -> None:

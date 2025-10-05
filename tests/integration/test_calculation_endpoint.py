@@ -10,6 +10,8 @@ from typing import Dict, Iterable
 import pytest
 from flask.testing import FlaskClient
 
+from greektax.backend.app.models import NET_INCOME_INPUT_ERROR
+
 DATA_PATH = Path(__file__).resolve().parents[1] / "data" / "regression_scenarios.json"
 
 
@@ -83,6 +85,20 @@ def test_calculation_endpoint_handles_service_errors(client: FlaskClient) -> Non
     payload = response.get_json()
     assert payload["error"] == "validation_error"
     assert "cannot be negative" in payload["message"].lower()
+
+
+def test_calculation_endpoint_rejects_net_income_inputs(client: FlaskClient) -> None:
+    """Legacy net income fields should surface meaningful validation errors."""
+
+    response = client.post(
+        "/api/v1/calculations",
+        json={"year": 2024, "employment": {"net_income": 1_000}},
+    )
+
+    assert response.status_code == HTTPStatus.BAD_REQUEST
+    payload = response.get_json()
+    assert payload["error"] == "validation_error"
+    assert NET_INCOME_INPUT_ERROR in payload["message"]
 
 
 def test_calculation_endpoint_accepts_mixed_employment_inputs(client: FlaskClient) -> None:
