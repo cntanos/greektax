@@ -66,6 +66,7 @@ let currentYearToggleKeys = new Set();
 let dynamicFieldLabels = {};
 let deductionValidationByInput = {};
 let lastCalculation = null;
+let loadedCalculatorState = null;
 let pendingCalculatorState = null;
 let calculatorStatePersistHandle = null;
 let isApplyingYearMetadata = false;
@@ -745,6 +746,37 @@ function captureCalculatorState() {
   return values;
 }
 
+function assignLoadedCalculatorState(values) {
+  if (!values || typeof values !== "object") {
+    loadedCalculatorState = null;
+    return;
+  }
+
+  loadedCalculatorState = Object.assign({}, values);
+}
+
+function getStoredCalculatorValue(key) {
+  if (!key) {
+    return undefined;
+  }
+
+  if (
+    pendingCalculatorState &&
+    Object.prototype.hasOwnProperty.call(pendingCalculatorState, key)
+  ) {
+    return pendingCalculatorState[key];
+  }
+
+  if (
+    loadedCalculatorState &&
+    Object.prototype.hasOwnProperty.call(loadedCalculatorState, key)
+  ) {
+    return loadedCalculatorState[key];
+  }
+
+  return undefined;
+}
+
 function preserveCurrentFormValues() {
   if (!calculatorForm) {
     return;
@@ -776,6 +808,7 @@ function persistCalculatorState() {
       timestamp: Date.now(),
       values: captureCalculatorState(),
     };
+    assignLoadedCalculatorState(payload.values);
     window.localStorage.setItem(
       CALCULATOR_STORAGE_KEY,
       JSON.stringify(payload),
@@ -1044,12 +1077,13 @@ function resolveStoredToggleValue(element) {
   }
 
   const key = element.id;
-  if (
-    key &&
-    pendingCalculatorState &&
-    Object.prototype.hasOwnProperty.call(pendingCalculatorState, key)
-  ) {
-    return Boolean(pendingCalculatorState[key]);
+  if (!key) {
+    return Boolean(element.defaultChecked);
+  }
+
+  const storedValue = getStoredCalculatorValue(key);
+  if (storedValue !== undefined) {
+    return Boolean(storedValue);
   }
 
   return Boolean(element.defaultChecked);
@@ -4053,6 +4087,7 @@ function clearCalculatorForm() {
   } catch (error) {
     console.warn("Unable to clear stored calculator state", error);
   }
+  assignLoadedCalculatorState(null);
   pendingCalculatorState = null;
   if (calculatorStatePersistHandle) {
     window.clearTimeout(calculatorStatePersistHandle);
@@ -4248,7 +4283,11 @@ function initialiseCalculator() {
     return;
   }
 
-  pendingCalculatorState = loadStoredCalculatorState();
+  const storedCalculatorState = loadStoredCalculatorState();
+  assignLoadedCalculatorState(storedCalculatorState);
+  pendingCalculatorState = loadedCalculatorState
+    ? Object.assign({}, loadedCalculatorState)
+    : null;
   applyPendingCalculatorState();
 
   if (pensionModeSelect) {
