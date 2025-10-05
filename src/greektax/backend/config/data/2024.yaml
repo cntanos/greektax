@@ -13,7 +13,7 @@ income:
       default_payments_per_year: 14
     contributions:
       employee_rate: 0.1387
-      employer_rate: 0.2243
+      employer_rate: 0.2229
     tax_brackets:
       - upper: 10000
         rate: 0.09
