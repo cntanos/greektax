@@ -240,6 +240,9 @@ const rentalExpensesInput = document.getElementById("rental-expenses");
 const investmentFieldsContainer = document.getElementById("investment-fields");
 const agriculturalRevenueInput = document.getElementById("agricultural-revenue");
 const agriculturalExpensesInput = document.getElementById("agricultural-expenses");
+const agriculturalProfessionalFarmerInput = document.getElementById(
+  "agricultural-professional-farmer",
+);
 const otherIncomeInput = document.getElementById("other-income");
 const deductionsDonationsInput = document.getElementById("deductions-donations");
 const deductionsMedicalInput = document.getElementById("deductions-medical");
@@ -2425,11 +2428,17 @@ function buildCalculationPayload() {
   if (isSectionActive(agriculturalSection)) {
     const revenue = readNumber(agriculturalRevenueInput);
     const expenses = readNumber(agriculturalExpensesInput);
-    if (revenue > 0 || expenses > 0) {
+    const professionalFarmer = Boolean(
+      agriculturalProfessionalFarmerInput?.checked,
+    );
+    if (revenue > 0 || expenses > 0 || professionalFarmer) {
       payload.agricultural = {
         gross_revenue: revenue,
         deductible_expenses: expenses,
       };
+      if (professionalFarmer) {
+        payload.agricultural.professional_farmer = true;
+      }
     }
   }
 

@@ -75,13 +75,14 @@
       },
       "fields": {
         "agricultural-expenses": "Εκπιπτόμενες αγροτικές δαπάνες (€)",
+        "agricultural-professional-farmer": "Καθεστώς επαγγελματία αγρότη",
         "agricultural-revenue": "Ακαθάριστα αγροτικά έσοδα (€)",
         "children-input": "Εξαρτώμενα τέκνα",
         "deductions-donations": "Δωρεές (€)",
         "deductions-education": "Εκπαιδευτικές δαπάνες (€)",
         "deductions-insurance": "Ασφαλιστικά ασφάλιστρα (€)",
         "deductions-medical": "Ιατρικές δαπάνες (€)",
-        "employment-employee-contributions": "Εισφορές ΕΦΚΑ εργαζομένου (€)",
+        "employment-employee-contributions": "Εισφορές ΕΦΚΑ μισθωτών (εκτός μισθοδοσίας) (€)",
         "employment-income": "Ακαθάριστο εισόδημα μισθωτών (€)",
         "employment-mode": "Τρόπος εισαγωγής μισθού",
         "employment-mode-annual": "Καταχώρηση ετήσιου ακαθάριστου ποσού",
@@ -174,8 +175,9 @@
         "no_investment_categories": "Δεν έχουν οριστεί επενδυτικές κατηγορίες για αυτό το έτος."
       },
       "hints": {
+        "agricultural-professional-farmer": "Επιλέξτε το αν είστε εγγεγραμμένος ως επαγγελματίας αγρότης για το φορολογικό έτος ώστε να εφαρμοστούν τυχόν διαθέσιμες ελαφρύνσεις.",
         "children-eligibility": "Μετρήστε τα εξαρτώμενα τέκνα που δικαιούνται την οικογενειακή έκπτωση ΑΑΔΕ (ανήλικοι, φοιτητές έως 24 ή τέκνα με αναπηρία).",
-        "employment-employee-contributions": "Προσθέστε εισφορές ΕΦΚΑ που καταβάλλετε απευθείας με αποδείξεις (π.χ. προαιρετικές συμπληρωματικές). Αφήστε κενό αν οι εισφορές παρακρατούνται μόνο μέσω μισθοδοσίας.",
+        "employment-employee-contributions": "Προσθέστε εισφορές ΕΦΚΑ που καταβάλλετε απευθείας εκτός μισθοδοσίας (π.χ. προαιρετικές συμπληρωματικές). Οι περισσότεροι μισθωτοί το αφήνουν στο 0 γιατί η μισθοδοσία καλύπτει ήδη τον ΕΦΚΑ.",
         "employment-income": "Εισάγετε το ετήσιο ακαθάριστο ποσό μισθού όταν διαθέτετε ένα συνολικό ποσό.",
         "employment-monthly-income": "Εισάγετε το ακαθάριστο ποσό ανά μισθοδοσία (μήνας ή δώρο). Ο υπολογιστής το πολλαπλασιάζει με τις πληρωμές ανά έτος.",
         "employment-net-note": "Δεν υποστηρίζεται μετατροπή καθαρού μισθού σε ακαθάριστο. Επιλέξτε ετήσια ή ανά καταβολή εισαγωγή και συμπληρώστε μόνο ακαθάριστα ποσά.",
@@ -199,6 +201,7 @@
         "freelance-trade-fee-sunset": "Το τέλος επιτηδεύματος αναμένεται να επανέλθει από το {{year}} (κατάσταση: {{status}}). Επιβεβαιώστε τις τρέχουσες οδηγίες με τον λογιστή σας.",
         "freelance-trade-fee-waived": "Για το συγκεκριμένο φορολογικό έτος δεν οφείλεται τέλος επιτηδεύματος, επομένως αφήστε τον διακόπτη απενεργοποιημένο.",
         "income-toggle-intro": "Επιλέξτε κάθε κατηγορία εισοδήματος που σας αφορά για να εμφανιστούν τα αντίστοιχα πεδία.",
+        "other-income": "Περιλάβετε φορολογητέα ποσά όπως επίδομα ανεργίας, διατροφή που εισπράττετε, φορολογητέες υποτροφίες, έπαθλα ή άλλο εισόδημα που δεν καλύπτεται παραπάνω.",
         "pension-income-gross": "Χρησιμοποιήστε το πεδίο ακαθάριστου όταν γνωρίζετε τη σύνταξη πριν από τις κρατήσεις.",
         "pension-income-net": "Συμπληρώστε το ετήσιο καθαρό ποσό μόνο αν επιλέξατε «Συνολικό ποσό έτους» παραπάνω.",
         "pension-income-net-monthly": "Συμπληρώστε το καθαρό ποσό ανά καταβολή μόνο αν επιλέξατε «Ανά καταβολή» παραπάνω.",
@@ -234,6 +237,7 @@
         }
       },
       "ui": {
+        "advanced_options": "Προχωρημένες επιλογές",
         "deductions_help_body": "Καταχωρήστε μόνο ποσά με νόμιμες αποδείξεις ή αποδεικτικά πληρωμής.",
         "deductions_help_limits": "Εφαρμόζονται αυτόματα τα νόμιμα όρια—η πίστωση για δωρεές εξαρτάται από το εισόδημα, ενώ ιατρικές, εκπαιδευτικές και ασφαλιστικές δαπάνες ακολουθούν τα όρια της ΑΑΔΕ.",
         "deductions_help_summary": "Βοήθεια για εκπτώσεις",
@@ -349,13 +353,14 @@
       },
       "fields": {
         "agricultural-expenses": "Agricultural expenses (€)",
+        "agricultural-professional-farmer": "Professional farmer status",
         "agricultural-revenue": "Agricultural revenue (€)",
         "children-input": "Dependent children",
         "deductions-donations": "Charitable donations (€)",
         "deductions-education": "Education expenses (€)",
         "deductions-insurance": "Insurance premiums (€)",
         "deductions-medical": "Medical expenses (€)",
-        "employment-employee-contributions": "Employee EFKA contributions (€)",
+        "employment-employee-contributions": "Employee EFKA contributions (outside payroll) (€)",
         "employment-income": "Employment gross income (€)",
         "employment-mode": "Salary input type",
         "employment-mode-annual": "Enter annual gross salary",
@@ -448,8 +453,9 @@
         "no_investment_categories": "No investment categories configured for this year."
       },
       "hints": {
+        "agricultural-professional-farmer": "Check this if you are registered as a professional farmer for the tax year. It enables any reliefs available for that status.",
         "children-eligibility": "Count dependent children recognised for the AADE family tax credit (minors, students up to 24, or dependents with a disability).",
-        "employment-employee-contributions": "Add EFKA amounts you pay directly with receipts (for example, voluntary top-ups). Leave blank if contributions are only withheld from payslips.",
+        "employment-employee-contributions": "Add EFKA amounts you pay directly outside payroll (for example, voluntary top-ups). Most employees will leave this at 0 because payroll already covers EFKA.",
         "employment-income": "Enter the total gross salary for the year when you have a single annual figure.",
         "employment-monthly-income": "Enter the gross amount per payslip (monthly or bonus). The calculator multiplies it by your payments per year.",
         "employment-net-note": "Net-to-gross salary conversion isn't supported. Choose annual or per-payment mode above and provide gross amounts only.",
@@ -473,6 +479,7 @@
         "freelance-trade-fee-sunset": "The business activity fee is slated to return from {{year}} (status: {{status}}). Double-check the latest rules with your accountant.",
         "freelance-trade-fee-waived": "No business activity fee is due for this tax year, so you can leave this switched off.",
         "income-toggle-intro": "Select each income type you receive to reveal its inputs.",
+        "other-income": "Include taxable amounts such as unemployment benefits, alimony received, taxable scholarships, prizes, or other income not covered above.",
         "pension-income-gross": "Use the gross field when you know the annual pension before deductions.",
         "pension-income-net": "Enter the annual net pension only when you choose \"Total for year\" above.",
         "pension-income-net-monthly": "Enter the per-payment net pension only when you choose \"Per payment\" above.",
@@ -508,6 +515,7 @@
         }
       },
       "ui": {
+        "advanced_options": "Advanced options",
         "deductions_help_body": "Only enter amounts supported by official receipts or payment slips.",
         "deductions_help_limits": "Statutory limits are applied automatically—donation credits depend on income, while medical, education, and insurance costs follow AADE caps.",
         "deductions_help_summary": "Deductions help",

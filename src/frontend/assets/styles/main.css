@@ -555,6 +555,24 @@ main {
   font-weight: 600;
 }
 
+.form-control--advanced {
+  grid-column: 1 / -1;
+  margin-top: 0.25rem;
+}
+
+.form-control--advanced .help-panel {
+  margin: 0;
+  border-style: dashed;
+}
+
+.form-control--advanced .help-panel summary {
+  color: var(--text-muted);
+}
+
+.form-control--nested {
+  margin-top: 0.75rem;
+}
+
 .form-intro {
   margin: 0 0 1rem;
   font-size: 0.95rem;
