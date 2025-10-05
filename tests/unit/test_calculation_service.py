@@ -62,28 +62,43 @@ def _employment_contribution_base(
 def _employment_expectations(
     year: int,
     gross_income: float,
+    *,
     children: int = 0,
     monthly_income: float | None = None,
     payments_per_year: int | None = None,
+    include_social: bool = True,
+    manual_contributions: float = 0.0,
 ) -> dict[str, float]:
     """Return expected employment tax metrics for the given inputs."""
 
     config = load_year_configuration(year)
     employment = config.employment
 
-    tax_before_credit = _progressive_tax(gross_income, employment.brackets)
-    credit_amount = employment.tax_credit.amount_for_children(children)
-    credit_applied = min(credit_amount, tax_before_credit)
-    tax_after_credit = tax_before_credit - credit_applied
-
     employee_rate = employment.contributions.employee_rate
     employer_rate = employment.contributions.employer_rate
     contribution_base = _employment_contribution_base(
         config, gross_income, monthly_income, payments_per_year
     )
-    employee_contrib = contribution_base * employee_rate
-    employer_contrib = contribution_base * employer_rate
-    net_income = gross_income - tax_after_credit - employee_contrib
+    employee_contrib = contribution_base * employee_rate if include_social else 0.0
+    employer_contrib = contribution_base * employer_rate if include_social else 0.0
+    manual_contrib = manual_contributions if include_social else 0.0
+
+    taxable_income = (
+        gross_income - employee_contrib - manual_contrib
+        if include_social
+        else gross_income
+    )
+    if taxable_income < 0:
+        taxable_income = 0.0
+
+    tax_before_credit = _progressive_tax(taxable_income, employment.brackets)
+    credit_amount = employment.tax_credit.amount_for_children(children)
+    credit_applied = min(credit_amount, tax_before_credit)
+    tax_after_credit = tax_before_credit - credit_applied
+
+    net_income = gross_income - tax_after_credit
+    if include_social:
+        net_income -= employee_contrib + manual_contrib
 
     effective_rate = (tax_after_credit / gross_income) if gross_income else 0.0
 
@@ -97,6 +112,7 @@ def _employment_expectations(
         "net_monthly": net_income / 12 if gross_income else 0.0,
         "avg_monthly_tax": tax_after_credit / 12 if gross_income else 0.0,
         "effective_rate": round(effective_rate, 4),
+        "taxable": taxable_income,
     }
 
 
@@ -114,7 +130,35 @@ def _freelance_expectations(request: CalculationRequest) -> dict[str, Any]:
     )
     contributions = freelance_section.mandatory_contributions
 
-    employment_taxable = employment_gross
+    include_social = request.employment.include_social_contributions
+
+    contribution_base = _employment_contribution_base(
+        config,
+        employment_gross,
+        request.employment.monthly_income,
+        request.employment.payments_per_year,
+    )
+    auto_employee_contrib = (
+        contribution_base * config.employment.contributions.employee_rate
+        if include_social
+        else 0.0
+    )
+    employer_contrib = (
+        contribution_base * config.employment.contributions.employer_rate
+        if include_social
+        else 0.0
+    )
+    manual_employee_contrib = (
+        request.employment.employee_contributions if include_social else 0.0
+    )
+    total_employee_contrib = auto_employee_contrib + manual_employee_contrib
+
+    employment_taxable = (
+        employment_gross - total_employee_contrib if include_social else employment_gross
+    )
+    if employment_taxable < 0:
+        employment_taxable = 0.0
+
     freelance_taxable = gross_after_expenses - contributions
     total_taxable = employment_taxable + freelance_taxable
 
@@ -143,20 +187,12 @@ def _freelance_expectations(request: CalculationRequest) -> dict[str, Any]:
     employment_tax = employment_tax_before_credit - employment_credit
     freelance_tax = freelance_tax_before_credit - freelance_credit
 
-    contribution_base = _employment_contribution_base(
-        config,
-        employment_gross,
-        request.employment.monthly_income,
-        request.employment.payments_per_year,
-    )
-    employment_employee_contrib = (
-        contribution_base * config.employment.contributions.employee_rate
-    )
-    employment_employer_contrib = (
-        contribution_base * config.employment.contributions.employer_rate
-    )
+    employment_employee_contrib = total_employee_contrib
+    employment_employer_contrib = employer_contrib
 
-    employment_net = employment_gross - employment_tax - employment_employee_contrib
+    employment_net = employment_gross - employment_tax
+    if include_social:
+        employment_net -= employment_employee_contrib
     freelance_net = gross_after_expenses - freelance_tax - contributions
 
     total_income = employment_gross + gross_after_expenses
@@ -166,6 +202,7 @@ def _freelance_expectations(request: CalculationRequest) -> dict[str, Any]:
     return {
         "summary": {
             "income": total_income,
+            "taxable": total_taxable,
             "tax": total_tax,
             "net": total_net,
             "net_monthly": total_net / 12,
@@ -212,8 +249,11 @@ def test_calculate_tax_accepts_request_model_instance() -> None:
 
     result = calculate_tax(request_model)
 
+    expected = _employment_expectations(request_model.year, request_model.employment.gross_income)
+
     assert result["meta"] == {"year": 2024, "locale": "en"}
     assert result["summary"]["income_total"] == pytest.approx(12_000.0)
+    assert result["summary"]["taxable_income"] == pytest.approx(expected["taxable"])
 
 
 def test_calculate_tax_defaults_to_zero_summary() -> None:
@@ -224,6 +264,7 @@ def test_calculate_tax_defaults_to_zero_summary() -> None:
     result = calculate_tax(request)
 
     assert result["summary"]["income_total"] == 0.0
+    assert result["summary"]["taxable_income"] == 0.0
     assert result["summary"]["tax_total"] == 0.0
     assert result["summary"]["net_income"] == 0.0
     assert result["summary"]["net_monthly_income"] == 0.0
@@ -254,7 +295,8 @@ def test_calculate_tax_employment_only() -> None:
 
     summary = result["summary"]
     assert summary["income_total"] == pytest.approx(gross_income)
-    assert summary["tax_total"] == pytest.approx(expected["tax"])
+    assert summary["taxable_income"] == pytest.approx(expected["taxable"])
+    assert summary["tax_total"] == pytest.approx(expected["tax"], rel=1e-4)
     assert summary["net_income"] == pytest.approx(expected["net_income"])
     assert summary["net_monthly_income"] == pytest.approx(
         expected["net_monthly"], rel=1e-4
@@ -303,7 +345,8 @@ def test_calculate_tax_with_withholding_tax_balance_due() -> None:
     expected_balance_due = expected["tax"] - withholding
 
     summary = result["summary"]
-    assert summary["tax_total"] == pytest.approx(expected["tax"])
+    assert summary["tax_total"] == pytest.approx(expected["tax"], rel=1e-4)
+    assert summary["taxable_income"] == pytest.approx(expected["taxable"])
     assert summary["withholding_tax"] == pytest.approx(withholding)
     assert summary["balance_due"] == pytest.approx(expected_balance_due)
     assert summary["balance_due_is_refund"] is False
@@ -329,7 +372,8 @@ def test_calculate_tax_with_withholding_tax_refund() -> None:
     expected_refund = abs(expected["tax"] - withholding)
 
     summary = result["summary"]
-    assert summary["tax_total"] == pytest.approx(expected["tax"])
+    assert summary["tax_total"] == pytest.approx(expected["tax"], rel=1e-4)
+    assert summary["taxable_income"] == pytest.approx(expected["taxable"])
     assert summary["withholding_tax"] == pytest.approx(withholding)
     assert summary["balance_due"] == pytest.approx(expected_refund)
     assert summary["balance_due_is_refund"] is True
@@ -370,7 +414,8 @@ def test_calculate_tax_accepts_monthly_employment_income(
 
     summary = result["summary"]
     assert summary["income_total"] == pytest.approx(gross_income)
-    assert summary["tax_total"] == pytest.approx(expected["tax"])
+    assert summary["taxable_income"] == pytest.approx(expected["taxable"])
+    assert summary["tax_total"] == pytest.approx(expected["tax"], rel=1e-4)
     assert summary["net_income"] == pytest.approx(expected["net_income"], rel=1e-4)
     assert summary["net_monthly_income"] == pytest.approx(
         expected["net_monthly"], rel=1e-4
@@ -485,12 +530,22 @@ def test_calculate_tax_supports_manual_employee_contributions() -> None:
     payments = request.employment.payments_per_year or 0
     manual_contrib = request.employment.employee_contributions
     gross_income = monthly_income * payments
-    base_expected = _employment_expectations(2024, gross_income)
+    base_expected = _employment_expectations(
+        2024,
+        gross_income,
+        monthly_income=monthly_income,
+        payments_per_year=payments,
+        manual_contributions=manual_contrib,
+    )
     expected_total_employee = base_expected["employee_contrib"] + manual_contrib
-    expected_net_income = base_expected["net_income"] - manual_contrib
+    expected_net_income = base_expected["net_income"]
+    expected_taxable_income = base_expected["taxable"]
 
     summary = result["summary"]
     assert summary["income_total"] == pytest.approx(gross_income)
+    assert summary["taxable_income"] == pytest.approx(
+        expected_taxable_income, rel=1e-4
+    )
     assert summary["net_income"] == pytest.approx(expected_net_income, rel=1e-4)
 
     employment_detail = result["details"][0]
@@ -550,16 +605,22 @@ def test_employment_social_contributions_can_be_excluded(
     assert excluded_detail.get("employee_contributions_manual", 0.0) == pytest.approx(0.0)
     assert excluded_detail.get("employer_contributions", 0.0) == pytest.approx(0.0)
 
+    tax_delta = excluded_detail["total_tax"] - inclusive_detail["total_tax"]
     assert excluded_detail["net_income"] == pytest.approx(
-        inclusive_detail["net_income"] + inclusive_contributions,
+        inclusive_detail["net_income"] + inclusive_contributions - tax_delta,
         rel=1e-4,
     )
 
     inclusive_summary = inclusive_result["summary"]
     excluded_summary = excluded_result["summary"]
 
+    tax_delta_summary = (
+        excluded_summary["tax_total"] - inclusive_summary["tax_total"]
+    )
     assert excluded_summary["net_income"] == pytest.approx(
-        inclusive_summary["net_income"] + inclusive_contributions,
+        inclusive_summary["net_income"]
+        + inclusive_contributions
+        - tax_delta_summary,
         rel=1e-4,
     )
 
@@ -636,6 +697,7 @@ def test_calculate_tax_with_freelance_income() -> None:
 
     summary = result["summary"]
     assert summary["income_total"] == pytest.approx(expected["summary"]["income"])
+    assert summary["taxable_income"] == pytest.approx(expected["summary"]["taxable"])
     assert summary["tax_total"] == pytest.approx(expected["summary"]["tax"])
     assert summary["net_income"] == pytest.approx(expected["summary"]["net"])
     assert summary["net_monthly_income"] == pytest.approx(
@@ -740,8 +802,9 @@ def test_calculate_tax_combines_employment_and_pension_credit() -> None:
 
     result = calculate_tax(request)
 
-    assert result["summary"]["tax_total"] == pytest.approx(2_290.0)
-    assert result["summary"]["net_income"] == pytest.approx(16_323.0)
+    assert result["summary"]["tax_total"] == pytest.approx(1_984.86, rel=1e-4)
+    assert result["summary"]["taxable_income"] == pytest.approx(18_613.0)
+    assert result["summary"]["net_income"] == pytest.approx(16_628.14, rel=1e-4)
 
     employment_detail = next(
         detail for detail in result["details"] if detail["category"] == "employment"
@@ -750,14 +813,14 @@ def test_calculate_tax_combines_employment_and_pension_credit() -> None:
         detail for detail in result["details"] if detail["category"] == "pension"
     )
 
-    assert employment_detail["tax_before_credits"] == pytest.approx(1_550.0)
-    assert pension_detail["tax_before_credits"] == pytest.approx(1_550.0)
+    assert employment_detail["tax_before_credits"] == pytest.approx(1_293.3, rel=1e-4)
+    assert pension_detail["tax_before_credits"] == pytest.approx(1_501.56, rel=1e-4)
 
-    assert employment_detail["credits"] == pytest.approx(405.0)
-    assert pension_detail["credits"] == pytest.approx(405.0)
+    assert employment_detail["credits"] == pytest.approx(374.82, rel=1e-4)
+    assert pension_detail["credits"] == pytest.approx(435.18, rel=1e-4)
 
-    assert employment_detail["total_tax"] == pytest.approx(1_145.0)
-    assert pension_detail["total_tax"] == pytest.approx(1_145.0)
+    assert employment_detail["total_tax"] == pytest.approx(918.48, rel=1e-4)
+    assert pension_detail["total_tax"] == pytest.approx(1_066.38, rel=1e-4)
     assert employment_detail["employee_contributions"] == pytest.approx(1_387.0)
 
 
@@ -790,6 +853,7 @@ def test_calculate_tax_with_pension_and_rental_income() -> None:
     assert rental_detail["net_income"] == pytest.approx(10_850.0)
 
     assert result["summary"]["income_total"] == pytest.approx(33_000.0)
+    assert result["summary"]["taxable_income"] == pytest.approx(31_000.0)
     assert result["summary"]["tax_total"] == pytest.approx(3_910.0)
 
 
@@ -834,6 +898,7 @@ def test_calculate_tax_includes_additional_obligations() -> None:
 
     summary = result["summary"]
     assert summary["income_total"] == 0.0
+    assert summary["taxable_income"] == 0.0
     assert summary["tax_total"] == pytest.approx(1_200.0)
     assert summary["net_income"] == pytest.approx(-1_200.0)
 
@@ -863,7 +928,12 @@ def test_calculate_tax_multi_year_credit_difference() -> None:
     tax_2024 = result_2024["summary"]["tax_total"]
     tax_2025 = result_2025["summary"]["tax_total"]
 
-    assert tax_2025 < tax_2024
+    expected_2024 = _employment_expectations(2024, 25_000, children=2)
+    expected_2025 = _employment_expectations(2025, 25_000, children=2)
+
+    assert tax_2024 == pytest.approx(expected_2024["tax"], rel=1e-4)
+    assert tax_2025 == pytest.approx(expected_2025["tax"], rel=1e-4)
+    assert expected_2025["credit"] > expected_2024["credit"]
     assert result_2025["meta"]["year"] == next_year_request.year
 
 
@@ -994,6 +1064,11 @@ def test_calculate_tax_applies_deductions_across_components() -> None:
 
     result = calculate_tax(request)
 
+    employment_expected = _employment_expectations(
+        request.year,
+        employment_income,
+    )
+
     employment_detail = next(
         detail for detail in result["details"] if detail["category"] == "employment"
     )
@@ -1004,7 +1079,9 @@ def test_calculate_tax_applies_deductions_across_components() -> None:
     assert employment_detail["deductions_applied"] == pytest.approx(
         expected_total_credit
     )
-    assert employment_detail["taxable_income"] == pytest.approx(30_000.0)
+    assert employment_detail["taxable_income"] == pytest.approx(
+        employment_expected["taxable"]
+    )
     assert "deductions_applied" not in agricultural_detail
     assert agricultural_detail["taxable_income"] == pytest.approx(10_000.0)
 
@@ -1145,6 +1222,7 @@ def test_calculate_tax_with_agricultural_and_other_income() -> None:
 
     summary = result["summary"]
     assert summary["income_total"] == pytest.approx(20_000.0)
+    assert summary["taxable_income"] == pytest.approx(18_000.0)
     assert summary["tax_total"] == pytest.approx(2_660.0)
 
 

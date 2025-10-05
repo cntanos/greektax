@@ -251,6 +251,7 @@
         "net_monthly_income": "Καθαρό εισόδημα ανά μήνα",
         "refund_due": "Επιστροφή φόρου",
         "tax_total": "Συνολικοί φόροι",
+        "taxable_income": "Φορολογητέο εισόδημα",
         "withholding_tax": "Παρακρατηθείς φόρος"
       },
       "ui": {
@@ -546,6 +547,7 @@
         "net_monthly_income": "Net income per month",
         "refund_due": "Refund due",
         "tax_total": "Total taxes",
+        "taxable_income": "Taxable income",
         "withholding_tax": "Tax already withheld"
       },
       "ui": {

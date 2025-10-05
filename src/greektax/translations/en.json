@@ -293,6 +293,7 @@
       "deductions_entered": "Deductions entered",
       "effective_tax_rate": "Effective tax rate",
       "income_total": "Total income",
+      "taxable_income": "Taxable income",
       "net_income": "Net income",
       "net_monthly_income": "Net income per month",
       "refund_due": "Refund due",
