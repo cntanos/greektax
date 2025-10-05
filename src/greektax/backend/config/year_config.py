@@ -62,12 +62,39 @@ class HouseholdRateTable:
 
 
 @dataclass(frozen=True)
+class YouthRateTable:
+    """Optional youth relief rates with dependant-aware overrides."""
+
+    dependants: dict[int, float] = field(default_factory=dict)
+    rate: float | None = None
+
+    def rate_for_dependants(self, dependants: int, household: HouseholdRateTable) -> float:
+        """Return the youth rate for ``dependants`` falling back to household rates."""
+
+        if self.dependants:
+            ordered_counts = sorted(self.dependants)
+            if dependants in self.dependants:
+                return self.dependants[dependants]
+
+            for count in ordered_counts:
+                if dependants < count:
+                    return self.dependants[count]
+
+            return self.dependants[ordered_counts[-1]]
+
+        if self.rate is not None:
+            return self.rate
+
+        return household.rate_for_dependants(dependants)
+
+
+@dataclass(frozen=True)
 class MultiRateBracket:
     """Progressive bracket exposing household and youth rates."""
 
     upper_bound: float | None
     household: HouseholdRateTable
-    youth_rates: dict[str, float]
+    youth_rates: dict[str, YouthRateTable]
     pending_confirmation: bool = False
     estimate: bool = False
 
@@ -81,6 +108,15 @@ class MultiRateBracket:
         """Return the household rate for a dependant count."""
 
         return self.household.rate_for_dependants(dependants)
+
+    def youth_rate_for_dependants(self, category: str, dependants: int) -> float:
+        """Return the youth relief rate for ``category`` respecting dependant bands."""
+
+        table = self.youth_rates.get(category)
+        if table is None:
+            return self.household.rate_for_dependants(dependants)
+
+        return table.rate_for_dependants(dependants, self.household)
 
 
 ProgressiveTaxBracket = TaxBracket | MultiRateBracket
@@ -467,19 +503,60 @@ def _parse_progressive_brackets(
                 )
 
             youth_raw = rates_raw.get("youth")
-            youth_rates: dict[str, float] = {}
+            youth_rates: dict[str, YouthRateTable] = {}
             if youth_raw is not None:
                 if not isinstance(youth_raw, Mapping):
                     raise ConfigurationError(
                         f"{context} youth rates must be provided as a mapping"
                     )
                 for key, value in youth_raw.items():
-                    youth_rate = float(value)
-                    if youth_rate < 0:
+                    youth_dependants: dict[int, float] = {}
+                    base_rate: float | None = None
+
+                    if isinstance(value, Mapping):
+                        dependants_raw = value.get("dependants")
+                        if dependants_raw is not None:
+                            if not isinstance(dependants_raw, Mapping) or not dependants_raw:
+                                raise ConfigurationError(
+                                    f"{context} youth dependant rates must be provided as a mapping"
+                                )
+                            for dependant_key, dependant_value in dependants_raw.items():
+                                try:
+                                    dependant_count = int(dependant_key)
+                                except (TypeError, ValueError) as exc:
+                                    raise ConfigurationError(
+                                        f"{context} youth dependant keys must be integers"
+                                    ) from exc
+
+                                dependant_rate = float(dependant_value)
+                                if dependant_rate < 0:
+                                    raise ConfigurationError(
+                                        f"{context} youth dependant rates must be non-negative"
+                                    )
+                                youth_dependants[dependant_count] = dependant_rate
+
+                        if "rate" in value and value["rate"] is not None:
+                            base_rate = float(value["rate"])
+                            if base_rate < 0:
+                                raise ConfigurationError(
+                                    f"{context} youth rates must be non-negative"
+                                )
+                    else:
+                        base_rate = float(value)
+                        if base_rate < 0:
+                            raise ConfigurationError(
+                                f"{context} youth rates must be non-negative"
+                            )
+
+                    if not youth_dependants and base_rate is None:
                         raise ConfigurationError(
-                            f"{context} youth rates must be non-negative"
+                            f"{context} youth band '{key}' must define a base rate or dependant rates"
                         )
-                    youth_rates[str(key)] = youth_rate
+
+                    youth_rates[str(key)] = YouthRateTable(
+                        dependants=youth_dependants,
+                        rate=base_rate,
+                    )
 
             if year >= 2026:
                 required_dependants = {0, 1, 2, 3, 4}
@@ -497,6 +574,17 @@ def _parse_progressive_brackets(
                     raise ConfigurationError(
                         f"{context} bracket {index} missing youth rate(s) for: {missing_list}"
                     )
+
+                for band_name, youth_table in youth_rates.items():
+                    if youth_table.dependants:
+                        missing_dependants = required_dependants - youth_table.dependants.keys()
+                        if missing_dependants:
+                            missing_list = ", ".join(
+                                str(item) for item in sorted(missing_dependants)
+                            )
+                            raise ConfigurationError(
+                                f"{context} bracket {index} youth band '{band_name}' missing dependant rate(s) for: {missing_list}"
+                            )
 
             bracket_obj: ProgressiveTaxBracket = MultiRateBracket(
                 upper_bound=upper_bound,

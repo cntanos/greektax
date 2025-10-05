@@ -125,10 +125,17 @@ def _serialise_multi_rate_bracket(bracket: MultiRateBracket) -> dict[str, Any]:
         for dependants, rate in sorted(bracket.household.dependants.items())
     ]
 
-    youth_rates = [
-        {"band": band, "rate": rate}
-        for band, rate in sorted(bracket.youth_rates.items())
-    ]
+    youth_rates = []
+    for band, table in sorted(bracket.youth_rates.items()):
+        entry: dict[str, Any] = {"band": band}
+        if table.rate is not None:
+            entry["rate"] = table.rate
+        if table.dependants:
+            entry["dependant_rates"] = [
+                {"dependants": dependants, "rate": rate}
+                for dependants, rate in sorted(table.dependants.items())
+            ]
+        youth_rates.append(entry)
 
     return {
         "type": "multi",

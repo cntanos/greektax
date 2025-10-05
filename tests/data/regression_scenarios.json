@@ -324,21 +324,21 @@
     },
     "expectations": {
       "summary": {
-        "income_total": 54000.0,
-        "tax_total": 4996.66,
-        "net_income": 43259.74,
-        "average_monthly_tax": 416.39
+      "income_total": 54000.0,
+      "tax_total": 4826.41,
+      "net_income": 43429.99,
+      "average_monthly_tax": 402.2
+    },
+    "details": {
+      "employment": {
+        "tax_before_credits": 936.41,
+        "credits": 910.0,
+        "total_tax": 26.41,
+        "employee_contributions": 3743.6
       },
-      "details": {
-        "employment": {
-          "tax_before_credits": 1106.66,
-          "credits": 910.0,
-          "total_tax": 196.66,
-          "employee_contributions": 3743.6
-        },
-        "rental": {
-          "taxable_income": 24000.0,
-          "total_tax": 4800.0
+      "rental": {
+        "taxable_income": 24000.0,
+        "total_tax": 4800.0
         }
       }
     }

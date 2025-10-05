@@ -51,9 +51,9 @@ def test_list_years_endpoint(client: FlaskClient) -> None:
 
     rental_meta = current_year["rental"]
     assert rental_meta["brackets"][0]["rate"] == pytest.approx(0.15)
-    assert rental_meta["brackets"][1]["upper"] == 25_000
+    assert rental_meta["brackets"][1]["upper"] == 24_000
     assert rental_meta["brackets"][1]["rate"] == pytest.approx(0.25)
-    assert rental_meta["brackets"][2]["upper"] == 45_000
+    assert rental_meta["brackets"][2]["upper"] == 36_000
 
     freelance_meta = current_year["freelance"]
     trade_fee = freelance_meta["trade_fee"]

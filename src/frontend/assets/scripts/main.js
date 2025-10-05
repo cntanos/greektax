@@ -1281,9 +1281,28 @@ function renderBracketSummary(section, brackets) {
       const youthDd = document.createElement("dd");
       const youthParts = youthRates.map((entry) => {
         const label = t(`ui.youth_band.${entry.band}`) || entry.band;
+        const dependantRates = Array.isArray(entry.dependant_rates)
+          ? entry.dependant_rates
+          : [];
+        const baseRate =
+          entry.rate !== undefined && entry.rate !== null
+            ? formatPercent(entry.rate)
+            : null;
+        let rateText = baseRate;
+        if (dependantRates.length) {
+          const dependantText = dependantRates
+            .map((dependantEntry) =>
+              t("ui.bracket_household_entry", {
+                dependants: dependantEntry.dependants,
+                rate: formatPercent(dependantEntry.rate),
+              }),
+            )
+            .join(" ");
+          rateText = baseRate ? `${baseRate} (${dependantText})` : dependantText;
+        }
         return t("ui.bracket_youth_entry", {
           label,
-          rate: formatPercent(entry.rate),
+          rate: rateText || formatPercent(0),
         });
       });
       youthDd.textContent = youthParts.join(" ");
