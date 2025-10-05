@@ -1154,6 +1154,57 @@ def test_calculate_tax_multi_year_credit_difference() -> None:
     assert result_2026["meta"]["year"] == request_2026.year
 
 
+def test_2026_presumptive_relief_defaults_apply() -> None:
+    """Config defaults apply presumptive relief flags when none are provided."""
+
+    payload = {"year": 2026}
+
+    result = calculate_tax(payload)
+
+    assert result["meta"]["presumptive_adjustments"] == [
+        "small_village",
+        "new_mother",
+    ]
+
+
+def test_2026_presumptive_relief_can_be_overridden_by_request() -> None:
+    """Explicit demographics suppress presumptive adjustments even with active toggles."""
+
+    payload = {
+        "year": 2026,
+        "demographics": {"small_village": False, "new_mother": False},
+    }
+
+    result = calculate_tax(payload)
+
+    assert "presumptive_adjustments" not in result["meta"]
+
+
+def test_2026_presumptive_relief_partial_and_toggle_control() -> None:
+    """Single adjustments are reported unless the tekmiria reduction toggle disables them."""
+
+    single_adjustment_payload = {
+        "year": 2026,
+        "demographics": {"small_village": True, "new_mother": False},
+    }
+
+    single_adjustment_result = calculate_tax(single_adjustment_payload)
+
+    assert single_adjustment_result["meta"]["presumptive_adjustments"] == [
+        "small_village"
+    ]
+
+    gated_payload = {
+        "year": 2026,
+        "demographics": {"small_village": True, "new_mother": False},
+        "toggles": {"tekmiria_reduction": False},
+    }
+
+    gated_result = calculate_tax(gated_payload)
+
+    assert "presumptive_adjustments" not in gated_result["meta"]
+
+
 def test_2026_dependant_credit_tiers_are_pending_confirmation() -> None:
     """Dependent credit tiers for 2026 are provisional but expose concrete amounts."""
 
