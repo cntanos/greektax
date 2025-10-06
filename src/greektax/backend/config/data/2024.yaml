@@ -196,19 +196,6 @@ deductions:
         type: integer
         min: 0
         max: 10
-      allowances:
-        - label_key: forms.dependents.children_allowance.label
-          description_key: forms.dependents.children_allowance.description
-          thresholds:
-            - label_key: forms.dependents.children_allowance.threshold.none
-              amount: 777
-            - label_key: forms.dependents.children_allowance.threshold.one
-              amount: 810
-            - label_key: forms.dependents.children_allowance.threshold.two
-              amount: 900
-            - label_key: forms.dependents.children_allowance.threshold.three_plus
-              amount: 1120
-              notes_key: forms.dependents.children_allowance.threshold.three_plus_note
     - id: freelance.mandatory_contributions
       applies_to:
         - freelance

@@ -166,6 +166,4 @@ def test_deduction_hints_endpoint(client: FlaskClient) -> None:
     children_hint = hints["dependents.children"]
     assert children_hint["input_id"] == "children-input"
     assert children_hint["description"].startswith("Καταμετρήστε")
-    assert children_hint["allowances"]
-    tier_labels = {threshold["label"] for threshold in children_hint["allowances"][0]["thresholds"]}
-    assert "3+ εξαρτώμενα τέκνα" in tier_labels
+    assert "allowances" not in children_hint or not children_hint["allowances"]
