@@ -78,20 +78,23 @@ schema. Unknown top-level or nested keys are rejected (`extra="forbid"`).
 | `other` | object | ❌ | Miscellaneous taxable income inputs. Defaults to zero amounts. |
 | `obligations` | object | ❌ | Flat obligations such as ENFIA and luxury tax. Defaults to zero amounts. |
 | `deductions` | object | ❌ | User-entered deduction amounts. Defaults to zero amounts. |
-| `toggles` | object | ❌ | Optional boolean feature flags (e.g., youth relief confirmation, presumptive relief opt-in). Defaults to `{}` and is merged with configuration toggles from `YearConfiguration.meta`. |
+| `toggles` | object | ❌ | Optional boolean feature flags (e.g., presumptive relief opt-in). Defaults to `{}` and is merged with configuration toggles from `YearConfiguration.meta`. |
 | `withholding_tax` | number | ❌ | Amount of tax already withheld. Defaults to `0`. Must be non-negative. |
 
 ### Dependents
 
 | Field | Type | Required | Rules |
 | --- | --- | --- | --- |
-| `children` | integer | ❌ | Defaults to `0`. Must be ≥ 0. |
+| `children` | integer | ❌ | Defaults to `0`. Must be between `0` and `15` inclusive. |
 
 ### Demographics
 
 | Field | Type | Required | Rules |
 | --- | --- | --- | --- |
-| `taxpayer_birth_year` | integer | ❌ | Defaults to `null`. When provided it must be between 1900 and 2100. Used to derive age brackets for youth relief calculations. |
+| `birth_year` | integer | ✅ | Must be between 1901 and 2100. The value cannot exceed the filing year and, for tax years 2025 and 2026, values above 2025 are rejected. Used to derive youth relief automatically. |
+| `taxpayer_birth_year` | integer | ❌ | Deprecated alias for `birth_year`. When provided it must match the required `birth_year` value. |
+| `small_village` | boolean | ❌ | Defaults to `false`. |
+| `new_mother` | boolean | ❌ | Defaults to `false`. |
 
 ### Employment & Pension sections
 
@@ -173,8 +176,7 @@ numeric truthy/falsy representations supported by Pydantic.
   "dependents": {"children": 2},
   "demographics": {
     "birth_year": 1998,
-    "small_village": true,
-    "youth_employment_override": "under25"
+    "small_village": true
   },
   "employment": {
     "gross_income": 24000,
@@ -193,7 +195,6 @@ numeric truthy/falsy representations supported by Pydantic.
   "obligations": {"enfia": 260},
   "deductions": {"donations": 150, "insurance": 300},
   "toggles": {
-    "youth_eligibility": true,
     "presumptive_relief": true,
     "tekmiria_reduction": false
   },

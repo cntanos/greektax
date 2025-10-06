@@ -203,13 +203,14 @@
                 >
                   Dependent children
                 </label>
-                <input
-                  id="children-input"
-                  name="dependents.children"
-                  type="number"
-                  min="0"
-                  step="1"
-                  value="0"
+                  <input
+                    id="children-input"
+                    name="dependents.children"
+                    type="number"
+                    min="0"
+                    max="15"
+                    step="1"
+                    value="0"
                   aria-describedby="children-hint"
                 />
                 <p
@@ -233,15 +234,16 @@
               <div class="form-grid double">
                 <div class="form-control">
                   <label for="birth-year" data-i18n-key="fields.birth-year">
-                    Birth year (optional)
+                    Birth year
                   </label>
                   <input
                     id="birth-year"
                     name="demographics.birth_year"
                     type="number"
-                    min="1900"
-                    max="2100"
+                    min="1901"
+                    max="2025"
                     step="1"
+                    required
                     aria-describedby="birth-year-hint"
                   />
                   <p
@@ -249,71 +251,13 @@
                     class="form-hint"
                     data-i18n-key="hints.birth-year"
                   >
-                    Add the taxpayer birth year to auto-calculate youth relief
-                    eligibility.
-                  </p>
-                </div>
-                <div class="form-control">
-                  <label for="age-band" data-i18n-key="fields.age-band">
-                    Youth relief age group
-                  </label>
-                  <select id="age-band" name="demographics.age_band">
-                    <option
-                      value=""
-                      data-i18n-key="fields.age-band-default"
-                    >
-                      Select age group (optional)
-                    </option>
-                    <option
-                      value="under_25"
-                      data-i18n-key="fields.age-band-under-25"
-                    >
-                      Under 25 (youth rate)
-                    </option>
-                    <option
-                      value="age26_30"
-                      data-i18n-key="fields.age-band-26-30"
-                    >
-                      Age 26–30 entering workforce
-                    </option>
-                  </select>
-                  <p
-                    id="age-band-hint"
-                    class="form-hint"
-                    data-i18n-key="hints.age-band"
-                  >
-                    Override the automatic youth band when the worker qualifies
-                    through special rules (for example, first-time employment).
+                    Enter the taxpayer birth year to calculate youth relief
+                    eligibility automatically.
                   </p>
                 </div>
               </div>
             </div>
             <div class="form-grid double">
-              <div
-                class="form-control form-control--toggle"
-                id="youth-eligibility-control"
-                hidden
-              >
-                <label
-                  for="youth-eligibility-toggle"
-                  data-i18n-key="fields.youth-eligibility-toggle"
-                >
-                  Youth employment relief
-                </label>
-                <input
-                  id="youth-eligibility-toggle"
-                  type="checkbox"
-                  aria-describedby="youth-eligibility-hint"
-                />
-                <p
-                  id="youth-eligibility-hint"
-                  class="form-hint"
-                  data-i18n-key="hints.youth-eligibility"
-                >
-                  Enable reduced tax rates when the employee qualifies for the
-                  AADE youth employment relief.
-                </p>
-              </div>
               <div
                 class="form-control form-control--toggle"
                 id="small-village-control"
@@ -367,14 +311,6 @@
                 </p>
               </div>
             </div>
-            <p
-              id="youth-rates-note"
-              class="form-hint form-hint--note"
-              data-i18n-key="hints.youth-rates-note"
-              hidden
-            >
-              Youth relief rates apply when eligible.
-            </p>
             <p
               id="tekmiria-note"
               class="form-hint form-hint--note"

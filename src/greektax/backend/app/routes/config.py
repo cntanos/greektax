@@ -212,7 +212,6 @@ def _serialise_year(year: int) -> dict[str, Any]:
             "defaults": employment_defaults,
             "youth": {
                 "bands": _collect_youth_bands(config.employment.brackets),
-                "enabled": bool(toggles.get("youth_eligibility")),
             },
             "tekmiria": {
                 "enabled": bool(toggles.get("tekmiria_reduction")),
@@ -225,7 +224,6 @@ def _serialise_year(year: int) -> dict[str, Any]:
             "brackets": pension_brackets,
             "youth": {
                 "bands": _collect_youth_bands(config.pension.brackets),
-                "enabled": bool(toggles.get("youth_eligibility")),
             },
         },
         "freelance": {
@@ -238,7 +236,6 @@ def _serialise_year(year: int) -> dict[str, Any]:
             "defaults": freelance_defaults,
             "youth": {
                 "bands": _collect_youth_bands(config.freelance.brackets),
-                "enabled": bool(toggles.get("youth_eligibility")),
             },
         },
         "agricultural": {"brackets": agricultural_brackets},

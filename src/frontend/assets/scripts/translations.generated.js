@@ -46,6 +46,8 @@
         "employee_contributions_per_payment": "Εισφορές εργαζομένου ανά καταβολή",
         "employer_contributions": "Εισφορές εργοδότη",
         "employer_contributions_per_payment": "Εισφορές εργοδότη ανά καταβολή",
+        "employer_cost": "Κόστος εργοδότη",
+        "employer_cost_per_payment": "Κόστος εργοδότη ανά καταβολή",
         "gross_income": "Ακαθάριστο εισόδημα",
         "gross_income_per_payment": "Ακαθάριστο ανά καταβολή",
         "lump_sum_contributions": "Εισφορές εφάπαξ",
@@ -108,14 +110,10 @@
         }
       },
       "fields": {
-        "age-band": "Ηλικιακή κατηγορία έκπτωσης νεολαίας",
-        "age-band-26-30": "26–30 ετών που εισέρχονται στην εργασία",
-        "age-band-default": "Επιλογή ηλικιακής κατηγορίας (προαιρετικό)",
-        "age-band-under-25": "Κάτω των 25 (συντελεστής νεολαίας)",
         "agricultural-expenses": "Εκπιπτόμενες αγροτικές δαπάνες (€)",
         "agricultural-professional-farmer": "Καθεστώς επαγγελματία αγρότη",
         "agricultural-revenue": "Ακαθάριστα αγροτικά έσοδα (€)",
-        "birth-year": "Έτος γέννησης (προαιρετικό)",
+        "birth-year": "Έτος γέννησης",
         "children-input": "Εξαρτώμενα τέκνα",
         "deductions-donations": "Δωρεές (€)",
         "deductions-education": "Εκπαιδευτικές δαπάνες (€)",
@@ -187,8 +185,7 @@
         "toggle-pension": "Εισόδημα συντάξεων",
         "toggle-rental": "Εισόδημα από ενοίκια",
         "trade-fee-toggle": "Τέλος επιτηδεύματος",
-        "year-select": "Φορολογικό έτος",
-        "youth-eligibility-toggle": "Έκπτωση νεανικής απασχόλησης"
+        "year-select": "Φορολογικό έτος"
       },
       "forms": {
         "freelance": {
@@ -214,10 +211,9 @@
         "no_investment_categories": "Δεν έχουν οριστεί επενδυτικές κατηγορίες για αυτό το έτος."
       },
       "hints": {
-        "age-band": "Υπερκαλύψτε την αυτόματη κατηγοριοποίηση όταν ισχύουν ειδικοί κανόνες (π.χ. πρώτη απασχόληση).",
         "agricultural-professional-farmer": "Επιλέξτε το αν είστε εγγεγραμμένος ως επαγγελματίας αγρότης για το φορολογικό έτος ώστε να εφαρμοστούν τυχόν διαθέσιμες ελαφρύνσεις.",
-        "birth-year": "Δηλώστε το έτος γέννησης για αυτόματο έλεγχο δικαιώματος στις εκπτώσεις νεολαίας.",
-        "children-eligibility": "Μετρήστε τα εξαρτώμενα τέκνα που δικαιούνται την οικογενειακή έκπτωση ΑΑΔΕ (ανήλικοι, φοιτητές έως 24 ή τέκνα με αναπηρία).",
+        "birth-year": "Δηλώστε το έτος γέννησης (1901–2025) για αυτόματο υπολογισμό της έκπτωσης νεανικής απασχόλησης.",
+        "children-eligibility": "Μετρήστε τα εξαρτώμενα τέκνα που δικαιούνται την οικογενειακή έκπτωση ΑΑΔΕ (ανήλικοι, φοιτητές έως 24 ή τέκνα με αναπηρία). Υποστηρίζονται έως 15 τέκνα.",
         "employment-employee-contributions": "Καταχωρήστε το ετήσιο σύνολο εισφορών ΕΦΚΑ που πληρώνετε απευθείας εκτός μισθοδοσίας (π.χ. προαιρετικές συμπληρωματικές). Οι περισσότεροι μισθωτοί το αφήνουν στο 0 γιατί η μισθοδοσία καλύπτει ήδη τον ΕΦΚΑ.",
         "employment-employee-contributions-preview": "Η μισθοδοσία περιλαμβάνει {{amount}} ετήσιες εισφορές ΕΦΚΑ. Αν το ετήσιο ποσό διαφέρει, καταχωρήστε το παρακάτω.",
         "employment-employee-contributions-preview-empty": "Εκτελέστε έναν υπολογισμό για να εμφανιστούν οι εισφορές ΕΦΚΑ της μισθοδοσίας ή εισάγετε το ετήσιο ποσό σας παρακάτω.",
@@ -259,9 +255,7 @@
         "tekmiria-note": "Η μείωση τεκμηρίων {{reduction}} εφαρμόζεται όταν ενεργοποιηθούν οι σχετικές επιλογές (μικρός οικισμός ή νέα μητέρα).",
         "trade-fee-note": "Το τέλος επιτηδεύματος δεν επιβάλλεται για το έτος· απενεργοποιήστε το μόνο για συγκρίσεις με παλαιότερα δεδομένα.",
         "year-partial-note": "Αν δεν είχατε εισόδημα για ολόκληρο το έτος, καταχωρήστε ό,τι εισπράξατε· η ετήσια φορολογική πίστωση εφαρμόζεται κανονικά.",
-        "year-select": "Επιλέξτε το φορολογικό έτος που θέλετε να υπολογίσετε.",
-        "youth-eligibility": "Ενεργοποιήστε τους μειωμένους συντελεστές όταν ο εργαζόμενος δικαιούται την έκπτωση νεανικής απασχόλησης.",
-        "youth-rates-note": "Ισχύουν μειωμένοι συντελεστές νεολαίας όταν πληρούνται τα κριτήρια: {{categories}}."
+        "year-select": "Επιλέξτε το φορολογικό έτος που θέλετε να υπολογίσετε."
       },
       "links": {
         "trade_fee_sunset": "Ενημέρωση ΑΑΔΕ για τέλος επιτηδεύματος"
@@ -292,7 +286,6 @@
         "calculation_complete": "Ο υπολογισμός ολοκληρώθηκε.",
         "calculation_failed": "Δεν ήταν δυνατή η επεξεργασία του υπολογισμού.",
         "loading_years": "Φόρτωση διαθέσιμων φορολογικών ετών…",
-        "recalculation_required": "Έγιναν αλλαγές στη φόρμα. Εκτελέστε νέο υπολογισμό για να ενημερωθούν τα αποτελέσματα.",
         "ready": "Η διαμόρφωση ολοκληρώθηκε. Συμπληρώστε τα στοιχεία σας για υπολογισμό.",
         "select_year": "Επιλέξτε φορολογικό έτος πριν από τον υπολογισμό.",
         "validation_errors": "Διορθώστε τα επισημασμένα πεδία και προσπαθήστε ξανά.",
@@ -430,6 +423,8 @@
         "employee_contributions_per_payment": "Employee contributions per payment",
         "employer_contributions": "Employer contributions",
         "employer_contributions_per_payment": "Employer contributions per payment",
+        "employer_cost": "Employer cost",
+        "employer_cost_per_payment": "Employer cost per payment",
         "gross_income": "Gross income",
         "gross_income_per_payment": "Gross per payment",
         "lump_sum_contributions": "Lump-sum fund contributions",
@@ -492,14 +487,10 @@
         }
       },
       "fields": {
-        "age-band": "Youth relief age group",
-        "age-band-26-30": "Age 26–30 entering workforce",
-        "age-band-default": "Select age group (optional)",
-        "age-band-under-25": "Under 25 (youth rate)",
         "agricultural-expenses": "Agricultural expenses (€)",
         "agricultural-professional-farmer": "Professional farmer status",
         "agricultural-revenue": "Agricultural revenue (€)",
-        "birth-year": "Birth year (optional)",
+        "birth-year": "Birth year",
         "children-input": "Dependent children",
         "deductions-donations": "Charitable donations (€)",
         "deductions-education": "Education expenses (€)",
@@ -571,8 +562,7 @@
         "toggle-pension": "Pension income",
         "toggle-rental": "Rental income",
         "trade-fee-toggle": "Business activity fee",
-        "year-select": "Tax year",
-        "youth-eligibility-toggle": "Youth employment relief"
+        "year-select": "Tax year"
       },
       "forms": {
         "freelance": {
@@ -598,10 +588,9 @@
         "no_investment_categories": "No investment categories configured for this year."
       },
       "hints": {
-        "age-band": "Override the automatic youth band when the worker qualifies through special rules (for example, first-time employment).",
         "agricultural-professional-farmer": "Check this if you are registered as a professional farmer for the tax year. It enables any reliefs available for that status.",
-        "birth-year": "Add the taxpayer birth year to auto-calculate youth relief eligibility.",
-        "children-eligibility": "Count dependent children recognised for the AADE family tax credit (minors, students up to 24, or dependents with a disability).",
+        "birth-year": "Enter the taxpayer birth year (1901–2025) to calculate youth relief eligibility automatically.",
+        "children-eligibility": "Count dependent children recognised for the AADE family tax credit (minors, students up to 24, or dependents with a disability). Up to 15 children are supported.",
         "employment-employee-contributions": "Enter the annual EFKA contributions you pay directly outside payroll (for example, voluntary top-ups). Most employees will leave this at 0 because payroll already covers EFKA.",
         "employment-employee-contributions-preview": "Payroll currently includes {{amount}} in annual EFKA contributions. Enter your yearly total below if it differs.",
         "employment-employee-contributions-preview-empty": "Run a calculation to preview the EFKA contributions covered by payroll, or enter your annual total below.",
@@ -643,9 +632,7 @@
         "tekmiria-note": "Tekmiria reductions of {{reduction}} apply when qualifying relief toggles (small village or new mother) are enabled.",
         "trade-fee-note": "Business activity fees are waived for this year; keep the toggle off only for historical comparisons.",
         "year-partial-note": "If you didn't earn income for the full year, enter what you earned; the annual tax credit still applies in full.",
-        "year-select": "Choose the tax year you want to estimate.",
-        "youth-eligibility": "Enable reduced tax rates when the employee qualifies for the AADE youth employment relief.",
-        "youth-rates-note": "Youth relief rates apply when eligible: {{categories}}."
+        "year-select": "Choose the tax year you want to estimate."
       },
       "links": {
         "trade_fee_sunset": "AADE trade fee update"
@@ -676,7 +663,6 @@
         "calculation_complete": "Calculation complete.",
         "calculation_failed": "Unable to process calculation.",
         "loading_years": "Loading tax years…",
-        "recalculation_required": "Form changes detected. Recalculate to refresh the results.",
         "ready": "Configuration loaded. Enter your details to calculate.",
         "select_year": "Please select a tax year before calculating.",
         "validation_errors": "Please fix the highlighted fields and try again.",

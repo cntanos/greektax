@@ -10,7 +10,25 @@ from pydantic import ValidationError
 
 from greektax.backend.app.models import CalculationRequest, NET_INCOME_INPUT_ERROR
 from greektax.backend.app.services.calculation_service import calculate_tax
-from greektax.backend.config.year_config import YearConfiguration, load_year_configuration
+from greektax.backend.config.year_config import (
+    MultiRateBracket,
+    YearConfiguration,
+    load_year_configuration,
+)
+
+
+DEFAULT_DEMOGRAPHICS = {"birth_year": 1990}
+
+
+def build_request(payload: dict[str, Any]) -> CalculationRequest:
+    data = deepcopy(payload)
+    demographics = data.setdefault("demographics", {})
+    if "birth_year" not in demographics:
+        alias_year = demographics.get("taxpayer_birth_year")
+        if alias_year is None:
+            alias_year = DEFAULT_DEMOGRAPHICS["birth_year"]
+        demographics["birth_year"] = alias_year
+    return CalculationRequest.model_validate(data)
 
 
 def _progressive_tax(amount: float, brackets, *, dependants: int = 0) -> float:
@@ -108,8 +126,9 @@ def _employment_expectations(
     )
     credit_amount = employment.tax_credit.amount_for_children(children)
     credit_reduction = 0.0
-    if gross_income > 12_000:
-        credit_reduction = ((gross_income - 12_000) / 1_000) * 20.0
+    reduction_base = gross_income if monthly_income is None else 0.0
+    if reduction_base > 12_000:
+        credit_reduction = ((reduction_base - 12_000) / 1_000) * 20.0
     credit_after_reduction = max(credit_amount - credit_reduction, 0.0)
     credit_applied = min(credit_after_reduction, tax_before_credit)
     tax_after_credit = tax_before_credit - credit_applied
@@ -157,6 +176,59 @@ def test_employment_contribution_rates_updated_for_2025() -> None:
     assert contributions_2025.employee_rate == pytest.approx(0.1337)
     assert contributions_2025.employer_rate == pytest.approx(0.2179)
     assert contributions_2025.monthly_salary_cap == pytest.approx(7572.62)
+
+
+def test_2025_employment_brackets_include_multi_rate_youth_relief() -> None:
+    """The 2025 employment brackets expose dependant and youth relief rates."""
+
+    config = load_year_configuration(2025)
+    brackets = config.employment.brackets
+
+    assert brackets, "Expected 2025 brackets to be populated"
+    assert all(isinstance(bracket, MultiRateBracket) for bracket in brackets)
+
+    first_band = brackets[0]
+    assert first_band.household.rate_for_dependants(5) == pytest.approx(0.0)
+    assert (
+        first_band.youth_rate_for_dependants("age26_30", 5)
+        == pytest.approx(0.0)
+    )
+
+    second_band = brackets[1]
+    assert second_band.household.rate_for_dependants(0) == pytest.approx(0.2)
+    assert (
+        second_band.youth_rate_for_dependants("under_25", 0)
+        == pytest.approx(0.0)
+    )
+    assert (
+        second_band.youth_rate_for_dependants("age26_30", 0)
+        == pytest.approx(0.09)
+    )
+
+
+def test_2025_employment_youth_large_family_alignment() -> None:
+    """A 70k income with five children matches the ministry youth relief outcome."""
+
+    request = build_request(
+        {
+            "year": 2025,
+            "dependents": {"children": 5},
+            "employment": {"gross_income": 70_000},
+            "demographics": {"taxpayer_birth_year": 1999},
+        }
+    )
+
+    result = calculate_tax(request)
+
+    summary = result["summary"]
+    employment_detail = next(
+        detail for detail in result["details"] if detail["category"] == "employment"
+    )
+
+    assert summary["tax_total"] == pytest.approx(12_462.04, rel=1e-4)
+    assert employment_detail["taxable_income"] == pytest.approx(60_641.0)
+    assert employment_detail["tax_before_credits"] == pytest.approx(13_082.04)
+    assert employment_detail["credits"] == pytest.approx(620.0)
 
 
 def _freelance_expectations(request: CalculationRequest) -> dict[str, Any]:
@@ -286,7 +358,13 @@ def test_calculate_tax_rejects_invalid_numbers() -> None:
     """Payloads with invalid numeric data surface clear validation errors."""
 
     with pytest.raises(ValueError) as error:
-        calculate_tax({"year": 2024, "employment": {"gross_income": -10}})
+        calculate_tax(
+            {
+                "year": 2024,
+                "employment": {"gross_income": -10},
+                "demographics": {"birth_year": 1985},
+            }
+        )
 
     message = str(error.value)
     assert "employment.gross_income" in message
@@ -298,7 +376,7 @@ def test_calculation_request_rejects_net_income_inputs(field: str) -> None:
     """Employment payloads should reject legacy net income fields."""
 
     with pytest.raises(ValidationError) as exc_info:
-        CalculationRequest.model_validate({"year": 2024, "employment": {field: 1_000}})
+        build_request({"year": 2024, "employment": {field: 1_000}})
 
     message = str(exc_info.value)
     assert NET_INCOME_INPUT_ERROR in message
@@ -308,7 +386,11 @@ def test_calculation_request_rejects_net_income_inputs(field: str) -> None:
 def test_calculate_tax_preserves_net_income_validation_error(field: str) -> None:
     """Service-level validation should surface the net income error message."""
 
-    payload = {"year": 2024, "employment": {field: 1_000}}
+    payload = {
+        "year": 2024,
+        "employment": {field: 1_000},
+        "demographics": {"birth_year": 1985},
+    }
 
     with pytest.raises(ValueError) as exc_info:
         calculate_tax(payload)
@@ -317,10 +399,20 @@ def test_calculate_tax_preserves_net_income_validation_error(field: str) -> None
     assert NET_INCOME_INPUT_ERROR in message
 
 
+def test_calculation_request_requires_birth_year() -> None:
+    """Demographic payloads must include a birth year."""
+
+    with pytest.raises(ValidationError) as exc_info:
+        CalculationRequest.model_validate({"year": 2025, "demographics": {}})
+
+    message = str(exc_info.value)
+    assert "birth_year" in message
+
+
 def test_calculate_tax_accepts_request_model_instance() -> None:
     """The service can operate directly on a validated request model."""
 
-    request_model = CalculationRequest.model_validate(
+    request_model = build_request(
         {"year": 2024, "employment": {"gross_income": 12_000}}
     )
 
@@ -336,7 +428,7 @@ def test_calculate_tax_accepts_request_model_instance() -> None:
 def test_calculate_tax_defaults_to_zero_summary() -> None:
     """An empty payload (besides year) should produce zeroed totals."""
 
-    request = CalculationRequest.model_validate({"year": 2024})
+    request = build_request({"year": 2024})
 
     result = calculate_tax(request)
 
@@ -354,7 +446,7 @@ def test_calculate_tax_defaults_to_zero_summary() -> None:
 def test_calculate_tax_employment_only() -> None:
     """Employment income uses progressive rates and tax credit."""
 
-    request = CalculationRequest.model_validate(
+    request = build_request(
         {
             "year": 2024,
             "locale": "en",
@@ -410,7 +502,7 @@ def test_calculate_tax_employment_only() -> None:
 def test_employment_tax_credit_not_reduced_below_threshold() -> None:
     """Gross salaries below €12k retain the full family tax credit."""
 
-    request = CalculationRequest.model_validate(
+    request = build_request(
         {
             "year": 2024,
             "dependents": {"children": 0},
@@ -432,7 +524,7 @@ def test_employment_tax_credit_not_reduced_below_threshold() -> None:
 def test_employment_tax_credit_reduced_using_gross_income() -> None:
     """Salary credits are reduced based on gross income above €12k and never negative."""
 
-    request = CalculationRequest.model_validate(
+    request = build_request(
         {
             "year": 2024,
             "dependents": {"children": 0},
@@ -459,7 +551,7 @@ def test_employment_tax_credit_reduced_using_gross_income() -> None:
 def test_calculate_tax_with_withholding_tax_balance_due() -> None:
     """Withholding reduces the net tax payable and surfaces in the summary."""
 
-    request = CalculationRequest.model_validate(
+    request = build_request(
         {
             "year": 2024,
             "employment": {"gross_income": 30_000},
@@ -486,7 +578,7 @@ def test_calculate_tax_with_withholding_tax_balance_due() -> None:
 def test_calculate_tax_with_withholding_tax_refund() -> None:
     """Withholding greater than tax due produces a refund summary."""
 
-    request = CalculationRequest.model_validate(
+    request = build_request(
         {
             "year": 2024,
             "employment": {"gross_income": 30_000},
@@ -516,7 +608,7 @@ def test_calculate_tax_accepts_monthly_employment_income(
 ) -> None:
     """Monthly salary inputs convert to annual totals and per-payment nets."""
 
-    request = CalculationRequest.model_validate(
+    request = build_request(
         {
             "year": 2024,
             "employment": {
@@ -589,7 +681,7 @@ def test_employment_contributions_respect_salary_cap(
 ) -> None:
     """Employment contributions stop increasing once the statutory cap is reached."""
 
-    request = CalculationRequest.model_validate(
+    request = build_request(
         {
             "year": year,
             "employment": {
@@ -656,7 +748,7 @@ def test_employment_contributions_respect_salary_cap(
 def test_manual_employee_contributions_respect_salary_cap() -> None:
     """Manual EFKA payments cannot increase the deductible beyond the cap."""
 
-    request = CalculationRequest.model_validate(
+    request = build_request(
         {
             "year": 2024,
             "employment": {
@@ -712,7 +804,7 @@ def test_employment_social_contributions_can_be_excluded(
 ) -> None:
     """Users can opt out of including EFKA contributions in the net result."""
 
-    base_request = CalculationRequest.model_validate(
+    base_request = build_request(
         {
             "year": 2024,
             "employment": {
@@ -723,7 +815,7 @@ def test_employment_social_contributions_can_be_excluded(
         }
     )
 
-    excluded_request = CalculationRequest.model_validate(
+    excluded_request = build_request(
         {
             "year": 2024,
             "employment": {
@@ -810,7 +902,7 @@ def test_employment_breakdown_remains_balanced(
     if not include_social:
         employment_payload["include_social_contributions"] = False
 
-    request = CalculationRequest.model_validate(
+    request = build_request(
         {
             "year": year,
             "employment": employment_payload,
@@ -841,7 +933,7 @@ def test_employment_breakdown_remains_balanced(
 def test_calculate_tax_with_freelance_income() -> None:
     """Freelance profit combines progressive tax and trade fee."""
 
-    request = CalculationRequest.model_validate(
+    request = build_request(
         {
             "year": 2024,
             "locale": "en",
@@ -969,7 +1061,7 @@ def test_freelance_contribution_toggle_excludes_amount(
         },
     }
 
-    base_request = CalculationRequest.model_validate(base_payload)
+    base_request = build_request(base_payload)
     base_result = calculate_tax(base_request)
     base_detail = next(
         detail for detail in base_result["details"] if detail["category"] == "freelance"
@@ -980,7 +1072,7 @@ def test_freelance_contribution_toggle_excludes_amount(
 
     toggled_payload = deepcopy(base_payload)
     toggled_payload["freelance"][toggle_field] = False
-    toggled_request = CalculationRequest.model_validate(toggled_payload)
+    toggled_request = build_request(toggled_payload)
     toggled_result = calculate_tax(toggled_request)
     toggled_detail = next(
         detail for detail in toggled_result["details"] if detail["category"] == "freelance"
@@ -1019,7 +1111,7 @@ def test_freelance_contribution_toggle_combination() -> None:
 
     base_detail = next(
         detail
-        for detail in calculate_tax(CalculationRequest.model_validate(base_payload))["details"]
+        for detail in calculate_tax(build_request(base_payload))["details"]
         if detail["category"] == "freelance"
     )
 
@@ -1034,7 +1126,7 @@ def test_freelance_contribution_toggle_combination() -> None:
     combined_detail = next(
         detail
         for detail in calculate_tax(
-            CalculationRequest.model_validate(combined_payload)
+            build_request(combined_payload)
         )["details"]
         if detail["category"] == "freelance"
     )
@@ -1068,7 +1160,7 @@ def test_freelance_contribution_toggle_combination() -> None:
 def test_calculate_tax_respects_locale_toggle() -> None:
     """Locale toggle switches translation catalogue."""
 
-    request = CalculationRequest.model_validate(
+    request = build_request(
         {"year": 2024, "locale": "el", "employment": {"gross_income": 10_000}}
     )
 
@@ -1079,19 +1171,17 @@ def test_calculate_tax_respects_locale_toggle() -> None:
     assert result["summary"]["labels"]["income_total"] == "Συνολικό εισόδημα"
 
 
-def test_youth_relief_applies_when_toggle_and_age_match() -> None:
-    """Employment youth relief applies reduced bracket rates when confirmed."""
+def test_youth_relief_applies_for_under_25_birth_year() -> None:
+    """Employment youth relief applies reduced bracket rates automatically."""
 
     base_payload = {
         "year": 2026,
         "dependents": {"children": 0},
         "employment": {"gross_income": 20_000},
-        "demographics": {"taxpayer_birth_year": 2003},
+        "demographics": {"birth_year": 2003},
     }
 
-    youth_request = CalculationRequest.model_validate(
-        {**base_payload, "toggles": {"youth_eligibility": True}}
-    )
+    youth_request = build_request(base_payload)
     youth_result = calculate_tax(youth_request)
 
     employment_detail = next(
@@ -1110,8 +1200,8 @@ def test_youth_relief_applies_when_toggle_and_age_match() -> None:
         expected_tax_before_credit, rel=1e-4
     )
 
-    baseline_request = CalculationRequest.model_validate(
-        {**base_payload, "toggles": {"youth_eligibility": False}}
+    baseline_request = build_request(
+        {**base_payload, "demographics": {"birth_year": 1985}}
     )
     baseline_result = calculate_tax(baseline_request)
     baseline_detail = next(
@@ -1142,12 +1232,10 @@ def test_2026_youth_relief_second_band_matches_announced_rates() -> None:
             "gross_income": 20_000,
             "include_social_contributions": False,
         },
-        "demographics": {"taxpayer_birth_year": 1999},
+        "demographics": {"birth_year": 1999},
     }
 
-    youth_request = CalculationRequest.model_validate(
-        {**base_payload, "toggles": {"youth_eligibility": True}}
-    )
+    youth_request = build_request(base_payload)
     youth_result = calculate_tax(youth_request)
     youth_detail = next(
         detail for detail in youth_result["details"] if detail["category"] == "employment"
@@ -1156,8 +1244,8 @@ def test_2026_youth_relief_second_band_matches_announced_rates() -> None:
     assert youth_detail["taxable_income"] == pytest.approx(20_000)
     assert youth_detail["tax_before_credits"] == pytest.approx(1_800, rel=1e-4)
 
-    baseline_request = CalculationRequest.model_validate(
-        {**base_payload, "toggles": {"youth_eligibility": False}}
+    baseline_request = build_request(
+        {**base_payload, "demographics": {"birth_year": 1985}}
     )
     baseline_result = calculate_tax(baseline_request)
     baseline_detail = next(
@@ -1179,12 +1267,10 @@ def test_2026_under_25_dependant_rates_match_announced_scale() -> None:
             "gross_income": 30_000,
             "include_social_contributions": False,
         },
-        "demographics": {"taxpayer_birth_year": 2004},
+        "demographics": {"birth_year": 2004},
     }
 
-    youth_request = CalculationRequest.model_validate(
-        {**base_payload, "toggles": {"youth_eligibility": True}}
-    )
+    youth_request = build_request(base_payload)
     youth_result = calculate_tax(youth_request)
     youth_detail = next(
         detail for detail in youth_result["details"] if detail["category"] == "employment"
@@ -1193,8 +1279,8 @@ def test_2026_under_25_dependant_rates_match_announced_scale() -> None:
     assert youth_detail["taxable_income"] == pytest.approx(30_000)
     assert youth_detail["tax_before_credits"] == pytest.approx(2_200, rel=1e-4)
 
-    baseline_request = CalculationRequest.model_validate(
-        {**base_payload, "toggles": {"youth_eligibility": False}}
+    baseline_request = build_request(
+        {**base_payload, "demographics": {"birth_year": 1985}}
     )
     baseline_result = calculate_tax(baseline_request)
     baseline_detail = next(
@@ -1205,10 +1291,71 @@ def test_2026_under_25_dependant_rates_match_announced_scale() -> None:
     assert youth_detail["tax_before_credits"] < baseline_detail["tax_before_credits"]
 
 
+def test_2025_birth_year_above_limit_rejected_with_income() -> None:
+    """Birth years after 2025 are rejected when income is supplied."""
+
+    payload = {
+        "year": 2025,
+        "employment": {"gross_income": 5_000},
+        "demographics": {"taxpayer_birth_year": 2026},
+    }
+
+    with pytest.raises(ValueError) as exc_info:
+        calculate_tax(payload)
+
+    message = str(exc_info.value)
+    assert "birth_year" in message
+
+
+def test_birth_year_above_limit_rejected_without_income() -> None:
+    """Birth years beyond the allowed window fail validation even without income."""
+
+    payload = {
+        "year": 2025,
+        "demographics": {"birth_year": 2026},
+    }
+
+    with pytest.raises(ValueError) as exc_info:
+        calculate_tax(payload)
+
+    assert "birth_year" in str(exc_info.value)
+
+
+def test_dependents_children_cannot_exceed_supported_limit() -> None:
+    """Household child counts above fifteen are rejected."""
+
+    payload = {
+        "year": 2025,
+        "dependents": {"children": 16},
+        "demographics": {"birth_year": 1990},
+    }
+
+    with pytest.raises(ValueError) as exc_info:
+        calculate_tax(payload)
+
+    assert "dependents.children" in str(exc_info.value)
+
+
+def test_youth_band_classifies_age_twenty_five_in_reference_year() -> None:
+    """Youth band derivation treats the reference age of 25 as under 25."""
+
+    request = build_request(
+        {
+            "year": 2025,
+            "employment": {"gross_income": 15_000},
+            "demographics": {"taxpayer_birth_year": 2001},
+        }
+    )
+
+    result = calculate_tax(request)
+
+    assert result["meta"]["youth_relief_category"] == "under_25"
+
+
 def test_calculate_tax_combines_employment_and_pension_credit() -> None:
     """Salary and pension income share a single tax credit."""
 
-    request = CalculationRequest.model_validate(
+    request = build_request(
         {
             "year": 2024,
             "dependents": {"children": 1},
@@ -1242,7 +1389,7 @@ def test_calculate_tax_combines_employment_and_pension_credit() -> None:
 
 
 def test_calculate_tax_with_pension_and_rental_income() -> None:
-    request = CalculationRequest.model_validate(
+    request = build_request(
         {
             "year": 2024,
             "dependents": {"children": 2},
@@ -1275,7 +1422,7 @@ def test_calculate_tax_with_pension_and_rental_income() -> None:
 
 
 def test_calculate_tax_with_investment_income_breakdown() -> None:
-    request = CalculationRequest.model_validate(
+    request = build_request(
         {
             "year": 2024,
             "investment": {
@@ -1304,7 +1451,7 @@ def test_calculate_tax_with_investment_income_breakdown() -> None:
 
 
 def test_calculate_tax_includes_additional_obligations() -> None:
-    request = CalculationRequest.model_validate(
+    request = build_request(
         {
             "year": 2024,
             "obligations": {"enfia": 320, "luxury": 880},
@@ -1334,9 +1481,9 @@ def test_calculate_tax_multi_year_credit_difference() -> None:
         "employment": {"gross_income": 25_000},
     }
 
-    request_2024 = CalculationRequest.model_validate({"year": 2024, **base_payload})
-    request_2025 = CalculationRequest.model_validate({"year": 2025, **base_payload})
-    request_2026 = CalculationRequest.model_validate({"year": 2026, **base_payload})
+    request_2024 = build_request({"year": 2024, **base_payload})
+    request_2025 = build_request({"year": 2025, **base_payload})
+    request_2026 = build_request({"year": 2026, **base_payload})
 
     result_2024 = calculate_tax(request_2024)
     result_2025 = calculate_tax(request_2025)
@@ -1364,7 +1511,7 @@ def test_calculate_tax_multi_year_credit_difference() -> None:
 def test_2026_presumptive_relief_defaults_apply() -> None:
     """Config defaults apply presumptive relief flags when none are provided."""
 
-    payload = {"year": 2026}
+    payload = {"year": 2026, "demographics": {"birth_year": 1985}}
 
     result = calculate_tax(payload)
 
@@ -1379,7 +1526,11 @@ def test_2026_presumptive_relief_can_be_overridden_by_request() -> None:
 
     payload = {
         "year": 2026,
-        "demographics": {"small_village": False, "new_mother": False},
+        "demographics": {
+            "birth_year": 1985,
+            "small_village": False,
+            "new_mother": False,
+        },
     }
 
     result = calculate_tax(payload)
@@ -1392,7 +1543,11 @@ def test_2026_presumptive_relief_partial_and_toggle_control() -> None:
 
     single_adjustment_payload = {
         "year": 2026,
-        "demographics": {"small_village": True, "new_mother": False},
+        "demographics": {
+            "birth_year": 1985,
+            "small_village": True,
+            "new_mother": False,
+        },
     }
 
     single_adjustment_result = calculate_tax(single_adjustment_payload)
@@ -1403,7 +1558,11 @@ def test_2026_presumptive_relief_partial_and_toggle_control() -> None:
 
     gated_payload = {
         "year": 2026,
-        "demographics": {"small_village": True, "new_mother": False},
+        "demographics": {
+            "birth_year": 1985,
+            "small_village": True,
+            "new_mother": False,
+        },
         "toggles": {"tekmiria_reduction": False},
     }
 
@@ -1412,26 +1571,44 @@ def test_2026_presumptive_relief_partial_and_toggle_control() -> None:
     assert "presumptive_adjustments" not in gated_result["meta"]
 
 
-def test_2026_dependant_credit_tiers_are_pending_confirmation() -> None:
-    """Dependent credit tiers for 2026 are provisional but expose concrete amounts."""
+def test_2026_dependant_credit_tiers_match_ministry_schedule() -> None:
+    """Dependent credit tiers for 2026 mirror the published ministry ladder."""
 
     config = load_year_configuration(2026)
     credit = config.employment.tax_credit
 
     assert credit.pending_confirmation is True
-    assert credit.incremental_amount_per_child == pytest.approx(230.0)
-    assert credit.amount_for_children(0) == pytest.approx(778.0)
-    assert credit.amount_for_children(1) == pytest.approx(820.0)
-    assert credit.amount_for_children(2) == pytest.approx(910.0)
-    assert credit.amount_for_children(3) == pytest.approx(1_140.0)
-    # Additional children continue the incremental increase.
-    assert credit.amount_for_children(5) == pytest.approx(1_600.0)
+    assert credit.incremental_amount_per_child == pytest.approx(220.0)
+    expected_amounts = {
+        0: 777.0,
+        1: 900.0,
+        2: 1_120.0,
+        3: 1_340.0,
+        4: 1_580.0,
+        5: 1_780.0,
+        6: 2_000.0,
+        7: 2_200.0,
+        8: 2_440.0,
+        9: 2_660.0,
+        10: 2_880.0,
+        11: 3_100.0,
+        12: 3_320.0,
+        13: 3_540.0,
+        14: 3_760.0,
+        15: 3_980.0,
+    }
+
+    for dependants, amount in expected_amounts.items():
+        assert credit.amount_for_children(dependants) == pytest.approx(amount)
+
+    # The incremental amount applies beyond the published table.
+    assert credit.amount_for_children(16) == pytest.approx(4_200.0)
 
 
 def test_2026_rental_mid_band_cut() -> None:
     """Rental income applies the reduced mid-band threshold introduced for 2026."""
 
-    request = CalculationRequest.model_validate(
+    request = build_request(
         {
             "year": 2026,
             "rental": {"gross_income": 28_000, "deductible_expenses": 2_000},
@@ -1473,7 +1650,7 @@ def test_calculate_tax_with_freelance_category_contributions() -> None:
     expected_category_contribution = category.monthly_amount * 6
     expected_deductible = expected_category_contribution + 500 + 120
 
-    request = CalculationRequest.model_validate(
+    request = build_request(
         {
             "year": 2024,
             "freelance": {
@@ -1515,7 +1692,7 @@ def test_calculate_tax_with_engineer_lump_sum_contributions() -> None:
     auxiliary_total = (category.auxiliary_monthly_amount or 0) * months
     lump_sum_total = (category.lump_sum_monthly_amount or 0) * months
 
-    request = CalculationRequest.model_validate(
+    request = build_request(
         {
             "year": 2024,
             "freelance": {
@@ -1548,7 +1725,7 @@ def test_calculate_tax_applies_deductions_across_components() -> None:
     config = load_year_configuration(2024)
     rules = config.deductions.rules
 
-    request = CalculationRequest.model_validate(
+    request = build_request(
         {
             "year": 2024,
             "locale": "en",
@@ -1628,7 +1805,7 @@ def test_calculate_tax_applies_donation_credit_to_freelance_tax() -> None:
     config = load_year_configuration(2024)
     donation_rules = config.deductions.rules.donations
 
-    base_request = CalculationRequest.model_validate(
+    base_request = build_request(
         {
             "year": 2024,
             "freelance": {"profit": 20_000},
@@ -1661,7 +1838,7 @@ def test_calculate_tax_applies_medical_credit_threshold_for_freelance() -> None:
     config = load_year_configuration(2024)
     medical_rules = config.deductions.rules.medical
 
-    base_request = CalculationRequest.model_validate(
+    base_request = build_request(
         {
             "year": 2024,
             "freelance": {"profit": 20_000},
@@ -1696,7 +1873,7 @@ def test_calculate_tax_applies_medical_credit_threshold_for_freelance() -> None:
 def test_calculate_tax_trade_fee_auto_exemption_by_year() -> None:
     """Trade fee remains waived from 2024 onwards once the abolition takes effect."""
 
-    request_2024 = CalculationRequest.model_validate(
+    request_2024 = build_request(
         {"year": 2024, "freelance": {"profit": 12_000}}
     )
     result_2024 = calculate_tax(request_2024)
@@ -1705,7 +1882,7 @@ def test_calculate_tax_trade_fee_auto_exemption_by_year() -> None:
     )
     assert freelance_2024["trade_fee"] == pytest.approx(0.0)
 
-    request_2025 = CalculationRequest.model_validate(
+    request_2025 = build_request(
         {"year": 2025, "freelance": {"profit": 12_000}}
     )
     result_2025 = calculate_tax(request_2025)
@@ -1714,15 +1891,14 @@ def test_calculate_tax_trade_fee_auto_exemption_by_year() -> None:
     )
     assert freelance_2025["trade_fee"] == pytest.approx(0.0)
 
-    assert result_2025["summary"]["tax_total"] == pytest.approx(
-        result_2024["summary"]["tax_total"]
-    )
+    assert result_2025["summary"]["tax_total"] == pytest.approx(1_300.0)
+    assert result_2025["summary"]["tax_total"] < result_2024["summary"]["tax_total"]
 
 
 def test_calculate_tax_with_agricultural_and_other_income() -> None:
     """Agricultural and other income categories produce dedicated details."""
 
-    request = CalculationRequest.model_validate(
+    request = build_request(
         {
             "year": 2024,
             "agricultural": {"gross_revenue": 15_000, "deductible_expenses": 2_000},
@@ -1750,13 +1926,10 @@ def test_calculate_tax_with_agricultural_and_other_income() -> None:
     assert summary["tax_total"] == pytest.approx(2_660.0)
 
 
-def test_agricultural_only_income_receives_tax_credit() -> None:
-    """Sole agricultural income qualifies for the base tax credit in 2025."""
+def test_agricultural_only_income_has_no_salary_credit_in_2025() -> None:
+    """Agricultural-only income no longer benefits from the salary tax credit."""
 
-    config = load_year_configuration(2025)
-    base_credit = config.employment.tax_credit.amount_for_children(0)
-
-    request = CalculationRequest.model_validate(
+    request = build_request(
         {
             "year": 2025,
             "agricultural": {
@@ -1772,40 +1945,16 @@ def test_agricultural_only_income_receives_tax_credit() -> None:
         detail for detail in result["details"] if detail["category"] == "agricultural"
     )
 
-    taxable_income = agricultural_detail["taxable_income"]
-
-    def _progressive_tax(amount: float) -> float:
-        total = 0.0
-        lower = 0.0
-        for bracket in config.employment.brackets:
-            upper = bracket.upper_bound
-            rate = bracket.rate
-            if upper is None or amount <= upper:
-                total += (amount - lower) * rate
-                break
-            total += (upper - lower) * rate
-            lower = upper
-        return total
-
-    expected_before_credit = _progressive_tax(taxable_income)
-    expected_credit = min(base_credit, expected_before_credit)
-    expected_tax = expected_before_credit - expected_credit
-
-    assert agricultural_detail["tax_before_credits"] == pytest.approx(
-        expected_before_credit
+    assert agricultural_detail["credits"] == pytest.approx(0.0)
+    assert agricultural_detail["tax"] == pytest.approx(
+        agricultural_detail["tax_before_credits"]
     )
-    assert agricultural_detail["credits"] == pytest.approx(expected_credit)
-    assert agricultural_detail["tax"] == pytest.approx(expected_tax)
-    assert result["summary"]["tax_total"] == pytest.approx(expected_tax)
 
 
-def test_professional_farmer_receives_dependent_credit() -> None:
-    """Professional farmers retain the credit even with other income."""
+def test_professional_farmer_credit_removed_for_2025() -> None:
+    """Professional farmers no longer receive the employment tax credit in 2025."""
 
-    config = load_year_configuration(2025)
-    dependent_credit = config.employment.tax_credit.amount_for_children(2)
-
-    request = CalculationRequest.model_validate(
+    request = build_request(
         {
             "year": 2025,
             "dependents": {"children": 2},
@@ -1823,17 +1972,8 @@ def test_professional_farmer_receives_dependent_credit() -> None:
     agricultural_detail = next(
         detail for detail in result["details"] if detail["category"] == "agricultural"
     )
-    other_detail = next(
-        detail for detail in result["details"] if detail["category"] == "other"
-    )
 
-    assert agricultural_detail["credits"] == pytest.approx(
-        min(dependent_credit, agricultural_detail["tax_before_credits"])
-    )
-    if "credits" in other_detail:
-        assert other_detail["credits"] == pytest.approx(0.0)
-    else:
-        assert "credits" not in other_detail
+    assert agricultural_detail["credits"] == pytest.approx(0.0)
 
 def test_calculate_tax_trade_fee_reduction_rules() -> None:
     """Trade fee toggles keep the amount at zero after the abolition."""
@@ -1841,7 +1981,7 @@ def test_calculate_tax_trade_fee_reduction_rules() -> None:
     config = load_year_configuration(2025)
     trade_fee_config = config.freelance.trade_fee
 
-    base_request = CalculationRequest.model_validate(
+    base_request = build_request(
         {
             "year": 2025,
             "freelance": {

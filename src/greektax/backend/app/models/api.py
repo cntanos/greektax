@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any, ClassVar
+from typing import Any
 
 from pydantic import (
     BaseModel,
@@ -48,7 +48,7 @@ class DependentsInput(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    children: int = Field(default=0, ge=0)
+    children: int = Field(default=0, ge=0, le=15)
 
 
 class DemographicsInput(BaseModel):
@@ -56,62 +56,38 @@ class DemographicsInput(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    AGE_BAND_ALIASES: ClassVar[dict[str, str]] = {
-        "under25": "under_25",
-        "under-25": "under_25",
-        "under_25": "under_25",
-        "26-30": "age26_30",
-        "26_30": "age26_30",
-        "age26_30": "age26_30",
-        "26-30_workforce": "age26_30",
-        "none": "",
-        "standard": "",
-        "": "",
-    }
-
-    ALLOWED_YOUTH_BANDS: ClassVar[set[str]] = {"under_25", "age26_30"}
-
-    taxpayer_birth_year: int | None = Field(default=None, ge=1900, le=2100)
-    birth_year: int | None = Field(default=None, ge=1900, le=2100)
-    age_band: str | None = None
-    youth_employment_override: str | None = None
+    taxpayer_birth_year: int | None = Field(default=None, ge=1901, le=2100)
+    birth_year: int = Field(..., ge=1901, le=2100)
     small_village: bool = False
     new_mother: bool = False
 
+    @model_validator(mode="before")
+    @classmethod
+    def _ensure_birth_year(cls, data: Any) -> Any:
+        if not isinstance(data, Mapping):
+            return data
+
+        if "birth_year" not in data and "taxpayer_birth_year" in data:
+            copied = dict(data)
+            copied["birth_year"] = copied.get("taxpayer_birth_year")
+            return copied
+        return data
+
     @staticmethod
-    def _normalise_age_band(value: Any) -> str | None:
-        if value is None:
-            return None
-        text = str(value).strip().lower().replace(" ", "_")
-        mapped = DemographicsInput.AGE_BAND_ALIASES.get(text, text)
-        if mapped == "":
-            return None
-        if mapped not in DemographicsInput.ALLOWED_YOUTH_BANDS:
-            raise ValueError(
-                "Age band must match a recognised youth relief category when provided"
-            )
-        return mapped
-
-    @field_validator("age_band", "youth_employment_override", mode="before")
-    @classmethod
-    def _validate_age_band_fields(cls, value: Any) -> str | None:
-        return cls._normalise_age_band(value)
-
-    @field_validator("small_village", "new_mother", mode="before")
-    @classmethod
-    def _normalise_boolean_flags(cls, value: Any) -> bool:
+    def _normalise_boolean_flags(value: Any) -> bool:
         if value is None:
             return False
         return bool(value)
 
+    @field_validator("small_village", "new_mother", mode="before")
+    @classmethod
+    def _coerce_boolean_flags(cls, value: Any) -> bool:
+        return cls._normalise_boolean_flags(value)
+
     @model_validator(mode="after")
     def _align_birth_year_aliases(self) -> "DemographicsInput":
         birth_year = self.birth_year or self.taxpayer_birth_year
-        if (
-            self.birth_year is not None
-            and self.taxpayer_birth_year is not None
-            and self.birth_year != self.taxpayer_birth_year
-        ):
+        if self.taxpayer_birth_year is not None and self.taxpayer_birth_year != birth_year:
             raise ValueError(
                 "birth_year and taxpayer_birth_year must match when both are provided"
             )
@@ -290,7 +266,7 @@ class CalculationRequest(BaseModel):
     year: int = Field(..., ge=0)
     locale: str = Field(default="en")
     dependents: DependentsInput = Field(default_factory=DependentsInput)
-    demographics: DemographicsInput = Field(default_factory=DemographicsInput)
+    demographics: DemographicsInput
     employment: EmploymentInput = Field(default_factory=EmploymentInput)
     pension: PensionInput = Field(default_factory=PensionInput)
     freelance: FreelanceInput = Field(default_factory=FreelanceInput)

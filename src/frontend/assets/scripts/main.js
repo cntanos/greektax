@@ -340,18 +340,10 @@ const themeButtons = Array.from(
 const yearSelect = document.getElementById("year-select");
 const childrenInput = document.getElementById("children-input");
 const birthYearInput = document.getElementById("birth-year");
-const ageBandSelect = document.getElementById("age-band");
-const youthEligibilityControl = document.getElementById(
-  "youth-eligibility-control",
-);
-const youthEligibilityToggle = document.getElementById(
-  "youth-eligibility-toggle",
-);
 const smallVillageControl = document.getElementById("small-village-control");
 const smallVillageToggle = document.getElementById("small-village-toggle");
 const newMotherControl = document.getElementById("new-mother-control");
 const newMotherToggle = document.getElementById("new-mother-toggle");
-const youthRatesNote = document.getElementById("youth-rates-note");
 const tekmiriaNote = document.getElementById("tekmiria-note");
 const employmentIncomeInput = document.getElementById("employment-income");
 const employmentMonthlyIncomeInput = document.getElementById(
@@ -1532,17 +1524,6 @@ function applyContributionDefaults(metadata) {
 }
 
 function updateDemographicToggles(metadata, toggles) {
-  const hasYouthToggle = Object.prototype.hasOwnProperty.call(
-    toggles,
-    "youth_eligibility",
-  );
-  syncDemographicToggleState(
-    "youth_eligibility",
-    youthEligibilityControl,
-    youthEligibilityToggle,
-    hasYouthToggle,
-  );
-
   const hasSmallVillage = Object.prototype.hasOwnProperty.call(
     toggles,
     "small_village",
@@ -1750,65 +1731,6 @@ function renderBracketSummaries(metadata) {
   sections.forEach(([section, brackets]) => {
     renderBracketSummary(section, brackets);
   });
-}
-
-function collectYouthBands(brackets) {
-  const bands = new Set();
-  if (Array.isArray(brackets)) {
-    brackets.forEach((bracket) => {
-      if (Array.isArray(bracket?.youth)) {
-        bracket.youth.forEach((entry) => {
-          if (entry?.band) {
-            bands.add(String(entry.band));
-          }
-        });
-      }
-    });
-  }
-  return Array.from(bands);
-}
-
-function collectAllYouthBands(metadata) {
-  const sections = [
-    metadata?.employment?.brackets,
-    metadata?.pension?.brackets,
-    metadata?.freelance?.brackets,
-    metadata?.agricultural?.brackets,
-    metadata?.other?.brackets,
-    metadata?.rental?.brackets,
-  ];
-  const bands = new Set();
-  sections.forEach((brackets) => {
-    collectYouthBands(brackets).forEach((band) => bands.add(band));
-  });
-  return Array.from(bands);
-}
-
-function updateYouthNotes(metadata, toggles) {
-  if (!youthRatesNote) {
-    return;
-  }
-
-  const hasToggle = currentYearToggleKeys.has("youth_eligibility");
-  if (!metadata || !hasToggle) {
-    youthRatesNote.textContent = "";
-    youthRatesNote.hidden = true;
-    return;
-  }
-
-  const bands = collectAllYouthBands(metadata);
-  if (!bands.length) {
-    youthRatesNote.textContent = "";
-    youthRatesNote.hidden = true;
-    return;
-  }
-
-  const labels = bands.map((band) => t(`ui.youth_band.${band}`) || band);
-  const formatted = formatList(labels) || labels.join(", ");
-  youthRatesNote.textContent = t("hints.youth-rates-note", {
-    categories: formatted,
-  });
-  youthRatesNote.hidden = false;
 }
 
 function updateTekmiriaNote(metadata, toggles) {
@@ -2450,7 +2372,6 @@ function applyYearMetadata(year) {
     applyContributionDefaults(currentYearMetadata);
     updateDemographicToggles(currentYearMetadata, currentYearToggles);
     renderBracketSummaries(currentYearMetadata);
-    updateYouthNotes(currentYearMetadata, currentYearToggles);
     updateTekmiriaNote(currentYearMetadata, currentYearToggles);
 
     updateEmploymentMode(currentEmploymentMode);
@@ -3343,17 +3264,8 @@ function buildCalculationPayload() {
   }
 
   const birthYear = readInteger(birthYearInput);
-  if (birthYear >= 1900 && birthYear <= 2100) {
+  if (birthYear >= 1901 && birthYear <= 2025) {
     demographics.birth_year = birthYear;
-  }
-
-  const ageBand = ageBandSelect?.value || "";
-  if (ageBand) {
-    demographics.age_band = ageBand;
-  }
-
-  if (youthEligibilityToggle && isInputVisible(youthEligibilityToggle)) {
-    toggles.youth_eligibility = Boolean(youthEligibilityToggle.checked);
   }
 
   if (smallVillageToggle && isInputVisible(smallVillageToggle)) {
