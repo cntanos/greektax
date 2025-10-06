@@ -328,12 +328,14 @@
       "withholding_tax": "Tax already withheld"
     },
     "sankey": {
-      "aria_label": "Sankey diagram showing how gross income flows into taxes, contributions, and net amounts.",
-      "contributions": "Contributions & expenses",
-      "empty": "Add taxable income above to reveal colour-coded flows for taxes, contributions, and take-home pay across categories.",
+      "aria_label": "Sankey diagram showing how gross income flows into taxes, insurance contributions, deductible expenses, and net income.",
+      "aria_label_template": "Sankey diagram showing how gross income flows into {{categories}}.",
+      "empty": "Add taxable income above to reveal colour-coded flows for taxes, insurance contributions, deductible expenses, and take-home pay across categories.",
       "heading": "Income distribution",
-      "net": "Net income",
-      "taxes": "Taxes"
+      "net_income": "Net income",
+      "taxes": "Taxes",
+      "insurance": "Insurance contributions",
+      "expenses": "Expenses"
     },
     "status": {
       "calculating": "Calculating tax breakdown…",
@@ -406,7 +408,7 @@
       "highlight_inputs_title": "Guided calculator inputs",
       "highlight_localisation_copy": "Use the top-right language buttons to switch between English and Greek without losing your data.",
       "highlight_localisation_title": "Bilingual header controls",
-      "highlight_visual_copy": "Track taxes, contributions, and take-home pay through a colour-coded Sankey diagram.",
+      "highlight_visual_copy": "Track taxes, insurance contributions, deductible expenses, and take-home pay through a colour-coded Sankey diagram.",
       "highlight_visual_title": "Visual income breakdown",
       "info_tooltip_label": "More information about this field",
       "overview_description": "Follow these quick steps to receive a bilingual summary of your Greek income taxes.",

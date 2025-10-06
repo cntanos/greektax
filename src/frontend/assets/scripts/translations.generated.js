@@ -277,11 +277,13 @@
         "title": "Σύνοψη GreekTax"
       },
       "sankey": {
-        "aria_label": "Διάγραμμα Sankey που δείχνει τη ροή του ακαθάριστου εισοδήματος σε φόρους, εισφορές και καθαρά ποσά.",
-        "contributions": "Εισφορές & δαπάνες",
-        "empty": "Προσθέστε φορολογητέο εισόδημα για να εμφανιστούν οι χρωματισμένες ροές φόρων, εισφορών και καθαρού ποσού ανά κατηγορία.",
+        "aria_label": "Διάγραμμα Sankey που δείχνει τη ροή του ακαθάριστου εισοδήματος σε φόρους, ασφαλιστικές εισφορές, εκπιπτόμενες δαπάνες και καθαρό εισόδημα.",
+        "aria_label_template": "Διάγραμμα Sankey που δείχνει τη ροή του ακαθάριστου εισοδήματος προς {{categories}}.",
+        "empty": "Προσθέστε φορολογητέο εισόδημα για να εμφανιστούν οι χρωματισμένες ροές φόρων, ασφαλιστικών εισφορών, εκπιπτόμενων δαπανών και καθαρού ποσού ανά κατηγορία.",
+        "expenses": "Δαπάνες",
         "heading": "Κατανομή εισοδήματος",
-        "net": "Καθαρό εισόδημα",
+        "insurance": "Ασφαλιστικές εισφορές",
+        "net_income": "Καθαρό εισόδημα",
         "taxes": "Φόροι"
       },
       "status": {
@@ -343,7 +345,7 @@
         "highlight_inputs_title": "Καθοδηγούμενη εισαγωγή στοιχείων",
         "highlight_localisation_copy": "Χρησιμοποιήστε τα κουμπιά γλώσσας στο επάνω μέρος για να εναλλάσσετε Αγγλικά και Ελληνικά χωρίς να χάνονται τα δεδομένα σας.",
         "highlight_localisation_title": "Έλεγχος γλώσσας στην κορυφή",
-        "highlight_visual_copy": "Παρακολουθήστε φόρους, εισφορές και καθαρό ποσό σε διάγραμμα Sankey με χρωματική κωδικοποίηση.",
+        "highlight_visual_copy": "Παρακολουθήστε φόρους, ασφαλιστικές εισφορές, εκπιπτόμενες δαπάνες και καθαρό ποσό σε διάγραμμα Sankey με χρωματική κωδικοποίηση.",
         "highlight_visual_title": "Οπτική απεικόνιση εισοδήματος",
         "info_tooltip_label": "Περισσότερες πληροφορίες για το πεδίο",
         "list_and": "και",
@@ -657,11 +659,13 @@
         "title": "GreekTax summary"
       },
       "sankey": {
-        "aria_label": "Sankey diagram showing how gross income flows into taxes, contributions, and net amounts.",
-        "contributions": "Contributions & expenses",
-        "empty": "Add taxable income above to reveal colour-coded flows for taxes, contributions, and take-home pay across categories.",
+        "aria_label": "Sankey diagram showing how gross income flows into taxes, insurance contributions, deductible expenses, and net income.",
+        "aria_label_template": "Sankey diagram showing how gross income flows into {{categories}}.",
+        "empty": "Add taxable income above to reveal colour-coded flows for taxes, insurance contributions, deductible expenses, and take-home pay across categories.",
+        "expenses": "Expenses",
         "heading": "Income distribution",
-        "net": "Net income",
+        "insurance": "Insurance contributions",
+        "net_income": "Net income",
         "taxes": "Taxes"
       },
       "status": {
@@ -723,7 +727,7 @@
         "highlight_inputs_title": "Guided calculator inputs",
         "highlight_localisation_copy": "Use the top-right language buttons to switch between English and Greek without losing your data.",
         "highlight_localisation_title": "Bilingual header controls",
-        "highlight_visual_copy": "Track taxes, contributions, and take-home pay through a colour-coded Sankey diagram.",
+        "highlight_visual_copy": "Track taxes, insurance contributions, deductible expenses, and take-home pay through a colour-coded Sankey diagram.",
         "highlight_visual_title": "Visual income breakdown",
         "info_tooltip_label": "More information about this field",
         "list_and": "and",
