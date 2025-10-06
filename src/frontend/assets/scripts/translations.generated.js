@@ -60,6 +60,7 @@
       },
       "distribution": {
         "heading": "Κατανομή συνολικού εισοδήματος",
+        "gross_income": "Ακαθάριστο εισόδημα",
         "total_income": "Συνολικό εισόδημα",
         "description": "Δείτε πώς κατανέμεται το συνολικό εισόδημα μεταξύ κερδών, φόρων, ασφαλιστικών εισφορών και εκπιπτόμενων δαπανών.",
         "empty": "Προσθέστε φορολογητέο εισόδημα για να εμφανιστεί η κατανομή σε όλες τις κατηγορίες.",
@@ -432,6 +433,7 @@
       },
       "distribution": {
         "heading": "Income allocation summary",
+        "gross_income": "Gross income",
         "total_income": "Total income",
         "description": "See how your total income is split between profits, taxes, insurance contributions, and deductible expenses.",
         "empty": "Add taxable income above to reveal the allocation across all categories.",
