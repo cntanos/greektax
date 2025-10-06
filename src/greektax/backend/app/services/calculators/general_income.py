@@ -263,14 +263,13 @@ def _apply_progressive_tax(
         config.employment.tax_credit.income_reduction_exempt_from_dependants
     )
 
-    def _credit_after_reduction(credit: float) -> float:
+    def _credit_after_reduction(credit: float, dependants: int) -> float:
         if credit_reduction <= 0:
             return credit
-        if (
-            reduction_exempt_from is not None
-            and payload.children >= reduction_exempt_from
-        ):
+
+        if reduction_exempt_from is not None and dependants >= reduction_exempt_from:
             return credit
+
         reduced = credit - credit_reduction
         if reduced < 0:
             return 0.0
@@ -281,7 +280,8 @@ def _apply_progressive_tax(
     ):
         credit_candidates.append(
             _credit_after_reduction(
-                config.employment.tax_credit.amount_for_children(payload.children)
+                config.employment.tax_credit.amount_for_children(payload.children),
+                payload.children,
             )
         )
         credit_categories.add("employment")
@@ -291,7 +291,8 @@ def _apply_progressive_tax(
     ):
         credit_candidates.append(
             _credit_after_reduction(
-                config.pension.tax_credit.amount_for_children(payload.children)
+                config.pension.tax_credit.amount_for_children(payload.children),
+                payload.children,
             )
         )
         credit_categories.add("pension")
@@ -302,7 +303,8 @@ def _apply_progressive_tax(
     ):
         credit_candidates.append(
             _credit_after_reduction(
-                config.employment.tax_credit.amount_for_children(payload.children)
+                config.employment.tax_credit.amount_for_children(payload.children),
+                payload.children,
             )
         )
         credit_categories.add("agricultural")
