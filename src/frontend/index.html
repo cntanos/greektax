@@ -389,7 +389,7 @@
                 for="toggle-employment"
                 data-i18n-key="fields.toggle-employment"
               >
-                Salary/pension income
+                Salary income
               </label>
             </div>
             <div class="section-toggle">
@@ -416,6 +416,19 @@
                 data-i18n-key="fields.toggle-agricultural"
               >
                 Agricultural income
+              </label>
+            </div>
+            <div class="section-toggle">
+              <input
+                type="checkbox"
+                id="toggle-pension"
+                data-toggle-target="pension-section"
+              />
+              <label
+                for="toggle-pension"
+                data-i18n-key="fields.toggle-pension"
+              >
+                Pension income
               </label>
             </div>
             <div class="section-toggle">
@@ -491,14 +504,11 @@
             hidden
             aria-hidden="true"
           >
-            <legend data-i18n-key="calculator.legends.employment_pension">
-              Employment and/or pension income
+            <legend data-i18n-key="calculator.legends.employment">
+              Salary income
             </legend>
-            <p
-              class="form-hint"
-              data-i18n-key="hints.employment-pension-scope"
-            >
-              (for wages, salaries, and retirement pensions)
+            <p class="form-hint" data-i18n-key="hints.employment-scope">
+              (for wages and salaries only)
             </p>
             <div class="form-grid double">
               <div class="form-control">
@@ -636,7 +646,7 @@
                   for="employment-income"
                   data-i18n-key="fields.employment-income"
                 >
-                  Employment gross income (€)
+                  Salary gross income (€)
                 </label>
                 <input
                   id="employment-income"
@@ -666,7 +676,7 @@
                   for="employment-monthly-income"
                   data-i18n-key="fields.employment-monthly-income"
                 >
-                  Monthly gross income (€)
+                  Gross salary per payment (€)
                 </label>
                 <input
                   id="employment-monthly-income"
@@ -694,123 +704,6 @@
               Net-to-gross salary conversion isn't supported. Please enter gross
               amounts only.
             </p>
-            <div class="form-subsection" id="pension-fields">
-              <h3
-                class="fieldset-subheading"
-                data-i18n-key="calculator.subheadings.pension"
-              >
-                Pension income
-              </h3>
-              <p
-                class="form-hint"
-                data-i18n-key="hints.pension-section-intro"
-              >
-                If you receive a pension, fill in the details below; otherwise
-                leave these fields blank.
-              </p>
-              <div class="form-grid double">
-                <div class="form-control">
-                  <label
-                    for="pension-mode"
-                    data-i18n-key="fields.pension-mode"
-                  >
-                    Pension input mode
-                  </label>
-                  <select id="pension-mode">
-                    <option
-                      value="annual"
-                      data-i18n-key="fields.pension-mode-annual"
-                    >
-                      Enter annual amount
-                    </option>
-                    <option
-                      value="monthly"
-                      data-i18n-key="fields.pension-mode-monthly"
-                    >
-                      Enter gross amount per payment
-                    </option>
-                  </select>
-                </div>
-                <div class="form-control">
-                  <label
-                    for="pension-payments"
-                    data-i18n-key="fields.pension-payments"
-                  >
-                    Pension payments per year
-                  </label>
-                  <select
-                    id="pension-payments"
-                    name="pension.payments_per_year"
-                  ></select>
-                </div>
-                <div
-                  class="form-control"
-                  data-section="pension"
-                  data-mode="annual"
-                >
-                  <label
-                    for="pension-income"
-                    data-i18n-key="fields.pension-income"
-                  >
-                    Pension gross income (€)
-                  </label>
-                  <input
-                    id="pension-income"
-                    name="pension.gross_income"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value="0"
-                    aria-describedby="pension-income-hint"
-                  />
-                  <p
-                    id="pension-income-hint"
-                    class="form-hint"
-                    data-i18n-key="hints.pension-income-gross"
-                  >
-                    Use this when you know the annual gross pension before
-                    deductions.
-                  </p>
-                </div>
-                <div
-                  class="form-control"
-                  data-section="pension"
-                  data-mode="monthly"
-                  hidden
-                >
-                  <label
-                    for="pension-monthly-income"
-                    data-i18n-key="fields.pension-monthly-income"
-                  >
-                    Monthly gross pension (€)
-                  </label>
-                  <input
-                    id="pension-monthly-income"
-                    name="pension.monthly_income"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value="0"
-                    aria-describedby="pension-monthly-income-hint"
-                  />
-                  <p
-                    id="pension-monthly-income-hint"
-                    class="form-hint"
-                    data-i18n-key="hints.pension-monthly-income"
-                  >
-                    Enter the gross amount per pension payment. The calculator
-                    multiplies it by the payments per year you selected.
-                  </p>
-                </div>
-              </div>
-              <p
-                class="form-hint"
-                data-i18n-key="hints.pension-gross-note"
-              >
-                Net-to-gross pension conversion isn't supported. Please enter
-                gross amounts only.
-              </p>
-            </div>
           </fieldset>
 
           <fieldset class="fieldset" id="freelance-section" hidden>
@@ -1140,6 +1033,126 @@
                 </p>
               </div>
             </div>
+          </fieldset>
+
+          <fieldset
+            class="fieldset"
+            id="pension-section"
+            hidden
+            aria-hidden="true"
+          >
+            <legend data-i18n-key="calculator.legends.pension">
+              Pension income
+            </legend>
+            <p class="form-hint" data-i18n-key="hints.pension-scope">
+              (for retirement pensions)
+            </p>
+            <p
+              class="form-hint"
+              data-i18n-key="hints.pension-section-intro"
+            >
+              If you receive a pension, fill in the details below; otherwise
+              leave these fields blank.
+            </p>
+            <div class="form-grid double">
+              <div class="form-control">
+                <label
+                  for="pension-mode"
+                  data-i18n-key="fields.pension-mode"
+                >
+                  Pension input mode
+                </label>
+                <select id="pension-mode">
+                  <option
+                    value="annual"
+                    data-i18n-key="fields.pension-mode-annual"
+                  >
+                    Enter annual amount
+                  </option>
+                  <option
+                    value="monthly"
+                    data-i18n-key="fields.pension-mode-monthly"
+                  >
+                    Enter gross amount per payment
+                  </option>
+                </select>
+              </div>
+              <div class="form-control">
+                <label
+                  for="pension-payments"
+                  data-i18n-key="fields.pension-payments"
+                >
+                  Pension payments per year
+                </label>
+                <select
+                  id="pension-payments"
+                  name="pension.payments_per_year"
+                ></select>
+              </div>
+              <div
+                class="form-control"
+                data-section="pension"
+                data-mode="annual"
+              >
+                <label
+                  for="pension-income"
+                  data-i18n-key="fields.pension-income"
+                >
+                  Pension gross income (€)
+                </label>
+                <input
+                  id="pension-income"
+                  name="pension.gross_income"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value="0"
+                  aria-describedby="pension-income-hint"
+                />
+                <p
+                  id="pension-income-hint"
+                  class="form-hint"
+                  data-i18n-key="hints.pension-income-gross"
+                >
+                  Use this when you know the annual gross pension before
+                  deductions.
+                </p>
+              </div>
+              <div
+                class="form-control"
+                data-section="pension"
+                data-mode="monthly"
+                hidden
+              >
+                <label
+                  for="pension-monthly-income"
+                  data-i18n-key="fields.pension-monthly-income"
+                >
+                  Monthly gross pension (€)
+                </label>
+                <input
+                  id="pension-monthly-income"
+                  name="pension.monthly_income"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value="0"
+                  aria-describedby="pension-monthly-income-hint"
+                />
+                <p
+                  id="pension-monthly-income-hint"
+                  class="form-hint"
+                  data-i18n-key="hints.pension-monthly-income"
+                >
+                  Enter the gross amount per pension payment. The calculator
+                  multiplies it by the payments per year you selected.
+                </p>
+              </div>
+            </div>
+            <p class="form-hint" data-i18n-key="hints.pension-gross-note">
+              Net-to-gross pension conversion isn't supported. Please enter
+              gross amounts only.
+            </p>
           </fieldset>
 
           <fieldset class="fieldset" id="other-section" hidden>
