@@ -204,7 +204,7 @@ income:
         "4": 1580
         "5": 1780
         "6": 2000
-        "7": 2200
+        "7": 2220
         "8": 2440
         "9": 2660
         "10": 2880
@@ -214,6 +214,7 @@ income:
         "14": 3760
         "15": 3980
       incremental_amount_per_child: 220
+      income_reduction_exempt_from_dependants: 5
   pension:
     payroll:
       allowed_payments_per_year:
