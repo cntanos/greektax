@@ -93,8 +93,6 @@ schema. Unknown top-level or nested keys are rejected (`extra="forbid"`).
 | --- | --- | --- | --- |
 | `birth_year` | integer | ✅ | Must be between 1901 and 2100. The value cannot exceed the filing year and, for tax years 2025 and 2026, values above 2025 are rejected. Used to derive youth relief automatically. |
 | `taxpayer_birth_year` | integer | ❌ | Deprecated alias for `birth_year`. When provided it must match the required `birth_year` value. |
-| `small_village` | boolean | ❌ | Defaults to `false`. |
-| `new_mother` | boolean | ❌ | Defaults to `false`. |
 
 ### Employment & Pension sections
 
@@ -175,8 +173,7 @@ numeric truthy/falsy representations supported by Pydantic.
   "locale": "el",
   "dependents": {"children": 2},
   "demographics": {
-    "birth_year": 1998,
-    "small_village": true
+    "birth_year": 1998
   },
   "employment": {
     "gross_income": 24000,

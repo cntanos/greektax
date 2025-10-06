@@ -4,8 +4,6 @@ meta:
   status: draft
   notes: "2026 configuration with confirmed wage and pension brackets plus provisional credits"
   toggles:
-    small_village: true
-    new_mother: true
     tekmiria_reduction: true
     presumptive_relief: true
 income:
@@ -736,25 +734,6 @@ deductions:
         type: integer
         min: 0
         max: 10
-    - id: toggles.small_village
-      applies_to:
-        - freelance
-        - agricultural
-      label_key: hints.toggles.small_village.label
-      description_key: hints.toggles.small_village.description
-      input_id: small-village-toggle
-      validation:
-        type: boolean
-      allowances: []
-    - id: toggles.new_mother
-      applies_to:
-        - employment
-      label_key: hints.toggles.new_mother.label
-      description_key: hints.toggles.new_mother.description
-      input_id: new-mother-toggle
-      validation:
-        type: boolean
-      allowances: []
 warnings:
   - id: employment.partial_year_review
     severity: warning

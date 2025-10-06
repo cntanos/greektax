@@ -24,10 +24,6 @@
     "forms.deductions.medical_hint": "Out-of-pocket medical, hospital, and pharmacy costs with receipts; deductible amounts follow AADE limits.",
     "forms.dependents.children": "Dependent children",
     "forms.dependents.children_hint": "Count dependent children who qualify for the AADE family tax credit (typically under 18, full-time students up to 24, or children with a disability). Impacts salary and pension tax credits.",
-    "hints.toggles.new_mother.description": "Flag recent childbirth to surface AADE guidance on enhanced family credits and presumptive relief.",
-    "hints.toggles.new_mother.label": "New mother allowance",
-    "hints.toggles.small_village.description": "Available to residents of settlements under 500 inhabitants; may reduce presumptive income imputation.",
-    "hints.toggles.small_village.label": "Small village residency relief",
     "forms.freelance.efka.category.engineer_class_1": "Engineers (TSMEDE) — Class 1",
     "forms.freelance.efka.category.engineer_class_2": "Engineers (TSMEDE) — Class 2",
     "forms.freelance.efka.category.engineer_class_3": "Engineers (TSMEDE) — Class 3",
@@ -156,8 +152,6 @@
       "employment-payments": "Salary payments per year",
       "employment-withholding": "Tax already withheld (PAYE) (€)",
       "enfia-due": "ENFIA amount (€)",
-      "new-mother-toggle": "New mother allowance",
-      "small-village-toggle": "Small village residency relief",
       "freelance": {
         "efka": {
           "category": {
@@ -240,9 +234,6 @@
     "hints": {
       "children-eligibility": "Count dependent children recognised for the AADE family tax credit (minors, students up to 24, or dependents with a disability). Up to 15 children are supported.",
       "birth-year": "Enter the taxpayer birth year (1901–2025) to calculate youth relief eligibility automatically.",
-      "small-village": "Residents of settlements under 500 inhabitants can reduce presumptive income imputation.",
-      "new-mother": "Flag recent childbirth to surface enhanced family credits and tekmiria reductions.",
-      "tekmiria-note": "Tekmiria reductions of {{reduction}} apply when qualifying relief toggles (small village or new mother) are enabled.",
       "employment-employee-contributions": "Enter the annual EFKA contributions you pay directly outside payroll (for example, voluntary top-ups). Most employees will leave this at 0 because payroll already covers EFKA.",
       "agricultural-professional-farmer": "Check this if you are registered as a professional farmer for the tax year. It enables any reliefs available for that status.",
       "employment-income": "Enter the total gross salary for the year when you have a single annual figure.",
@@ -284,9 +275,7 @@
       "pension-gross-note": "Net-to-gross pension conversion isn't supported. Please enter gross amounts only.",
       "year-partial-note": "If you didn't earn income for the full year, enter what you earned; the annual tax credit still applies in full."
     },
-    "links": {
-      "trade_fee_sunset": "AADE trade fee update"
-    },
+    "links": {},
     "distribution": {
       "heading": "Income allocation summary",
       "gross_income": "Gross income",
@@ -437,9 +426,7 @@
         "partial_year_review": "Partial-year payroll scenarios may require manual EFKA and tax credit adjustments. Validate the figures for {{year}} if your contract ended early."
       },
       "family": {},
-      "freelance": {
-        "trade_fee_sunset": "AADE plans to bring back the business activity fee in stages. For {{year}}, confirm whether it applies to your activity before you submit."
-      },
+      "freelance": {},
       "residence": {},
       "learn_more": "Learn more",
       "links": {

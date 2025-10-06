@@ -41,8 +41,7 @@ def test_list_years_endpoint(client: FlaskClient) -> None:
     assert 12 in employment_meta["payroll"]["allowed_payments_per_year"]
     assert employment_meta["contributions"]["employee_rate"] >= 0
     toggles = current_year["meta"].get("toggles", {})
-    assert toggles.get("small_village") is True
-    assert toggles.get("new_mother") is True
+    assert set(toggles.keys()).issuperset({"presumptive_relief", "tekmiria_reduction"})
 
     pension_meta = current_year["pension"]
     assert pension_meta["payroll"]["allowed_payments_per_year"]
@@ -79,10 +78,6 @@ def test_list_years_endpoint(client: FlaskClient) -> None:
     assert isinstance(warnings, list) and warnings
     warning_ids = {entry["id"] for entry in warnings}
     assert "employment.partial_year_review" in warning_ids
-    assert {
-        "residence.small_village_toggle",
-        "family.new_mother_toggle",
-    }.isdisjoint(warning_ids)
     assert all(
         entry not in warning_ids
         for entry in {"config.pending_deduction_updates", "freelance.trade_fee_sunset"}
@@ -93,9 +88,6 @@ def test_list_years_endpoint(client: FlaskClient) -> None:
     assert "sunset" in legacy_trade_fee
     assert legacy_trade_fee["sunset"]["year"] == 2025
     assert legacy_trade_fee["sunset"]["description_key"]
-    legacy_warnings = legacy_year["warnings"]
-    assert any(entry["id"] == "freelance.trade_fee_sunset" for entry in legacy_warnings)
-
     modern_trade_fee = current_year["freelance"]["trade_fee"]
     assert modern_trade_fee["standard_amount"] == 0
     assert modern_trade_fee.get("sunset") is None

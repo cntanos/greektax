@@ -111,17 +111,6 @@ def _normalise_payload(
 
     birth_year = demographics.birth_year
 
-    demo_fields_set = getattr(demographics, "model_fields_set", set())
-    if "small_village" in demo_fields_set:
-        small_village = bool(demographics.small_village)
-    else:
-        small_village = bool(merged_toggles.get("small_village"))
-
-    if "new_mother" in demo_fields_set:
-        new_mother = bool(demographics.new_mother)
-    else:
-        new_mother = bool(merged_toggles.get("new_mother"))
-
     employment_input = request.employment
     employment_payroll = config.employment.payroll
     employment_payments = _validate_payments(
@@ -270,8 +259,6 @@ def _normalise_payload(
         locale=locale,
         children=children,
         taxpayer_birth_year=birth_year,
-        small_village=small_village,
-        new_mother=new_mother,
         employment_income=employment_income,
         employment_monthly_income=employment_monthly_income,
         employment_payments_per_year=employment_payments,
