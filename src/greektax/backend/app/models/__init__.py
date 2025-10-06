@@ -60,8 +60,17 @@ __all__ = [
     "DetailEntry",
     "ResponseMeta",
     "format_validation_error",
+    "youth_age_reference_year",
     "NET_INCOME_INPUT_ERROR",
 ]
+
+
+def youth_age_reference_year(year: int) -> int:
+    """Return the reference year used to derive youth relief ages."""
+
+    if year in {2025, 2026}:
+        return 2026
+    return year
 
 
 class CalculationInput(BaseModel):
@@ -80,10 +89,12 @@ class CalculationInput(BaseModel):
     employment_include_employee_contributions: bool
     employment_include_manual_contributions: bool
     employment_include_employer_contributions: bool
+    employment_declared_gross_income: float = 0.0
     withholding_tax: float
     pension_income: float
     pension_monthly_income: float | None
     pension_payments_per_year: int | None
+    pension_declared_gross_income: float = 0.0
     freelance_profit: float
     freelance_gross_revenue: float
     freelance_deductible_expenses: float
@@ -252,7 +263,8 @@ class CalculationInput(BaseModel):
     def taxpayer_age(self) -> int | None:
         if self.taxpayer_birth_year is None:
             return None
-        age = self.year - self.taxpayer_birth_year
+        reference_year = youth_age_reference_year(self.year)
+        age = reference_year - self.taxpayer_birth_year
         return age if age >= 0 else None
 
     @property

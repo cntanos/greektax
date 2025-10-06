@@ -91,7 +91,7 @@ schema. Unknown top-level or nested keys are rejected (`extra="forbid"`).
 
 | Field | Type | Required | Rules |
 | --- | --- | --- | --- |
-| `taxpayer_birth_year` | integer | ❌ | Defaults to `null`. When provided it must be between 1900 and 2100. Used to derive age brackets for youth relief calculations. |
+| `taxpayer_birth_year` | integer | ❌ | Defaults to `null`. When provided it must be between 1900 and 2100. For tax years 2025 and 2026, values above 2025 are rejected whenever income is supplied. Used to derive age brackets for youth relief calculations. |
 
 ### Employment & Pension sections
 

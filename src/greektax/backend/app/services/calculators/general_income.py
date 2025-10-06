@@ -233,12 +233,30 @@ def _apply_progressive_tax(
         )
 
     credit_candidates: list[float] = []
+    credit_categories: set[str] = set()
 
-    salary_credit_income = sum(
+    salary_credit_categories = {"employment"} if config.year >= 2025 else {"employment", "pension"}
+
+    derived_salary_income = sum(
         component.gross_income
         for component in components
-        if component.credit_eligible and component.category in {"employment", "pension"}
+        if component.credit_eligible and component.category in salary_credit_categories
     )
+    salary_credit_income = derived_salary_income
+    if config.year >= 2025:
+        declared_employment = payload.employment_declared_gross_income
+        if declared_employment > 0:
+            salary_credit_income = declared_employment
+    else:
+        declared_total = 0.0
+        if payload.employment_declared_gross_income > 0:
+            declared_total += payload.employment_declared_gross_income
+        if payload.pension_declared_gross_income > 0:
+            declared_total += payload.pension_declared_gross_income
+        if declared_total > 0:
+            salary_credit_income = declared_total
+        else:
+            salary_credit_income = 0.0
     credit_reduction = 0.0
     if salary_credit_income > 12_000:
         credit_reduction = ((salary_credit_income - 12_000) / 1_000) * 20.0
@@ -251,19 +269,27 @@ def _apply_progressive_tax(
             return 0.0
         return reduced
 
-    if any(component.category == "employment" for component in components):
+    if any(
+        component.category == "employment" for component in components
+    ):
         credit_candidates.append(
             _credit_after_reduction(
                 config.employment.tax_credit.amount_for_children(payload.children)
             )
         )
-    if any(component.category == "pension" for component in components):
+        credit_categories.add("employment")
+
+    if config.year < 2025 and any(
+        component.category == "pension" for component in components
+    ):
         credit_candidates.append(
             _credit_after_reduction(
                 config.pension.tax_credit.amount_for_children(payload.children)
             )
         )
-    if any(
+        credit_categories.add("pension")
+
+    if config.year < 2025 and any(
         component.category == "agricultural" and component.credit_eligible
         for component in components
     ):
@@ -271,6 +297,14 @@ def _apply_progressive_tax(
             _credit_after_reduction(
                 config.employment.tax_credit.amount_for_children(payload.children)
             )
+        )
+        credit_categories.add("agricultural")
+
+    if config.year < 2025 and credit_candidates:
+        credit_categories.update(
+            component.category
+            for component in components
+            if component.credit_eligible
         )
 
     credit_requested = max(credit_candidates) if credit_candidates else 0.0
@@ -280,14 +314,15 @@ def _apply_progressive_tax(
     for component, tax_before_credit in zip(components, taxes_before_credit):
         component.tax_before_credit = tax_before_credit
 
-    eligible_tax = sum(
-        component.tax_before_credit
+    eligible_components = [
+        component
         for component in components
-        if component.credit_eligible
-    )
+        if component.credit_eligible and component.category in credit_categories
+    ]
+    eligible_tax = sum(component.tax_before_credit for component in eligible_components)
 
     for component in components:
-        if component.credit_eligible and eligible_tax > 0:
+        if component in eligible_components and eligible_tax > 0:
             share = component.tax_before_credit / eligible_tax
             component.credit = credit_applied * share
         else:

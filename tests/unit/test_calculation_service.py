@@ -108,8 +108,9 @@ def _employment_expectations(
     )
     credit_amount = employment.tax_credit.amount_for_children(children)
     credit_reduction = 0.0
-    if gross_income > 12_000:
-        credit_reduction = ((gross_income - 12_000) / 1_000) * 20.0
+    reduction_base = gross_income if monthly_income is None else 0.0
+    if reduction_base > 12_000:
+        credit_reduction = ((reduction_base - 12_000) / 1_000) * 20.0
     credit_after_reduction = max(credit_amount - credit_reduction, 0.0)
     credit_applied = min(credit_after_reduction, tax_before_credit)
     tax_after_credit = tax_before_credit - credit_applied
@@ -1205,6 +1206,39 @@ def test_2026_under_25_dependant_rates_match_announced_scale() -> None:
     assert youth_detail["tax_before_credits"] < baseline_detail["tax_before_credits"]
 
 
+def test_2025_birth_year_above_limit_rejected_with_income() -> None:
+    """Birth years after 2025 are rejected when income is supplied."""
+
+    payload = {
+        "year": 2025,
+        "employment": {"gross_income": 5_000},
+        "demographics": {"taxpayer_birth_year": 2026},
+    }
+
+    with pytest.raises(ValueError) as exc_info:
+        calculate_tax(payload)
+
+    message = str(exc_info.value)
+    assert "birth_year" in message
+
+
+def test_youth_band_classifies_age_twenty_five_in_reference_year() -> None:
+    """Youth band derivation treats the reference age of 25 as under 25."""
+
+    request = CalculationRequest.model_validate(
+        {
+            "year": 2025,
+            "employment": {"gross_income": 15_000},
+            "demographics": {"taxpayer_birth_year": 2001},
+            "toggles": {"youth_eligibility": True},
+        }
+    )
+
+    result = calculate_tax(request)
+
+    assert result["meta"]["youth_relief_category"] == "under_25"
+
+
 def test_calculate_tax_combines_employment_and_pension_credit() -> None:
     """Salary and pension income share a single tax credit."""
 
@@ -1412,20 +1446,38 @@ def test_2026_presumptive_relief_partial_and_toggle_control() -> None:
     assert "presumptive_adjustments" not in gated_result["meta"]
 
 
-def test_2026_dependant_credit_tiers_are_pending_confirmation() -> None:
-    """Dependent credit tiers for 2026 are provisional but expose concrete amounts."""
+def test_2026_dependant_credit_tiers_match_ministry_schedule() -> None:
+    """Dependent credit tiers for 2026 mirror the published ministry ladder."""
 
     config = load_year_configuration(2026)
     credit = config.employment.tax_credit
 
     assert credit.pending_confirmation is True
-    assert credit.incremental_amount_per_child == pytest.approx(230.0)
-    assert credit.amount_for_children(0) == pytest.approx(778.0)
-    assert credit.amount_for_children(1) == pytest.approx(820.0)
-    assert credit.amount_for_children(2) == pytest.approx(910.0)
-    assert credit.amount_for_children(3) == pytest.approx(1_140.0)
-    # Additional children continue the incremental increase.
-    assert credit.amount_for_children(5) == pytest.approx(1_600.0)
+    assert credit.incremental_amount_per_child == pytest.approx(220.0)
+    expected_amounts = {
+        0: 777.0,
+        1: 900.0,
+        2: 1_120.0,
+        3: 1_340.0,
+        4: 1_580.0,
+        5: 1_780.0,
+        6: 2_000.0,
+        7: 2_200.0,
+        8: 2_440.0,
+        9: 2_660.0,
+        10: 2_880.0,
+        11: 3_100.0,
+        12: 3_320.0,
+        13: 3_540.0,
+        14: 3_760.0,
+        15: 3_980.0,
+    }
+
+    for dependants, amount in expected_amounts.items():
+        assert credit.amount_for_children(dependants) == pytest.approx(amount)
+
+    # The incremental amount applies beyond the published table.
+    assert credit.amount_for_children(16) == pytest.approx(4_200.0)
 
 
 def test_2026_rental_mid_band_cut() -> None:
@@ -1750,11 +1802,8 @@ def test_calculate_tax_with_agricultural_and_other_income() -> None:
     assert summary["tax_total"] == pytest.approx(2_660.0)
 
 
-def test_agricultural_only_income_receives_tax_credit() -> None:
-    """Sole agricultural income qualifies for the base tax credit in 2025."""
-
-    config = load_year_configuration(2025)
-    base_credit = config.employment.tax_credit.amount_for_children(0)
+def test_agricultural_only_income_has_no_salary_credit_in_2025() -> None:
+    """Agricultural-only income no longer benefits from the salary tax credit."""
 
     request = CalculationRequest.model_validate(
         {
@@ -1772,38 +1821,14 @@ def test_agricultural_only_income_receives_tax_credit() -> None:
         detail for detail in result["details"] if detail["category"] == "agricultural"
     )
 
-    taxable_income = agricultural_detail["taxable_income"]
-
-    def _progressive_tax(amount: float) -> float:
-        total = 0.0
-        lower = 0.0
-        for bracket in config.employment.brackets:
-            upper = bracket.upper_bound
-            rate = bracket.rate
-            if upper is None or amount <= upper:
-                total += (amount - lower) * rate
-                break
-            total += (upper - lower) * rate
-            lower = upper
-        return total
-
-    expected_before_credit = _progressive_tax(taxable_income)
-    expected_credit = min(base_credit, expected_before_credit)
-    expected_tax = expected_before_credit - expected_credit
-
-    assert agricultural_detail["tax_before_credits"] == pytest.approx(
-        expected_before_credit
+    assert agricultural_detail["credits"] == pytest.approx(0.0)
+    assert agricultural_detail["tax"] == pytest.approx(
+        agricultural_detail["tax_before_credits"]
     )
-    assert agricultural_detail["credits"] == pytest.approx(expected_credit)
-    assert agricultural_detail["tax"] == pytest.approx(expected_tax)
-    assert result["summary"]["tax_total"] == pytest.approx(expected_tax)
 
 
-def test_professional_farmer_receives_dependent_credit() -> None:
-    """Professional farmers retain the credit even with other income."""
-
-    config = load_year_configuration(2025)
-    dependent_credit = config.employment.tax_credit.amount_for_children(2)
+def test_professional_farmer_credit_removed_for_2025() -> None:
+    """Professional farmers no longer receive the employment tax credit in 2025."""
 
     request = CalculationRequest.model_validate(
         {
@@ -1823,17 +1848,8 @@ def test_professional_farmer_receives_dependent_credit() -> None:
     agricultural_detail = next(
         detail for detail in result["details"] if detail["category"] == "agricultural"
     )
-    other_detail = next(
-        detail for detail in result["details"] if detail["category"] == "other"
-    )
 
-    assert agricultural_detail["credits"] == pytest.approx(
-        min(dependent_credit, agricultural_detail["tax_before_credits"])
-    )
-    if "credits" in other_detail:
-        assert other_detail["credits"] == pytest.approx(0.0)
-    else:
-        assert "credits" not in other_detail
+    assert agricultural_detail["credits"] == pytest.approx(0.0)
 
 def test_calculate_tax_trade_fee_reduction_rules() -> None:
     """Trade fee toggles keep the amount at zero after the abolition."""
