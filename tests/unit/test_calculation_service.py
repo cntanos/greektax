@@ -107,7 +107,11 @@ def _employment_expectations(
         taxable_income, employment.brackets, dependants=children
     )
     credit_amount = employment.tax_credit.amount_for_children(children)
-    credit_applied = min(credit_amount, tax_before_credit)
+    credit_reduction = 0.0
+    if gross_income > 12_000:
+        credit_reduction = ((gross_income - 12_000) / 1_000) * 20.0
+    credit_after_reduction = max(credit_amount - credit_reduction, 0.0)
+    credit_applied = min(credit_after_reduction, tax_before_credit)
     tax_after_credit = tax_before_credit - credit_applied
 
     net_income = gross_income - tax_after_credit
@@ -205,7 +209,11 @@ def _freelance_expectations(request: CalculationRequest) -> dict[str, Any]:
         dependants=dependents,
     )
     credit_amount = config.employment.tax_credit.amount_for_children(dependents)
-    credit_applied = min(credit_amount, total_tax_before_credit)
+    credit_reduction = 0.0
+    if employment_gross > 12_000:
+        credit_reduction = ((employment_gross - 12_000) / 1_000) * 20.0
+    credit_after_reduction = max(credit_amount - credit_reduction, 0.0)
+    credit_applied = min(credit_after_reduction, total_tax_before_credit)
 
     employment_share = (
         employment_taxable / total_taxable if total_taxable else 0.0
@@ -387,6 +395,55 @@ def test_calculate_tax_employment_only() -> None:
     assert employment_detail["employer_contributions"] == pytest.approx(
         expected["employer_contrib"], rel=1e-4
     )
+
+
+def test_employment_tax_credit_not_reduced_below_threshold() -> None:
+    """Gross salaries below €12k retain the full family tax credit."""
+
+    request = CalculationRequest.model_validate(
+        {
+            "year": 2024,
+            "dependents": {"children": 0},
+            "employment": {"gross_income": 11_900},
+        }
+    )
+
+    result = calculate_tax(request)
+    employment_detail = result["details"][0]
+
+    config = load_year_configuration(request.year)
+    base_credit = config.employment.tax_credit.amount_for_children(
+        request.dependents.children
+    )
+
+    assert employment_detail["credits"] == pytest.approx(base_credit)
+
+
+def test_employment_tax_credit_reduced_using_gross_income() -> None:
+    """Salary credits are reduced based on gross income above €12k and never negative."""
+
+    request = CalculationRequest.model_validate(
+        {
+            "year": 2024,
+            "dependents": {"children": 0},
+            "employment": {"gross_income": 12_100},
+        }
+    )
+
+    result = calculate_tax(request)
+    employment_detail = result["details"][0]
+
+    config = load_year_configuration(request.year)
+    base_credit = config.employment.tax_credit.amount_for_children(
+        request.dependents.children
+    )
+    gross_income = request.employment.gross_income
+    reduction = ((gross_income - 12_000) / 1_000) * 20.0
+    expected_credit = max(base_credit - reduction, 0.0)
+
+    assert employment_detail["taxable_income"] < 12_000
+    assert employment_detail["credits"] == pytest.approx(expected_credit)
+    assert employment_detail["credits"] >= 0.0
 
 
 def test_calculate_tax_with_withholding_tax_balance_due() -> None:
@@ -1111,9 +1168,9 @@ def test_calculate_tax_combines_employment_and_pension_credit() -> None:
 
     result = calculate_tax(request)
 
-    assert result["summary"]["tax_total"] == pytest.approx(1_984.86, rel=1e-4)
+    assert result["summary"]["tax_total"] == pytest.approx(2_144.86, rel=1e-4)
     assert result["summary"]["taxable_income"] == pytest.approx(18_613.0)
-    assert result["summary"]["net_income"] == pytest.approx(16_628.14, rel=1e-4)
+    assert result["summary"]["net_income"] == pytest.approx(16_468.14, rel=1e-4)
 
     employment_detail = next(
         detail for detail in result["details"] if detail["category"] == "employment"
@@ -1125,11 +1182,11 @@ def test_calculate_tax_combines_employment_and_pension_credit() -> None:
     assert employment_detail["tax_before_credits"] == pytest.approx(1_293.3, rel=1e-4)
     assert pension_detail["tax_before_credits"] == pytest.approx(1_501.56, rel=1e-4)
 
-    assert employment_detail["credits"] == pytest.approx(374.82, rel=1e-4)
-    assert pension_detail["credits"] == pytest.approx(435.18, rel=1e-4)
+    assert employment_detail["credits"] == pytest.approx(300.78, rel=1e-4)
+    assert pension_detail["credits"] == pytest.approx(349.22, rel=1e-4)
 
-    assert employment_detail["total_tax"] == pytest.approx(918.48, rel=1e-4)
-    assert pension_detail["total_tax"] == pytest.approx(1_066.38, rel=1e-4)
+    assert employment_detail["total_tax"] == pytest.approx(992.51, rel=1e-4)
+    assert pension_detail["total_tax"] == pytest.approx(1_152.35, rel=1e-4)
     assert employment_detail["employee_contributions"] == pytest.approx(1_387.0)
 
 
@@ -1153,8 +1210,8 @@ def test_calculate_tax_with_pension_and_rental_income() -> None:
     )
 
     # Pension tax: (10k * 9%) + (8k * 22%) = 900 + 1760 = 2,660
-    # Credit for 2 children = 900 -> tax 1,760
-    assert pension_detail["total_tax"] == pytest.approx(1_760.0)
+    # Credit for 2 children = 900 reduced by €120 above the threshold -> tax 1,880
+    assert pension_detail["total_tax"] == pytest.approx(1_880.0)
 
     # Rental taxable: 15k - 2k = 13k -> 12k @15% + 1k @35% = 2,150
     assert rental_detail["taxable_income"] == pytest.approx(13_000.0)
@@ -1163,7 +1220,7 @@ def test_calculate_tax_with_pension_and_rental_income() -> None:
 
     assert result["summary"]["income_total"] == pytest.approx(33_000.0)
     assert result["summary"]["taxable_income"] == pytest.approx(31_000.0)
-    assert result["summary"]["tax_total"] == pytest.approx(3_910.0)
+    assert result["summary"]["tax_total"] == pytest.approx(4_030.0)
 
 
 def test_calculate_tax_with_investment_income_breakdown() -> None:
