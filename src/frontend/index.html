@@ -273,20 +273,22 @@
               </div>
             </div>
             <div class="form-grid double">
-              <div class="form-control" id="youth-eligibility-control" hidden>
-                <span class="inline-field">
-                  <input
-                    id="youth-eligibility-toggle"
-                    type="checkbox"
-                    aria-describedby="youth-eligibility-hint"
-                  />
-                  <label
-                    for="youth-eligibility-toggle"
-                    data-i18n-key="fields.youth-eligibility-toggle"
-                  >
-                    Youth employment relief
-                  </label>
-                </span>
+              <div
+                class="form-control form-control--toggle"
+                id="youth-eligibility-control"
+                hidden
+              >
+                <label
+                  for="youth-eligibility-toggle"
+                  data-i18n-key="fields.youth-eligibility-toggle"
+                >
+                  Youth employment relief
+                </label>
+                <input
+                  id="youth-eligibility-toggle"
+                  type="checkbox"
+                  aria-describedby="youth-eligibility-hint"
+                />
                 <p
                   id="youth-eligibility-hint"
                   class="form-hint"
@@ -296,21 +298,23 @@
                   AADE youth employment relief.
                 </p>
               </div>
-              <div class="form-control" id="small-village-control" hidden>
-                <span class="inline-field">
-                  <input
-                    id="small-village-toggle"
-                    name="demographics.small_village"
-                    type="checkbox"
-                    aria-describedby="small-village-hint"
-                  />
-                  <label
-                    for="small-village-toggle"
-                    data-i18n-key="fields.small-village-toggle"
-                  >
-                    Small village residency relief
-                  </label>
-                </span>
+              <div
+                class="form-control form-control--toggle"
+                id="small-village-control"
+                hidden
+              >
+                <label
+                  for="small-village-toggle"
+                  data-i18n-key="fields.small-village-toggle"
+                >
+                  Small village residency relief
+                </label>
+                <input
+                  id="small-village-toggle"
+                  name="demographics.small_village"
+                  type="checkbox"
+                  aria-describedby="small-village-hint"
+                />
                 <p
                   id="small-village-hint"
                   class="form-hint"
@@ -320,21 +324,23 @@
                   presumptive income imputation.
                 </p>
               </div>
-              <div class="form-control" id="new-mother-control" hidden>
-                <span class="inline-field">
-                  <input
-                    id="new-mother-toggle"
-                    name="demographics.new_mother"
-                    type="checkbox"
-                    aria-describedby="new-mother-hint"
-                  />
-                  <label
-                    for="new-mother-toggle"
-                    data-i18n-key="fields.new-mother-toggle"
-                  >
-                    New mother allowance
-                  </label>
-                </span>
+              <div
+                class="form-control form-control--toggle"
+                id="new-mother-control"
+                hidden
+              >
+                <label
+                  for="new-mother-toggle"
+                  data-i18n-key="fields.new-mother-toggle"
+                >
+                  New mother allowance
+                </label>
+                <input
+                  id="new-mother-toggle"
+                  name="demographics.new_mother"
+                  type="checkbox"
+                  aria-describedby="new-mother-hint"
+                />
                 <p
                   id="new-mother-hint"
                   class="form-hint"
@@ -584,22 +590,22 @@
                       employees will leave this at 0 because payroll already covers EFKA.
                     </p>
                   </div>
-                  <div class="form-control form-control--nested">
-                    <span class="inline-field">
-                      <input
-                        id="employment-include-social"
-                        name="employment.include_social_contributions"
-                        type="checkbox"
-                        checked
-                        aria-describedby="employment-include-social-hint"
-                      />
-                      <label
-                        for="employment-include-social"
-                        data-i18n-key="fields.employment-include-social"
-                      >
-                        Include social insurance contributions in net pay
-                      </label>
-                    </span>
+                  <div
+                    class="form-control form-control--nested form-control--toggle"
+                  >
+                    <label
+                      for="employment-include-social"
+                      data-i18n-key="fields.employment-include-social"
+                    >
+                      Include social insurance contributions in net pay
+                    </label>
+                    <input
+                      id="employment-include-social"
+                      name="employment.include_social_contributions"
+                      type="checkbox"
+                      checked
+                      aria-describedby="employment-include-social-hint"
+                    />
                     <p
                       id="employment-include-social-hint"
                       class="form-hint"
@@ -944,21 +950,19 @@
                   towns/islands.
                 </p>
               </div>
-              <div class="form-control">
-                <span class="inline-field">
-                  <input
-                    id="trade-fee-toggle"
-                    type="checkbox"
-                    name="freelance.include_trade_fee"
-                    checked
-                  />
-                  <label
-                    for="trade-fee-toggle"
-                    data-i18n-key="fields.trade-fee-toggle"
-                  >
-              Business activity fee
-                  </label>
-                </span>
+              <div class="form-control form-control--toggle">
+                <label
+                  for="trade-fee-toggle"
+                  data-i18n-key="fields.trade-fee-toggle"
+                >
+                  Business activity fee
+                </label>
+                <input
+                  id="trade-fee-toggle"
+                  type="checkbox"
+                  name="freelance.include_trade_fee"
+                  checked
+                />
               </div>
             </div>
             <p
@@ -1008,21 +1012,19 @@
                   value="0"
                 />
               </div>
-              <div class="form-control">
-                <span class="inline-field">
-                  <input
-                    id="agricultural-professional-farmer"
-                    name="agricultural.professional_farmer"
-                    type="checkbox"
-                    aria-describedby="agricultural-professional-farmer-hint"
-                  />
-                  <label
-                    for="agricultural-professional-farmer"
-                    data-i18n-key="fields.agricultural-professional-farmer"
-                  >
-                    Professional farmer status
-                  </label>
-                </span>
+              <div class="form-control form-control--toggle">
+                <label
+                  for="agricultural-professional-farmer"
+                  data-i18n-key="fields.agricultural-professional-farmer"
+                >
+                  Professional farmer status
+                </label>
+                <input
+                  id="agricultural-professional-farmer"
+                  name="agricultural.professional_farmer"
+                  type="checkbox"
+                  aria-describedby="agricultural-professional-farmer-hint"
+                />
                 <p
                   id="agricultural-professional-farmer-hint"
                   class="form-hint"

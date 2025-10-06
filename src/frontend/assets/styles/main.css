@@ -953,10 +953,14 @@ main {
   box-shadow: 0 1rem 2rem rgba(15, 109, 255, 0.16);
 }
 
-.inline-field {
+.form-control--toggle {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.form-control--toggle > input[type="checkbox"] {
+  align-self: flex-start;
 }
 
 .actions {
