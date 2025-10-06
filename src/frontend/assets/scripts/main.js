@@ -454,6 +454,9 @@ const resultsSection = document.getElementById("calculation-results");
 const sankeyWrapper = document.getElementById("sankey-wrapper");
 const sankeyChart = document.getElementById("sankey-chart");
 const sankeyEmptyState = document.getElementById("sankey-empty");
+const sankeyLegend = sankeyWrapper
+  ? sankeyWrapper.querySelector(".sankey-legend")
+  : null;
 const distributionWrapper = document.getElementById("distribution-wrapper");
 const distributionVisual = distributionWrapper
   ? distributionWrapper.querySelector(".distribution-visual")
@@ -1043,6 +1046,44 @@ function getFallbackFormat(locale) {
 
 function getActiveLocale() {
   return normaliseLocaleChoice(currentLocale || fallbackLocale || "en");
+}
+
+function formatListForLocale(items) {
+  const values = Array.isArray(items)
+    ? items.filter((item) => typeof item === "string" && item.trim())
+    : [];
+  if (!values.length) {
+    return "";
+  }
+
+  if (typeof Intl !== "undefined" && typeof Intl.ListFormat === "function") {
+    try {
+      const formatter = new Intl.ListFormat(getActiveLocale(), {
+        style: "long",
+        type: "conjunction",
+      });
+      return formatter.format(values);
+    } catch (error) {
+      console.warn("Unable to format list for locale", error);
+    }
+  }
+
+  if (values.length === 1) {
+    return values[0];
+  }
+
+  const conjunctionKey = "ui.list_and";
+  const conjunction = t(conjunctionKey);
+  const conjunctionWord =
+    conjunction && conjunction !== conjunctionKey ? conjunction : "and";
+
+  if (values.length === 2) {
+    return `${values[0]} ${conjunctionWord} ${values[1]}`;
+  }
+
+  const head = values.slice(0, -1).join(", ");
+  const tail = values[values.length - 1];
+  return `${head}, ${conjunctionWord} ${tail}`;
 }
 
 function getNumberFormatter(locale, options) {
@@ -3504,6 +3545,54 @@ function buildCalculationPayload() {
   return payload;
 }
 
+function updateSankeyLegend(categories) {
+  if (!sankeyLegend) {
+    return;
+  }
+
+  sankeyLegend.innerHTML = "";
+
+  categories.forEach(({ key, label, baseColor }) => {
+    if (!label) {
+      return;
+    }
+
+    const item = document.createElement("div");
+    item.className = "sankey-legend__item";
+    item.dataset.flow = key;
+    item.setAttribute("role", "listitem");
+
+    const swatch = document.createElement("span");
+    swatch.className = "sankey-legend__swatch";
+    swatch.setAttribute("aria-hidden", "true");
+    if (baseColor) {
+      swatch.style.background = baseColor;
+    }
+    item.appendChild(swatch);
+
+    const labelSpan = document.createElement("span");
+    labelSpan.textContent = label;
+    item.appendChild(labelSpan);
+
+    sankeyLegend.appendChild(item);
+  });
+}
+
+function buildSankeyAriaLabel(categoryLabels) {
+  const formatted = formatListForLocale(categoryLabels);
+  if (!formatted) {
+    return t("sankey.aria_label");
+  }
+
+  const templateKey = "sankey.aria_label_template";
+  const template = t(templateKey, { categories: formatted });
+  if (template && template !== templateKey) {
+    return template;
+  }
+
+  return t("sankey.aria_label");
+}
+
 function renderSankey(result) {
   if (!sankeyWrapper || !sankeyChart) {
     return;
@@ -3519,15 +3608,7 @@ function renderSankey(result) {
   const linkLabels = [];
   const linkColors = [];
 
-  const sankeyTotals = {
-    taxes: t("sankey.taxes"),
-    contributions: t("sankey.contributions"),
-    net: t("sankey.net"),
-  };
-
   const flowTaxes = getCssVariable("--flow-taxes", "#d63384");
-  const flowContributions = getCssVariable("--flow-contributions", "#20c997");
-  const flowNet = getCssVariable("--flow-net", "#0d6efd");
   const textColor = getCssVariable("--text-body", "#212529");
   const subtleColor = getCssVariable("--text-subtle", "#495057");
   const nodeLineColor = getCssVariable("--sankey-node-outline", "#adb5bd");
@@ -3537,31 +3618,57 @@ function renderSankey(result) {
   );
   const tooltipBackground = getCssVariable("--tooltip-bg", "#212529");
   const tooltipText = getCssVariable("--tooltip-text", "#ffffff");
-
   const linkColorPalette = {
-    taxes: colorWithAlpha(flowTaxes, 0.72, "rgba(214, 51, 132, 0.72)"),
-    contributions: colorWithAlpha(
-      flowContributions,
-      0.72,
-      "rgba(32, 201, 151, 0.72)",
-    ),
-    net: colorWithAlpha(flowNet, 0.72, "rgba(13, 110, 253, 0.72)"),
     default: colorWithAlpha(subtleColor, 0.6, "rgba(73, 80, 87, 0.6)"),
   };
 
-  const nodeAccentColors = {
-    [sankeyTotals.taxes]: colorWithAlpha(
-      flowTaxes,
+  const categoryMeta = DISTRIBUTION_CATEGORIES.map(({ key, colorVar }) => {
+    const translationKey = `distribution.${key}`;
+    const translated = t(translationKey);
+    const label =
+      translated && translated !== translationKey
+        ? translated
+        : key
+            .split("_")
+            .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+            .join(" ");
+    const fallbackBase = DISTRIBUTION_FALLBACK_COLORS[key] || flowTaxes;
+    const cssColor = getCssVariable(colorVar, fallbackBase);
+    const baseColor = cssColor && cssColor.trim() ? cssColor.trim() : fallbackBase;
+    const fallbackLink = colorWithAlpha(
+      fallbackBase,
+      0.72,
+      "rgba(73, 80, 87, 0.6)",
+    );
+    const fallbackNode = colorWithAlpha(
+      fallbackBase,
       0.18,
-      "rgba(214, 51, 132, 0.18)",
-    ),
-    [sankeyTotals.contributions]: colorWithAlpha(
-      flowContributions,
-      0.18,
-      "rgba(32, 201, 151, 0.18)",
-    ),
-    [sankeyTotals.net]: colorWithAlpha(flowNet, 0.18, "rgba(13, 110, 253, 0.18)"),
-  };
+      "rgba(33, 37, 41, 0.08)",
+    );
+    const linkColor = colorWithAlpha(baseColor, 0.72, fallbackLink);
+    const nodeColor = colorWithAlpha(baseColor, 0.18, fallbackNode);
+
+    return {
+      key,
+      label,
+      baseColor,
+      linkColor,
+      nodeColor,
+    };
+  });
+
+  updateSankeyLegend(categoryMeta);
+
+  const nodeAccentColors = {};
+  const categoryLabels = [];
+
+  categoryMeta.forEach((meta) => {
+    if (meta.label) {
+      nodeAccentColors[meta.label] = meta.nodeColor;
+      categoryLabels.push(meta.label);
+    }
+    linkColorPalette[meta.key] = meta.linkColor;
+  });
 
   const ensureNode = (label) => {
     const resolved = label || "";
@@ -3574,6 +3681,19 @@ function renderSankey(result) {
     return index;
   };
 
+  const categoryIndex = new Map();
+
+  const getCategoryIndex = (key) => {
+    if (categoryIndex.has(key)) {
+      return categoryIndex.get(key);
+    }
+    const meta = categoryMeta.find((entry) => entry.key === key);
+    const label = meta?.label || key;
+    const index = ensureNode(label);
+    categoryIndex.set(key, index);
+    return index;
+  };
+
   const toChartValue = (value) => {
     const number = Number.parseFloat(value ?? 0);
     if (!Number.isFinite(number) || number <= 0) {
@@ -3582,7 +3702,7 @@ function renderSankey(result) {
     return Math.round(number * 100) / 100;
   };
 
-  const addLink = (source, target, value, label, tone = "default") => {
+  const addLink = (source, target, value, label, categoryKey = "default") => {
     const chartValue = toChartValue(value);
     if (!chartValue) {
       return;
@@ -3591,41 +3711,13 @@ function renderSankey(result) {
     targets.push(target);
     values.push(chartValue);
     linkLabels.push(label);
-    linkColors.push(linkColorPalette[tone] || linkColorPalette.default);
-  };
-
-  let taxesIndex = null;
-  let contributionsIndex = null;
-  let netIndex = null;
-
-  const getTaxesIndex = () => {
-    if (taxesIndex === null) {
-      taxesIndex = ensureNode(t("sankey.taxes"));
-    }
-    return taxesIndex;
-  };
-
-  const getContributionsIndex = () => {
-    if (contributionsIndex === null) {
-      contributionsIndex = ensureNode(t("sankey.contributions"));
-    }
-    return contributionsIndex;
-  };
-
-  const getNetIndex = () => {
-    if (netIndex === null) {
-      netIndex = ensureNode(t("sankey.net"));
-    }
-    return netIndex;
+    linkColors.push(
+      linkColorPalette[categoryKey] || linkColorPalette.default,
+    );
   };
 
   details.forEach((detail) => {
     if (!detail) {
-      return;
-    }
-
-    const grossRaw = Number.parseFloat(detail.gross_income ?? 0);
-    if (!Number.isFinite(grossRaw) || grossRaw <= 0) {
       return;
     }
 
@@ -3635,54 +3727,20 @@ function renderSankey(result) {
     }
 
     const sourceIndex = ensureNode(sourceLabel);
+    const breakdown = computeDistributionForDetail(detail);
+    if (!breakdown || breakdown.gross <= 0) {
+      return;
+    }
 
-    const taxRaw = Math.max(Number.parseFloat(detail.total_tax ?? detail.tax ?? 0), 0);
-    let netRaw = Math.max(Number.parseFloat(detail.net_income ?? 0), 0);
-    let contributionsRaw = Math.max(grossRaw - taxRaw - netRaw, 0);
-
-    const allocated = taxRaw + netRaw + contributionsRaw;
-    const difference = grossRaw - allocated;
-    if (difference > 0.01) {
-      netRaw += difference;
-    } else if (difference < -0.01) {
-      const adjustment = Math.min(netRaw, Math.abs(difference));
-      netRaw -= adjustment;
-      const remaining = difference + adjustment;
-      if (remaining < -0.01) {
-        const contributionAdjustment = Math.min(contributionsRaw, Math.abs(remaining));
-        contributionsRaw -= contributionAdjustment;
+    categoryMeta.forEach(({ key, label }) => {
+      const amount = Math.max(breakdown[key] || 0, 0);
+      if (amount <= 0.005) {
+        return;
       }
-    }
-
-    addLink(
-      sourceIndex,
-      getTaxesIndex(),
-      taxRaw,
-      `${sourceLabel} → ${t("sankey.taxes")}: ${formatCurrency(taxRaw)}`,
-      "taxes",
-    );
-
-    if (contributionsRaw > 0.005) {
-      addLink(
-        sourceIndex,
-        getContributionsIndex(),
-        contributionsRaw,
-        `${sourceLabel} → ${t("sankey.contributions")}: ${formatCurrency(
-          contributionsRaw,
-        )}`,
-        "contributions",
-      );
-    }
-
-    if (netRaw > 0.005) {
-      addLink(
-        sourceIndex,
-        getNetIndex(),
-        netRaw,
-        `${sourceLabel} → ${t("sankey.net")}: ${formatCurrency(netRaw)}`,
-        "net",
-      );
-    }
+      const targetIndex = getCategoryIndex(key);
+      const tooltipLabel = `${sourceLabel} → ${label}: ${formatCurrency(amount)}`;
+      addLink(sourceIndex, targetIndex, amount, tooltipLabel, key);
+    });
   });
 
   if (!values.length) {
@@ -3716,6 +3774,8 @@ function renderSankey(result) {
   );
 
   const { width: resolvedWidth, height: chartHeight } = computeSankeyDimensions();
+
+  const ariaLabel = buildSankeyAriaLabel(categoryLabels);
 
   const data = [
     {
@@ -3779,7 +3839,7 @@ function renderSankey(result) {
         });
         sankeyWrapper.hidden = false;
         sankeyChart.setAttribute("aria-hidden", "false");
-        sankeyChart.setAttribute("aria-label", t("sankey.aria_label"));
+        sankeyChart.setAttribute("aria-label", ariaLabel);
       })
       .catch((error) => {
         console.error("Unable to initialise the Sankey diagram", error);
@@ -3977,70 +4037,83 @@ function sumDetailFields(detail, fields) {
   }, 0);
 }
 
+function computeDistributionForDetail(detail) {
+  const empty = { net_income: 0, taxes: 0, insurance: 0, expenses: 0, gross: 0 };
+  if (!detail) {
+    return empty;
+  }
+
+  const taxCandidate =
+    detail.total_tax !== undefined && detail.total_tax !== null
+      ? detail.total_tax
+      : detail.tax;
+  const taxes = Math.max(toFiniteNumber(taxCandidate), 0);
+
+  const contributionCandidates = [
+    toFiniteNumber(detail.employee_contributions),
+    toFiniteNumber(detail.deductible_contributions),
+    toFiniteNumber(detail.contributions),
+  ];
+  let insurance = contributionCandidates.reduce((total, value) => {
+    return value > 0 ? total + value : total;
+  }, 0);
+
+  const rawNet = toFiniteNumber(detail.net_income);
+  let netIncome = rawNet > 0 ? rawNet : 0;
+
+  let expenses = sumDetailFields(detail, DISTRIBUTION_EXPENSE_FIELDS);
+
+  const isTaxDetail =
+    taxes > 0 ||
+    (typeof detail.category === "string" &&
+      DISTRIBUTION_TAX_CATEGORIES.has(detail.category));
+
+  if (rawNet < 0) {
+    if (!isTaxDetail && insurance <= 0) {
+      expenses += Math.abs(rawNet);
+    }
+    netIncome = 0;
+  }
+
+  if (insurance <= 0) {
+    const gross = Math.max(toFiniteNumber(detail.gross_income), 0);
+    if (gross > 0) {
+      const impliedInsurance = gross - (taxes + expenses + netIncome);
+      if (impliedInsurance > 0) {
+        insurance = impliedInsurance;
+      }
+    }
+  }
+
+  const breakdown = {
+    net_income: Math.max(netIncome, 0),
+    taxes: Math.max(taxes, 0),
+    insurance: Math.max(insurance, 0),
+    expenses: Math.max(expenses, 0),
+  };
+
+  const grossTotal =
+    breakdown.net_income +
+    breakdown.taxes +
+    breakdown.insurance +
+    breakdown.expenses;
+
+  return { ...breakdown, gross: grossTotal > 0 ? grossTotal : 0 };
+}
+
 function computeDistributionTotals(details) {
   const totals = { net_income: 0, taxes: 0, insurance: 0, expenses: 0 };
   const entries = Array.isArray(details) ? details : [];
   let grossTotal = 0;
 
   entries.forEach((detail) => {
-    if (!detail) {
-      return;
-    }
+    const breakdown = computeDistributionForDetail(detail);
 
-    const taxCandidate =
-      detail.total_tax !== undefined && detail.total_tax !== null
-        ? detail.total_tax
-        : detail.tax;
-    const taxValue = Math.max(toFiniteNumber(taxCandidate), 0);
-
-    const contributionCandidates = [
-      toFiniteNumber(detail.employee_contributions),
-      toFiniteNumber(detail.deductible_contributions),
-      toFiniteNumber(detail.contributions),
-    ];
-    let insuranceValue = contributionCandidates.reduce((total, value) => {
-      return value > 0 ? total + value : total;
-    }, 0);
-
-    const rawNet = toFiniteNumber(detail.net_income);
-    let netIncomeValue = rawNet > 0 ? rawNet : 0;
-
-    let expenseValue = sumDetailFields(detail, DISTRIBUTION_EXPENSE_FIELDS);
-
-    const isTaxDetail =
-      taxValue > 0 ||
-      (typeof detail.category === "string" &&
-        DISTRIBUTION_TAX_CATEGORIES.has(detail.category));
-
-    if (rawNet < 0) {
-      if (!isTaxDetail && insuranceValue <= 0) {
-        expenseValue += Math.abs(rawNet);
-      }
-      netIncomeValue = 0;
-    }
-
-    if (insuranceValue <= 0) {
-      const gross = Math.max(toFiniteNumber(detail.gross_income), 0);
-      if (gross > 0) {
-        const impliedInsurance =
-          gross - (taxValue + expenseValue + netIncomeValue);
-        if (impliedInsurance > 0) {
-          insuranceValue = impliedInsurance;
-        }
-      }
-    }
-
-    const computedGross =
-      Math.max(netIncomeValue, 0) +
-      Math.max(taxValue, 0) +
-      Math.max(insuranceValue, 0) +
-      Math.max(expenseValue, 0);
-
-    grossTotal += computedGross;
-    totals.net_income += Math.max(netIncomeValue, 0);
-    totals.taxes += Math.max(taxValue, 0);
-    totals.insurance += Math.max(insuranceValue, 0);
-    totals.expenses += Math.max(expenseValue, 0);
+    grossTotal += breakdown.gross;
+    totals.net_income += breakdown.net_income;
+    totals.taxes += breakdown.taxes;
+    totals.insurance += breakdown.insurance;
+    totals.expenses += breakdown.expenses;
   });
 
   const totalValue = grossTotal;

@@ -1398,30 +1398,43 @@
             <div class="sankey-legend" role="list">
               <div
                 class="sankey-legend__item"
+                data-flow="net_income"
+                role="listitem"
+              >
+                <span class="sankey-legend__swatch" aria-hidden="true"></span>
+                <span data-i18n-key="distribution.net_income">Net income</span>
+              </div>
+              <div
+                class="sankey-legend__item"
                 data-flow="taxes"
                 role="listitem"
               >
                 <span class="sankey-legend__swatch" aria-hidden="true"></span>
-                <span data-i18n-key="sankey.taxes">Taxes</span>
+                <span data-i18n-key="distribution.taxes">Taxes</span>
               </div>
               <div
                 class="sankey-legend__item"
-                data-flow="contributions"
+                data-flow="insurance"
                 role="listitem"
               >
                 <span class="sankey-legend__swatch" aria-hidden="true"></span>
-                <span data-i18n-key="sankey.contributions">
-                  Contributions &amp; expenses
+                <span data-i18n-key="distribution.insurance">
+                  Insurance contributions
                 </span>
               </div>
-              <div class="sankey-legend__item" data-flow="net" role="listitem">
+              <div
+                class="sankey-legend__item"
+                data-flow="expenses"
+                role="listitem"
+              >
                 <span class="sankey-legend__swatch" aria-hidden="true"></span>
-                <span data-i18n-key="sankey.net">Net income</span>
+                <span data-i18n-key="distribution.expenses">Expenses</span>
               </div>
             </div>
             <p id="sankey-empty" data-i18n-key="sankey.empty">
               Add taxable income above to reveal colour-coded flows for taxes,
-              contributions, and take-home pay across categories.
+              insurance contributions, deductible expenses, and take-home pay
+              across categories.
             </p>
             <div
               id="sankey-chart"

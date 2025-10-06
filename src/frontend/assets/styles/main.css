@@ -1547,16 +1547,20 @@ main {
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.8);
 }
 
+.sankey-legend__item[data-flow="net_income"] .sankey-legend__swatch {
+  background: var(--flow-net);
+}
+
 .sankey-legend__item[data-flow="taxes"] .sankey-legend__swatch {
   background: var(--flow-taxes);
 }
 
-.sankey-legend__item[data-flow="contributions"] .sankey-legend__swatch {
+.sankey-legend__item[data-flow="insurance"] .sankey-legend__swatch {
   background: var(--flow-contributions);
 }
 
-.sankey-legend__item[data-flow="net"] .sankey-legend__swatch {
-  background: var(--flow-net);
+.sankey-legend__item[data-flow="expenses"] .sankey-legend__swatch {
+  background: var(--flow-expenses);
 }
 
 @media (min-width: 768px) {
