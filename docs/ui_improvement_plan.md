@@ -87,11 +87,15 @@ polish.
 
 ## Dependencies & Risks
 - Localisation updates may require coordination with translators for new highlight
-  copy and legend descriptions.
+  copy and legend descriptions. Follow the
+  [`docs/i18n.md`](i18n.md) workflow so copy and bundle regeneration stay in
+  sync with layout changes.
 - Plotly configuration changes must stay compatible with backend data shapes to
   avoid runtime chart errors.
 - Accessibility tooling (e.g., axe) should be rerun after visual updates to guard
-  against colour contrast regressions.
+  against colour contrast regressions, and the
+  [`docs/performance_baseline.md`](performance_baseline.md) workflow should be
+  exercised if asset sizes or render paths shift.
 
 ## Out of Scope
 - Introducing a dark theme or advanced animation sequencing (tracked for future
@@ -103,3 +107,10 @@ polish.
 1. GreekTax Requirements – non-functional visual communication guidance.【F:Requirements.md†L96-L111】
 2. Front-end localisation catalogue for hero and Sankey copy.【F:src/frontend/assets/scripts/main.js†L20-L118】【F:src/frontend/assets/scripts/main.js†L241-L339】
 3. Current Sankey rendering implementation for refinement baseline.【F:src/frontend/assets/scripts/main.js†L2079-L2350】
+
+## Related Workflows
+
+- [`docs/i18n.md`](i18n.md) – manage translation updates required for hero and
+  navigation copy.
+- [`docs/performance_baseline.md`](performance_baseline.md) – reprofile asset
+  bundles and render timings after visual polish work.

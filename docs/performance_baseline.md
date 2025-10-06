@@ -4,7 +4,9 @@ Sprint 18 introduces lightweight tooling for tracking calculation timings,
 front-end bundle sizes, and accessibility metadata so the team can monitor
 optimisation work over time. The `scripts/performance_snapshot.py` helper wraps
 the back-end calculation service, inspects critical static assets, and scans the
-HTML shell for ARIA usage.
+HTML shell for ARIA usage. Use this workflow alongside localisation and UI
+reviews so that catalogue or styling changes are reflected in the historical
+baseline.
 
 ## Running the snapshot
 
@@ -43,4 +45,14 @@ The calculation timings rely on the profiling hooks in
 variable `GREEKTAX_PROFILE_CALCULATIONS=true` prints per-section timings for
 ad-hoc investigations while keeping the API contract unchanged. The snapshot now
 reports minimum and maximum iteration durations to surface jitter alongside the
-average and cumulative timings.
+average and cumulative timings. After significant localisation batches or UI
+refresh work, coordinate reruns with the
+[`docs/i18n.md`](i18n.md) and [`docs/ui_improvement_plan.md`](ui_improvement_plan.md)
+workflows so bundle and render changes stay measurable.
+
+## Related Workflows
+
+- [`docs/i18n.md`](i18n.md) – localisation guidance for catalogue updates that
+  often precede performance sampling.
+- [`docs/ui_improvement_plan.md`](ui_improvement_plan.md) – UI polish checklist
+  that may influence asset payloads and accessibility metrics captured here.
