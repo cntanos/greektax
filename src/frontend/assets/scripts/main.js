@@ -5363,126 +5363,94 @@ function printSummary() {
 
   const title = translate("print.title") || "GreekTax summary";
   const heading = translate("print.heading") || title;
-  const metaHeading = translate("print.meta_heading") || "Details at a glance";
-  const summaryHeading = translate("print.summary_heading") || "Summary";
-  const deductionsHeading = translate("print.deductions_heading") || "Deductions";
-  const detailsHeading = translate("print.details_heading") || "Income details";
-  const itemsHeading = translate("print.items_heading") || "Breakdown";
   const generatedLabel = translate("print.generated_on") || "Generated";
   const generatedDisplay = formatDateTime(exportData.generatedAt, { locale });
   const footerText =
     translate("print.footer", { year: new Date().getFullYear() }) ||
     "© 2025 Christos Ntanos for CogniSys. Released under the GNU GPL v3.";
 
-  const summaryRows = exportData.summary
+  const tableHeaderSection =
+    translate("export.csv.header_section") || "Section";
+  const tableHeaderLabel = translate("export.csv.header_label") || "Label";
+  const tableHeaderValue = translate("export.csv.header_value") || "Value";
+
+  const sectionLabels = {
+    meta: translate("export.csv.section.meta") || "Meta",
+    summary: translate("export.csv.section.summary") || "Summary",
+    deductions: translate("export.csv.section.deductions") || "Deductions",
+    detail: translate("export.csv.section.detail") || "Detail",
+  };
+
+  const rows = [];
+  const pushRow = (section, label, value) => {
+    if (label === undefined || label === null) {
+      return;
+    }
+    if (value === undefined || value === null) {
+      return;
+    }
+    const trimmedLabel = String(label).trim();
+    const trimmedValue = String(value).trim();
+    if (!trimmedLabel && !trimmedValue) {
+      return;
+    }
+    rows.push({ section, label: trimmedLabel, value: trimmedValue });
+  };
+
+  exportData.meta.entries.forEach((entry) => {
+    pushRow(sectionLabels.meta, entry.label, entry.formatted);
+  });
+
+  exportData.summary.forEach((entry) => {
+    pushRow(sectionLabels.summary, entry.label, entry.formatted);
+  });
+
+  exportData.deductions.forEach((deduction) => {
+    deduction.entries.forEach((entry) => {
+      pushRow(
+        sectionLabels.deductions,
+        `${deduction.label} – ${entry.label}`,
+        entry.formatted,
+      );
+    });
+    if (deduction.notes) {
+      const notesLabel =
+        translate("export.deductions.notes") || "Notes";
+      pushRow(
+        sectionLabels.deductions,
+        `${deduction.label} – ${notesLabel}`,
+        deduction.notes,
+      );
+    }
+  });
+
+  exportData.details.forEach((detail) => {
+    detail.entries.forEach((entry) => {
+      pushRow(
+        sectionLabels.detail,
+        `${detail.label} – ${entry.label}`,
+        entry.formatted,
+      );
+    });
+    detail.items.forEach((item) => {
+      const ratePart = item.rate && item.rate.formatted ? ` (${item.rate.formatted})` : "";
+      const value = `${item.amount.formatted} → ${item.tax.formatted}${ratePart}`;
+      pushRow(
+        sectionLabels.detail,
+        `${detail.label} – ${item.label}`,
+        value,
+      );
+    });
+  });
+
+  const tableBody = rows
     .map(
-      (entry) =>
-        `<tr><th>${escapeHtml(entry.label)}</th><td>${escapeHtml(
-          entry.formatted,
-        )}</td></tr>`,
+      (row) =>
+        `<tr><td class="section">${escapeHtml(row.section)}</td><td class="label">${escapeHtml(
+          row.label,
+        )}</td><td class="value">${escapeHtml(row.value)}</td></tr>`,
     )
     .join("");
-
-  const metaRows = exportData.meta.entries
-    .map(
-      (entry) =>
-        `<tr><th>${escapeHtml(entry.label)}</th><td>${escapeHtml(
-          entry.formatted,
-        )}</td></tr>`,
-    )
-    .join("");
-
-  const deductionsSections = exportData.deductions
-    .map((deduction) => {
-      const rows = deduction.entries
-        .map(
-          (entry) =>
-            `<tr><th>${escapeHtml(entry.label)}</th><td>${escapeHtml(
-              entry.formatted,
-            )}</td></tr>`,
-        )
-        .join("");
-      const notes = deduction.notes
-        ? `<p class="print-notes">${escapeHtml(deduction.notes)}</p>`
-        : "";
-      if (!rows && !notes) {
-        return "";
-      }
-      return `
-        <section class="print-subsection">
-          <h3>${escapeHtml(deduction.label)}</h3>
-          ${rows ? `<table class="print-table">${rows}</table>` : ""}
-          ${notes}
-        </section>
-      `;
-    })
-    .join("");
-
-  const detailSections = exportData.details
-    .map((detail) => {
-      const rows = detail.entries
-        .map(
-          (entry) =>
-            `<tr><th>${escapeHtml(entry.label)}</th><td>${escapeHtml(
-              entry.formatted,
-            )}</td></tr>`,
-        )
-        .join("");
-      const items = detail.items
-        .map((item) => {
-          const ratePart = item.rate && item.rate.formatted ? ` (${escapeHtml(item.rate.formatted)})` : "";
-          const value = `${escapeHtml(item.amount.formatted)} → ${escapeHtml(
-            item.tax.formatted,
-          )}${ratePart}`;
-          return `<li><span class="print-item-label">${escapeHtml(
-            item.label,
-          )}</span><span class="print-item-value">${value}</span></li>`;
-        })
-        .join("");
-
-      const itemsMarkup = items
-        ? `<div class="print-breakdown"><h4>${escapeHtml(
-            itemsHeading,
-          )}</h4><ul class="print-breakdown-list">${items}</ul></div>`
-        : "";
-
-      if (!rows && !itemsMarkup) {
-        return "";
-      }
-
-      return `
-        <section class="print-section">
-          <h3>${escapeHtml(detail.label)}</h3>
-          ${rows ? `<table class="print-table">${rows}</table>` : ""}
-          ${itemsMarkup}
-        </section>
-      `;
-    })
-    .join("");
-
-  const metaSection = metaRows
-    ? `<section class="print-section"><h2>${escapeHtml(
-        metaHeading,
-      )}</h2><table class="print-table">${metaRows}</table></section>`
-    : "";
-
-  const deductionsSection = deductionsSections
-    ? `<section class="print-section"><h2>${escapeHtml(
-        deductionsHeading,
-      )}</h2>${deductionsSections}</section>`
-    : "";
-
-  const detailsSection = detailSections
-    ? `<section class="print-section"><h2>${escapeHtml(
-        detailsHeading,
-      )}</h2>${detailSections}</section>`
-    : "";
-
-  const summarySection = summaryRows
-    ? `<section class="print-section"><h2>${escapeHtml(
-        summaryHeading,
-      )}</h2><table class="print-table">${summaryRows}</table></section>`
-    : "";
 
   const documentHtml = `<!doctype html>
     <html lang="${escapeHtml(locale)}">
@@ -5500,14 +5468,14 @@ function printSummary() {
             background: #ffffff;
           }
           .print-wrapper {
-            max-width: 960px;
+            max-width: 840px;
             margin: 0 auto;
           }
           header {
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.25rem;
           }
           h1 {
-            font-size: 1.9rem;
+            font-size: 1.75rem;
             margin: 0 0 0.25rem;
           }
           .print-generated {
@@ -5515,77 +5483,43 @@ function printSummary() {
             font-size: 0.95rem;
             color: #4f4f4f;
           }
-          .print-section {
-            margin-bottom: 1.75rem;
-          }
-          .print-section h2 {
-            font-size: 1.3rem;
-            margin-bottom: 0.75rem;
-          }
-          .print-section h3 {
-            font-size: 1.1rem;
-            margin-bottom: 0.5rem;
-          }
-          .print-table {
+          table {
             width: 100%;
             border-collapse: collapse;
+            margin-top: 1rem;
           }
-          .print-table th,
-          .print-table td {
-            padding: 0.4rem 0.5rem;
-            border-bottom: 1px solid #e0e0e0;
-          }
-          .print-table th {
+          thead th {
             text-align: left;
+            padding: 0.5rem;
+            border-bottom: 2px solid #1a1a1a;
             font-weight: 600;
+            font-size: 0.95rem;
+          }
+          tbody td {
+            padding: 0.5rem;
+            border-bottom: 1px solid #d7d7d7;
+            font-size: 0.95rem;
+            vertical-align: top;
+          }
+          tbody td.section {
+            width: 20%;
+            font-weight: 600;
+          }
+          tbody td.label {
+            width: 45%;
             color: #333333;
           }
-          .print-table td {
+          tbody td.value {
+            width: 35%;
             text-align: right;
             font-variant-numeric: tabular-nums;
-          }
-          .print-breakdown {
-            margin-top: 0.5rem;
-          }
-          .print-breakdown h4 {
-            font-size: 1rem;
-            margin: 0.75rem 0 0.35rem;
-          }
-          .print-breakdown-list {
-            list-style: none;
-            margin: 0;
-            padding: 0;
-            border: 1px solid #ececec;
-            border-radius: 6px;
-          }
-          .print-breakdown-list li {
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-            padding: 0.4rem 0.6rem;
-            border-bottom: 1px solid #ececec;
-            font-variant-numeric: tabular-nums;
-          }
-          .print-breakdown-list li:last-child {
-            border-bottom: none;
-          }
-          .print-item-label {
-            margin-right: 1rem;
-            color: #424242;
-          }
-          .print-item-value {
-            font-weight: 600;
-          }
-          .print-notes {
-            margin: 0.5rem 0 0;
-            font-size: 0.95rem;
-            color: #424242;
+            color: #111111;
           }
           footer {
-            margin-top: 2rem;
+            margin-top: 1.5rem;
             font-size: 0.9rem;
             color: #4f4f4f;
-            border-top: 1px solid #e0e0e0;
+            border-top: 1px solid #d7d7d7;
             padding-top: 0.75rem;
           }
           @media print {
@@ -5609,10 +5543,18 @@ function printSummary() {
     generatedDisplay,
   )}</p>
           </header>
-          ${metaSection}
-          ${summarySection}
-          ${deductionsSection}
-          ${detailsSection}
+          <table>
+            <thead>
+              <tr>
+                <th>${escapeHtml(tableHeaderSection)}</th>
+                <th>${escapeHtml(tableHeaderLabel)}</th>
+                <th>${escapeHtml(tableHeaderValue)}</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${tableBody}
+            </tbody>
+          </table>
           <footer>${escapeHtml(footerText)}</footer>
         </div>
       </body>
