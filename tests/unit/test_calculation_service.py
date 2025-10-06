@@ -126,7 +126,15 @@ def _employment_expectations(
     )
     credit_amount = employment.tax_credit.amount_for_children(children)
     credit_reduction = 0.0
-    reduction_base = gross_income if monthly_income is None else 0.0
+    reduction_base = gross_income
+    if monthly_income is not None:
+        payments = (
+            payments_per_year
+            or employment.payroll.default_payments_per_year
+            or 0
+        )
+        if payments:
+            reduction_base = monthly_income * payments
     if reduction_base > 12_000:
         credit_reduction = ((reduction_base - 12_000) / 1_000) * 20.0
     credit_after_reduction = max(credit_amount - credit_reduction, 0.0)
@@ -551,7 +559,7 @@ def test_employment_tax_credit_reduced_using_gross_income() -> None:
 def test_salary_credit_reduction_uses_derived_income_when_no_declared() -> None:
     """Monthly salary inputs still reduce the credit when above the threshold."""
 
-    request = CalculationRequest.model_validate(
+    request = build_request(
         {
             "year": 2024,
             "dependents": {"children": 0},
