@@ -255,8 +255,6 @@ def _apply_progressive_tax(
             declared_total += payload.pension_declared_gross_income
         if declared_total > 0:
             salary_credit_income = declared_total
-        else:
-            salary_credit_income = 0.0
     credit_reduction = 0.0
     if salary_credit_income > 12_000:
         credit_reduction = ((salary_credit_income - 12_000) / 1_000) * 20.0
