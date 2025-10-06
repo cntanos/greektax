@@ -6,6 +6,18 @@ net income per category. Input and output payloads are now expressed with
 Pydantic models, meaning that types, default values, and validation rules are
 enforced consistently across the stack.
 
+Key implementation entry points:
+
+- Request/response models live in
+  [`app/models/api.py`](../src/greektax/backend/app/models/api.py) and mirror the
+  shapes described below.
+- Calculation orchestration happens inside
+  [`app/services/calculation_service.py`](../src/greektax/backend/app/services/calculation_service.py),
+  which normalises payloads, applies configuration toggles, and delegates to the
+  category calculators.
+- Year-specific thresholds and toggles are loaded from YAML through
+  [`config/year_config.py`](../src/greektax/backend/config/year_config.py).
+
 ## Endpoints
 
 ```
@@ -34,6 +46,16 @@ deduction identifier, the applicable income categories, the translated display
 label and description, as well as validation metadata (e.g., minimum, maximum,
 or numeric type) to apply on the client.
 
+## Pydantic Models
+
+| Model | Purpose |
+| --- | --- |
+| `CalculationRequest` | Complete inbound payload accepted by the calculation endpoint. |
+| `DependentsInput`, `DemographicsInput`, `EmploymentInput`, `PensionInput`, `FreelanceInput`, `RentalInput`, `AgriculturalIncomeInput`, `OtherIncomeInput`, `ObligationsInput`, `DeductionsInput` | Section-specific request fragments with dedicated normalisation and validation. |
+| `CalculationResponse` | Wrapper containing `Summary`, `DetailEntry` items, and `ResponseMeta`. |
+| `Summary` & `SummaryLabels` | Aggregate totals and translated display strings. |
+| `DeductionBreakdownEntry` | Optional per-deduction credit explanations returned when applicable. |
+
 ## Request Body
 
 Every request must be a JSON object that matches the `CalculationRequest`
@@ -56,7 +78,7 @@ schema. Unknown top-level or nested keys are rejected (`extra="forbid"`).
 | `other` | object | ❌ | Miscellaneous taxable income inputs. Defaults to zero amounts. |
 | `obligations` | object | ❌ | Flat obligations such as ENFIA and luxury tax. Defaults to zero amounts. |
 | `deductions` | object | ❌ | User-entered deduction amounts. Defaults to zero amounts. |
-| `toggles` | object | ❌ | Optional boolean feature flags (e.g., youth relief confirmation). Defaults to `{}`. |
+| `toggles` | object | ❌ | Optional boolean feature flags (e.g., youth relief confirmation, presumptive relief opt-in). Defaults to `{}` and is merged with configuration toggles from `YearConfiguration.meta`. |
 | `withholding_tax` | number | ❌ | Amount of tax already withheld. Defaults to `0`. Must be non-negative. |
 
 ### Dependents
@@ -142,6 +164,43 @@ All numeric fields are validated as non-negative floats or integers during
 schema parsing. Boolean fields accept JSON booleans as well as typical string or
 numeric truthy/falsy representations supported by Pydantic.
 
+### Sample request payload
+
+```json
+{
+  "year": 2024,
+  "locale": "el",
+  "dependents": {"children": 2},
+  "demographics": {
+    "birth_year": 1998,
+    "small_village": true,
+    "youth_employment_override": "under25"
+  },
+  "employment": {
+    "gross_income": 24000,
+    "payments_per_year": 14,
+    "employee_contributions": 1500,
+    "include_social_contributions": false
+  },
+  "freelance": {
+    "gross_revenue": 12000,
+    "deductible_expenses": 4000,
+    "include_trade_fee": true,
+    "trade_fee_location": "reduced",
+    "years_active": 1
+  },
+  "investment": {"dividends": 800, "interest": 120},
+  "obligations": {"enfia": 260},
+  "deductions": {"donations": 150, "insurance": 300},
+  "toggles": {
+    "youth_eligibility": true,
+    "presumptive_relief": true,
+    "tekmiria_reduction": false
+  },
+  "withholding_tax": 1000
+}
+```
+
 ### Validation Errors
 
 Validation is performed by the `CalculationRequest` Pydantic model. Any issues
@@ -168,24 +227,56 @@ Key characteristics of the new validation layer:
   produce `Employment net income inputs are no longer supported; provide gross
   amounts instead`.
 
+### Error handling scenarios
+
+| Scenario | HTTP status | JSON body |
+| --- | --- | --- |
+| Missing/invalid JSON | `400 Bad Request` | `{"error": "bad_request", "message": "Request body must be valid JSON"}` (raised by Flask before reaching the service). |
+| Pydantic validation failure | `400 Bad Request` | `{"error": "validation_error", "message": "Invalid calculation payload: freelance.trade_fee_location: Invalid trade fee location selection"}`. |
+| Non-mapping `toggles` payload | `400 Bad Request` | `{"error": "validation_error", "message": "Invalid calculation payload: toggles: Toggles section must be an object mapping identifiers to booleans"}`. |
+| Year configuration missing | `500 Internal Server Error` | Triggered when `load_year_configuration` raises `FileNotFoundError`; deploy new YAML to resolve. |
+
 ## Response Body
 
 ```
 {
   "summary": {
     "income_total": 33000.0,
+    "taxable_income": 31200.0,
     "tax_total": 4830.0,
     "net_income": 28170.0,
     "net_monthly_income": 2347.5,
     "effective_tax_rate": 0.1464,
+    "average_monthly_tax": 402.5,
+    "deductions_entered": 450.0,
+    "deductions_applied": 360.0,
+    "withholding_tax": 1000.0,
+    "balance_due": 3830.0,
+    "balance_due_is_refund": false,
     "labels": {
       "income_total": "Total income",
+      "taxable_income": "Taxable income",
       "tax_total": "Total taxes",
       "net_income": "Net income",
       "net_monthly_income": "Net income per month",
       "average_monthly_tax": "Average tax per month",
-      "effective_tax_rate": "Effective tax rate"
-    }
+      "effective_tax_rate": "Effective tax rate",
+      "deductions_entered": "Deductions entered",
+      "deductions_applied": "Deductions applied",
+      "withholding_tax": "Withholding tax",
+      "balance_due": "Balance due"
+    },
+    "deductions_breakdown": [
+      {
+        "type": "donations",
+        "label": "Charitable donations",
+        "entered": 150.0,
+        "eligible": 150.0,
+        "credit_rate": 0.1,
+        "credit_requested": 15.0,
+        "credit_applied": 15.0
+      }
+    ]
   },
   "details": [
     {
@@ -242,7 +333,11 @@ Key characteristics of the new validation layer:
   ],
   "meta": {
     "year": 2024,
-    "locale": "en"
+    "locale": "en",
+    "youth_relief_category": "under_25",
+    "presumptive_adjustments": [
+      "presumptive_income"
+    ]
   }
 }
 ```
@@ -250,12 +345,20 @@ Key characteristics of the new validation layer:
 The response always includes:
 
 - `summary`: Aggregated totals with localized labels, including monthly net income
-  and the effective tax rate.
+  and the effective tax rate. When applicable it also surfaces
+  `withholding_tax`, `balance_due`, and per-deduction entries in
+  `deductions_breakdown`.
 - `details`: Per-category breakdowns. Additional fields appear depending on the
   income type (e.g., `monthly_gross_income`, `payments_per_year`, `trade_fee_label`,
   investment `items`). Flat obligations such as ENFIA or luxury taxes are
   returned as simple line items with negative `net_income` values to reflect
   their impact on take-home amounts.
 - `meta`: Echoes the tax `year` and the resolved `locale` used for labels.
+
+The orchestration layer in
+[`app/services/calculation_service.py`](../src/greektax/backend/app/services/calculation_service.py)
+produces this payload after loading the structured year metadata via
+[`config/year_config.py`](../src/greektax/backend/config/year_config.py) and the
+Pydantic response models highlighted earlier.
 
 All currency values are rounded to two decimals.

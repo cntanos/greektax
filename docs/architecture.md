@@ -5,6 +5,26 @@ static front-end that consumes the published endpoints. Both surfaces rely on
 shared configuration and localisation assets so changes propagate consistently
 across deployments.
 
+## Deployment Topology
+
+| Environment | Hosted Components | Notes |
+| --- | --- | --- |
+| Local development | Flask API (`src/greektax/backend`) and static shell (`src/frontend`) served from the same process via [`create_app`](../src/greektax/backend/app/__init__.py). | `flask --app greektax.backend.app` enables hot reloads and local asset serving. |
+| Staging | Flask API behind a WSGI server (e.g., Gunicorn) with the static build deployed to object storage. | Builds consume the same configuration snapshots committed to the repo so parity issues surface early. |
+| Production | Managed WSGI host for the API and CDN-backed static assets. | Reverse proxies terminate TLS, forward `/api/*` to the Flask service, and cache `/assets/*` aggressively. |
+
+```
+                ┌──────────────────────┐
+                │      CDN / S3        │
+                │  (static frontend)   │
+                └──────────┬───────────┘
+                           │
+        Browser ───────────┼────────────> Flask API / WSGI ──> Calculation service
+                           │                                  (`app/services/calculation_service.py`)
+                           ▼
+                 Locale & configuration assets (`src/greektax`)
+```
+
 ## Module Boundaries
 
 ### Backend service (`src/greektax/backend`)
@@ -36,6 +56,14 @@ Key responsibilities include:
 The API service is deployed separately from the static UI. Production
 installations front the Flask app with a WSGI server, while local development can
 run `flask --app greektax.backend.app` to host the endpoints.
+
+| Module | Primary owner | Responsibilities |
+| --- | --- | --- |
+| `app/routes/*` | API surface | HTTP endpoints, payload parsing, and error handling. |
+| `app/services/calculation_service.py` | Calculation orchestration | Validates requests, merges configuration toggles, and coordinates category calculators. |
+| `config/year_config.py` | Configuration loader | Parses year YAML files, validates structure, and exposes helper dataclasses. |
+| `app/models/api.py` | API contract | Defines the Pydantic request/response models used for validation. |
+| `app/models/__init__.py` | Normalised domain models | Converts the API payload into calculator-friendly structures. |
 
 ### Front-end shell (`src/frontend`)
 
@@ -89,6 +117,30 @@ Adding a new filing year involves:
 Because the configuration objects are strongly typed, the calculation service
 can depend on consistent shapes for every category while still allowing the data
 team to evolve rules year over year without touching Python code.
+
+## Request/Data Flow
+
+```mermaid
+sequenceDiagram
+    participant UI as Front-end (`src/frontend`)
+    participant API as Flask API
+    participant Service as Calculation service
+    participant Config as Year configuration
+
+    UI->>API: POST /api/v1/calculations (JSON payload)
+    API->>Service: `calculate_tax(payload)`
+    Service->>Config: `load_year_configuration(year)`
+    Config-->>Service: `YearConfiguration` dataclasses
+    Service-->>API: Pydantic `CalculationResponse`
+    API-->>UI: JSON summary & detail payload
+```
+
+The calculation service documented above lives in
+[`app/services/calculation_service.py`](../src/greektax/backend/app/services/calculation_service.py)
+and is the single integration point for the calculator logic. Its reliance on
+[`config/year_config.py`](../src/greektax/backend/config/year_config.py) keeps the
+deployment story data-driven: shipping a new YAML file immediately affects all
+environments without requiring code redeploys.
 
 ## Deployment Interaction
 
