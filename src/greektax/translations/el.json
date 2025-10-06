@@ -348,6 +348,46 @@
         "scheduled": "προγραμματισμένο"
       }
     },
+    "export": {
+      "csv": {
+        "header_section": "Ενότητα",
+        "header_label": "Ετικέτα",
+        "header_value": "Τιμή",
+        "section": {
+          "meta": "Μεταδεδομένα",
+          "summary": "Σύνοψη",
+          "deductions": "Εκπτώσεις",
+          "detail": "Ανάλυση"
+        }
+      },
+      "meta": {
+        "generated_at": "Χρόνος δημιουργίας",
+        "year": "Φορολογικό έτος",
+        "locale": "Γλώσσα",
+        "currency": "Νόμισμα",
+        "youth_relief_category": "Κατηγορία έκπτωσης νέων",
+        "presumptive_adjustments": "Τεκμαρτές προσαρμογές"
+      },
+      "deductions": {
+        "entered": "Ποσό που καταχωρήθηκε",
+        "eligible": "Επιλέξιμο ποσό",
+        "credit_rate": "Ποσοστό πίστωσης",
+        "credit_requested": "Πίστωση που ζητήθηκε",
+        "credit_applied": "Πίστωση που εφαρμόστηκε",
+        "notes": "Σημειώσεις"
+      }
+    },
+    "print": {
+      "title": "Σύνοψη GreekTax",
+      "heading": "Σύνοψη GreekTax",
+      "meta_heading": "Στοιχεία με μια ματιά",
+      "summary_heading": "Σύνοψη",
+      "deductions_heading": "Εκπτώσεις",
+      "details_heading": "Αναλυτικά εισοδήματα",
+      "items_heading": "Αναλυτική κατανομή",
+      "generated_on": "Χρόνος δημιουργίας",
+      "footer": "© {{year}} Christos Ntanos for CogniSys. Διατίθεται υπό την άδεια GNU GPL v3."
+    },
     "ui": {
       "deductions_help_body": "Καταχωρήστε μόνο ποσά με νόμιμες αποδείξεις ή αποδεικτικά πληρωμής.",
       "deductions_help_limits": "Εφαρμόζονται αυτόματα τα νόμιμα όρια—η πίστωση για δωρεές εξαρτάται από το εισόδημα, ενώ ιατρικές, εκπαιδευτικές και ασφαλιστικές δαπάνες ακολουθούν τα όρια της ΑΑΔΕ.",

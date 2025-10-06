@@ -348,6 +348,46 @@
         "scheduled": "scheduled"
       }
     },
+    "export": {
+      "csv": {
+        "header_section": "Section",
+        "header_label": "Label",
+        "header_value": "Value",
+        "section": {
+          "meta": "Meta",
+          "summary": "Summary",
+          "deductions": "Deductions",
+          "detail": "Detail"
+        }
+      },
+      "meta": {
+        "generated_at": "Generated",
+        "year": "Tax year",
+        "locale": "Locale",
+        "currency": "Currency",
+        "youth_relief_category": "Youth relief category",
+        "presumptive_adjustments": "Presumptive adjustments"
+      },
+      "deductions": {
+        "entered": "Entered amount",
+        "eligible": "Eligible amount",
+        "credit_rate": "Credit rate",
+        "credit_requested": "Credit requested",
+        "credit_applied": "Credit applied",
+        "notes": "Notes"
+      }
+    },
+    "print": {
+      "title": "GreekTax summary",
+      "heading": "GreekTax summary",
+      "meta_heading": "Details at a glance",
+      "summary_heading": "Summary",
+      "deductions_heading": "Deductions",
+      "details_heading": "Income details",
+      "items_heading": "Breakdown",
+      "generated_on": "Generated",
+      "footer": "© {{year}} Christos Ntanos for CogniSys. Released under the GNU GPL v3."
+    },
     "ui": {
       "deductions_help_body": "Only enter amounts supported by official receipts or payment slips.",
       "deductions_help_limits": "Statutory limits are applied automatically—donation credits depend on income, while medical, education, and insurance costs follow AADE caps.",

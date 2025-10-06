@@ -62,14 +62,14 @@
         "trade_fee": "Τέλος επιτηδεύματος"
       },
       "distribution": {
-        "description": "Δείτε πώς κατανέμεται το συνολικό εισόδημα μεταξύ καθαρού εισοδήματος, φόρων, ασφαλιστικών εισφορών και δαπανών.",
-        "empty": "Προσθέστε φορολογητέο εισόδημα για να εμφανιστεί η κατανομή σε όλες τις κατηγορίες.",
-        "expenses": "Δαπάνες",
         "heading": "Κατανομή συνολικού εισοδήματος",
-        "gross_income": "Ακαθάριστο εισόδημα",
+        "total_income": "Συνολικό εισόδημα",
+        "description": "Δείτε πώς κατανέμεται το συνολικό εισόδημα μεταξύ κερδών, φόρων, ασφαλιστικών εισφορών και εκπιπτόμενων δαπανών.",
+        "empty": "Προσθέστε φορολογητέο εισόδημα για να εμφανιστεί η κατανομή σε όλες τις κατηγορίες.",
+        "profits": "Κέρδη",
+        "taxes": "Φόροι",
         "insurance": "Ασφαλιστικές εισφορές",
-        "net_income": "Καθαρό εισόδημα",
-        "taxes": "Φόροι"
+        "expenses": "Δαπάνες"
       },
       "errors": {
         "invalid_number": "Εισαγάγετε έγκυρο αριθμό για {{field}}.",
@@ -257,6 +257,46 @@
           "scheduled": "προγραμματισμένο"
         }
       },
+      "export": {
+        "csv": {
+          "header_section": "Ενότητα",
+          "header_label": "Ετικέτα",
+          "header_value": "Τιμή",
+          "section": {
+            "meta": "Μεταδεδομένα",
+            "summary": "Σύνοψη",
+            "deductions": "Εκπτώσεις",
+            "detail": "Ανάλυση"
+          }
+        },
+        "meta": {
+          "generated_at": "Χρόνος δημιουργίας",
+          "year": "Φορολογικό έτος",
+          "locale": "Γλώσσα",
+          "currency": "Νόμισμα",
+          "youth_relief_category": "Κατηγορία έκπτωσης νέων",
+          "presumptive_adjustments": "Τεκμαρτές προσαρμογές"
+        },
+        "deductions": {
+          "entered": "Ποσό που καταχωρήθηκε",
+          "eligible": "Επιλέξιμο ποσό",
+          "credit_rate": "Ποσοστό πίστωσης",
+          "credit_requested": "Πίστωση που ζητήθηκε",
+          "credit_applied": "Πίστωση που εφαρμόστηκε",
+          "notes": "Σημειώσεις"
+        }
+      },
+      "print": {
+        "title": "Σύνοψη GreekTax",
+        "heading": "Σύνοψη GreekTax",
+        "meta_heading": "Στοιχεία με μια ματιά",
+        "summary_heading": "Σύνοψη",
+        "deductions_heading": "Εκπτώσεις",
+        "details_heading": "Αναλυτικά εισοδήματα",
+        "items_heading": "Αναλυτική κατανομή",
+        "generated_on": "Χρόνος δημιουργίας",
+        "footer": "© {{year}} Christos Ntanos for CogniSys. Διατίθεται υπό την άδεια GNU GPL v3."
+      },
       "summary": {
         "average_monthly_tax": "Μέσος φόρος ανά μήνα",
         "balance_due": "Καθαρός φόρος προς πληρωμή",
@@ -397,14 +437,14 @@
         "trade_fee": "Business activity fee"
       },
       "distribution": {
-        "description": "See how your total income is split between net income, taxes, insurance contributions, and expenses.",
-        "empty": "Add taxable income above to reveal the allocation across all categories.",
-        "expenses": "Expenses",
         "heading": "Income allocation summary",
-        "gross_income": "Gross income",
+        "total_income": "Total income",
+        "description": "See how your total income is split between profits, taxes, insurance contributions, and deductible expenses.",
+        "empty": "Add taxable income above to reveal the allocation across all categories.",
+        "profits": "Profits",
+        "taxes": "Taxes",
         "insurance": "Insurance contributions",
-        "net_income": "Net income",
-        "taxes": "Taxes"
+        "expenses": "Expenses"
       },
       "errors": {
         "invalid_number": "Please enter a valid number for {{field}}.",
@@ -591,6 +631,46 @@
           "proposed": "proposed",
           "scheduled": "scheduled"
         }
+      },
+      "export": {
+        "csv": {
+          "header_section": "Section",
+          "header_label": "Label",
+          "header_value": "Value",
+          "section": {
+            "meta": "Meta",
+            "summary": "Summary",
+            "deductions": "Deductions",
+            "detail": "Detail"
+          }
+        },
+        "meta": {
+          "generated_at": "Generated",
+          "year": "Tax year",
+          "locale": "Locale",
+          "currency": "Currency",
+          "youth_relief_category": "Youth relief category",
+          "presumptive_adjustments": "Presumptive adjustments"
+        },
+        "deductions": {
+          "entered": "Entered amount",
+          "eligible": "Eligible amount",
+          "credit_rate": "Credit rate",
+          "credit_requested": "Credit requested",
+          "credit_applied": "Credit applied",
+          "notes": "Notes"
+        }
+      },
+      "print": {
+        "title": "GreekTax summary",
+        "heading": "GreekTax summary",
+        "meta_heading": "Details at a glance",
+        "summary_heading": "Summary",
+        "deductions_heading": "Deductions",
+        "details_heading": "Income details",
+        "items_heading": "Breakdown",
+        "generated_on": "Generated",
+        "footer": "© {{year}} Christos Ntanos for CogniSys. Released under the GNU GPL v3."
       },
       "summary": {
         "average_monthly_tax": "Average tax per month",

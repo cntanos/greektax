@@ -843,14 +843,252 @@ function resolveLocaleTag(locale) {
   return locale || "en-GB";
 }
 
-const GREEK_GROUP_SEPARATOR = ".";
-const GREEK_DECIMAL_SEPARATOR = ",";
 const NON_BREAKING_SPACE = "\u00a0";
 const GROUPING_REGEX = /\B(?=(\d{3})+(?!\d))/g;
+const DEFAULT_CURRENCY = "EUR";
+
+const FALLBACK_NUMBER_FORMATS = {
+  el: {
+    decimal: ",",
+    group: ".",
+    currencyPattern: (value, { useNonBreakingSpace }) =>
+      `${value}${useNonBreakingSpace ? NON_BREAKING_SPACE : " "}€`,
+    percentSuffix: "%",
+  },
+  en: {
+    decimal: ".",
+    group: ",",
+    currencyPattern: (value) => `€${value}`,
+    percentSuffix: "%",
+  },
+};
+
+const numberFormatterCache = new Map();
+
+function getFallbackFormat(locale) {
+  if (locale in FALLBACK_NUMBER_FORMATS) {
+    return FALLBACK_NUMBER_FORMATS[locale];
+  }
+  return FALLBACK_NUMBER_FORMATS.en;
+}
+
+function getActiveLocale() {
+  return normaliseLocaleChoice(currentLocale || fallbackLocale || "en");
+}
+
+function getNumberFormatter(locale, options) {
+  if (typeof Intl === "undefined" || typeof Intl.NumberFormat === "undefined") {
+    return null;
+  }
+
+  const resolvedLocale = resolveLocaleTag(locale);
+  const key = [
+    resolvedLocale,
+    options.style || "decimal",
+    options.currency || "",
+    options.minimumFractionDigits ?? "",
+    options.maximumFractionDigits ?? "",
+    options.useGrouping === false ? "nogroup" : "group",
+  ].join("|");
+
+  if (!numberFormatterCache.has(key)) {
+    try {
+      numberFormatterCache.set(key, new Intl.NumberFormat(resolvedLocale, options));
+    } catch (error) {
+      console.warn("Unable to create number formatter", error);
+      numberFormatterCache.set(key, null);
+    }
+  }
+
+  return numberFormatterCache.get(key);
+}
 
 function coerceFiniteNumber(value) {
   const parsed = Number.parseFloat(value ?? 0);
   return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function formatNumberParts(value, fractionDigits, localeConfig) {
+  const rounded = fractionDigits >= 0 ? Math.round(value * 10 ** fractionDigits) / 10 ** fractionDigits : value;
+  const sign = rounded < 0 ? "-" : "";
+  const absolute = Math.abs(rounded);
+  let [integerPart, fractionPart = ""] = absolute
+    .toFixed(Math.max(fractionDigits, 0))
+    .split(".");
+  integerPart = integerPart.replace(GROUPING_REGEX, localeConfig.group);
+  if (fractionDigits > 0) {
+    return {
+      sign,
+      integerPart,
+      fractionPart,
+    };
+  }
+  return { sign, integerPart, fractionPart: "" };
+}
+
+function formatNumber(value, {
+  locale = getActiveLocale(),
+  minimumFractionDigits = 0,
+  maximumFractionDigits = 2,
+  useNonBreakingSpace = true,
+} = {}) {
+  const numeric = coerceFiniteNumber(value);
+  const formatter = getNumberFormatter(resolveLocaleTag(locale), {
+    style: "decimal",
+    minimumFractionDigits,
+    maximumFractionDigits,
+  });
+
+  if (formatter) {
+    let formatted = formatter.format(numeric);
+    if (!useNonBreakingSpace) {
+      formatted = formatted.replace(/\u00a0/g, " ");
+    }
+    return formatted;
+  }
+
+  const fallback = getFallbackFormat(locale);
+  const parts = formatNumberParts(numeric, maximumFractionDigits, fallback);
+  let fractionPart = parts.fractionPart;
+  if (fractionPart && maximumFractionDigits > minimumFractionDigits) {
+    fractionPart = fractionPart.replace(/0+$/, "");
+  }
+  if (fractionPart && minimumFractionDigits > 0) {
+    while (fractionPart.length < minimumFractionDigits) {
+      fractionPart += "0";
+    }
+  }
+  const decimalPart = fractionPart
+    ? `${fallback.decimal}${fractionPart}`
+    : minimumFractionDigits > 0
+    ? `${fallback.decimal}${"0".repeat(minimumFractionDigits)}`
+    : "";
+  return `${parts.sign}${parts.integerPart}${decimalPart}`;
+}
+
+function formatInteger(value, { locale = getActiveLocale() } = {}) {
+  const numeric = Math.round(coerceFiniteNumber(value));
+  const formatter = getNumberFormatter(resolveLocaleTag(locale), {
+    style: "decimal",
+    maximumFractionDigits: 0,
+    minimumFractionDigits: 0,
+  });
+  if (formatter) {
+    return formatter.format(numeric);
+  }
+  const fallback = getFallbackFormat(locale);
+  const parts = formatNumberParts(numeric, 0, fallback);
+  return `${parts.sign}${parts.integerPart}`;
+}
+
+function formatCurrency(value, {
+  locale = getActiveLocale(),
+  useNonBreakingSpace = true,
+} = {}) {
+  const numeric = coerceFiniteNumber(value);
+  const formatter = getNumberFormatter(resolveLocaleTag(locale), {
+    style: "currency",
+    currency: DEFAULT_CURRENCY,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+
+  if (formatter) {
+    let formatted = formatter.format(numeric);
+    if (!useNonBreakingSpace) {
+      formatted = formatted.replace(/\u00a0/g, " ");
+    }
+    return formatted;
+  }
+
+  const fallback = getFallbackFormat(locale);
+  const parts = formatNumberParts(numeric, 2, fallback);
+  const valuePart = `${parts.integerPart}${fallback.decimal}${parts.fractionPart}`;
+  const formattedValue = fallback.currencyPattern(valuePart, { useNonBreakingSpace });
+  return `${parts.sign}${formattedValue}`;
+}
+
+function formatPercent(value, {
+  locale = getActiveLocale(),
+  maximumFractionDigits = 1,
+  minimumFractionDigits = 0,
+  useNonBreakingSpace = true,
+} = {}) {
+  const numeric = coerceFiniteNumber(value);
+  const formatter = getNumberFormatter(resolveLocaleTag(locale), {
+    style: "percent",
+    minimumFractionDigits,
+    maximumFractionDigits,
+  });
+
+  if (formatter) {
+    let formatted = formatter.format(numeric);
+    if (!useNonBreakingSpace) {
+      formatted = formatted.replace(/\u00a0/g, " ");
+    }
+    return formatted;
+  }
+
+  const fallback = getFallbackFormat(locale);
+  const scaled = numeric * 100;
+  const parts = formatNumberParts(scaled, Math.max(maximumFractionDigits, minimumFractionDigits), fallback);
+  let fractionPart = parts.fractionPart;
+  if (fractionPart) {
+    fractionPart = fractionPart.replace(/0+$/, "");
+  }
+  if (fractionPart && fractionPart.length < minimumFractionDigits) {
+    while (fractionPart.length < minimumFractionDigits) {
+      fractionPart += "0";
+    }
+  }
+  const decimalPart = fractionPart ? `${fallback.decimal}${fractionPart}` : "";
+  return `${parts.sign}${parts.integerPart}${decimalPart}${fallback.percentSuffix}`;
+}
+
+function formatDateTime(value, { locale = getActiveLocale() } = {}) {
+  if (!value) {
+    return "";
+  }
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return String(value);
+  }
+  if (typeof Intl !== "undefined" && typeof Intl.DateTimeFormat !== "undefined") {
+    try {
+      const formatter = new Intl.DateTimeFormat(resolveLocaleTag(locale), {
+        dateStyle: "medium",
+        timeStyle: "short",
+      });
+      return formatter.format(date);
+    } catch (error) {
+      console.warn("Unable to format date", error);
+    }
+  }
+  return date.toISOString();
+}
+
+function formatList(items, localeOverride = getActiveLocale()) {
+  if (!Array.isArray(items) || items.length === 0) {
+    return "";
+  }
+  if (typeof Intl !== "undefined" && typeof Intl.ListFormat !== "undefined") {
+    try {
+      const formatter = new Intl.ListFormat(resolveLocaleTag(localeOverride), {
+        style: "long",
+        type: "conjunction",
+      });
+      return formatter.format(items);
+    } catch (error) {
+      // Fall back to manual formatting below.
+    }
+  }
+  if (items.length === 1) {
+    return items[0];
+  }
+  const rest = items.slice(0, -1).join(", ");
+  const last = items[items.length - 1];
+  const conjunction = t("ui.list_and", {}, localeOverride) || "and";
+  return `${rest} ${conjunction} ${last}`;
 }
 
 function updateLocaleButtonState(locale) {
@@ -993,68 +1231,6 @@ function setCalculatorStatus(message, { isError = false } = {}) {
   }
   calculatorStatus.textContent = message;
   calculatorStatus.setAttribute("data-status", isError ? "error" : "info");
-}
-
-function formatNumber(value) {
-  const numeric = coerceFiniteNumber(value);
-  const rounded = Math.round(numeric * 100) / 100;
-  const sign = rounded < 0 ? "-" : "";
-  const absolute = Math.abs(rounded);
-  let [integerPart, fractionPart = ""] = absolute.toFixed(2).split(".");
-  integerPart = integerPart.replace(GROUPING_REGEX, GREEK_GROUP_SEPARATOR);
-  fractionPart = fractionPart.replace(/0+$/, "");
-  const decimalPart = fractionPart
-    ? `${GREEK_DECIMAL_SEPARATOR}${fractionPart}`
-    : "";
-  return `${sign}${integerPart}${decimalPart}`;
-}
-
-function formatCurrency(value) {
-  const numeric = coerceFiniteNumber(value);
-  const sign = numeric < 0 ? "-" : "";
-  const absolute = Math.abs(numeric);
-  let [integerPart, fractionPart = ""] = absolute.toFixed(2).split(".");
-  integerPart = integerPart.replace(GROUPING_REGEX, GREEK_GROUP_SEPARATOR);
-  const formatted = `${integerPart}${GREEK_DECIMAL_SEPARATOR}${fractionPart}`;
-  return `${sign}${formatted}${NON_BREAKING_SPACE}€`;
-}
-
-function formatPercent(value) {
-  const numeric = coerceFiniteNumber(value) * 100;
-  const rounded = Math.round(numeric * 10) / 10;
-  const sign = rounded < 0 ? "-" : "";
-  const absolute = Math.abs(rounded);
-  let [integerPart, fractionPart = ""] = absolute.toFixed(1).split(".");
-  integerPart = integerPart.replace(GROUPING_REGEX, GREEK_GROUP_SEPARATOR);
-  fractionPart = fractionPart.replace(/0+$/, "");
-  const decimalPart = fractionPart
-    ? `${GREEK_DECIMAL_SEPARATOR}${fractionPart}`
-    : "";
-  return `${sign}${integerPart}${decimalPart}%`;
-}
-
-function formatList(items) {
-  if (!Array.isArray(items) || items.length === 0) {
-    return "";
-  }
-  if (typeof Intl !== "undefined" && typeof Intl.ListFormat !== "undefined") {
-    try {
-      const formatter = new Intl.ListFormat(currentLocale || fallbackLocale || "en", {
-        style: "long",
-        type: "conjunction",
-      });
-      return formatter.format(items);
-    } catch (error) {
-      // Fall back to manual formatting below.
-    }
-  }
-  if (items.length === 1) {
-    return items[0];
-  }
-  const rest = items.slice(0, -1).join(", ");
-  const last = items[items.length - 1];
-  const conjunction = t("ui.list_and") || "and";
-  return `${rest} ${conjunction} ${last}`;
 }
 
 function sanitiseToggleMap(source) {
@@ -3738,12 +3914,27 @@ function renderDistributionChart(details) {
   distributionWrapper.hidden = false;
 }
 
-function resolveSummaryLabel(key, labels = {}) {
+function resolveSummaryLabel(key, labels = {}, localeOverride = currentLocale) {
   if (labels && typeof labels[key] === "string" && labels[key].trim()) {
     return labels[key];
   }
   const translationKey = `summary.${key}`;
-  const translated = t(translationKey);
+  const translated = t(translationKey, {}, localeOverride);
+  if (translated && translated !== translationKey) {
+    return translated;
+  }
+  return key;
+}
+
+function resolveDetailLabel(detail, key, labels = {}, localeOverride = currentLocale) {
+  if (key === "trade_fee" && detail && typeof detail.trade_fee_label === "string") {
+    return detail.trade_fee_label;
+  }
+  if (labels && typeof labels[key] === "string" && labels[key].trim()) {
+    return labels[key];
+  }
+  const translationKey = `detailFields.${key}`;
+  const translated = t(translationKey, {}, localeOverride);
   if (translated && translated !== translationKey) {
     return translated;
   }
@@ -4165,8 +4356,16 @@ function downloadJsonSummary() {
     return;
   }
 
+  const exportData = buildSummaryExportData(lastCalculation, {
+    useNonBreakingSpace: false,
+    includeSource: true,
+  });
+  if (!exportData) {
+    return;
+  }
+
   const filename = buildDownloadFilename("json");
-  const blob = new Blob([JSON.stringify(lastCalculation, null, 2)], {
+  const blob = new Blob([JSON.stringify(exportData, null, 2)], {
     type: "application/json",
   });
   const url = URL.createObjectURL(blob);
@@ -4192,85 +4391,470 @@ function escapeCsvValue(value) {
   return string;
 }
 
+const SUMMARY_EXPORT_FIELDS = [
+  { key: "income_total", type: "currency" },
+  { key: "taxable_income", type: "currency" },
+  { key: "tax_total", type: "currency" },
+  { key: "withholding_tax", type: "currency", optional: true },
+  { key: "balance_due", type: "currency", optional: true },
+  { key: "net_income", type: "currency" },
+  { key: "net_monthly_income", type: "currency" },
+  { key: "average_monthly_tax", type: "currency" },
+  {
+    key: "effective_tax_rate",
+    type: "percent",
+    formatOptions: { maximumFractionDigits: 1, minimumFractionDigits: 0 },
+  },
+  { key: "deductions_entered", type: "currency" },
+  { key: "deductions_applied", type: "currency" },
+];
+
+const DETAIL_EXPORT_FIELDS = [
+  { key: "gross_income", type: "currency" },
+  { key: "monthly_gross_income", type: "currency", skipZero: true },
+  { key: "payments_per_year", type: "integer" },
+  { key: "gross_income_per_payment", type: "currency", skipZero: true },
+  { key: "deductible_contributions", type: "currency", skipZero: true },
+  { key: "category_contributions", type: "currency", skipZero: true },
+  { key: "additional_contributions", type: "currency", skipZero: true },
+  { key: "auxiliary_contributions", type: "currency", skipZero: true },
+  { key: "lump_sum_contributions", type: "currency", skipZero: true },
+  { key: "employee_contributions", type: "currency", skipZero: true },
+  { key: "employee_contributions_manual", type: "currency", skipZero: true },
+  { key: "employee_contributions_per_payment", type: "currency", skipZero: true },
+  { key: "employer_contributions", type: "currency", skipZero: true },
+  { key: "employer_contributions_per_payment", type: "currency", skipZero: true },
+  { key: "deductible_expenses", type: "currency", skipZero: true },
+  { key: "taxable_income", type: "currency" },
+  { key: "tax_before_credits", type: "currency", skipZero: true },
+  { key: "credits", type: "currency", skipZero: true },
+  { key: "tax", type: "currency", skipZero: true },
+  { key: "trade_fee", type: "currency", skipZero: true },
+  { key: "total_tax", type: "currency", skipZero: true },
+  { key: "net_income", type: "currency" },
+  { key: "net_income_per_payment", type: "currency", skipZero: true },
+  { key: "deductions_applied", type: "currency", skipZero: true },
+];
+
+const DEDUCTION_EXPORT_FIELDS = [
+  { key: "entered", type: "currency", translationKey: "export.deductions.entered" },
+  { key: "eligible", type: "currency", translationKey: "export.deductions.eligible" },
+  {
+    key: "credit_rate",
+    type: "percent",
+    translationKey: "export.deductions.credit_rate",
+    formatOptions: { maximumFractionDigits: 2, minimumFractionDigits: 0 },
+  },
+  {
+    key: "credit_requested",
+    type: "currency",
+    translationKey: "export.deductions.credit_requested",
+  },
+  {
+    key: "credit_applied",
+    type: "currency",
+    translationKey: "export.deductions.credit_applied",
+  },
+];
+
+function shouldSkipValue(value, skipZero) {
+  if (!skipZero) {
+    return false;
+  }
+  const numeric = coerceFiniteNumber(value);
+  return Math.abs(numeric) < 0.005;
+}
+
+function createFormattedEntry({
+  key,
+  label,
+  value,
+  type,
+  locale,
+  useNonBreakingSpace,
+  formatOptions = {},
+  skipZero = false,
+}) {
+  if (value === null || value === undefined) {
+    return null;
+  }
+  if (shouldSkipValue(value, skipZero)) {
+    return null;
+  }
+
+  let formatted;
+  switch (type) {
+    case "currency":
+      formatted = formatCurrency(value, {
+        locale,
+        useNonBreakingSpace,
+        ...formatOptions,
+      });
+      break;
+    case "percent":
+      formatted = formatPercent(value, {
+        locale,
+        useNonBreakingSpace,
+        maximumFractionDigits: formatOptions.maximumFractionDigits,
+        minimumFractionDigits: formatOptions.minimumFractionDigits,
+      });
+      break;
+    case "integer":
+      formatted = formatInteger(value, { locale });
+      break;
+    default:
+      formatted = String(value);
+      break;
+  }
+
+  return {
+    key,
+    label,
+    raw: value,
+    formatted,
+    type,
+  };
+}
+
+function buildSummaryExportData(calculation, {
+  locale: localeOverride,
+  useNonBreakingSpace = true,
+  includeSource = false,
+} = {}) {
+  if (!calculation) {
+    return null;
+  }
+
+  const locale = normaliseLocaleChoice(localeOverride || getActiveLocale());
+  const summary = calculation.summary || {};
+  const summaryLabels = summary.labels || {};
+  const details = Array.isArray(calculation.details) ? calculation.details : [];
+  const meta = calculation.meta || {};
+  const generatedAtDate = new Date();
+  const generatedAtIso = generatedAtDate.toISOString();
+
+  const exportData = {
+    locale,
+    localeTag: resolveLocaleTag(locale),
+    currency: DEFAULT_CURRENCY,
+    generatedAt: generatedAtIso,
+    summary: [],
+    details: [],
+    deductions: [],
+    meta: { entries: [], raw: meta },
+    summaryRaw: summary,
+    detailsRaw: details,
+  };
+
+  if (includeSource) {
+    exportData.source = calculation;
+  }
+
+  SUMMARY_EXPORT_FIELDS.forEach((field) => {
+    if (!(field.key in summary)) {
+      if (field.optional) {
+        return;
+      }
+    }
+    const value = summary[field.key];
+    if (value === undefined || value === null) {
+      if (field.optional) {
+        return;
+      }
+    }
+    const label = resolveSummaryLabel(field.key, summaryLabels, locale);
+    const entry = createFormattedEntry({
+      key: field.key,
+      label,
+      value,
+      type: field.type,
+      locale,
+      useNonBreakingSpace,
+      formatOptions: field.formatOptions,
+      skipZero: field.skipZero,
+    });
+    if (entry) {
+      exportData.summary.push(entry);
+    }
+  });
+
+  if (Array.isArray(summary.deductions_breakdown)) {
+    summary.deductions_breakdown.forEach((entry) => {
+      if (!entry) {
+        return;
+      }
+      const sectionLabel =
+        (typeof entry.label === "string" && entry.label.trim()) || entry.type ||
+        t("export.csv.section.deductions", {}, locale) ||
+        "Deductions";
+      const fields = [];
+      DEDUCTION_EXPORT_FIELDS.forEach((field) => {
+        const value = entry[field.key];
+        const label =
+          t(field.translationKey, {}, locale) || field.translationKey || field.key;
+        const formatted = createFormattedEntry({
+          key: field.key,
+          label,
+          value,
+          type: field.type,
+          locale,
+          useNonBreakingSpace,
+          formatOptions: field.formatOptions,
+        });
+        if (formatted) {
+          fields.push(formatted);
+        }
+      });
+      const notes =
+        typeof entry.notes === "string" && entry.notes.trim()
+          ? entry.notes.trim()
+          : null;
+      if (fields.length || notes) {
+        exportData.deductions.push({
+          key: entry.type || sectionLabel,
+          label: sectionLabel,
+          entries: fields,
+          notes,
+        });
+      }
+    });
+  }
+
+  const detailLabels = getMessagesSection(locale, "detailFields");
+  details.forEach((detail, index) => {
+    if (!detail) {
+      return;
+    }
+    const sectionLabel =
+      (typeof detail.label === "string" && detail.label.trim()) ||
+      detail.category ||
+      `${t("export.csv.section.detail", {}, locale) || "Detail"} ${index + 1}`;
+
+    const entries = [];
+    DETAIL_EXPORT_FIELDS.forEach((field) => {
+      const value = detail[field.key];
+      const label = resolveDetailLabel(detail, field.key, detailLabels, locale);
+      const formatted = createFormattedEntry({
+        key: field.key,
+        label,
+        value,
+        type: field.type,
+        locale,
+        useNonBreakingSpace,
+        formatOptions: field.formatOptions,
+        skipZero: field.skipZero,
+      });
+      if (formatted) {
+        entries.push(formatted);
+      }
+    });
+
+    const items = [];
+    if (Array.isArray(detail.items)) {
+      detail.items.forEach((item) => {
+        if (!item) {
+          return;
+        }
+        const amountValue = coerceFiniteNumber(item.amount);
+        const taxValue = coerceFiniteNumber(item.tax);
+        if (!Number.isFinite(amountValue) && !Number.isFinite(taxValue)) {
+          return;
+        }
+        const label =
+          (typeof item.label === "string" && item.label.trim()) ||
+          resolveDetailLabel(detail, "breakdown", detailLabels, locale);
+        const amount = {
+          raw: item.amount,
+          formatted: formatCurrency(amountValue, {
+            locale,
+            useNonBreakingSpace,
+          }),
+        };
+        const tax = {
+          raw: item.tax,
+          formatted: formatCurrency(taxValue, {
+            locale,
+            useNonBreakingSpace,
+          }),
+        };
+        let rate = null;
+        const rateValue = coerceFiniteNumber(item.rate);
+        if (Number.isFinite(rateValue) && Math.abs(rateValue) > 0) {
+          rate = {
+            raw: item.rate,
+            formatted: formatPercent(rateValue, {
+              locale,
+              useNonBreakingSpace,
+              maximumFractionDigits: 2,
+              minimumFractionDigits: 0,
+            }),
+          };
+        }
+        items.push({ label, amount, tax, rate });
+      });
+    }
+
+    if (entries.length || items.length) {
+      exportData.details.push({
+        key: detail.category || detail.label || `detail-${index}`,
+        label: sectionLabel,
+        entries,
+        items,
+      });
+    }
+  });
+
+  const metaEntries = [];
+  const generatedLabel = t("export.meta.generated_at", {}, locale) || "Generated";
+  metaEntries.push({
+    key: "generated_at",
+    label: generatedLabel,
+    raw: generatedAtIso,
+    formatted: formatDateTime(generatedAtDate, { locale }),
+    type: "datetime",
+  });
+
+  if (meta.year !== undefined && meta.year !== null) {
+    metaEntries.push({
+      key: "year",
+      label: t("export.meta.year", {}, locale) || "Tax year",
+      raw: meta.year,
+      formatted: formatInteger(meta.year, { locale }),
+      type: "integer",
+    });
+  }
+
+  const metaLocale = normaliseLocaleChoice(meta.locale || locale);
+  metaEntries.push({
+    key: "locale",
+    label: t("export.meta.locale", {}, locale) || "Locale",
+    raw: resolveLocaleTag(metaLocale),
+    formatted: resolveLocaleTag(metaLocale),
+    type: "text",
+  });
+
+  metaEntries.push({
+    key: "currency",
+    label: t("export.meta.currency", {}, locale) || "Currency",
+    raw: DEFAULT_CURRENCY,
+    formatted: DEFAULT_CURRENCY,
+    type: "text",
+  });
+
+  if (meta.youth_relief_category) {
+    metaEntries.push({
+      key: "youth_relief_category",
+      label: t("export.meta.youth_relief_category", {}, locale) ||
+        "Youth relief category",
+      raw: meta.youth_relief_category,
+      formatted: String(meta.youth_relief_category),
+      type: "text",
+    });
+  }
+
+  if (Array.isArray(meta.presumptive_adjustments) && meta.presumptive_adjustments.length) {
+    metaEntries.push({
+      key: "presumptive_adjustments",
+      label:
+        t("export.meta.presumptive_adjustments", {}, locale) ||
+        "Presumptive adjustments",
+      raw: meta.presumptive_adjustments,
+      formatted: formatList(meta.presumptive_adjustments, locale),
+      type: "list",
+    });
+  }
+
+  exportData.meta.entries = metaEntries;
+
+  return exportData;
+}
+
+function escapeHtml(value) {
+  if (value === null || value === undefined) {
+    return "";
+  }
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function downloadCsvSummary() {
   if (!lastCalculation) {
     return;
   }
 
-  const summary = lastCalculation.summary || {};
-  const summaryLabels = summary.labels || {};
-  const details = Array.isArray(lastCalculation.details) ? lastCalculation.details : [];
-  const detailLabels = getMessagesSection(currentLocale, "detailFields");
+  const exportData = buildSummaryExportData(lastCalculation, {
+    useNonBreakingSpace: false,
+  });
+  if (!exportData) {
+    return;
+  }
 
-  const lines = [["Section", "Label", "Value"]];
-
-  const summaryFields = [
-    { key: "net_income", formatter: formatCurrency },
-    { key: "tax_total", formatter: formatCurrency },
-    { key: "withholding_tax", formatter: formatCurrency },
-    { key: "balance_due", formatter: formatCurrency },
-    { key: "deductions_applied", formatter: formatCurrency },
-    { key: "deductions_entered", formatter: formatCurrency },
-    { key: "net_monthly_income", formatter: formatCurrency },
-    { key: "average_monthly_tax", formatter: formatCurrency },
-    { key: "income_total", formatter: formatCurrency },
-    { key: "taxable_income", formatter: formatCurrency },
-    { key: "effective_tax_rate", formatter: formatPercent },
+  const locale = exportData.locale;
+  const header = [
+    t("export.csv.header_section", {}, locale) || "Section",
+    t("export.csv.header_label", {}, locale) || "Label",
+    t("export.csv.header_value", {}, locale) || "Value",
   ];
 
-  summaryFields.forEach(({ key, formatter }) => {
-    if (summary[key] !== undefined && summary[key] !== null) {
-      const label = resolveSummaryLabel(key, summaryLabels);
-      lines.push(["Summary", label, formatter(summary[key])]);
+  const sectionLabels = {
+    meta: t("export.csv.section.meta", {}, locale) || "Meta",
+    summary: t("export.csv.section.summary", {}, locale) || "Summary",
+    deductions: t("export.csv.section.deductions", {}, locale) || "Deductions",
+    detail: t("export.csv.section.detail", {}, locale) || "Detail",
+  };
+
+  const lines = [header];
+
+  if (exportData.meta.entries.length) {
+    exportData.meta.entries.forEach((entry) => {
+      lines.push([sectionLabels.meta, entry.label, entry.formatted]);
+    });
+  }
+
+  exportData.summary.forEach((entry) => {
+    lines.push([sectionLabels.summary, entry.label, entry.formatted]);
+  });
+
+  exportData.deductions.forEach((deduction) => {
+    deduction.entries.forEach((entry) => {
+      lines.push([
+        sectionLabels.deductions,
+        `${deduction.label} – ${entry.label}`,
+        entry.formatted,
+      ]);
+    });
+    if (deduction.notes) {
+      const notesLabel =
+        t("export.deductions.notes", {}, locale) || "Notes";
+      lines.push([
+        sectionLabels.deductions,
+        `${deduction.label} – ${notesLabel}`,
+        deduction.notes,
+      ]);
     }
   });
 
-  const detailFieldOrder = [
-    "gross_income",
-    "deductible_contributions",
-    "category_contributions",
-    "additional_contributions",
-    "auxiliary_contributions",
-    "lump_sum_contributions",
-    "employee_contributions",
-    "employee_contributions_manual",
-    "employer_contributions",
-    "deductible_expenses",
-    "taxable_income",
-    "tax_before_credits",
-    "credits",
-    "tax",
-    "trade_fee",
-    "total_tax",
-    "net_income",
-    "net_income_per_payment",
-    "deductions_applied",
-  ];
-
-  details.forEach((detail) => {
-    const sectionLabel = detail.label || detail.category || "Detail";
-    detailFieldOrder.forEach((field) => {
-      if (detail[field] === undefined || detail[field] === null) {
-        return;
-      }
-
-      const labelKey = field === "trade_fee" && detail.trade_fee_label
-        ? detail.trade_fee_label
-        : detailLabels[field] || field;
-
-      const value = formatCurrency(detail[field]);
-
-      lines.push(["Detail", `${sectionLabel} – ${labelKey}`, value]);
+  exportData.details.forEach((detail) => {
+    detail.entries.forEach((entry) => {
+      lines.push([
+        sectionLabels.detail,
+        `${detail.label} – ${entry.label}`,
+        entry.formatted,
+      ]);
     });
-
-    if (detail.items && Array.isArray(detail.items)) {
-      detail.items.forEach((item) => {
-        const formatted = `${formatCurrency(item.amount)} → ${formatCurrency(
-          item.tax,
-        )} (${formatPercent(item.rate)})`;
-        lines.push(["Detail", `${sectionLabel} – ${item.label}`, formatted]);
-      });
-    }
+    detail.items.forEach((item) => {
+      const ratePart = item.rate && item.rate.formatted ? ` (${item.rate.formatted})` : "";
+      const formattedValue = `${item.amount.formatted} → ${item.tax.formatted}${ratePart}`;
+      lines.push([
+        sectionLabels.detail,
+        `${detail.label} – ${item.label}`,
+        formattedValue,
+      ]);
+    });
   });
 
   const csvContent = lines
@@ -4292,7 +4876,298 @@ function printSummary() {
   if (!lastCalculation) {
     return;
   }
-  window.print();
+
+  const exportData = buildSummaryExportData(lastCalculation, {
+    useNonBreakingSpace: false,
+  });
+  if (!exportData) {
+    return;
+  }
+
+  const locale = exportData.locale;
+  const translate = (key, replacements = {}) => t(key, replacements, locale);
+  const printWindow = window.open("", "_blank", "noopener=yes,noreferrer=yes");
+
+  if (!printWindow) {
+    window.print();
+    return;
+  }
+
+  const title = translate("print.title") || "GreekTax summary";
+  const heading = translate("print.heading") || title;
+  const metaHeading = translate("print.meta_heading") || "Details at a glance";
+  const summaryHeading = translate("print.summary_heading") || "Summary";
+  const deductionsHeading = translate("print.deductions_heading") || "Deductions";
+  const detailsHeading = translate("print.details_heading") || "Income details";
+  const itemsHeading = translate("print.items_heading") || "Breakdown";
+  const generatedLabel = translate("print.generated_on") || "Generated";
+  const generatedDisplay = formatDateTime(exportData.generatedAt, { locale });
+  const footerText =
+    translate("print.footer", { year: new Date().getFullYear() }) ||
+    "© 2025 Christos Ntanos for CogniSys. Released under the GNU GPL v3.";
+
+  const summaryRows = exportData.summary
+    .map(
+      (entry) =>
+        `<tr><th>${escapeHtml(entry.label)}</th><td>${escapeHtml(
+          entry.formatted,
+        )}</td></tr>`,
+    )
+    .join("");
+
+  const metaRows = exportData.meta.entries
+    .map(
+      (entry) =>
+        `<tr><th>${escapeHtml(entry.label)}</th><td>${escapeHtml(
+          entry.formatted,
+        )}</td></tr>`,
+    )
+    .join("");
+
+  const deductionsSections = exportData.deductions
+    .map((deduction) => {
+      const rows = deduction.entries
+        .map(
+          (entry) =>
+            `<tr><th>${escapeHtml(entry.label)}</th><td>${escapeHtml(
+              entry.formatted,
+            )}</td></tr>`,
+        )
+        .join("");
+      const notes = deduction.notes
+        ? `<p class="print-notes">${escapeHtml(deduction.notes)}</p>`
+        : "";
+      if (!rows && !notes) {
+        return "";
+      }
+      return `
+        <section class="print-subsection">
+          <h3>${escapeHtml(deduction.label)}</h3>
+          ${rows ? `<table class="print-table">${rows}</table>` : ""}
+          ${notes}
+        </section>
+      `;
+    })
+    .join("");
+
+  const detailSections = exportData.details
+    .map((detail) => {
+      const rows = detail.entries
+        .map(
+          (entry) =>
+            `<tr><th>${escapeHtml(entry.label)}</th><td>${escapeHtml(
+              entry.formatted,
+            )}</td></tr>`,
+        )
+        .join("");
+      const items = detail.items
+        .map((item) => {
+          const ratePart = item.rate && item.rate.formatted ? ` (${escapeHtml(item.rate.formatted)})` : "";
+          const value = `${escapeHtml(item.amount.formatted)} → ${escapeHtml(
+            item.tax.formatted,
+          )}${ratePart}`;
+          return `<li><span class="print-item-label">${escapeHtml(
+            item.label,
+          )}</span><span class="print-item-value">${value}</span></li>`;
+        })
+        .join("");
+
+      const itemsMarkup = items
+        ? `<div class="print-breakdown"><h4>${escapeHtml(
+            itemsHeading,
+          )}</h4><ul class="print-breakdown-list">${items}</ul></div>`
+        : "";
+
+      if (!rows && !itemsMarkup) {
+        return "";
+      }
+
+      return `
+        <section class="print-section">
+          <h3>${escapeHtml(detail.label)}</h3>
+          ${rows ? `<table class="print-table">${rows}</table>` : ""}
+          ${itemsMarkup}
+        </section>
+      `;
+    })
+    .join("");
+
+  const metaSection = metaRows
+    ? `<section class="print-section"><h2>${escapeHtml(
+        metaHeading,
+      )}</h2><table class="print-table">${metaRows}</table></section>`
+    : "";
+
+  const deductionsSection = deductionsSections
+    ? `<section class="print-section"><h2>${escapeHtml(
+        deductionsHeading,
+      )}</h2>${deductionsSections}</section>`
+    : "";
+
+  const detailsSection = detailSections
+    ? `<section class="print-section"><h2>${escapeHtml(
+        detailsHeading,
+      )}</h2>${detailSections}</section>`
+    : "";
+
+  const summarySection = summaryRows
+    ? `<section class="print-section"><h2>${escapeHtml(
+        summaryHeading,
+      )}</h2><table class="print-table">${summaryRows}</table></section>`
+    : "";
+
+  const documentHtml = `<!doctype html>
+    <html lang="${escapeHtml(locale)}">
+      <head>
+        <meta charset="utf-8" />
+        <title>${escapeHtml(title)}</title>
+        <style>
+          :root {
+            color-scheme: light;
+          }
+          body {
+            font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+            margin: 1.5rem;
+            color: #1a1a1a;
+            background: #ffffff;
+          }
+          .print-wrapper {
+            max-width: 960px;
+            margin: 0 auto;
+          }
+          header {
+            margin-bottom: 1.5rem;
+          }
+          h1 {
+            font-size: 1.9rem;
+            margin: 0 0 0.25rem;
+          }
+          .print-generated {
+            margin: 0;
+            font-size: 0.95rem;
+            color: #4f4f4f;
+          }
+          .print-section {
+            margin-bottom: 1.75rem;
+          }
+          .print-section h2 {
+            font-size: 1.3rem;
+            margin-bottom: 0.75rem;
+          }
+          .print-section h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+          }
+          .print-table {
+            width: 100%;
+            border-collapse: collapse;
+          }
+          .print-table th,
+          .print-table td {
+            padding: 0.4rem 0.5rem;
+            border-bottom: 1px solid #e0e0e0;
+          }
+          .print-table th {
+            text-align: left;
+            font-weight: 600;
+            color: #333333;
+          }
+          .print-table td {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+          }
+          .print-breakdown {
+            margin-top: 0.5rem;
+          }
+          .print-breakdown h4 {
+            font-size: 1rem;
+            margin: 0.75rem 0 0.35rem;
+          }
+          .print-breakdown-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            border: 1px solid #ececec;
+            border-radius: 6px;
+          }
+          .print-breakdown-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            padding: 0.4rem 0.6rem;
+            border-bottom: 1px solid #ececec;
+            font-variant-numeric: tabular-nums;
+          }
+          .print-breakdown-list li:last-child {
+            border-bottom: none;
+          }
+          .print-item-label {
+            margin-right: 1rem;
+            color: #424242;
+          }
+          .print-item-value {
+            font-weight: 600;
+          }
+          .print-notes {
+            margin: 0.5rem 0 0;
+            font-size: 0.95rem;
+            color: #424242;
+          }
+          footer {
+            margin-top: 2rem;
+            font-size: 0.9rem;
+            color: #4f4f4f;
+            border-top: 1px solid #e0e0e0;
+            padding-top: 0.75rem;
+          }
+          @media print {
+            body {
+              margin: 0.5in;
+            }
+            .print-wrapper {
+              max-width: none;
+            }
+            footer {
+              color: #6b6b6b;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="print-wrapper">
+          <header>
+            <h1>${escapeHtml(heading)}</h1>
+            <p class="print-generated">${escapeHtml(generatedLabel)}: ${escapeHtml(
+    generatedDisplay,
+  )}</p>
+          </header>
+          ${metaSection}
+          ${summarySection}
+          ${deductionsSection}
+          ${detailsSection}
+          <footer>${escapeHtml(footerText)}</footer>
+        </div>
+      </body>
+    </html>`;
+
+  printWindow.document.open();
+  printWindow.document.write(documentHtml);
+  printWindow.document.close();
+  printWindow.focus();
+
+  const handlePrint = () => {
+    try {
+      printWindow.print();
+    } finally {
+      printWindow.close();
+    }
+  };
+
+  if (printWindow.document.readyState === "complete") {
+    handlePrint();
+  } else {
+    printWindow.addEventListener("load", handlePrint, { once: true });
+  }
 }
 
 function initialiseCalculator() {
