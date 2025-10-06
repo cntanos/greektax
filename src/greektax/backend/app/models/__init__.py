@@ -378,6 +378,14 @@ class GeneralIncomeComponent:
             return None
         return self.gross_income / self.payments_per_year
 
+    def employer_cost(self) -> float:
+        return self.gross_income + self.employer_contributions
+
+    def employer_cost_per_payment(self) -> float | None:
+        if not self.payments_per_year or self.payments_per_year <= 0:
+            return None
+        return self.employer_cost() / self.payments_per_year
+
 
 @dataclass(slots=True)
 class DetailTotals:

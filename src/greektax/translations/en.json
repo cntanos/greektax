@@ -116,6 +116,8 @@
       "employee_contributions_per_payment": "Employee contributions per payment",
       "employer_contributions": "Employer contributions",
       "employer_contributions_per_payment": "Employer contributions per payment",
+      "employer_cost": "Employer cost",
+      "employer_cost_per_payment": "Employer cost per payment",
       "gross_income": "Gross income",
       "gross_income_per_payment": "Gross per payment",
       "lump_sum_contributions": "Lump-sum fund contributions",
