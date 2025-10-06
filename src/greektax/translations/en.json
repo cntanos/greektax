@@ -328,6 +328,7 @@
       "calculation_complete": "Calculation complete.",
       "calculation_failed": "Unable to process calculation.",
       "loading_years": "Loading tax years…",
+      "recalculation_required": "Changes detected. Recalculate to update results.",
       "ready": "Configuration loaded. Enter your details to calculate.",
       "select_year": "Please select a tax year before calculating.",
       "validation_errors": "Please fix the highlighted fields and try again.",
