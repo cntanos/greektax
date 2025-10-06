@@ -20,16 +20,13 @@
           "freelance": "Εισόδημα ελεύθερου επαγγελματία",
           "income_sources": "Πηγές εισοδήματος",
           "investment": "Επενδυτικά εισοδήματα",
-          "pension": "Εισόδημα συντάξεων",
           "obligations": "Άλλοι φόροι",
           "other": "Λοιπά εισοδήματα",
+          "pension": "Εισόδημα συντάξεων",
           "rental": "Εισόδημα από ενοίκια",
           "year_household": "Έτος και νοικοκυριό"
         },
-        "results_employer_note": "Το κόστος εργοδότη ισούται με τον μικτό μισθό και τις εργοδοτικές εισφορές ΕΦΚΑ, μέχρι το νόμιμο ανώτατο όριο αποδοχών.",
         "results_heading": "Αποτελέσματα",
-        "results_intro": "Σύνοψη αποτελεσμάτων: Το διάγραμμα και οι πίνακες που ακολουθούν δείχνουν το συνολικό εισόδημα, τους φόρους και το καθαρό ποσό. Τοποθετήστε τον δείκτη πάνω από το διάγραμμα για λεπτομέρειες και δείτε την ανάλυση κάθε κατηγορίας στη λίστα.",
-        "results_social_note": "Η καθαρή αμοιβή προσαρμόζεται στην επιλογή σας για τις ασφαλιστικές εισφορές. Αφήστε το πεδίο ενεργό για αυτόματη αφαίρεση των εισφορών ΕΦΚΑ ή απενεργοποιήστε το για να δείτε ένα σενάριο μόνο με φόρους.",
         "subheadings": {
           "pension": "Εισόδημα συντάξεων"
         }
@@ -62,14 +59,14 @@
         "trade_fee": "Τέλος επιτηδεύματος"
       },
       "distribution": {
-        "description": "Δείτε πώς κατανέμεται το συνολικό εισόδημα μεταξύ καθαρού εισοδήματος, φόρων, ασφαλιστικών εισφορών και δαπανών.",
+        "description": "Δείτε πώς κατανέμεται το συνολικό εισόδημα μεταξύ κερδών, φόρων, ασφαλιστικών εισφορών και εκπιπτόμενων δαπανών.",
         "empty": "Προσθέστε φορολογητέο εισόδημα για να εμφανιστεί η κατανομή σε όλες τις κατηγορίες.",
         "expenses": "Δαπάνες",
         "heading": "Κατανομή συνολικού εισοδήματος",
-        "gross_income": "Ακαθάριστο εισόδημα",
         "insurance": "Ασφαλιστικές εισφορές",
-        "net_income": "Καθαρό εισόδημα",
-        "taxes": "Φόροι"
+        "profits": "Κέρδη",
+        "taxes": "Φόροι",
+        "total_income": "Συνολικό εισόδημα"
       },
       "errors": {
         "invalid_number": "Εισαγάγετε έγκυρο αριθμό για {{field}}.",
@@ -151,11 +148,11 @@
         "toggle-agricultural": "Αγροτικό εισόδημα",
         "toggle-deductions": "Εκπτώσεις",
         "toggle-employment": "Εισόδημα μισθωτών",
-        "toggle-pension": "Εισόδημα συντάξεων",
         "toggle-freelance": "Εισόδημα ελευθέρων επαγγελματιών",
         "toggle-investment": "Επενδυτικά εισοδήματα",
         "toggle-obligations": "Άλλοι φόροι",
         "toggle-other": "Λοιπά εισοδήματα",
+        "toggle-pension": "Εισόδημα συντάξεων",
         "toggle-rental": "Εισόδημα από ενοίκια",
         "trade-fee-toggle": "Τέλος επιτηδεύματος",
         "year-select": "Φορολογικό έτος",
@@ -196,7 +193,6 @@
         "employment-net-note": "Δεν υποστηρίζεται μετατροπή καθαρού μισθού σε ακαθάριστο. Επιλέξτε ετήσια ή ανά καταβολή εισαγωγή και συμπληρώστε μόνο ακαθάριστα ποσά.",
         "employment-payments": "Συνήθως καταβάλλονται 14 μισθοί (12 μηνιαίοι και 2 δώρα). Προσαρμόστε τον αριθμό ώστε να ταιριάζει με τις καταβολές μισθοδοσίας που λαμβάνετε ετησίως.",
         "employment-scope": "(για μισθούς και ημερομίσθια μόνο)",
-        "pension-scope": "(για συντάξεις)",
         "employment-withholding": "Καταχωρήστε τον φόρο PAYE που έχει ήδη παρακρατηθεί στις μισθοδοσίες ώστε να μειωθεί το υπόλοιπο.",
         "freelance-activity-start-year": "Καθορίζει αν ισχύει η 5ετής απαλλαγή νέας επιχείρησης.",
         "freelance-efka-category": "Επιλέξτε κατηγορία εισφορών για αυτόματη συμπλήρωση των υποχρεωτικών ποσών.",
@@ -222,6 +218,7 @@
         "pension-gross-note": "Η μετατροπή καθαρών σε ακαθάριστα ποσά σύνταξης δεν υποστηρίζεται. Δηλώστε μόνο ακαθάριστα ποσά.",
         "pension-income-gross": "Χρησιμοποιήστε το πεδίο ακαθάριστου όταν γνωρίζετε τη σύνταξη πριν από τις κρατήσεις.",
         "pension-monthly-income": "Καταχωρήστε το ακαθάριστο ποσό κάθε καταβολής σύνταξης. Ο υπολογιστής το πολλαπλασιάζει με τις καταβολές ανά έτος που επιλέξατε.",
+        "pension-scope": "(για συντάξεις)",
         "pension-section-intro": "Αν λαμβάνετε σύνταξη, συμπληρώστε τα πεδία παρακάτω· διαφορετικά αφήστε τα κενά.",
         "small-village": "Οι μόνιμοι κάτοικοι οικισμών κάτω των 500 κατοίκων μπορούν να μειώσουν το τεκμαρτό εισόδημα.",
         "tekmiria-note": "Η μείωση τεκμηρίων {{reduction}} εφαρμόζεται όταν ενεργοποιηθούν οι σχετικές επιλογές (μικρός οικισμός ή νέα μητέρα).",
@@ -355,16 +352,13 @@
           "freelance": "Freelance income",
           "income_sources": "Income sources",
           "investment": "Investment income",
-          "pension": "Pension income",
           "obligations": "Other taxes",
           "other": "Other income",
+          "pension": "Pension income",
           "rental": "Rental income",
           "year_household": "Year and household"
         },
-        "results_employer_note": "Employer cost represents the gross salary plus employer EFKA contributions, capped at the statutory salary ceiling.",
         "results_heading": "Results",
-        "results_intro": "Results Summary: The chart and tables below show your total income, taxes, and net income. Hover over the diagram for details and review each category in the list.",
-        "results_social_note": "Net pay honours your social insurance selection. Leave the toggle on to subtract EFKA contributions automatically, or turn it off to see a tax-only projection.",
         "subheadings": {
           "pension": "Pension income"
         }
@@ -397,14 +391,14 @@
         "trade_fee": "Business activity fee"
       },
       "distribution": {
-        "description": "See how your total income is split between net income, taxes, insurance contributions, and expenses.",
+        "description": "See how your total income is split between profits, taxes, insurance contributions, and deductible expenses.",
         "empty": "Add taxable income above to reveal the allocation across all categories.",
         "expenses": "Expenses",
         "heading": "Income allocation summary",
-        "gross_income": "Gross income",
         "insurance": "Insurance contributions",
-        "net_income": "Net income",
-        "taxes": "Taxes"
+        "profits": "Profits",
+        "taxes": "Taxes",
+        "total_income": "Total income"
       },
       "errors": {
         "invalid_number": "Please enter a valid number for {{field}}.",
@@ -486,11 +480,11 @@
         "toggle-agricultural": "Agricultural income",
         "toggle-deductions": "Deductions",
         "toggle-employment": "Salary income",
-        "toggle-pension": "Pension income",
         "toggle-freelance": "Freelance income",
         "toggle-investment": "Investment income",
         "toggle-obligations": "Other taxes",
         "toggle-other": "Other income",
+        "toggle-pension": "Pension income",
         "toggle-rental": "Rental income",
         "trade-fee-toggle": "Business activity fee",
         "year-select": "Tax year",
@@ -531,7 +525,6 @@
         "employment-net-note": "Net-to-gross salary conversion isn't supported. Choose annual or per-payment mode above and provide gross amounts only.",
         "employment-payments": "Most salaried roles use 14 payments (12 monthly plus bonuses). Adjust this to match the number of payslips you receive each year.",
         "employment-scope": "(for wages and salaries only)",
-        "pension-scope": "(for retirement pensions)",
         "employment-withholding": "Enter PAYE income tax already withheld on your payslips to reduce the balance due.",
         "freelance-activity-start-year": "Determines if the new-business 5-year fee exemption applies.",
         "freelance-efka-category": "Select a contribution class to prefill mandatory EFKA payments.",
@@ -557,6 +550,7 @@
         "pension-gross-note": "Net-to-gross pension conversion isn't supported. Please enter gross amounts only.",
         "pension-income-gross": "Use the gross field when you know the annual pension before deductions.",
         "pension-monthly-income": "Enter the gross amount per pension payment. The calculator multiplies it by the payments per year you selected.",
+        "pension-scope": "(for retirement pensions)",
         "pension-section-intro": "If you receive a pension, fill in the fields below; otherwise leave them blank.",
         "small-village": "Residents of settlements under 500 inhabitants can reduce presumptive income imputation.",
         "tekmiria-note": "Tekmiria reductions of {{reduction}} apply when qualifying relief toggles (small village or new mother) are enabled.",
