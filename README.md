@@ -77,14 +77,20 @@ The script rebuilds
 file so static deployments remain in sync with the canonical catalogues. See
 [`docs/i18n.md`](docs/i18n.md) for end-to-end localisation guidance.
 
+## Development Environment
+
+Use the [Operational Workflows Index](docs/operations.md) as the entry point for
+recurring contributor tasks. It summarises localisation updates, performance
+baseline captures, and UI review loops with links to the detailed guides.
+
 ## Architecture & Planning References
 
 - [`docs/architecture.md`](docs/architecture.md) — module boundaries, deployment
   model, and maintenance workflows.
 - [`docs/project_plan.md`](docs/project_plan.md) — roadmap, sprint history, and
   upcoming milestones.
-- [`docs/i18n.md`](docs/i18n.md) — localisation workflows and translation
-  catalogue conventions.
+- [`docs/operations.md`](docs/operations.md) — index of localisation,
+  performance, and UI review workflows.
 - [`Requirements.md`](Requirements.md) — product requirements and acceptance
   criteria.
 
