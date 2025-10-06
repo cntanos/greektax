@@ -259,8 +259,17 @@ def _apply_progressive_tax(
     if salary_credit_income > 12_000:
         credit_reduction = ((salary_credit_income - 12_000) / 1_000) * 20.0
 
+    reduction_exempt_from = (
+        config.employment.tax_credit.income_reduction_exempt_from_dependants
+    )
+
     def _credit_after_reduction(credit: float) -> float:
         if credit_reduction <= 0:
+            return credit
+        if (
+            reduction_exempt_from is not None
+            and payload.children >= reduction_exempt_from
+        ):
             return credit
         reduced = credit - credit_reduction
         if reduced < 0:
