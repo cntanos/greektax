@@ -26,6 +26,7 @@ from greektax.backend.app.models import (
     CalculationResponse,
     DetailTotals,
     format_validation_error,
+    youth_age_reference_year,
 )
 from greektax.backend.config.year_config import (
     PayrollConfig,
@@ -111,7 +112,7 @@ def _normalise_payload(
     def _derive_youth_band(age: int | None) -> str | None:
         if age is None:
             return None
-        if age < 25:
+        if age <= 25:
             return "under_25"
         if age <= 30:
             return "age26_30"
@@ -120,7 +121,8 @@ def _normalise_payload(
     birth_year = demographics.birth_year
     taxpayer_age: int | None = None
     if birth_year is not None:
-        computed_age = request.year - birth_year
+        reference_year = youth_age_reference_year(request.year)
+        computed_age = reference_year - birth_year
         if computed_age >= 0:
             taxpayer_age = computed_age
 
@@ -148,6 +150,7 @@ def _normalise_payload(
 
     employment_monthly_income: float | None = None
     employment_income = 0.0
+    employment_declared_gross = employment_input.gross_income
 
     if employment_input.monthly_income is not None and employment_input.monthly_income > 0:
         payments = employment_payments or employment_payroll.default_payments_per_year
@@ -225,6 +228,7 @@ def _normalise_payload(
 
     pension_monthly_income: float | None = None
     pension_income = 0.0
+    pension_declared_gross = pension_input.gross_income
 
     if pension_input.monthly_income is not None and pension_input.monthly_income > 0:
         payments = pension_payments or pension_payroll.default_payments_per_year
@@ -249,6 +253,25 @@ def _normalise_payload(
     agricultural_professional = agricultural_input.professional_farmer
 
     other_income = request.other.taxable_income
+
+    if birth_year is not None and request.year in {2025, 2026}:
+        birth_year_limit = 2025
+        if birth_year > birth_year_limit:
+            has_income = any(
+                (
+                    employment_income > 0,
+                    pension_income > 0,
+                    profit > 0,
+                    rental_gross > 0,
+                    agricultural_revenue > 0,
+                    other_income > 0,
+                    any(amount > 0 for amount in investment_amounts.values()),
+                )
+            )
+            if has_income:
+                raise ValueError(
+                    "Invalid calculation payload: demographics.birth_year must be 2025 or earlier when income is provided"
+                )
 
     obligations = request.obligations
     enfia_due = obligations.enfia
@@ -281,10 +304,12 @@ def _normalise_payload(
         employment_input.include_manual_employee_contributions,
         employment_include_employer_contributions=
         employment_input.include_employer_contributions,
+        employment_declared_gross_income=employment_declared_gross,
         withholding_tax=withholding_tax,
         pension_income=pension_income,
         pension_monthly_income=pension_monthly_income,
         pension_payments_per_year=pension_payments,
+        pension_declared_gross_income=pension_declared_gross,
         freelance_profit=profit,
         freelance_gross_revenue=freelance_gross_revenue,
         freelance_deductible_expenses=freelance_deductible_expenses,
