@@ -1,10 +1,12 @@
 # GreekTax Development Plan
 
 ## Vision
-GreekTax will provide an unofficial, bilingual (Greek/English) tax calculation
-tool for individuals in Greece. The project prioritises accuracy, clarity, and
-maintainability. Development will proceed iteratively using epics and sprints to
-deliver user value in incremental, testable slices.
+- Deliver an unofficial, bilingual (Greek/English) tax calculation tool focused
+  on accuracy, clarity, and maintainability.
+- Iterate through measurable sprints so every increment is testable and tied to
+  user value.
+- Keep shared documentation aligned by updating the plan whenever we close a
+  sprint or pivot scope.
 
 ## Documentation baseline
 - Track overlapping or outdated guidance in [docs/documentation_audit.md](./documentation_audit.md) before touching shared
@@ -22,30 +24,65 @@ deliver user value in incremental, testable slices.
   relief schedule, while dependant credits, rental updates, and freelance EFKA
   bands remain provisional pending official circulars.
 
-## Epics Overview
+## Overview
 
-1. **Core Tax Engine**
-   - Establish domain models for income categories, deductions, and
-     contributions.
-   - Implement year-based configuration management and calculation pipelines.
-   - Provide comprehensive automated test coverage and documentation.
+1. **Functional requirements**
+   - **1.1 Employment & Pension**
+     - Maintain `employment` and `pension` income pipelines within the
+       calculation service, including dependant credits and payroll-frequency
+       validation aligned with the [API contract](./api_contract.md).
+     - Surface year-specific warnings, allowances, and toggleable input groups
+       in the UI, referencing the localisation keys defined in
+       [`main.js`](../src/frontend/assets/scripts/main.js).
+   - **1.2 Freelance & Trade Activity**
+     - Calculate trade fees, EFKA classes, and engineer overrides using the
+       `freelance` configuration schema and scenario coverage noted in recent
+       sprints.
+     - Provide guided activity-start workflows and metadata hints that mirror
+       the UX flows documented in the [UI improvement plan](./ui_improvement_plan.md).
+   - **1.3 Investment & Rental**
+     - Support rental, capital-gains, and other investment categories with
+       aggregated summaries, respecting provisional toggles in the 2026
+       configuration files.
+     - Keep the Sankey and summary views synchronised with calculation outputs
+       so category totals stay localisation-ready.
+   - **1.4 Shared Reporting & Validation**
+     - Expose locale-aware configuration and calculation endpoints as defined in
+       the [API contract](./api_contract.md).
+     - Generate printable, shareable, or downloadable summaries only where they
+       align with current calculator outputs, flagging legacy export paths as
+       deprecated.
 
-2. **User Experience & Localization**
-   - Build bilingual UI components with responsive layouts and accessibility
-     compliance.
-   - Implement localization utilities across front-end and back-end layers.
-   - Ensure high-fidelity error handling and user guidance.
+2. **Non-functional requirements**
+   - **2.1 Localisation & Accessibility**
+     - Preserve bilingual coverage with catalogues embedded in the static
+       bundle and validated against the [UI improvement plan](./ui_improvement_plan.md).
+     - Maintain accessibility checks, focus order, and responsive behaviour for
+       all calculator views.
+   - **2.2 Performance & Observability**
+     - Monitor calculation latency using the performance snapshot utility and
+       keep Sankey rendering responsive through deferred bootstrapping.
+     - Capture telemetry hooks for navigation, validation friction, and share
+       link expiry metadata.
+   - **2.3 Quality & Tooling**
+     - Enforce automated testing (unit, integration, regression) and linting to
+       guard critical calculation paths.
+     - Provide deployment, maintenance, and contributor onboarding guidance in
+       lockstep with repository updates.
 
-3. **Extended Tax Obligations & Reporting**
-   - Support optional modules such as ENFIA and luxury tax inputs.
-   - Deliver printable or shareable summaries and export formats.
-   - Validate calculations against real-world scenarios.
-
-4. **Operations & Quality Assurance**
-   - Automate testing (unit, integration, end-to-end) and quality gates
-     (linting, type checking).
-   - Provide deployment guides, observability hooks, and maintenance playbooks.
-   - Facilitate contributor onboarding with comprehensive documentation.
+3. **Out-of-scope and deprecated**
+   - **3.1 Legacy Share/Export Surfaces**
+     - The retired Plotly sharing endpoint and PDF export tooling remain
+       deprecated and are scheduled for removal once historical regression data
+       is archived.
+   - **3.2 Non-Integrated Tax Modules**
+     - Future ENFIA or luxury tax expansions beyond documented scenarios are
+       parked until the core calculator stabilises under the new configuration
+       structure.
+   - **3.3 External Data Imports**
+     - Bulk data importers and third-party integrations (e.g., payroll
+       providers) are excluded from the current roadmap and will be revisited in
+       a later planning cycle.
 
 ## Sprint 0 (Completed)
 
