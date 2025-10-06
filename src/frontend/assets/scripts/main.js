@@ -340,11 +340,6 @@ const themeButtons = Array.from(
 const yearSelect = document.getElementById("year-select");
 const childrenInput = document.getElementById("children-input");
 const birthYearInput = document.getElementById("birth-year");
-const smallVillageControl = document.getElementById("small-village-control");
-const smallVillageToggle = document.getElementById("small-village-toggle");
-const newMotherControl = document.getElementById("new-mother-control");
-const newMotherToggle = document.getElementById("new-mother-toggle");
-const tekmiriaNote = document.getElementById("tekmiria-note");
 const employmentIncomeInput = document.getElementById("employment-income");
 const employmentMonthlyIncomeInput = document.getElementById(
   "employment-monthly-income",
@@ -1456,47 +1451,6 @@ function sanitiseToggleMap(source) {
   return toggles;
 }
 
-function resolveStoredToggleValue(element) {
-  if (!element) {
-    return false;
-  }
-
-  const key = getElementPersistenceKey(element);
-  if (!key) {
-    return Boolean(element.defaultChecked);
-  }
-
-  const storedValue = getStoredCalculatorValue(key);
-  if (storedValue !== undefined) {
-    return Boolean(storedValue);
-  }
-
-  return Boolean(element.defaultChecked);
-}
-
-function syncDemographicToggleState(key, control, toggleElement, isAvailable) {
-  if (control) {
-    control.hidden = !isAvailable;
-  }
-
-  if (!toggleElement) {
-    if (!isAvailable) {
-      delete currentYearToggles[key];
-    }
-    return;
-  }
-
-  if (!isAvailable) {
-    toggleElement.checked = Boolean(toggleElement.defaultChecked);
-    delete currentYearToggles[key];
-    return;
-  }
-
-  const desired = resolveStoredToggleValue(toggleElement);
-  toggleElement.checked = desired;
-  currentYearToggles[key] = desired;
-}
-
 function applyContributionDefaults(metadata) {
   const employmentDefaults =
     (metadata && metadata.employment && metadata.employment.defaults) || {};
@@ -1533,30 +1487,6 @@ function applyContributionDefaults(metadata) {
       tradeFeeToggle.checked = Boolean(tradeFeeToggle.defaultChecked);
     }
   }
-}
-
-function updateDemographicToggles(metadata, toggles) {
-  const hasSmallVillage = Object.prototype.hasOwnProperty.call(
-    toggles,
-    "small_village",
-  );
-  syncDemographicToggleState(
-    "small_village",
-    smallVillageControl,
-    smallVillageToggle,
-    hasSmallVillage,
-  );
-
-  const hasNewMother = Object.prototype.hasOwnProperty.call(
-    toggles,
-    "new_mother",
-  );
-  syncDemographicToggleState(
-    "new_mother",
-    newMotherControl,
-    newMotherToggle,
-    hasNewMother,
-  );
 }
 
 function computeBracketRangeLabel(bracket, index, previousUpper) {
@@ -1743,31 +1673,6 @@ function renderBracketSummaries(metadata) {
   sections.forEach(([section, brackets]) => {
     renderBracketSummary(section, brackets);
   });
-}
-
-function updateTekmiriaNote(metadata, toggles) {
-  if (!tekmiriaNote) {
-    return;
-  }
-
-  const tekmiriaConfig = metadata?.employment?.tekmiria;
-  if (!tekmiriaConfig || !tekmiriaConfig.enabled) {
-    tekmiriaNote.textContent = "";
-    tekmiriaNote.hidden = true;
-    return;
-  }
-
-  const factor = tekmiriaConfig.reduction_factor;
-  if (factor === null || factor === undefined) {
-    tekmiriaNote.textContent = "";
-    tekmiriaNote.hidden = true;
-    return;
-  }
-
-  tekmiriaNote.textContent = t("hints.tekmiria-note", {
-    reduction: formatPercent(factor),
-  });
-  tekmiriaNote.hidden = false;
 }
 
 function updateTradeFeeNote(metadata) {
@@ -2382,10 +2287,7 @@ function applyYearMetadata(year) {
     );
 
     applyContributionDefaults(currentYearMetadata);
-    updateDemographicToggles(currentYearMetadata, currentYearToggles);
     renderBracketSummaries(currentYearMetadata);
-    updateTekmiriaNote(currentYearMetadata, currentYearToggles);
-
     updateEmploymentMode(currentEmploymentMode);
     updatePensionMode(currentPensionMode);
     populateFreelanceMetadata(currentYearMetadata?.freelance || null);
@@ -3278,18 +3180,6 @@ function buildCalculationPayload() {
   const birthYear = readInteger(birthYearInput);
   if (birthYear >= 1901 && birthYear <= 2025) {
     demographics.birth_year = birthYear;
-  }
-
-  if (smallVillageToggle && isInputVisible(smallVillageToggle)) {
-    const value = Boolean(smallVillageToggle.checked);
-    toggles.small_village = value;
-    demographics.small_village = value;
-  }
-
-  if (newMotherToggle && isInputVisible(newMotherToggle)) {
-    const value = Boolean(newMotherToggle.checked);
-    toggles.new_mother = value;
-    demographics.new_mother = value;
   }
 
   payload.demographics = demographics;

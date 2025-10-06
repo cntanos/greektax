@@ -127,8 +127,6 @@ class CalculationInput(BaseModel):
     deductions_insurance: float
     toggles: Mapping[str, bool] = Field(default_factory=dict)
     taxpayer_birth_year: int | None = None
-    small_village: bool = False
-    new_mother: bool = False
 
     @model_validator(mode="after")
     def _validate_taxpayer_birth_year(self) -> "CalculationInput":
@@ -318,21 +316,11 @@ class CalculationInput(BaseModel):
 
     @property
     def presumptive_adjustments(self) -> tuple[str, ...]:
-        if not self.toggle_enabled("presumptive_relief"):
-            return tuple()
-
-        adjustments: list[str] = []
-        if self.small_village:
-            adjustments.append("small_village")
-        if self.new_mother:
-            adjustments.append("new_mother")
-        return tuple(adjustments)
+        return tuple()
 
     @property
     def presumptive_relief_applied(self) -> bool:
-        if not self.toggle_enabled("tekmiria_reduction"):
-            return False
-        return bool(self.presumptive_adjustments)
+        return False
 
     @property
     def has_enfia_obligation(self) -> bool:

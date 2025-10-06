@@ -58,8 +58,6 @@ class DemographicsInput(BaseModel):
 
     taxpayer_birth_year: int | None = Field(default=None, ge=1901, le=2100)
     birth_year: int = Field(..., ge=1901, le=2100)
-    small_village: bool = False
-    new_mother: bool = False
 
     @model_validator(mode="before")
     @classmethod
@@ -72,17 +70,6 @@ class DemographicsInput(BaseModel):
             copied["birth_year"] = copied.get("taxpayer_birth_year")
             return copied
         return data
-
-    @staticmethod
-    def _normalise_boolean_flags(value: Any) -> bool:
-        if value is None:
-            return False
-        return bool(value)
-
-    @field_validator("small_village", "new_mother", mode="before")
-    @classmethod
-    def _coerce_boolean_flags(cls, value: Any) -> bool:
-        return cls._normalise_boolean_flags(value)
 
     @model_validator(mode="after")
     def _align_birth_year_aliases(self) -> "DemographicsInput":

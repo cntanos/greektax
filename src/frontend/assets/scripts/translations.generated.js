@@ -164,7 +164,6 @@
         "freelance-trade-fee-standard": "Τυπικό ποσό",
         "freelance-years-active": "Έτη ως ελεύθερος επαγγελματίας",
         "luxury-due": "Φόρος πολυτελούς διαβίωσης (€)",
-        "new-mother-toggle": "Επίδομα νέας μητέρας",
         "other-income": "Λοιπά φορολογητέα εισοδήματα (€)",
         "pension-income": "Ακαθάριστο εισόδημα συντάξεων (€)",
         "pension-mode": "Τρόπος εισαγωγής σύνταξης",
@@ -174,7 +173,6 @@
         "pension-payments": "Καταβολές συντάξεων ανά έτος",
         "rental-expenses": "Εκπιπτόμενες δαπάνες ενοικίων (€)",
         "rental-income": "Ακαθάριστα έσοδα ενοικίων (€)",
-        "small-village-toggle": "Ελάφρυνση μικρού οικισμού",
         "toggle-agricultural": "Αγροτικό εισόδημα",
         "toggle-deductions": "Εκπτώσεις",
         "toggle-employment": "Εισόδημα μισθωτών",
@@ -244,22 +242,17 @@
         "freelance-trade-fee-sunset": "Το τέλος επιτηδεύματος αναμένεται να επανέλθει από το {{year}} (κατάσταση: {{status}}). Επιβεβαιώστε τις τρέχουσες οδηγίες με τον λογιστή σας.",
         "freelance-trade-fee-waived": "Για το συγκεκριμένο φορολογικό έτος δεν οφείλεται τέλος επιτηδεύματος, επομένως αφήστε τον διακόπτη απενεργοποιημένο.",
         "income-toggle-intro": "Ενεργοποιήστε κάθε κατηγορία εισοδημάτων, δαπανών ή λοιπών ρυθμίσεων για να εμφανιστούν τα πεδία της.",
-        "new-mother": "Δηλώστε πρόσφατη γέννα ώστε να εφαρμοστούν ενισχυμένες οικογενειακές εκπτώσεις και μειώσεις τεκμηρίων.",
         "other-income": "Περιλάβετε φορολογητέα ποσά όπως επίδομα ανεργίας, διατροφή που εισπράττετε, φορολογητέες υποτροφίες, έπαθλα ή άλλο εισόδημα που δεν καλύπτεται παραπάνω.",
         "pension-gross-note": "Η μετατροπή καθαρών σε ακαθάριστα ποσά σύνταξης δεν υποστηρίζεται. Δηλώστε μόνο ακαθάριστα ποσά.",
         "pension-income-gross": "Χρησιμοποιήστε το πεδίο ακαθάριστου όταν γνωρίζετε τη σύνταξη πριν από τις κρατήσεις.",
         "pension-monthly-income": "Καταχωρήστε το ακαθάριστο ποσό κάθε καταβολής σύνταξης. Ο υπολογιστής το πολλαπλασιάζει με τις καταβολές ανά έτος που επιλέξατε.",
         "pension-scope": "(για συντάξεις)",
         "pension-section-intro": "Αν λαμβάνετε σύνταξη, συμπληρώστε τα πεδία παρακάτω· διαφορετικά αφήστε τα κενά.",
-        "small-village": "Οι μόνιμοι κάτοικοι οικισμών κάτω των 500 κατοίκων μπορούν να μειώσουν το τεκμαρτό εισόδημα.",
-        "tekmiria-note": "Η μείωση τεκμηρίων {{reduction}} εφαρμόζεται όταν ενεργοποιηθούν οι σχετικές επιλογές (μικρός οικισμός ή νέα μητέρα).",
         "trade-fee-note": "Το τέλος επιτηδεύματος δεν επιβάλλεται για το έτος· απενεργοποιήστε το μόνο για συγκρίσεις με παλαιότερα δεδομένα.",
         "year-partial-note": "Αν δεν είχατε εισόδημα για ολόκληρο το έτος, καταχωρήστε ό,τι εισπράξατε· η ετήσια φορολογική πίστωση εφαρμόζεται κανονικά.",
         "year-select": "Επιλέξτε το φορολογικό έτος που θέλετε να υπολογίσετε."
       },
-      "links": {
-        "trade_fee_sunset": "Ενημέρωση ΑΑΔΕ για τέλος επιτηδεύματος"
-      },
+      "links": {},
       "print": {
         "deductions_heading": "Εκπτώσεις",
         "details_heading": "Αναλυτικά εισοδήματα",
@@ -369,9 +362,7 @@
           "partial_year_review": "Τα σενάρια με μερική απασχόληση ενδέχεται να απαιτούν χειροκίνητη προσαρμογή εισφορών και πιστώσεων. Επαληθεύστε τα ποσά για το {{year}} αν η σύμβασή σας έληξε νωρίτερα."
         },
         "family": {},
-        "freelance": {
-          "trade_fee_sunset": "Η ΑΑΔΕ σχεδιάζει την επαναφορά του τέλους επιτηδεύματος σταδιακά. Για το {{year}} επιβεβαιώστε αν ισχύει για τη δραστηριότητά σας πριν από την υποβολή."
-        },
+        "freelance": {},
         "learn_more": "Μάθετε περισσότερα",
         "links": {
           "partial_year_review": "Οδηγίες για μερική απασχόληση",
@@ -542,7 +533,6 @@
         "freelance-trade-fee-standard": "Standard amount",
         "freelance-years-active": "Years self-employed",
         "luxury-due": "Luxury living tax (€)",
-        "new-mother-toggle": "New mother allowance",
         "other-income": "Other taxable income (€)",
         "pension-income": "Pension gross income (€)",
         "pension-mode": "Pension input mode",
@@ -552,7 +542,6 @@
         "pension-payments": "Pension payments per year",
         "rental-expenses": "Rental deductible expenses (€)",
         "rental-income": "Rental gross income (€)",
-        "small-village-toggle": "Small village residency relief",
         "toggle-agricultural": "Agricultural income",
         "toggle-deductions": "Deductions",
         "toggle-employment": "Salary income",
@@ -622,22 +611,17 @@
         "freelance-trade-fee-sunset": "The business activity fee is slated to return from {{year}} (status: {{status}}). Double-check the latest rules with your accountant.",
         "freelance-trade-fee-waived": "No business activity fee is due for this tax year, so you can leave this switched off.",
         "income-toggle-intro": "Enable each category you need—income, deductions, or other adjustments—to reveal its fields.",
-        "new-mother": "Flag recent childbirth to surface enhanced family credits and tekmiria reductions.",
         "other-income": "Include taxable amounts such as unemployment benefits, alimony received, taxable scholarships, prizes, or other income not covered above.",
         "pension-gross-note": "Net-to-gross pension conversion isn't supported. Please enter gross amounts only.",
         "pension-income-gross": "Use the gross field when you know the annual pension before deductions.",
         "pension-monthly-income": "Enter the gross amount per pension payment. The calculator multiplies it by the payments per year you selected.",
         "pension-scope": "(for retirement pensions)",
         "pension-section-intro": "If you receive a pension, fill in the fields below; otherwise leave them blank.",
-        "small-village": "Residents of settlements under 500 inhabitants can reduce presumptive income imputation.",
-        "tekmiria-note": "Tekmiria reductions of {{reduction}} apply when qualifying relief toggles (small village or new mother) are enabled.",
         "trade-fee-note": "Business activity fees are waived for this year; keep the toggle off only for historical comparisons.",
         "year-partial-note": "If you didn't earn income for the full year, enter what you earned; the annual tax credit still applies in full.",
         "year-select": "Choose the tax year you want to estimate."
       },
-      "links": {
-        "trade_fee_sunset": "AADE trade fee update"
-      },
+      "links": {},
       "print": {
         "deductions_heading": "Deductions",
         "details_heading": "Income details",
@@ -747,9 +731,7 @@
           "partial_year_review": "Partial-year payroll scenarios may require manual EFKA and tax credit adjustments. Validate the figures for {{year}} if your contract ended early."
         },
         "family": {},
-        "freelance": {
-          "trade_fee_sunset": "AADE plans to bring back the business activity fee in stages. For {{year}}, confirm whether it applies to your activity before you submit."
-        },
+        "freelance": {},
         "learn_more": "Learn more",
         "links": {
           "partial_year_review": "Guidance on partial-year payroll",
