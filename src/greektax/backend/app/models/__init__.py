@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from types import MappingProxyType
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from .api import (
     AgriculturalIncomeInput,
@@ -127,10 +127,27 @@ class CalculationInput(BaseModel):
     deductions_insurance: float
     toggles: Mapping[str, bool] = Field(default_factory=dict)
     taxpayer_birth_year: int | None = None
-    taxpayer_age_band: str | None = None
-    youth_employment_override: str | None = None
     small_village: bool = False
     new_mother: bool = False
+
+    @model_validator(mode="after")
+    def _validate_taxpayer_birth_year(self) -> "CalculationInput":
+        birth_year = self.taxpayer_birth_year
+        if birth_year is None:
+            return self
+
+        reference_year = youth_age_reference_year(self.year)
+        if reference_year > self.year:
+            max_allowed = reference_year - 1
+        else:
+            max_allowed = self.year
+
+        if birth_year > max_allowed:
+            raise ValueError(
+                "taxpayer_birth_year must be %d or earlier" % max_allowed
+            )
+
+        return self
 
     @property
     def freelance_taxable_income(self) -> float:
@@ -269,20 +286,10 @@ class CalculationInput(BaseModel):
 
     @property
     def youth_rate_category(self) -> str | None:
-        override = self.youth_employment_override
-        if override:
-            return override
-
-        if not self.toggle_enabled("youth_eligibility"):
-            return None
-
-        if self.taxpayer_age_band in {"under_25", "age26_30"}:
-            return self.taxpayer_age_band
-
         age = self.taxpayer_age
         if age is None:
             return None
-        if age < 25:
+        if age <= 25:
             return "under_25"
         if age <= 30:
             return "age26_30"

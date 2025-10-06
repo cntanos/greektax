@@ -28,8 +28,6 @@
     "hints.toggles.new_mother.label": "New mother allowance",
     "hints.toggles.small_village.description": "Available to residents of settlements under 500 inhabitants; may reduce presumptive income imputation.",
     "hints.toggles.small_village.label": "Small village residency relief",
-    "hints.toggles.youth_eligibility.description": "Toggle if the worker qualifies for the reduced youth rates (under 25 or age 26–30 entering the workforce).",
-    "hints.toggles.youth_eligibility.label": "Youth employment relief",
     "forms.freelance.efka.category.engineer_class_1": "Engineers (TSMEDE) — Class 1",
     "forms.freelance.efka.category.engineer_class_2": "Engineers (TSMEDE) — Class 2",
     "forms.freelance.efka.category.engineer_class_3": "Engineers (TSMEDE) — Class 3",
@@ -83,23 +81,23 @@
     "calculator": {
       "heading": "Tax calculator",
       "instructions_intro": "Work through the sections you enable, using the hints to enter annual or per-payment figures, then select Calculate to generate your summary.",
-    "legends": {
-      "agricultural": "Agricultural income",
-      "deductions": "Deductions",
-      "employment": "Salary income",
-      "freelance": "Freelance income",
-      "income_sources": "Income, expenses, and credits",
-      "investment": "Investment income",
-      "pension": "Pension income",
-      "obligations": "Other taxes",
-      "other": "Other income",
-      "rental": "Rental income",
-      "year_household": "Year and household"
-    },
-    "subheadings": {
-      "demographics": "Demographic details",
-      "pension": "Pension income"
-    },
+      "legends": {
+        "agricultural": "Agricultural income",
+        "deductions": "Deductions",
+        "employment": "Salary income",
+        "freelance": "Freelance income",
+        "income_sources": "Income, expenses, and credits",
+        "investment": "Investment income",
+        "pension": "Pension income",
+        "obligations": "Other taxes",
+        "other": "Other income",
+        "rental": "Rental income",
+        "year_household": "Year and household"
+      },
+      "subheadings": {
+        "demographics": "Demographic details",
+        "pension": "Pension income"
+      },
       "results_heading": "Results"
     },
     "detailFields": {
@@ -143,11 +141,7 @@
       "agricultural-revenue": "Agricultural revenue (€)",
       "agricultural-professional-farmer": "Professional farmer status",
       "children-input": "Dependent children",
-      "birth-year": "Birth year (optional)",
-      "age-band": "Youth relief age group",
-      "age-band-default": "Select age group (optional)",
-      "age-band-under-25": "Under 25 (youth rate)",
-      "age-band-26-30": "Age 26–30 entering workforce",
+      "birth-year": "Birth year",
       "deductions-donations": "Charitable donations (€)",
       "deductions-education": "Education expenses (€)",
       "deductions-insurance": "Insurance premiums (€)",
@@ -164,7 +158,6 @@
       "enfia-due": "ENFIA amount (€)",
       "new-mother-toggle": "New mother allowance",
       "small-village-toggle": "Small village residency relief",
-      "youth-eligibility-toggle": "Youth employment relief",
       "freelance": {
         "efka": {
           "category": {
@@ -245,13 +238,10 @@
       "no_investment_categories": "No investment categories configured for this year."
     },
     "hints": {
-      "children-eligibility": "Count dependent children recognised for the AADE family tax credit (minors, students up to 24, or dependents with a disability).",
-      "birth-year": "Add the taxpayer birth year to auto-calculate youth relief eligibility.",
-      "age-band": "Override the automatic youth band when the worker qualifies through special rules (for example, first-time employment).",
-      "youth-eligibility": "Enable reduced tax rates when the employee qualifies for the AADE youth employment relief.",
+      "children-eligibility": "Count dependent children recognised for the AADE family tax credit (minors, students up to 24, or dependents with a disability). Up to 15 children are supported.",
+      "birth-year": "Enter the taxpayer birth year (1901–2025) to calculate youth relief eligibility automatically.",
       "small-village": "Residents of settlements under 500 inhabitants can reduce presumptive income imputation.",
       "new-mother": "Flag recent childbirth to surface enhanced family credits and tekmiria reductions.",
-      "youth-rates-note": "Youth relief rates apply when eligible: {{categories}}.",
       "tekmiria-note": "Tekmiria reductions of {{reduction}} apply when qualifying relief toggles (small village or new mother) are enabled.",
       "employment-employee-contributions": "Enter the annual EFKA contributions you pay directly outside payroll (for example, voluntary top-ups). Most employees will leave this at 0 because payroll already covers EFKA.",
       "agricultural-professional-farmer": "Check this if you are registered as a professional farmer for the tax year. It enables any reliefs available for that status.",

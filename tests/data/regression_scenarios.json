@@ -14,6 +14,9 @@
         "gross_revenue": 18000,
         "deductible_expenses": 4000,
         "mandatory_contributions": 3000
+      },
+      "demographics": {
+        "birth_year": 1985
       }
     },
     "expectations": {
@@ -55,6 +58,9 @@
       },
       "obligations": {
         "enfia": 350
+      },
+      "demographics": {
+        "birth_year": 1985
       }
     },
     "expectations": {
@@ -89,6 +95,9 @@
       "year": 2024,
       "obligations": {
         "enfia": 275
+      },
+      "demographics": {
+        "birth_year": 1985
       }
     },
     "expectations": {
@@ -112,6 +121,9 @@
       "year": 2024,
       "obligations": {
         "luxury": 925.75
+      },
+      "demographics": {
+        "birth_year": 1985
       }
     },
     "expectations": {
@@ -137,6 +149,9 @@
       "employment": {
         "monthly_income": 1850,
         "payments_per_year": 14
+      },
+      "demographics": {
+        "birth_year": 1985
       }
     },
     "expectations": {
@@ -167,6 +182,9 @@
       },
       "employment": {
         "gross_income": 42000
+      },
+      "demographics": {
+        "birth_year": 1985
       }
     },
     "expectations": {
@@ -197,6 +215,9 @@
       },
       "pension": {
         "gross_income": 8000
+      },
+      "demographics": {
+        "birth_year": 1985
       }
     },
     "expectations": {
@@ -227,6 +248,9 @@
       "employment": {
         "gross_income": 18000,
         "payments_per_year": 10
+      },
+      "demographics": {
+        "birth_year": 1985
       }
     },
     "expectations": {
@@ -255,21 +279,120 @@
         "deductible_expenses": 6000,
         "mandatory_contributions": 3200,
         "include_trade_fee": false
+      },
+      "demographics": {
+        "birth_year": 1985
       }
     },
     "expectations": {
       "summary": {
         "income_total": 19000.0,
-        "tax_total": 2176.0,
-        "net_income": 13624.0,
-        "average_monthly_tax": 181.33
+        "tax_total": 2060.0,
+        "net_income": 13740.0,
+        "average_monthly_tax": 171.67
       },
       "details": {
         "freelance": {
           "taxable_income": 15800.0,
           "deductible_contributions": 3200.0,
           "trade_fee": 0.0,
-          "total_tax": 2176.0
+          "total_tax": 2060.0
+        }
+      }
+    }
+  },
+  {
+    "name": "employment_youth_large_family_2025",
+    "payload": {
+      "year": 2025,
+      "dependents": {
+        "children": 5
+      },
+      "employment": {
+        "gross_income": 70000
+      },
+      "demographics": {
+        "taxpayer_birth_year": 1999,
+        "birth_year": 1999
+      }
+    },
+    "expectations": {
+      "summary": {
+        "income_total": 70000.0,
+        "tax_total": 12462.04,
+        "net_income": 48178.96,
+        "average_monthly_tax": 1038.5
+      },
+      "details": {
+        "employment": {
+          "taxable_income": 60641.0,
+          "total_tax": 12462.04,
+          "tax_before_credits": 13082.04,
+          "credits": 620.0
+        }
+      }
+    }
+  },
+  {
+    "name": "employment_youth_under25_no_children_2025",
+    "payload": {
+      "year": 2025,
+      "dependents": {
+        "children": 0
+      },
+      "employment": {
+        "gross_income": 20000
+      },
+      "demographics": {
+        "birth_year": 2006
+      }
+    },
+    "expectations": {
+      "summary": {
+        "income_total": 20000.0,
+        "tax_total": 0.0,
+        "net_income": 17326.0,
+        "average_monthly_tax": 0.0
+      },
+      "details": {
+        "employment": {
+          "taxable_income": 17326.0,
+          "tax_before_credits": 0.0,
+          "total_tax": 0.0,
+          "employee_contributions": 2674.0,
+          "credits": 0.0
+        }
+      }
+    }
+  },
+  {
+    "name": "employment_standard_single_2025",
+    "payload": {
+      "year": 2025,
+      "dependents": {
+        "children": 0
+      },
+      "employment": {
+        "gross_income": 20000
+      },
+      "demographics": {
+        "birth_year": 1990
+      }
+    },
+    "expectations": {
+      "summary": {
+        "income_total": 20000.0,
+        "tax_total": 1748.2,
+        "net_income": 15577.8,
+        "average_monthly_tax": 145.68
+      },
+      "details": {
+        "employment": {
+          "taxable_income": 17326.0,
+          "tax_before_credits": 2365.2,
+          "total_tax": 1748.2,
+          "employee_contributions": 2674.0,
+          "credits": 617.0
         }
       }
     }
@@ -281,6 +404,9 @@
       "pension": {
         "gross_income": 12000,
         "payments_per_year": 12
+      },
+      "demographics": {
+        "birth_year": 1985
       }
     },
     "expectations": {
@@ -301,6 +427,38 @@
     }
   },
   {
+    "name": "employment_youth_single_parent_2026",
+    "payload": {
+      "year": 2026,
+      "dependents": {
+        "children": 1
+      },
+      "employment": {
+        "gross_income": 18000
+      },
+      "demographics": {
+        "birth_year": 2004
+      }
+    },
+    "expectations": {
+      "summary": {
+        "income_total": 18000.0,
+        "tax_total": 0.0,
+        "net_income": 15593.4,
+        "average_monthly_tax": 0.0
+      },
+      "details": {
+        "employment": {
+          "taxable_income": 15593.4,
+          "tax_before_credits": 0.0,
+          "total_tax": 0.0,
+          "employee_contributions": 2406.6,
+          "credits": 0.0
+        }
+      }
+    }
+  },
+  {
     "name": "youth_rental_combo_2026",
     "payload": {
       "year": 2026,
@@ -316,10 +474,8 @@
         "deductible_expenses": 2000
       },
       "demographics": {
-        "taxpayer_birth_year": 2002
-      },
-      "toggles": {
-        "youth_eligibility": true
+        "taxpayer_birth_year": 2002,
+        "birth_year": 2002
       }
     },
     "expectations": {
@@ -352,6 +508,9 @@
         "efka_category": "general_class_2",
         "efka_months": 12,
         "mandatory_contributions": 600
+      },
+      "demographics": {
+        "birth_year": 1985
       }
     },
     "expectations": {

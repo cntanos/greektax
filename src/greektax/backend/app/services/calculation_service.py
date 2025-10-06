@@ -109,25 +109,7 @@ def _normalise_payload(
 
     toggles = MappingProxyType(merged_toggles)
 
-    def _derive_youth_band(age: int | None) -> str | None:
-        if age is None:
-            return None
-        if age <= 25:
-            return "under_25"
-        if age <= 30:
-            return "age26_30"
-        return None
-
     birth_year = demographics.birth_year
-    taxpayer_age: int | None = None
-    if birth_year is not None:
-        reference_year = youth_age_reference_year(request.year)
-        computed_age = reference_year - birth_year
-        if computed_age >= 0:
-            taxpayer_age = computed_age
-
-    taxpayer_age_band = demographics.age_band or _derive_youth_band(taxpayer_age)
-    youth_override = demographics.youth_employment_override
 
     demo_fields_set = getattr(demographics, "model_fields_set", set())
     if "small_village" in demo_fields_set:
@@ -288,8 +270,6 @@ def _normalise_payload(
         locale=locale,
         children=children,
         taxpayer_birth_year=birth_year,
-        taxpayer_age_band=taxpayer_age_band,
-        youth_employment_override=youth_override,
         small_village=small_village,
         new_mother=new_mother,
         employment_income=employment_income,

@@ -41,7 +41,6 @@ def test_list_years_endpoint(client: FlaskClient) -> None:
     assert 12 in employment_meta["payroll"]["allowed_payments_per_year"]
     assert employment_meta["contributions"]["employee_rate"] >= 0
     toggles = current_year["meta"].get("toggles", {})
-    assert toggles.get("youth_eligibility") is True
     assert toggles.get("small_village") is True
     assert toggles.get("new_mother") is True
 
@@ -81,7 +80,6 @@ def test_list_years_endpoint(client: FlaskClient) -> None:
     warning_ids = {entry["id"] for entry in warnings}
     assert "employment.partial_year_review" in warning_ids
     assert {
-        "employment.youth_relief_toggle",
         "residence.small_village_toggle",
         "family.new_mother_toggle",
     }.isdisjoint(warning_ids)

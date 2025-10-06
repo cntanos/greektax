@@ -48,7 +48,11 @@ def test_calculation_endpoint_uses_accept_language_header(client: FlaskClient) -
 
     response = client.post(
         "/api/v1/calculations",
-        json={"year": 2024, "employment": {"gross_income": 10_000}},
+        json={
+            "year": 2024,
+            "employment": {"gross_income": 10_000},
+            "demographics": {"birth_year": 1985},
+        },
         headers={"Accept-Language": "el"},
     )
 
@@ -78,7 +82,11 @@ def test_calculation_endpoint_handles_service_errors(client: FlaskClient) -> Non
 
     response = client.post(
         "/api/v1/calculations",
-        json={"year": 2024, "employment": {"gross_income": -1}},
+        json={
+            "year": 2024,
+            "employment": {"gross_income": -1},
+            "demographics": {"birth_year": 1985},
+        },
     )
 
     assert response.status_code == HTTPStatus.BAD_REQUEST
@@ -92,7 +100,11 @@ def test_calculation_endpoint_rejects_net_income_inputs(client: FlaskClient) -> 
 
     response = client.post(
         "/api/v1/calculations",
-        json={"year": 2024, "employment": {"net_income": 1_000}},
+        json={
+            "year": 2024,
+            "employment": {"net_income": 1_000},
+            "demographics": {"birth_year": 1985},
+        },
     )
 
     assert response.status_code == HTTPStatus.BAD_REQUEST
@@ -111,6 +123,7 @@ def test_calculation_endpoint_accepts_mixed_employment_inputs(client: FlaskClien
             "monthly_income": 1_500,
             "payments_per_year": 14,
         },
+        "demographics": {"birth_year": 1985},
     }
 
     response = client.post("/api/v1/calculations", json=payload)
@@ -143,6 +156,7 @@ def test_calculation_endpoint_handles_employment_and_pension_toggles(
         "year": 2024,
         "employment": {"gross_income": 18_000},
         "pension": {"gross_income": 9_000},
+        "demographics": {"birth_year": 1985},
     }
 
     response = client.post("/api/v1/calculations", json=payload)

@@ -4,7 +4,6 @@ meta:
   status: draft
   notes: "2026 configuration with confirmed wage and pension brackets plus provisional credits"
   toggles:
-    youth_eligibility: true
     small_village: true
     new_mother: true
     tekmiria_reduction: true
@@ -736,16 +735,6 @@ deductions:
         type: integer
         min: 0
         max: 10
-    - id: toggles.youth_eligibility
-      applies_to:
-        - employment
-        - pension
-      label_key: hints.toggles.youth_eligibility.label
-      description_key: hints.toggles.youth_eligibility.description
-      input_id: youth-eligibility-toggle
-      validation:
-        type: boolean
-      allowances: []
     - id: toggles.small_village
       applies_to:
         - freelance

@@ -23,9 +23,18 @@
 - Youth age derivation and the 2025–2026 family tax credit ladder now mirror
   the ministry calculator, with youth relief determined from the 2026
   reference year and the expanded dependant amounts.
+- Demographic inputs now require a birth year and automatically derive youth
+  relief, removing manual age-band overrides and redundant confirmation
+  toggles.
+- The 2025 employment brackets now embed the ministry's dependant- and youth-
+  specific rates so scenarios like five-child youth households receive the
+  correct progressive relief.
 - The 2026 wage and pension brackets mirror the confirmed youth and large-family
   relief schedule, while dependant credits, rental updates, and freelance EFKA
   bands remain provisional pending official circulars.
+- Input validation now mirrors the ministry ranges by capping dependant children
+  at 15, constraining birth years to the official window, and covering multiple
+  youth scenarios with regression tests.
 
 ## Overview
 
