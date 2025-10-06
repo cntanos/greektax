@@ -3958,10 +3958,16 @@ function applyEmploymentModeLabels() {
   );
 
   if (annualOption) {
-    annualOption.textContent = "Ανά έτος";
+    const annualLabel = t("fields.employment-mode-annual");
+    if (annualLabel && annualLabel !== "fields.employment-mode-annual") {
+      annualOption.textContent = annualLabel;
+    }
   }
   if (monthlyOption) {
-    monthlyOption.textContent = "Ανά καταβολή (μήνα)";
+    const monthlyLabel = t("fields.employment-mode-monthly");
+    if (monthlyLabel && monthlyLabel !== "fields.employment-mode-monthly") {
+      monthlyOption.textContent = monthlyLabel;
+    }
   }
 }
 
