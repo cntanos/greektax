@@ -71,6 +71,37 @@ let calculatorStatePersistHandle = null;
 let isApplyingYearMetadata = false;
 let partialYearWarningActive = false;
 
+const EMPLOYMENT_CONTRIBUTION_PREVIEW_MESSAGES = {
+  automatic: {
+    key: "hints.employment-employee-contributions-preview",
+    fallback: {
+      en: "Payroll currently includes {{amount}} in annual EFKA contributions. Enter your yearly total below if it differs.",
+      el: "Η μισθοδοσία περιλαμβάνει {{amount}} ετήσιες εισφορές ΕΦΚΑ. Αν το ετήσιο ποσό διαφέρει, καταχωρήστε το παρακάτω.",
+    },
+  },
+  empty: {
+    key: "hints.employment-employee-contributions-preview-empty",
+    fallback: {
+      en: "Run a calculation to preview the EFKA contributions covered by payroll, or enter your annual total below.",
+      el: "Εκτελέστε έναν υπολογισμό για να εμφανιστούν οι εισφορές ΕΦΚΑ της μισθοδοσίας ή εισάγετε το ετήσιο ποσό σας παρακάτω.",
+    },
+  },
+  excluded: {
+    key: "hints.employment-employee-contributions-preview-excluded",
+    fallback: {
+      en: "EFKA contributions are excluded from the net calculation; turn the option back on to include them.",
+      el: "Οι εισφορές ΕΦΚΑ εξαιρούνται από το καθαρό αποτέλεσμα· ενεργοποιήστε ξανά την επιλογή για να συμπεριληφθούν.",
+    },
+  },
+  manual: {
+    key: "hints.employment-employee-contributions-preview-manual",
+    fallback: {
+      en: "Using your entered EFKA total: {{amount}} per year.",
+      el: "Χρησιμοποιείται το ποσό που καταχωρήσατε: {{amount}} ετησίως.",
+    },
+  },
+};
+
 function buildCalculatorFormNameUsage() {
   const usage = new Map();
   if (!calculatorForm) {
@@ -327,6 +358,9 @@ const employmentMonthlyIncomeInput = document.getElementById(
 );
 const employmentEmployeeContributionsInput = document.getElementById(
   "employment-employee-contributions",
+);
+const employmentEmployeeContributionsPreview = document.getElementById(
+  "employment-employee-contributions-preview",
 );
 const employmentIncludeSocialToggle = document.getElementById(
   "employment-include-social",
@@ -1292,6 +1326,7 @@ async function applyLocale(locale) {
   document.documentElement.lang = resolved;
   updateLocaleButtonState(resolved);
   localiseStaticText();
+  applyEmploymentModeLabels();
   renderYearWarnings(currentYearMetadata, {
     showPartialYearWarning: partialYearWarningActive,
   });
@@ -1301,6 +1336,8 @@ async function applyLocale(locale) {
   populateFreelanceMetadata(currentFreelanceMetadata);
   if (lastCalculation) {
     renderCalculation(lastCalculation);
+  } else {
+    updateEmploymentContributionPreview([]);
   }
 }
 
@@ -3794,6 +3831,142 @@ function toFiniteNumber(value) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+function resolveEmploymentContributionPreviewMessage(type, replacements = {}) {
+  const config = EMPLOYMENT_CONTRIBUTION_PREVIEW_MESSAGES[type];
+  if (!config) {
+    return "";
+  }
+
+  const message = t(config.key, replacements);
+  if (typeof message === "string" && message && message !== config.key) {
+    return message;
+  }
+
+  const locale = getActiveLocale();
+  const fallbackTemplate =
+    (config.fallback && (config.fallback[locale] || config.fallback.en)) || "";
+  if (!fallbackTemplate) {
+    return "";
+  }
+
+  return formatTemplate(fallbackTemplate, replacements);
+}
+
+function getManualEmploymentContributionValue() {
+  if (!employmentEmployeeContributionsInput) {
+    return 0;
+  }
+
+  const raw = (employmentEmployeeContributionsInput.value ?? "").trim();
+  if (!raw) {
+    return 0;
+  }
+
+  const normalised = raw.replace(",", ".");
+  const value = Number.parseFloat(normalised);
+  if (!Number.isFinite(value) || value <= 0) {
+    return 0;
+  }
+
+  return value;
+}
+
+function applyEmploymentContributionPreview(message) {
+  if (!employmentEmployeeContributionsPreview) {
+    return;
+  }
+
+  if (typeof message === "string" && message.trim()) {
+    employmentEmployeeContributionsPreview.textContent = message;
+    employmentEmployeeContributionsPreview.hidden = false;
+  } else {
+    employmentEmployeeContributionsPreview.textContent = "";
+    employmentEmployeeContributionsPreview.hidden = true;
+  }
+}
+
+function applyEmploymentModeLabels() {
+  if (!employmentModeSelect) {
+    return;
+  }
+
+  const annualOption = employmentModeSelect.querySelector(
+    'option[value="annual"]',
+  );
+  const monthlyOption = employmentModeSelect.querySelector(
+    'option[value="monthly"]',
+  );
+
+  if (annualOption) {
+    annualOption.textContent = "Ανά έτος";
+  }
+  if (monthlyOption) {
+    monthlyOption.textContent = "Ανά καταβολή (μήνα)";
+  }
+}
+
+function updateEmploymentContributionPreview(details) {
+  if (!employmentEmployeeContributionsPreview) {
+    return;
+  }
+
+  const includeSocial = employmentIncludeSocialToggle
+    ? Boolean(employmentIncludeSocialToggle.checked)
+    : true;
+
+  if (!includeSocial) {
+    const excludedMessage = resolveEmploymentContributionPreviewMessage(
+      "excluded",
+    );
+    applyEmploymentContributionPreview(excludedMessage);
+    return;
+  }
+
+  const manualValue = getManualEmploymentContributionValue();
+  if (manualValue > 0) {
+    const manualMessage = resolveEmploymentContributionPreviewMessage(
+      "manual",
+      {
+        amount: formatCurrency(manualValue),
+      },
+    );
+    applyEmploymentContributionPreview(manualMessage);
+    return;
+  }
+
+  const detailsList = Array.isArray(details) ? details : [];
+  const employmentDetail = detailsList.find(
+    (detail) => detail && detail.category === "employment",
+  );
+
+  if (employmentDetail) {
+    const totalContributions = toFiniteNumber(
+      employmentDetail.employee_contributions,
+    );
+    const manualPortion = toFiniteNumber(
+      employmentDetail.employee_contributions_manual,
+    );
+    const automaticContributions = Math.max(
+      totalContributions - manualPortion,
+      0,
+    );
+
+    if (automaticContributions > 0) {
+      const message = resolveEmploymentContributionPreviewMessage(
+        "automatic",
+        {
+          amount: formatCurrency(automaticContributions),
+        },
+      );
+      applyEmploymentContributionPreview(message);
+      return;
+    }
+  }
+
+  const fallbackMessage = resolveEmploymentContributionPreviewMessage("empty");
+  applyEmploymentContributionPreview(fallbackMessage);
+}
+
 function sumDetailFields(detail, fields) {
   if (!detail) {
     return 0;
@@ -4405,6 +4578,7 @@ function renderCalculation(result) {
   }
 
   lastCalculation = result;
+  updateEmploymentContributionPreview(result.details || []);
   downloadButton?.removeAttribute("disabled");
   downloadCsvButton?.removeAttribute("disabled");
   printButton?.removeAttribute("disabled");
@@ -4448,6 +4622,7 @@ function resetResults() {
   downloadCsvButton?.setAttribute("disabled", "true");
   printButton?.setAttribute("disabled", "true");
   lastCalculation = null;
+  updateEmploymentContributionPreview([]);
 }
 
 function clearCalculatorForm() {
@@ -4514,6 +4689,7 @@ function clearCalculatorForm() {
   } catch (error) {
     console.warn("Unable to clear stored calculator state", error);
   }
+  updateEmploymentContributionPreview([]);
   assignLoadedCalculatorState(null);
   pendingCalculatorState = null;
   if (calculatorStatePersistHandle) {
@@ -5459,6 +5635,12 @@ function initialiseCalculator() {
     const value = typeof target?.value === "string" ? target.value : "annual";
     updateEmploymentMode(value);
   });
+  employmentEmployeeContributionsInput?.addEventListener("input", () => {
+    updateEmploymentContributionPreview(lastCalculation?.details || []);
+  });
+  employmentIncludeSocialToggle?.addEventListener("change", () => {
+    updateEmploymentContributionPreview(lastCalculation?.details || []);
+  });
 
   downloadButton?.addEventListener("click", downloadJsonSummary);
   downloadCsvButton?.addEventListener("click", downloadCsvSummary);
@@ -5468,13 +5650,21 @@ function initialiseCalculator() {
   attachValidationHandlers();
   updatePartialYearWarningState();
 
-  loadYearOptions().then(async () => {
-    applyPendingCalculatorState();
-    await refreshInvestmentCategories();
-    applyPendingCalculatorState();
-    await refreshDeductionHints();
-    applyPendingCalculatorState();
-  });
+  updateEmploymentContributionPreview(lastCalculation?.details || []);
+  applyEmploymentModeLabels();
+
+  loadYearOptions()
+    .then(async () => {
+      applyPendingCalculatorState();
+      await refreshInvestmentCategories();
+      applyPendingCalculatorState();
+      await refreshDeductionHints();
+      applyPendingCalculatorState();
+    })
+    .finally(() => {
+      updateEmploymentContributionPreview(lastCalculation?.details || []);
+      applyEmploymentModeLabels();
+    });
 }
 
 async function bootstrap() {
