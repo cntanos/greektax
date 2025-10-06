@@ -558,6 +558,14 @@ def _add_employment_contribution_fields(
                 component.employer_contributions / component.payments_per_year
             )
 
+    if component.category == "employment":
+        detail["employer_cost"] = round_currency(component.employer_cost())
+        employer_cost_per_payment = component.employer_cost_per_payment()
+        if employer_cost_per_payment is not None:
+            detail["employer_cost_per_payment"] = round_currency(
+                employer_cost_per_payment
+            )
+
 
 def _add_freelance_fields(
     detail: dict[str, Any], component: GeneralIncomeComponent, translator: Translator

@@ -120,12 +120,19 @@ def _employment_expectations(
 
     effective_rate = (tax_after_credit / gross_income) if gross_income else 0.0
 
+    employer_cost = gross_income + employer_contrib
+    employer_cost_per_payment = None
+    if payments_per_year:
+        employer_cost_per_payment = employer_cost / payments_per_year
+
     return {
         "tax_before_credit": tax_before_credit,
         "credit": credit_applied,
         "tax": tax_after_credit,
         "employee_contrib": employee_contrib,
         "employer_contrib": employer_contrib,
+        "employer_cost": employer_cost,
+        "employer_cost_per_payment": employer_cost_per_payment,
         "net_income": net_income,
         "net_monthly": net_income / 12 if gross_income else 0.0,
         "avg_monthly_tax": tax_after_credit / 12 if gross_income else 0.0,
@@ -395,6 +402,9 @@ def test_calculate_tax_employment_only() -> None:
     assert employment_detail["employer_contributions"] == pytest.approx(
         expected["employer_contrib"], rel=1e-4
     )
+    assert employment_detail["employer_cost"] == pytest.approx(
+        expected["employer_cost"], rel=1e-4
+    )
 
 
 def test_employment_tax_credit_not_reduced_below_threshold() -> None:
@@ -562,6 +572,12 @@ def test_calculate_tax_accepts_monthly_employment_income(
     assert employment_detail["employer_contributions_per_payment"] == pytest.approx(
         expected_employer_per_payment, rel=1e-4
     )
+    assert employment_detail["employer_cost"] == pytest.approx(
+        expected["employer_cost"], rel=1e-4
+    )
+    assert employment_detail["employer_cost_per_payment"] == pytest.approx(
+        expected["employer_cost_per_payment"], rel=1e-4
+    )
 
 
 @pytest.mark.parametrize(
@@ -616,6 +632,14 @@ def test_employment_contributions_respect_salary_cap(
     )
     assert employment_detail["employer_contributions_per_payment"] == pytest.approx(
         expected_employer_per_payment,
+        rel=1e-4,
+    )
+    assert employment_detail["employer_cost"] == pytest.approx(
+        expected["employer_cost"],
+        rel=1e-4,
+    )
+    assert employment_detail["employer_cost_per_payment"] == pytest.approx(
+        expected["employer_cost_per_payment"],
         rel=1e-4,
     )
     assert employment_detail["gross_income_per_payment"] == pytest.approx(
@@ -674,6 +698,12 @@ def test_manual_employee_contributions_respect_salary_cap() -> None:
     assert employment_detail["net_income_per_payment"] == pytest.approx(
         expected_net_income / payments, rel=1e-4
     )
+    assert employment_detail["employer_cost"] == pytest.approx(
+        base_expected["employer_cost"], rel=1e-4
+    )
+    assert employment_detail["employer_cost_per_payment"] == pytest.approx(
+        base_expected["employer_cost_per_payment"], rel=1e-4
+    )
 
 
 @pytest.mark.parametrize("payments_per_year", [14, 12])
@@ -720,6 +750,23 @@ def test_employment_social_contributions_can_be_excluded(
     assert excluded_detail.get("employee_contributions", 0.0) == pytest.approx(0.0)
     assert excluded_detail.get("employee_contributions_manual", 0.0) == pytest.approx(0.0)
     assert excluded_detail.get("employer_contributions", 0.0) == pytest.approx(0.0)
+    assert inclusive_detail["employer_cost"] == pytest.approx(
+        inclusive_detail["gross_income"] + inclusive_detail["employer_contributions"],
+        rel=1e-4,
+    )
+    assert excluded_detail["employer_cost"] == pytest.approx(
+        excluded_detail["gross_income"],
+        rel=1e-4,
+    )
+    assert inclusive_detail["employer_cost_per_payment"] == pytest.approx(
+        (inclusive_detail["gross_income"] + inclusive_detail["employer_contributions"])
+        / payments_per_year,
+        rel=1e-4,
+    )
+    assert excluded_detail["employer_cost_per_payment"] == pytest.approx(
+        excluded_detail["gross_income"] / payments_per_year,
+        rel=1e-4,
+    )
 
     tax_delta = excluded_detail["total_tax"] - inclusive_detail["total_tax"]
     assert excluded_detail["net_income"] == pytest.approx(
@@ -857,6 +904,10 @@ def test_calculate_tax_with_freelance_income() -> None:
     )
     assert employment_detail["employer_contributions"] == pytest.approx(
         expected["employment"]["employer_contrib"],
+        rel=1e-4,
+    )
+    assert employment_detail["employer_cost"] == pytest.approx(
+        expected["employment"]["gross"] + expected["employment"]["employer_contrib"],
         rel=1e-4,
     )
 

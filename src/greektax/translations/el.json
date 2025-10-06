@@ -116,6 +116,8 @@
       "employee_contributions_per_payment": "Εισφορές εργαζομένου ανά καταβολή",
       "employer_contributions": "Εισφορές εργοδότη",
       "employer_contributions_per_payment": "Εισφορές εργοδότη ανά καταβολή",
+      "employer_cost": "Κόστος εργοδότη",
+      "employer_cost_per_payment": "Κόστος εργοδότη ανά καταβολή",
       "gross_income": "Ακαθάριστο εισόδημα",
       "gross_income_per_payment": "Ακαθάριστο ανά καταβολή",
       "lump_sum_contributions": "Εισφορές εφάπαξ",
