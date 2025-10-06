@@ -28,6 +28,7 @@
         },
         "results_heading": "Αποτελέσματα",
         "subheadings": {
+          "demographics": "Δημογραφικά στοιχεία",
           "pension": "Εισόδημα συντάξεων"
         }
       },
@@ -402,6 +403,7 @@
         },
         "results_heading": "Results",
         "subheadings": {
+          "demographics": "Demographic details",
           "pension": "Pension income"
         }
       },
