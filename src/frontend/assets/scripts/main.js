@@ -3539,6 +3539,7 @@ function renderSankey(result) {
 }
 
 const DISTRIBUTION_EXPENSE_FIELDS = ["deductible_expenses"];
+const DISTRIBUTION_TAX_CATEGORIES = new Set(["luxury", "enfia"]);
 
 const DISTRIBUTION_CATEGORIES = [
   { key: "net_income", colorVar: "--flow-net" },
@@ -3579,20 +3580,11 @@ function computeDistributionTotals(details) {
       return;
     }
 
-    const rawNet = toFiniteNumber(detail.net_income);
-    let netIncomeValue = rawNet > 0 ? rawNet : 0;
-
     const taxCandidate =
       detail.total_tax !== undefined && detail.total_tax !== null
         ? detail.total_tax
         : detail.tax;
     const taxValue = Math.max(toFiniteNumber(taxCandidate), 0);
-
-    let expenseValue = sumDetailFields(detail, DISTRIBUTION_EXPENSE_FIELDS);
-    if (rawNet < 0) {
-      expenseValue += Math.abs(rawNet);
-      netIncomeValue = 0;
-    }
 
     const contributionCandidates = [
       toFiniteNumber(detail.employee_contributions),
@@ -3602,6 +3594,23 @@ function computeDistributionTotals(details) {
     let insuranceValue = contributionCandidates.reduce((total, value) => {
       return value > 0 ? total + value : total;
     }, 0);
+
+    const rawNet = toFiniteNumber(detail.net_income);
+    let netIncomeValue = rawNet > 0 ? rawNet : 0;
+
+    let expenseValue = sumDetailFields(detail, DISTRIBUTION_EXPENSE_FIELDS);
+
+    const isTaxDetail =
+      taxValue > 0 ||
+      (typeof detail.category === "string" &&
+        DISTRIBUTION_TAX_CATEGORIES.has(detail.category));
+
+    if (rawNet < 0) {
+      if (!isTaxDetail && insuranceValue <= 0) {
+        expenseValue += Math.abs(rawNet);
+      }
+      netIncomeValue = 0;
+    }
 
     if (insuranceValue <= 0) {
       const gross = Math.max(toFiniteNumber(detail.gross_income), 0);
