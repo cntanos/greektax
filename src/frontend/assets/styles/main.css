@@ -1401,7 +1401,8 @@ main {
   font-size: 0.78rem;
   line-height: 1.3;
   pointer-events: none;
-  white-space: nowrap;
+  white-space: normal;
+  max-width: 22rem;
   z-index: 5;
   font-weight: 600;
   opacity: 0;
@@ -1456,6 +1457,35 @@ main {
   color: var(--text-subtle);
 }
 
+.distribution-chart__tooltip-breakdown {
+  margin: 0.45rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.distribution-chart__tooltip-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 0.2rem 0.75rem;
+  font-size: 0.72rem;
+  color: var(--text-body);
+}
+
+.distribution-chart__tooltip-item-label {
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.distribution-chart__tooltip-item-value {
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  color: var(--text-subtle);
+  white-space: nowrap;
+}
+
 .distribution-chart__center-label {
   font-size: 0.78rem;
   text-transform: uppercase;
@@ -1488,9 +1518,19 @@ main {
   box-shadow: inset 0 0 0 1px rgba(15, 109, 255, 0.08);
 }
 
+.distribution-legend__item--active {
+  box-shadow: inset 0 0 0 1px rgba(15, 109, 255, 0.45);
+  background: rgba(255, 255, 255, 0.32);
+}
+
 :root[data-theme="dark"] .distribution-legend__item {
   background: rgba(3, 19, 23, 0.65);
   box-shadow: inset 0 0 0 1px rgba(50, 224, 212, 0.22);
+}
+
+:root[data-theme="dark"] .distribution-legend__item--active {
+  box-shadow: inset 0 0 0 1px rgba(50, 224, 212, 0.4);
+  background: rgba(3, 19, 23, 0.78);
 }
 
 .distribution-legend__swatch {
