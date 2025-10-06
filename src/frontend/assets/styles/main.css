@@ -1559,10 +1559,6 @@ main {
   background: var(--flow-net);
 }
 
-.no-print {
-  /* Utility class to hide sections in print layout */
-}
-
 @media (min-width: 768px) {
   .site-header {
     text-align: left;
@@ -2047,8 +2043,7 @@ main {
   .results-visualisation,
   #sankey-wrapper,
   #distribution-wrapper,
-  .distribution-card,
-  .no-print {
+  .distribution-card {
     display: none !important;
   }
 
