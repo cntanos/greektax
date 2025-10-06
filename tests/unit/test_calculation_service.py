@@ -1590,6 +1590,81 @@ def test_2026_youth_relief_second_band_matches_announced_rates() -> None:
     assert youth_detail["tax_before_credits"] < baseline_detail["tax_before_credits"]
 
 
+def test_2026_youth_relief_applies_to_freelance_income() -> None:
+    """Youth relief extends to freelance profit for the 2026 scale."""
+
+    base_payload = {
+        "year": 2026,
+        "dependents": {"children": 0},
+        "freelance": {"profit": 20_000},
+        "demographics": {"birth_year": 2003},
+    }
+
+    youth_request = build_request(base_payload)
+    youth_result = calculate_tax(youth_request)
+
+    freelance_detail = next(
+        detail for detail in youth_result["details"] if detail["category"] == "freelance"
+    )
+
+    assert freelance_detail["taxable_income"] == pytest.approx(20_000)
+    assert freelance_detail["tax_before_credits"] == pytest.approx(0.0, rel=1e-4)
+
+    baseline_request = build_request(
+        {**base_payload, "demographics": {"birth_year": 1985}}
+    )
+    baseline_result = calculate_tax(baseline_request)
+    baseline_detail = next(
+        detail for detail in baseline_result["details"] if detail["category"] == "freelance"
+    )
+
+    expected_baseline_tax = 10_000 * 0.09 + 10_000 * 0.20
+
+    assert baseline_detail["tax_before_credits"] == pytest.approx(
+        expected_baseline_tax, rel=1e-4
+    )
+    assert baseline_detail["tax_before_credits"] > freelance_detail["tax_before_credits"]
+
+
+def test_2026_youth_relief_applies_to_agricultural_income() -> None:
+    """Agricultural income also benefits from the youth relief brackets in 2026."""
+
+    base_payload = {
+        "year": 2026,
+        "dependents": {"children": 0},
+        "agricultural": {"gross_revenue": 20_000},
+        "demographics": {"birth_year": 1999},
+    }
+
+    youth_request = build_request(base_payload)
+    youth_result = calculate_tax(youth_request)
+    agricultural_detail = next(
+        detail
+        for detail in youth_result["details"]
+        if detail["category"] == "agricultural"
+    )
+
+    assert agricultural_detail["taxable_income"] == pytest.approx(20_000)
+    assert agricultural_detail["tax_before_credits"] == pytest.approx(1_800, rel=1e-4)
+
+    baseline_request = build_request(
+        {**base_payload, "demographics": {"birth_year": 1985}}
+    )
+    baseline_result = calculate_tax(baseline_request)
+    baseline_detail = next(
+        detail
+        for detail in baseline_result["details"]
+        if detail["category"] == "agricultural"
+    )
+
+    expected_baseline_tax = 10_000 * 0.09 + 10_000 * 0.20
+
+    assert baseline_detail["tax_before_credits"] == pytest.approx(
+        expected_baseline_tax, rel=1e-4
+    )
+    assert baseline_detail["tax_before_credits"] > agricultural_detail["tax_before_credits"]
+
+
 def test_2026_under_25_dependant_rates_match_announced_scale() -> None:
     """Dependants adjust youth relief brackets according to the 2026 scale."""
 

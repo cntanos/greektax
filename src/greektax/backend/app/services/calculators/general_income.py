@@ -211,12 +211,15 @@ def _apply_progressive_tax(
     else:
         dependants = payload.children if payload.children > 0 else 0
         youth_category = payload.youth_rate_category
+        youth_relief_categories = {"employment"}
+        if config.year >= 2026:
+            youth_relief_categories.update({"freelance", "agricultural"})
 
         def _resolve_rate(index: int, bracket) -> float:
             component = components[index]
             if isinstance(bracket, MultiRateBracket):
                 if (
-                    component.category == "employment"
+                    component.category in youth_relief_categories
                     and youth_category
                     and youth_category in bracket.youth_rates
                 ):
