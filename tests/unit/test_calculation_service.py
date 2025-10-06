@@ -137,7 +137,12 @@ def _employment_expectations(
             reduction_base = monthly_income * payments
     if reduction_base > 12_000:
         credit_reduction = ((reduction_base - 12_000) / 1_000) * 20.0
-    credit_after_reduction = max(credit_amount - credit_reduction, 0.0)
+    exempt_from_reduction = employment.tax_credit.income_reduction_exempt_from_dependants
+    credit_after_reduction = credit_amount
+    if credit_reduction > 0 and (
+        exempt_from_reduction is None or children < exempt_from_reduction
+    ):
+        credit_after_reduction = max(credit_amount - credit_reduction, 0.0)
     credit_applied = min(credit_after_reduction, tax_before_credit)
     tax_after_credit = tax_before_credit - credit_applied
 
@@ -166,6 +171,87 @@ def _employment_expectations(
         "effective_rate": round(effective_rate, 4),
         "taxable": taxable_income,
     }
+
+
+MINISTRY_EMPLOYMENT_CREDIT_EXPECTATIONS_2026 = {
+    0: {
+        12_000: {"tax_before": 1_300.0, "credit": 777.0},
+        20_000: {"tax_before": 2_900.0, "credit": 617.0},
+        30_000: {"tax_before": 5_500.0, "credit": 417.0},
+        50_000: {"tax_before": 12_800.0, "credit": 17.0},
+        70_000: {"tax_before": 21_100.0, "credit": 0.0},
+    },
+    1: {
+        12_000: {"tax_before": 1_260.0, "credit": 900.0},
+        20_000: {"tax_before": 2_700.0, "credit": 740.0},
+        30_000: {"tax_before": 5_100.0, "credit": 540.0},
+        50_000: {"tax_before": 12_400.0, "credit": 140.0},
+        70_000: {"tax_before": 20_700.0, "credit": 0.0},
+    },
+    2: {
+        12_000: {"tax_before": 1_220.0, "credit": 1_120.0},
+        20_000: {"tax_before": 2_500.0, "credit": 960.0},
+        30_000: {"tax_before": 4_700.0, "credit": 760.0},
+        50_000: {"tax_before": 12_000.0, "credit": 360.0},
+        70_000: {"tax_before": 20_300.0, "credit": 0.0},
+    },
+    3: {
+        12_000: {"tax_before": 1_080.0, "credit": 1_080.0},
+        20_000: {"tax_before": 1_800.0, "credit": 1_180.0},
+        30_000: {"tax_before": 3_800.0, "credit": 980.0},
+        50_000: {"tax_before": 11_100.0, "credit": 580.0},
+        70_000: {"tax_before": 19_400.0, "credit": 180.0},
+    },
+    4: {
+        12_000: {"tax_before": 0.0, "credit": 0.0},
+        20_000: {"tax_before": 0.0, "credit": 0.0},
+        30_000: {"tax_before": 1_800.0, "credit": 1_220.0},
+        50_000: {"tax_before": 9_100.0, "credit": 820.0},
+        70_000: {"tax_before": 17_400.0, "credit": 420.0},
+    },
+    5: {
+        12_000: {"tax_before": 0.0, "credit": 0.0},
+        20_000: {"tax_before": 0.0, "credit": 0.0},
+        30_000: {"tax_before": 1_600.0, "credit": 1_600.0},
+        50_000: {"tax_before": 8_900.0, "credit": 1_780.0},
+        70_000: {"tax_before": 17_200.0, "credit": 1_780.0},
+    },
+    6: {
+        12_000: {"tax_before": 0.0, "credit": 0.0},
+        20_000: {"tax_before": 0.0, "credit": 0.0},
+        30_000: {"tax_before": 1_400.0, "credit": 1_400.0},
+        50_000: {"tax_before": 8_700.0, "credit": 2_000.0},
+        70_000: {"tax_before": 17_000.0, "credit": 2_000.0},
+    },
+    7: {
+        12_000: {"tax_before": 0.0, "credit": 0.0},
+        20_000: {"tax_before": 0.0, "credit": 0.0},
+        30_000: {"tax_before": 1_400.0, "credit": 1_400.0},
+        50_000: {"tax_before": 8_700.0, "credit": 2_200.0},
+        70_000: {"tax_before": 17_000.0, "credit": 2_200.0},
+    },
+    8: {
+        12_000: {"tax_before": 0.0, "credit": 0.0},
+        20_000: {"tax_before": 0.0, "credit": 0.0},
+        30_000: {"tax_before": 1_400.0, "credit": 1_400.0},
+        50_000: {"tax_before": 8_700.0, "credit": 2_440.0},
+        70_000: {"tax_before": 17_000.0, "credit": 2_440.0},
+    },
+    9: {
+        12_000: {"tax_before": 0.0, "credit": 0.0},
+        20_000: {"tax_before": 0.0, "credit": 0.0},
+        30_000: {"tax_before": 1_400.0, "credit": 1_400.0},
+        50_000: {"tax_before": 8_700.0, "credit": 2_660.0},
+        70_000: {"tax_before": 17_000.0, "credit": 2_660.0},
+    },
+    10: {
+        12_000: {"tax_before": 0.0, "credit": 0.0},
+        20_000: {"tax_before": 0.0, "credit": 0.0},
+        30_000: {"tax_before": 1_400.0, "credit": 1_400.0},
+        50_000: {"tax_before": 8_700.0, "credit": 2_880.0},
+        70_000: {"tax_before": 17_000.0, "credit": 2_880.0},
+    },
+}
 
 
 def test_employment_contribution_rates_updated_for_2025() -> None:
@@ -264,6 +350,41 @@ def test_2026_large_family_credit_not_reduced() -> None:
     assert employment_detail["credits"] == pytest.approx(1_780.0)
     assert employment_detail["total_tax"] == pytest.approx(15_420.0)
     assert summary["net_income"] == pytest.approx(54_580.0)
+
+
+@pytest.mark.parametrize(
+    "dependants, expectations",
+    list(MINISTRY_EMPLOYMENT_CREDIT_EXPECTATIONS_2026.items()),
+)
+def test_2026_employment_credit_regression_against_ministry(
+    dependants: int, expectations: dict[int, dict[str, float]]
+) -> None:
+    """Employment credit and pre-credit tax mirror the ministry calculator across brackets."""
+
+    for income in sorted(expectations):
+        request = build_request(
+            {
+                "year": 2026,
+                "dependents": {"children": dependants},
+                "employment": {
+                    "gross_income": income,
+                    "include_social_contributions": False,
+                },
+            }
+        )
+
+        result = calculate_tax(request)
+        employment_detail = next(
+            detail for detail in result["details"] if detail["category"] == "employment"
+        )
+
+        expected = expectations[income]
+        assert employment_detail["tax_before_credits"] == pytest.approx(
+            expected["tax_before"], abs=0.01
+        )
+        assert employment_detail["credits"] == pytest.approx(
+            expected["credit"], abs=0.01
+        )
 
 
 def _freelance_expectations(request: CalculationRequest) -> dict[str, Any]:
