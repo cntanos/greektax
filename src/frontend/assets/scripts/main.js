@@ -70,6 +70,7 @@ let pendingCalculatorState = null;
 let calculatorStatePersistHandle = null;
 let isApplyingYearMetadata = false;
 let partialYearWarningActive = false;
+let hasPendingFormChanges = false;
 
 const EMPLOYMENT_CONTRIBUTION_PREVIEW_MESSAGES = {
   automatic: {
@@ -1438,12 +1439,18 @@ function initialiseThemeControls() {
   });
 }
 
-function setCalculatorStatus(message, { isError = false } = {}) {
+function setCalculatorStatus(message, { isError = false, tone = null } = {}) {
   if (!calculatorStatus) {
     return;
   }
   calculatorStatus.textContent = message;
-  calculatorStatus.setAttribute("data-status", isError ? "error" : "info");
+  let status = "info";
+  if (isError) {
+    status = "error";
+  } else if (tone) {
+    status = tone;
+  }
+  calculatorStatus.setAttribute("data-status", status);
 }
 
 function sanitiseToggleMap(source) {
@@ -2220,7 +2227,32 @@ function applyPendingCalculatorState() {
   updateTradeFeeHint();
 }
 
+function markCalculatorResultsAsStale() {
+  if (!lastCalculation || hasPendingFormChanges) {
+    return;
+  }
+
+  if (calculatorStatus?.getAttribute("data-status") === "error") {
+    return;
+  }
+
+  hasPendingFormChanges = true;
+  if (resultsSection) {
+    resultsSection.setAttribute("data-stale", "true");
+  }
+
+  setCalculatorStatus(t("status.recalculation_required"), { tone: "warning" });
+}
+
+function clearCalculatorStaleState() {
+  hasPendingFormChanges = false;
+  if (resultsSection) {
+    resultsSection.removeAttribute("data-stale");
+  }
+}
+
 function handleCalculatorStateChange() {
+  markCalculatorResultsAsStale();
   schedulePersistCalculatorState();
 }
 
@@ -4830,6 +4862,7 @@ function renderCalculation(result) {
     resultsSection.hidden = false;
   }
 
+  clearCalculatorStaleState();
   lastCalculation = result;
   updateEmploymentContributionPreview(result.details || []);
   downloadButton?.removeAttribute("disabled");
@@ -4846,6 +4879,7 @@ function resetResults() {
   if (resultsSection) {
     resultsSection.hidden = true;
   }
+  clearCalculatorStaleState();
   if (summaryGrid) {
     summaryGrid.innerHTML = "";
   }
