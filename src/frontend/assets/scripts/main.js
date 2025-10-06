@@ -71,6 +71,123 @@ let calculatorStatePersistHandle = null;
 let isApplyingYearMetadata = false;
 let partialYearWarningActive = false;
 
+function buildCalculatorFormNameUsage() {
+  const usage = new Map();
+  if (!calculatorForm) {
+    return usage;
+  }
+
+  Array.from(calculatorForm.elements || []).forEach((element) => {
+    if (!element || typeof element.name !== "string") {
+      return;
+    }
+    const trimmed = element.name.trim();
+    if (!trimmed) {
+      return;
+    }
+    usage.set(trimmed, (usage.get(trimmed) || 0) + 1);
+  });
+
+  return usage;
+}
+
+function getElementPersistenceKey(element, nameUsage = null) {
+  if (!element) {
+    return null;
+  }
+
+  const datasetKey =
+    element.dataset && typeof element.dataset.persistKey === "string"
+      ? element.dataset.persistKey.trim()
+      : "";
+  if (datasetKey) {
+    return datasetKey;
+  }
+
+  const name = typeof element.name === "string" ? element.name.trim() : "";
+  if (name) {
+    if (!nameUsage || nameUsage.get(name) === 1) {
+      return name;
+    }
+  }
+
+  const id = typeof element.id === "string" ? element.id.trim() : "";
+  if (id) {
+    return id;
+  }
+
+  if (name) {
+    return name;
+  }
+
+  return null;
+}
+
+function escapeSelector(value) {
+  if (typeof value !== "string" || !value) {
+    return "";
+  }
+  if (window.CSS && typeof window.CSS.escape === "function") {
+    return window.CSS.escape(value);
+  }
+  return value.replace(/["\\]/g, "\\$&");
+}
+
+function getElementsByPersistenceKey(key) {
+  if (!key) {
+    return [];
+  }
+
+  const unique = new Set();
+  const matches = [];
+
+  const byId = document.getElementById(key);
+  if (byId) {
+    unique.add(byId);
+    matches.push(byId);
+  }
+
+  const escapedKey = escapeSelector(key);
+  if (escapedKey) {
+    document
+      .querySelectorAll(`[data-persist-key="${escapedKey}"]`)
+      .forEach((element) => {
+        if (!unique.has(element)) {
+          unique.add(element);
+          matches.push(element);
+        }
+      });
+
+    if (!matches.length) {
+      document
+        .querySelectorAll(`[name="${escapedKey}"]`)
+        .forEach((element) => {
+          if (!unique.has(element)) {
+            unique.add(element);
+            matches.push(element);
+          }
+        });
+    }
+  }
+
+  return matches;
+}
+
+const warnedMissingPersistenceKey = new WeakSet();
+
+function warnMissingPersistenceKey(element) {
+  if (!element || warnedMissingPersistenceKey.has(element)) {
+    return;
+  }
+  warnedMissingPersistenceKey.add(element);
+  if (typeof console !== "undefined" && console && console.warn) {
+    console.warn(
+      "Calculator field is missing a persistence key (add an id, name, or data-persist-key)",
+      element,
+    );
+  }
+}
+
 function normaliseLocaleChoice(locale) {
   if (typeof locale !== "string" || !locale) {
     return fallbackLocale;
@@ -702,7 +819,7 @@ function loadStoredCalculatorState() {
 }
 
 function captureElementValue(element) {
-  if (!element || !element.id) {
+  if (!element) {
     return undefined;
   }
 
@@ -733,12 +850,30 @@ function captureCalculatorState() {
 
   const values = {};
   const elements = Array.from(calculatorForm.elements || []);
+  const nameUsage = buildCalculatorFormNameUsage();
+
   elements.forEach((element) => {
+    const key = getElementPersistenceKey(element, nameUsage);
+    if (!key) {
+      warnMissingPersistenceKey(element);
+      return;
+    }
+
+    if (element instanceof HTMLInputElement && element.type === "radio") {
+      if (element.checked) {
+        values[key] = element.value;
+      } else if (!Object.prototype.hasOwnProperty.call(values, key)) {
+        values[key] = "";
+      }
+      return;
+    }
+
     const value = captureElementValue(element);
     if (value === undefined) {
       return;
     }
-    values[element.id] = value;
+
+    values[key] = value;
   });
   return values;
 }
@@ -1249,7 +1384,7 @@ function resolveStoredToggleValue(element) {
     return false;
   }
 
-  const key = element.id;
+  const key = getElementPersistenceKey(element);
   if (!key) {
     return Boolean(element.defaultChecked);
   }
@@ -1843,28 +1978,109 @@ function applyValueToElement(element, value) {
   return false;
 }
 
+function applyStoredValueToKey(key, value) {
+  const elements = getElementsByPersistenceKey(key);
+  if (!elements.length) {
+    return false;
+  }
+
+  if (elements.length === 1) {
+    return applyValueToElement(elements[0], value);
+  }
+
+  const primary = elements[0];
+  if (primary instanceof HTMLInputElement && primary.type === "radio") {
+    const desiredValue =
+      value === null || value === undefined ? "" : String(value);
+    let matched = false;
+    elements.forEach((element) => {
+      if (!(element instanceof HTMLInputElement)) {
+        return;
+      }
+      const isMatch = element.value === desiredValue;
+      element.checked = isMatch;
+      if (isMatch) {
+        matched = true;
+      }
+    });
+    return matched || desiredValue === "";
+  }
+
+  let applied = false;
+  elements.forEach((element) => {
+    if (applied) {
+      return;
+    }
+    applied = applyValueToElement(element, value);
+  });
+  return applied;
+}
+
 function applyPendingCalculatorState() {
   if (!pendingCalculatorState) {
     return;
   }
 
+  const sourceState = pendingCalculatorState;
   const remaining = {};
   let yearUpdated = false;
+  const nameUsage = buildCalculatorFormNameUsage();
+  const yearKey = getElementPersistenceKey(yearSelect, nameUsage);
+  const yearKeyCandidates = new Set();
+  if (yearKey) {
+    yearKeyCandidates.add(yearKey);
+  }
+  if (yearSelect && typeof yearSelect.id === "string" && yearSelect.id) {
+    yearKeyCandidates.add(yearSelect.id);
+  }
+  const pensionModeKey = getElementPersistenceKey(pensionModeSelect, nameUsage);
+  const pensionModeKeys = new Set();
+  if (pensionModeKey) {
+    pensionModeKeys.add(pensionModeKey);
+  }
+  if (
+    pensionModeSelect &&
+    typeof pensionModeSelect.id === "string" &&
+    pensionModeSelect.id
+  ) {
+    pensionModeKeys.add(pensionModeSelect.id);
+  }
+  const employmentModeKey = getElementPersistenceKey(
+    employmentModeSelect,
+    nameUsage,
+  );
+  const employmentModeKeys = new Set();
+  if (employmentModeKey) {
+    employmentModeKeys.add(employmentModeKey);
+  }
+  if (
+    employmentModeSelect &&
+    typeof employmentModeSelect.id === "string" &&
+    employmentModeSelect.id
+  ) {
+    employmentModeKeys.add(employmentModeSelect.id);
+  }
 
-  Object.entries(pendingCalculatorState).forEach(([id, storedValue]) => {
-    const element = document.getElementById(id);
-    if (!element) {
-      remaining[id] = storedValue;
-      return;
+  const pickStoredValue = (keys) => {
+    if (!sourceState || !keys || !keys.size) {
+      return undefined;
     }
+    for (const candidate of keys) {
+      if (Object.prototype.hasOwnProperty.call(sourceState, candidate)) {
+        return sourceState[candidate];
+      }
+    }
+    return undefined;
+  };
 
-    const applied = applyValueToElement(element, storedValue);
+  Object.entries(sourceState).forEach(([key, storedValue]) => {
+    const applied = applyStoredValueToKey(key, storedValue);
     if (!applied) {
-      remaining[id] = storedValue;
+      remaining[key] = storedValue;
       return;
     }
 
-    if (id === "year-select") {
+    if (yearKeyCandidates.has(key)) {
       yearUpdated = true;
     }
   });
@@ -1879,11 +2095,29 @@ function applyPendingCalculatorState() {
   }
 
   if (pensionModeSelect) {
-    updatePensionMode(pensionModeSelect.value || "annual");
+    if (pensionModeKeys.size) {
+      const storedValue = pickStoredValue(pensionModeKeys);
+      if (storedValue !== undefined) {
+        updatePensionMode(storedValue || "annual");
+      } else {
+        updatePensionMode(pensionModeSelect.value || "annual");
+      }
+    } else {
+      updatePensionMode(pensionModeSelect.value || "annual");
+    }
   }
 
   if (employmentModeSelect) {
-    updateEmploymentMode(employmentModeSelect.value || "annual");
+    if (employmentModeKeys.size) {
+      const storedValue = pickStoredValue(employmentModeKeys);
+      if (storedValue !== undefined) {
+        updateEmploymentMode(storedValue || "annual");
+      } else {
+        updateEmploymentMode(employmentModeSelect.value || "annual");
+      }
+    } else {
+      updateEmploymentMode(employmentModeSelect.value || "annual");
+    }
   } else {
     updateEmploymentMode(currentEmploymentMode);
   }

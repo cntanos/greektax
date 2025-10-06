@@ -104,6 +104,7 @@
       "year_household": "Year and household"
     },
     "subheadings": {
+      "demographics": "Demographic details",
       "pension": "Pension income"
     },
       "results_heading": "Results"
@@ -395,6 +396,8 @@
       "freelance_help_body": "Report gross turnover before VAT and only claim expenses you can document (rent, utilities, equipment, professional fees).",
       "freelance_help_contributions": "Choosing an EFKA category preloads mandatory contributions; override with your actual payments if they differ.",
       "freelance_help_summary": "Freelance help",
+      "freelance_contributions_heading": "Social security contributions",
+      "freelance_contributions_hint": "Select an EFKA class to preload monthly payments or override them with manual totals.",
       "freelance_mandatory_tooltip": "Mandatory EFKA and auxiliary contributions reduce taxable profit euro-for-euro when supported by receipts.",
       "highlight_inputs_copy": "Toggle each income type only when you need it, supported by inline tips and validation.",
       "highlight_inputs_title": "Guided calculator inputs",
