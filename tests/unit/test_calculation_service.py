@@ -130,6 +130,24 @@ def _employment_expectations(
     }
 
 
+def test_employment_contribution_rates_updated_for_2025() -> None:
+    """Employment contribution tables include the 2025 rate and cap revisions."""
+
+    config_2024 = load_year_configuration(2024)
+    contributions_2024 = config_2024.employment.contributions
+
+    assert contributions_2024.employee_rate == pytest.approx(0.1387)
+    assert contributions_2024.employer_rate == pytest.approx(0.2229)
+    assert contributions_2024.monthly_salary_cap == pytest.approx(7126.94)
+
+    config_2025 = load_year_configuration(2025)
+    contributions_2025 = config_2025.employment.contributions
+
+    assert contributions_2025.employee_rate == pytest.approx(0.1337)
+    assert contributions_2025.employer_rate == pytest.approx(0.2179)
+    assert contributions_2025.monthly_salary_cap == pytest.approx(7572.62)
+
+
 def _freelance_expectations(request: CalculationRequest) -> dict[str, Any]:
     """Return expected freelance and employment metrics for the mixed payload."""
 
