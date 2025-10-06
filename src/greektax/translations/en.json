@@ -306,7 +306,8 @@
       "profits": "Profits",
       "taxes": "Taxes",
       "insurance": "Insurance contributions",
-      "expenses": "Expenses"
+      "expenses": "Expenses",
+      "net_income": "Net income"
     },
     "summary": {
       "average_monthly_tax": "Average tax per month",

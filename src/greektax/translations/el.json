@@ -306,7 +306,8 @@
       "profits": "Κέρδη",
       "taxes": "Φόροι",
       "insurance": "Ασφαλιστικές εισφορές",
-      "expenses": "Δαπάνες"
+      "expenses": "Δαπάνες",
+      "net_income": "Καθαρό εισόδημα"
     },
     "summary": {
       "average_monthly_tax": "Μέσος φόρος ανά μήνα",
