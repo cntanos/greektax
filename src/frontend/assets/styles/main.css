@@ -563,18 +563,6 @@ main {
   margin-bottom: 0.25rem;
 }
 
-.results-intro {
-  margin: 0 0 1rem;
-  font-size: 0.95rem;
-  color: var(--text-subtle);
-}
-
-.results-note {
-  margin: -0.5rem 0 1rem;
-  font-size: 0.9rem;
-  color: var(--text-muted);
-}
-
 .print-overview {
   display: none;
 }
@@ -2118,16 +2106,6 @@ main {
   #calculation-results h3 {
     margin: 0 0 0.5rem;
     font-size: 1.4rem;
-  }
-
-  .results-intro {
-    margin: 0 0 1rem;
-    color: #000 !important;
-  }
-
-  .results-note {
-    margin: -0.35rem 0 0.9rem;
-    color: #000 !important;
   }
 
   .summary-grid,

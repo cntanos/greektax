@@ -3579,7 +3579,6 @@ function computeDistributionTotals(details) {
       return;
     }
 
-    const gross = Math.max(toFiniteNumber(detail.gross_income), 0);
     const rawNet = toFiniteNumber(detail.net_income);
     let netIncomeValue = rawNet > 0 ? rawNet : 0;
 
@@ -3587,64 +3586,41 @@ function computeDistributionTotals(details) {
       detail.total_tax !== undefined && detail.total_tax !== null
         ? detail.total_tax
         : detail.tax;
-    let taxValue = Math.max(toFiniteNumber(taxCandidate), 0);
+    const taxValue = Math.max(toFiniteNumber(taxCandidate), 0);
 
-    const explicitContributionCandidates = [
-      toFiniteNumber(detail.employee_contributions),
-      toFiniteNumber(detail.deductible_contributions),
-      toFiniteNumber(detail.contributions),
-    ];
-    let insuranceValue = 0;
     let expenseValue = sumDetailFields(detail, DISTRIBUTION_EXPENSE_FIELDS);
-
     if (rawNet < 0) {
       expenseValue += Math.abs(rawNet);
       netIncomeValue = 0;
     }
 
-    if (gross > 0) {
-      const residual = gross - taxValue - netIncomeValue;
-      if (residual > 0.01) {
-        insuranceValue = residual;
-      } else if (residual > 0) {
-        insuranceValue = residual;
+    const contributionCandidates = [
+      toFiniteNumber(detail.employee_contributions),
+      toFiniteNumber(detail.deductible_contributions),
+      toFiniteNumber(detail.contributions),
+    ];
+    let insuranceValue = contributionCandidates.reduce((total, value) => {
+      return value > 0 ? total + value : total;
+    }, 0);
+
+    if (insuranceValue <= 0) {
+      const gross = Math.max(toFiniteNumber(detail.gross_income), 0);
+      if (gross > 0) {
+        const impliedInsurance =
+          gross - (taxValue + expenseValue + netIncomeValue);
+        if (impliedInsurance > 0) {
+          insuranceValue = impliedInsurance;
+        }
       }
     }
 
-    const explicitContribution = explicitContributionCandidates.reduce(
-      (max, value) => (value > max ? value : max),
-      0,
-    );
-    if (explicitContribution > 0 && explicitContribution > insuranceValue) {
-      insuranceValue = explicitContribution;
-    }
+    const computedGross =
+      Math.max(netIncomeValue, 0) +
+      Math.max(taxValue, 0) +
+      Math.max(insuranceValue, 0) +
+      Math.max(expenseValue, 0);
 
-    if (gross > 0) {
-      const allocated =
-        taxValue + insuranceValue + expenseValue + netIncomeValue;
-      const difference = gross - allocated;
-      if (difference > 0.01) {
-        netIncomeValue += difference;
-      } else if (difference < -0.01) {
-        let remaining = Math.abs(difference);
-
-        const reduceValue = (current) => {
-          if (current <= 0 || remaining <= 0) {
-            return current;
-          }
-          const reduction = Math.min(current, remaining);
-          remaining -= reduction;
-          return current - reduction;
-        };
-
-        insuranceValue = reduceValue(insuranceValue);
-        expenseValue = reduceValue(expenseValue);
-        taxValue = reduceValue(taxValue);
-        netIncomeValue = reduceValue(netIncomeValue);
-      }
-    }
-
-    grossTotal += gross;
+    grossTotal += computedGross;
     totals.net_income += Math.max(netIncomeValue, 0);
     totals.taxes += Math.max(taxValue, 0);
     totals.insurance += Math.max(insuranceValue, 0);
