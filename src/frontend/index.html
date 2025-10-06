@@ -283,20 +283,22 @@
               </div>
             </div>
             <div class="form-grid double">
-              <div class="form-control" id="youth-eligibility-control" hidden>
-                <span class="inline-field">
-                  <input
-                    id="youth-eligibility-toggle"
-                    type="checkbox"
-                    aria-describedby="youth-eligibility-hint"
-                  />
-                  <label
-                    for="youth-eligibility-toggle"
-                    data-i18n-key="fields.youth-eligibility-toggle"
-                  >
-                    Youth employment relief
-                  </label>
-                </span>
+              <div
+                class="form-control form-control--toggle"
+                id="youth-eligibility-control"
+                hidden
+              >
+                <label
+                  for="youth-eligibility-toggle"
+                  data-i18n-key="fields.youth-eligibility-toggle"
+                >
+                  Youth employment relief
+                </label>
+                <input
+                  id="youth-eligibility-toggle"
+                  type="checkbox"
+                  aria-describedby="youth-eligibility-hint"
+                />
                 <p
                   id="youth-eligibility-hint"
                   class="form-hint"
@@ -306,21 +308,23 @@
                   AADE youth employment relief.
                 </p>
               </div>
-              <div class="form-control" id="small-village-control" hidden>
-                <span class="inline-field">
-                  <input
-                    id="small-village-toggle"
-                    name="demographics.small_village"
-                    type="checkbox"
-                    aria-describedby="small-village-hint"
-                  />
-                  <label
-                    for="small-village-toggle"
-                    data-i18n-key="fields.small-village-toggle"
-                  >
-                    Small village residency relief
-                  </label>
-                </span>
+              <div
+                class="form-control form-control--toggle"
+                id="small-village-control"
+                hidden
+              >
+                <label
+                  for="small-village-toggle"
+                  data-i18n-key="fields.small-village-toggle"
+                >
+                  Small village residency relief
+                </label>
+                <input
+                  id="small-village-toggle"
+                  name="demographics.small_village"
+                  type="checkbox"
+                  aria-describedby="small-village-hint"
+                />
                 <p
                   id="small-village-hint"
                   class="form-hint"
@@ -330,21 +334,23 @@
                   presumptive income imputation.
                 </p>
               </div>
-              <div class="form-control" id="new-mother-control" hidden>
-                <span class="inline-field">
-                  <input
-                    id="new-mother-toggle"
-                    name="demographics.new_mother"
-                    type="checkbox"
-                    aria-describedby="new-mother-hint"
-                  />
-                  <label
-                    for="new-mother-toggle"
-                    data-i18n-key="fields.new-mother-toggle"
-                  >
-                    New mother allowance
-                  </label>
-                </span>
+              <div
+                class="form-control form-control--toggle"
+                id="new-mother-control"
+                hidden
+              >
+                <label
+                  for="new-mother-toggle"
+                  data-i18n-key="fields.new-mother-toggle"
+                >
+                  New mother allowance
+                </label>
+                <input
+                  id="new-mother-toggle"
+                  name="demographics.new_mother"
+                  type="checkbox"
+                  aria-describedby="new-mother-hint"
+                />
                 <p
                   id="new-mother-hint"
                   class="form-hint"
@@ -563,6 +569,89 @@
                     Enter gross salary per payment
                   </option>
                 </select>
+              </div>
+              <div class="form-control form-control--advanced">
+                <details class="help-panel">
+                  <summary data-i18n-key="ui.advanced_options">
+                    Advanced options
+                  </summary>
+                  <div class="form-control form-control--nested">
+                    <label
+                      for="employment-employee-contributions"
+                      data-i18n-key="fields.employment-employee-contributions"
+                    >
+                      Employee EFKA contributions (outside payroll) (€)
+                    </label>
+                    <input
+                      id="employment-employee-contributions"
+                      name="employment.employee_contributions"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value="0"
+                      aria-describedby="employment-employee-contributions-hint"
+                    />
+                    <p
+                      id="employment-employee-contributions-hint"
+                      class="form-hint"
+                      data-i18n-key="hints.employment-employee-contributions"
+                    >
+                      Add EFKA amounts you pay directly outside payroll (for example, voluntary top-ups). Most
+                      employees will leave this at 0 because payroll already covers EFKA.
+                    </p>
+                  </div>
+                  <div
+                    class="form-control form-control--nested form-control--toggle"
+                  >
+                    <label
+                      for="employment-include-social"
+                      data-i18n-key="fields.employment-include-social"
+                    >
+                      Include social insurance contributions in net pay
+                    </label>
+                    <input
+                      id="employment-include-social"
+                      name="employment.include_social_contributions"
+                      type="checkbox"
+                      checked
+                      aria-describedby="employment-include-social-hint"
+                    />
+                    <p
+                      id="employment-include-social-hint"
+                      class="form-hint"
+                      data-i18n-key="hints.employment-include-social"
+                    >
+                      Uncheck to see tax-only net income. EFKA amounts (employee and employer) will be treated as
+                      zero in the results.
+                    </p>
+                  </div>
+                </details>
+              </div>
+              <div class="form-control">
+                <label
+                  for="employment-withholding"
+                  data-i18n-key="fields.employment-withholding"
+                >
+                  Tax already withheld (PAYE) (€)
+                </label>
+                <input
+                  id="employment-withholding"
+                  name="withholding_tax"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value="0"
+                  aria-describedby="employment-withholding-hint"
+                />
+                <p
+                  id="employment-withholding-hint"
+                  class="form-hint"
+                  data-static-hint="true"
+                  data-i18n-key="hints.employment-withholding"
+                >
+                  Enter PAYE income tax already withheld on payslips to offset the
+                  balance due.
+                </p>
               </div>
               <div
                 class="form-control"
@@ -926,76 +1015,19 @@
                   </div>
                 </details>
               </div>
-            </div>
-            <div class="form-subsection">
-              <h3
-                class="fieldset-subheading"
-                data-i18n-key="ui.freelance_trade_fee_heading"
-              >
-                Trade fee and exemptions
-              </h3>
-              <p class="form-hint" data-i18n-key="ui.freelance_trade_fee_hint">
-                Track eligibility for the business activity fee and potential
-                reductions.
-              </p>
-              <div class="form-grid double">
-                <div class="form-control">
-                  <label
-                    for="freelance-trade-fee-location"
-                    data-i18n-key="fields.freelance-trade-fee-location"
-                  >
-                    Trade fee location
-                  </label>
-                  <select id="freelance-trade-fee-location"></select>
-                  <p
-                    id="freelance-trade-fee-hint"
-                    class="form-hint"
-                    data-static-hint="true"
-                    data-i18n-key="hints.freelance-trade-fee-location"
-                  >
-                    Standard: full fee; Reduced: half fee for eligible small
-                    towns/islands.
-                  </p>
-                </div>
-                <div class="form-control">
-                  <span class="inline-field">
-                    <input
-                      id="trade-fee-toggle"
-                      type="checkbox"
-                      name="freelance.include_trade_fee"
-                      checked
-                    />
-                    <label
-                      for="trade-fee-toggle"
-                      data-i18n-key="fields.trade-fee-toggle"
-                    >
-                      Business activity fee
-                    </label>
-                  </span>
-                </div>
-                <div class="form-control">
-                  <label
-                    for="freelance-activity-start-year"
-                    data-i18n-key="fields.freelance-activity-start-year"
-                  >
-                    Year freelance activity started
-                  </label>
-                  <input
-                    id="freelance-activity-start-year"
-                    type="number"
-                    min="1900"
-                    max="2100"
-                    step="1"
-                    value="2000"
-                  />
-                  <p
-                    class="form-hint"
-                    data-static-hint="true"
-                    data-i18n-key="hints.freelance-activity-start-year"
-                  >
-                    Determines if the new-business 5-year fee exemption applies.
-                  </p>
-                </div>
+              <div class="form-control form-control--toggle">
+                <label
+                  for="trade-fee-toggle"
+                  data-i18n-key="fields.trade-fee-toggle"
+                >
+                  Business activity fee
+                </label>
+                <input
+                  id="trade-fee-toggle"
+                  type="checkbox"
+                  name="freelance.include_trade_fee"
+                  checked
+                />
               </div>
             </div>
             <p
@@ -1045,21 +1077,19 @@
                   value="0"
                 />
               </div>
-              <div class="form-control">
-                <span class="inline-field">
-                  <input
-                    id="agricultural-professional-farmer"
-                    name="agricultural.professional_farmer"
-                    type="checkbox"
-                    aria-describedby="agricultural-professional-farmer-hint"
-                  />
-                  <label
-                    for="agricultural-professional-farmer"
-                    data-i18n-key="fields.agricultural-professional-farmer"
-                  >
-                    Professional farmer status
-                  </label>
-                </span>
+              <div class="form-control form-control--toggle">
+                <label
+                  for="agricultural-professional-farmer"
+                  data-i18n-key="fields.agricultural-professional-farmer"
+                >
+                  Professional farmer status
+                </label>
+                <input
+                  id="agricultural-professional-farmer"
+                  name="agricultural.professional_farmer"
+                  type="checkbox"
+                  aria-describedby="agricultural-professional-farmer-hint"
+                />
                 <p
                   id="agricultural-professional-farmer-hint"
                   class="form-hint"
