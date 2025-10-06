@@ -219,6 +219,7 @@ income:
         "14": 3760
         "15": 3980
       incremental_amount_per_child: 220
+      income_reduction_exempt_from_dependants: 5
       pending_confirmation: true
     family_tax_credit:
       pending_confirmation: true

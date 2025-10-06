@@ -239,6 +239,33 @@ def test_2025_employment_youth_large_family_alignment() -> None:
     assert employment_detail["credits"] == pytest.approx(620.0)
 
 
+def test_2026_large_family_credit_not_reduced() -> None:
+    """Five-child households retain the full 2026 family tax credit despite income."""
+
+    request = build_request(
+        {
+            "year": 2026,
+            "dependents": {"children": 5},
+            "employment": {
+                "gross_income": 70_000,
+                "include_social_contributions": False,
+            },
+        }
+    )
+
+    result = calculate_tax(request)
+
+    summary = result["summary"]
+    employment_detail = next(
+        detail for detail in result["details"] if detail["category"] == "employment"
+    )
+
+    assert employment_detail["tax_before_credits"] == pytest.approx(17_200.0)
+    assert employment_detail["credits"] == pytest.approx(1_780.0)
+    assert employment_detail["total_tax"] == pytest.approx(15_420.0)
+    assert summary["net_income"] == pytest.approx(54_580.0)
+
+
 def _freelance_expectations(request: CalculationRequest) -> dict[str, Any]:
     """Return expected freelance and employment metrics for the mixed payload."""
 

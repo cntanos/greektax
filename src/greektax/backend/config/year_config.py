@@ -140,6 +140,7 @@ class EmploymentTaxCredit:
     incremental_amount_per_child: float
     pending_confirmation: bool = False
     estimate: bool = False
+    income_reduction_exempt_from_dependants: int | None = None
 
     def amount_for_children(self, dependants: int) -> float:
         """Return the tax credit amount for the provided dependant count."""
@@ -632,6 +633,15 @@ def _parse_tax_credit(raw: Mapping[str, Any]) -> EmploymentTaxCredit:
         amounts[child_count] = float(value)
 
     incremental = float(raw.get("incremental_amount_per_child", 0.0))
+    reduction_exempt_raw = raw.get("income_reduction_exempt_from_dependants")
+    if reduction_exempt_raw is None:
+        reduction_exempt = None
+    else:
+        reduction_exempt = int(reduction_exempt_raw)
+        if reduction_exempt < 0:
+            raise ConfigurationError(
+                "'income_reduction_exempt_from_dependants' must be non-negative"
+            )
     pending = _parse_boolean_flag(
         raw.get("pending_confirmation"),
         context="employment.tax_credit 'pending_confirmation'",
@@ -646,6 +656,7 @@ def _parse_tax_credit(raw: Mapping[str, Any]) -> EmploymentTaxCredit:
         incremental_amount_per_child=incremental,
         pending_confirmation=pending,
         estimate=estimate,
+        income_reduction_exempt_from_dependants=reduction_exempt,
     )
 
 
