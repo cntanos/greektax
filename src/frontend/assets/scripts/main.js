@@ -4101,8 +4101,43 @@ function computeDistributionForDetail(detail) {
   return { ...breakdown, gross: grossTotal > 0 ? grossTotal : 0 };
 }
 
+function resolveDistributionDetailLabel(detail) {
+  if (!detail || typeof detail !== "object") {
+    return t("distribution.total_income");
+  }
+
+  const candidateKeys = [
+    "label",
+    "category_label",
+    "category",
+    "section_label",
+    "section",
+    "name",
+    "type_label",
+    "type",
+  ];
+
+  for (const key of candidateKeys) {
+    const value = detail[key];
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      if (trimmed) {
+        return trimmed;
+      }
+    }
+  }
+
+  return t("distribution.total_income");
+}
+
 function computeDistributionTotals(details) {
   const totals = { net_income: 0, taxes: 0, insurance: 0, expenses: 0 };
+  const breakdownMaps = {
+    net_income: new Map(),
+    taxes: new Map(),
+    insurance: new Map(),
+    expenses: new Map(),
+  };
   const entries = Array.isArray(details) ? details : [];
   let grossTotal = 0;
 
@@ -4110,15 +4145,46 @@ function computeDistributionTotals(details) {
     const breakdown = computeDistributionForDetail(detail);
 
     grossTotal += breakdown.gross;
-    totals.net_income += breakdown.net_income;
-    totals.taxes += breakdown.taxes;
-    totals.insurance += breakdown.insurance;
-    totals.expenses += breakdown.expenses;
+
+    Object.entries(breakdown).forEach(([key, value]) => {
+      if (key === "gross") {
+        return;
+      }
+
+      const safeValue = Math.max(value || 0, 0);
+
+      if (!Object.prototype.hasOwnProperty.call(totals, key)) {
+        totals[key] = 0;
+      }
+      if (!Object.prototype.hasOwnProperty.call(breakdownMaps, key)) {
+        breakdownMaps[key] = new Map();
+      }
+
+      totals[key] += safeValue;
+
+      if (safeValue <= 0) {
+        return;
+      }
+
+      const label = resolveDistributionDetailLabel(detail);
+      const categoryBreakdown = breakdownMaps[key];
+      const existingValue = categoryBreakdown.get(label) || 0;
+      categoryBreakdown.set(label, existingValue + safeValue);
+    });
   });
+
+  const breakdowns = Object.fromEntries(
+    Object.entries(breakdownMaps).map(([key, valueMap]) => {
+      const entriesForCategory = Array.from(valueMap.entries()).map(
+        ([label, value]) => ({ label, value }),
+      );
+      return [key, entriesForCategory];
+    }),
+  );
 
   const totalValue = grossTotal;
 
-  return { totals, totalValue };
+  return { totals, totalValue, breakdowns };
 }
 
 function renderDistributionChart(details) {
@@ -4148,18 +4214,33 @@ function renderDistributionChart(details) {
 
   const tooltipLabel = tooltip.querySelector(".distribution-chart__tooltip-label");
   const tooltipValue = tooltip.querySelector(".distribution-chart__tooltip-value");
-  let activeSegment = null;
+  let tooltipBreakdown = tooltip.querySelector(
+    ".distribution-chart__tooltip-breakdown",
+  );
+  if (!tooltipBreakdown) {
+    tooltipBreakdown = document.createElement("ul");
+    tooltipBreakdown.className = "distribution-chart__tooltip-breakdown";
+    tooltip.appendChild(tooltipBreakdown);
+  }
+
+  let activeElement = null;
+  let activeElementClass = null;
+  const tooltipDataByCategory = new Map();
 
   const hideTooltip = () => {
-    if (activeSegment) {
-      activeSegment.classList.remove("distribution-chart__segment--active");
-      activeSegment = null;
+    if (activeElement && activeElementClass) {
+      activeElement.classList.remove(activeElementClass);
     }
+    activeElement = null;
+    activeElementClass = null;
     if (tooltipLabel) {
       tooltipLabel.textContent = "";
     }
     if (tooltipValue) {
       tooltipValue.textContent = "";
+    }
+    if (tooltipBreakdown) {
+      tooltipBreakdown.innerHTML = "";
     }
     tooltip.hidden = true;
     tooltip.removeAttribute("data-visible");
@@ -4170,7 +4251,7 @@ function renderDistributionChart(details) {
       return;
     }
     const reference =
-      (event && event.currentTarget instanceof SVGElement
+      (event && event.currentTarget instanceof Element
         ? event.currentTarget
         : null) || fallbackTarget;
     const wrapperRect = distributionWrapper.getBoundingClientRect();
@@ -4180,7 +4261,7 @@ function renderDistributionChart(details) {
       clientX = event.clientX;
       clientY = event.clientY;
     }
-    if ((clientX === null || clientY === null) && reference) {
+    if ((clientX === null || clientY === null) && reference instanceof Element) {
       const rect = reference.getBoundingClientRect();
       clientX = rect.left + rect.width / 2;
       clientY = rect.top + rect.height / 2;
@@ -4196,37 +4277,77 @@ function renderDistributionChart(details) {
 
   const showTooltip = (event) => {
     const target = event.currentTarget;
-    if (!(target instanceof SVGElement)) {
+    if (!(target instanceof Element)) {
       return;
     }
-    const label = target.dataset.tooltipLabel || "";
-    const amount = target.dataset.tooltipAmount || "";
-    const percent = target.dataset.tooltipPercent || "";
+    const category = target.dataset.category;
+    if (!category) {
+      return;
+    }
+
+    const tooltipData = tooltipDataByCategory.get(category);
+    if (!tooltipData) {
+      return;
+    }
+
     if (tooltipLabel) {
-      tooltipLabel.textContent = label;
+      tooltipLabel.textContent = tooltipData.label || "";
     }
     if (tooltipValue) {
-      tooltipValue.textContent = amount && percent ? `${amount} · ${percent}` : amount || percent;
+      const hasPercent = tooltipData.percent && tooltipData.percent.trim();
+      tooltipValue.textContent = hasPercent
+        ? `${tooltipData.amount} · ${tooltipData.percent}`
+        : tooltipData.amount || tooltipData.percent || "";
     }
-    if (activeSegment) {
-      activeSegment.classList.remove("distribution-chart__segment--active");
+    if (tooltipBreakdown) {
+      tooltipBreakdown.innerHTML = "";
+      tooltipData.breakdown.forEach((entry) => {
+        const item = document.createElement("li");
+        item.className = "distribution-chart__tooltip-item";
+
+        const entryLabel = document.createElement("span");
+        entryLabel.className = "distribution-chart__tooltip-item-label";
+        entryLabel.textContent = entry.label;
+        item.appendChild(entryLabel);
+
+        const entryValue = document.createElement("span");
+        entryValue.className = "distribution-chart__tooltip-item-value";
+        entryValue.textContent = entry.percent
+          ? `${entry.amount} · ${entry.percent}`
+          : entry.amount;
+        item.appendChild(entryValue);
+
+        tooltipBreakdown.appendChild(item);
+      });
     }
-    activeSegment = target;
-    activeSegment.classList.add("distribution-chart__segment--active");
+
+    if (activeElement && activeElementClass) {
+      activeElement.classList.remove(activeElementClass);
+    }
+
+    const nextActiveClass =
+      target instanceof SVGElement
+        ? "distribution-chart__segment--active"
+        : "distribution-legend__item--active";
+
+    activeElement = target;
+    activeElementClass = nextActiveClass;
+    activeElement.classList.add(nextActiveClass);
+
     tooltip.hidden = false;
     tooltip.setAttribute("data-visible", "true");
     updateTooltipPosition(event, target);
   };
 
   const trackPointer = (event) => {
-    if (activeSegment) {
-      updateTooltipPosition(event, activeSegment);
+    if (activeElement) {
+      updateTooltipPosition(event, activeElement);
     }
   };
 
   hideTooltip();
 
-  const { totals, totalValue } = computeDistributionTotals(details);
+  const { totals, totalValue, breakdowns } = computeDistributionTotals(details);
   const safeTotal = totalValue > 0 ? totalValue : 0;
 
   if (!safeTotal) {
@@ -4252,6 +4373,22 @@ function renderDistributionChart(details) {
   let offset = 0;
   const labelParts = [];
 
+  const baseCategoryOrder = DISTRIBUTION_CATEGORIES.map(({ key }) => key);
+  const totalsKeys = Object.keys(totals);
+  const seenCategories = new Set();
+  const categoryOrder = [];
+
+  const addCategoryKey = (key) => {
+    if (!key || seenCategories.has(key)) {
+      return;
+    }
+    seenCategories.add(key);
+    categoryOrder.push(key);
+  };
+
+  baseCategoryOrder.forEach((key) => addCategoryKey(key));
+  totalsKeys.forEach((key) => addCategoryKey(key));
+
   const ring = document.createElementNS(SVG_NS, "circle");
   ring.setAttribute("class", "distribution-chart__ring");
   ring.setAttribute("cx", center);
@@ -4259,17 +4396,54 @@ function renderDistributionChart(details) {
   ring.setAttribute("r", radius);
   distributionChart.appendChild(ring);
 
-  DISTRIBUTION_CATEGORIES.forEach(({ key, colorVar }) => {
+  categoryOrder.forEach((key) => {
     const value = Math.max(totals[key] || 0, 0);
     const ratio = safeTotal > 0 ? value / safeTotal : 0;
     const clampedRatio = Math.max(0, Math.min(ratio, 1));
     const strokeLength = clampedRatio * circumference;
-    const labelText = t(`distribution.${key}`);
+    const categoryConfig = DISTRIBUTION_CATEGORIES.find(
+      (entry) => entry.key === key,
+    );
+    const colorVar = categoryConfig?.colorVar || `--distribution-${key}`;
+    const labelText = (() => {
+      const translationKey = `distribution.${key}`;
+      const translated = t(translationKey);
+      if (translated && translated !== translationKey) {
+        return translated;
+      }
+      return key.replace(/_/g, " ");
+    })();
 
     const cssColor = rootStyles ? rootStyles.getPropertyValue(colorVar) : "";
     const normalizedColor = cssColor && cssColor.trim().length
       ? cssColor.trim()
       : DISTRIBUTION_FALLBACK_COLORS[key] || "#0f6dff";
+
+    if (!(value > 0)) {
+      offset = Math.min(offset + strokeLength, circumference);
+      return;
+    }
+
+    const formattedAmount = formatCurrency(value);
+    const formattedPercent = formatPercent(ratio);
+    const breakdownEntries = Array.isArray(breakdowns[key])
+      ? breakdowns[key]
+      : [];
+    const normalizedBreakdown = breakdownEntries
+      .filter((entry) => entry && entry.value > 0)
+      .sort((a, b) => b.value - a.value)
+      .map((entry) => ({
+        label: entry.label,
+        amount: formatCurrency(entry.value),
+        percent: formatPercent(value > 0 ? entry.value / value : 0),
+      }));
+
+    tooltipDataByCategory.set(key, {
+      label: labelText,
+      amount: formattedAmount,
+      percent: formattedPercent,
+      breakdown: normalizedBreakdown,
+    });
 
     if (strokeLength > 0) {
       const segment = document.createElementNS(SVG_NS, "circle");
@@ -4287,11 +4461,6 @@ function renderDistributionChart(details) {
       segment.setAttribute("tabindex", "0");
       segment.setAttribute("focusable", "true");
       segment.setAttribute("role", "img");
-      const formattedAmount = formatCurrency(value);
-      const formattedPercent = formatPercent(ratio);
-      segment.dataset.tooltipLabel = labelText;
-      segment.dataset.tooltipAmount = formattedAmount;
-      segment.dataset.tooltipPercent = formattedPercent;
       segment.setAttribute(
         "aria-label",
         `${labelText}: ${formattedAmount} (${formattedPercent})`,
@@ -4310,6 +4479,7 @@ function renderDistributionChart(details) {
     item.className = "distribution-legend__item";
     item.dataset.category = key;
     item.style.setProperty("--distribution-color", normalizedColor);
+    item.setAttribute("tabindex", "0");
 
     const swatch = document.createElement("span");
     swatch.className = "distribution-legend__swatch";
@@ -4323,19 +4493,23 @@ function renderDistributionChart(details) {
 
     const amountSpan = document.createElement("span");
     amountSpan.className = "distribution-legend__amount";
-    amountSpan.textContent = formatCurrency(value);
+    amountSpan.textContent = formattedAmount;
     item.appendChild(amountSpan);
 
     const percentSpan = document.createElement("span");
     percentSpan.className = "distribution-legend__percent";
-    percentSpan.textContent = formatPercent(ratio);
+    percentSpan.textContent = formattedPercent;
     item.appendChild(percentSpan);
+
+    item.addEventListener("mouseenter", showTooltip);
+    item.addEventListener("mouseleave", hideTooltip);
+    item.addEventListener("focus", showTooltip);
+    item.addEventListener("blur", hideTooltip);
+    item.addEventListener("mousemove", trackPointer);
 
     distributionList.appendChild(item);
 
-    if (value > 0) {
-      labelParts.push(`${labelText} ${percentSpan.textContent}`);
-    }
+    labelParts.push(`${labelText} ${formattedPercent}`);
   });
 
   if (safeTotal > 0) {
