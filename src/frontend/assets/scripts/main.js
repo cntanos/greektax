@@ -1501,7 +1501,14 @@ function applyContributionDefaults(metadata) {
   const employmentDefaults =
     (metadata && metadata.employment && metadata.employment.defaults) || {};
   if (employmentIncludeSocialToggle) {
-    if (employmentDefaults.hasOwnProperty("include_social_contributions")) {
+    const persistenceKey = getElementPersistenceKey(employmentIncludeSocialToggle);
+    const storedValue =
+      persistenceKey !== null ? getStoredCalculatorValue(persistenceKey) : undefined;
+    if (storedValue !== undefined) {
+      employmentIncludeSocialToggle.checked = Boolean(storedValue);
+    } else if (
+      employmentDefaults.hasOwnProperty("include_social_contributions")
+    ) {
       employmentIncludeSocialToggle.checked = Boolean(
         employmentDefaults.include_social_contributions,
       );
@@ -1515,7 +1522,12 @@ function applyContributionDefaults(metadata) {
   const freelanceDefaults =
     (metadata && metadata.freelance && metadata.freelance.defaults) || {};
   if (tradeFeeToggle) {
-    if (freelanceDefaults.hasOwnProperty("include_trade_fee")) {
+    const persistenceKey = getElementPersistenceKey(tradeFeeToggle);
+    const storedValue =
+      persistenceKey !== null ? getStoredCalculatorValue(persistenceKey) : undefined;
+    if (storedValue !== undefined) {
+      tradeFeeToggle.checked = Boolean(storedValue);
+    } else if (freelanceDefaults.hasOwnProperty("include_trade_fee")) {
       tradeFeeToggle.checked = Boolean(freelanceDefaults.include_trade_fee);
     } else {
       tradeFeeToggle.checked = Boolean(tradeFeeToggle.defaultChecked);
@@ -4657,11 +4669,19 @@ function renderDetailCard(detail) {
       return;
     }
 
+    const isTotalTaxField = key === "total_tax";
+    const isActiveCategory =
+      (detail?.is_active ?? true) &&
+      (detail?.active ?? true) &&
+      (detail?.category_active ?? true);
+    const shouldPreserveZero = isTotalTaxField && isActiveCategory;
+
     if (
       typeof value === "number" &&
       Number.isFinite(value) &&
       key !== "payments_per_year" &&
-      Math.abs(value) < 0.005
+      Math.abs(value) < 0.005 &&
+      !shouldPreserveZero
     ) {
       return;
     }
