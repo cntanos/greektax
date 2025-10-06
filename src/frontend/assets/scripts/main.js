@@ -790,8 +790,8 @@ function preserveCurrentFormValues() {
   }
 
   pendingCalculatorState = {
-    ...(pendingCalculatorState || {}),
     ...snapshot,
+    ...(pendingCalculatorState || {}),
   };
 }
 
