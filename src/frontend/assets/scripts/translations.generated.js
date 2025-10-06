@@ -287,6 +287,7 @@
         "calculation_failed": "Δεν ήταν δυνατή η επεξεργασία του υπολογισμού.",
         "loading_years": "Φόρτωση διαθέσιμων φορολογικών ετών…",
         "ready": "Η διαμόρφωση ολοκληρώθηκε. Συμπληρώστε τα στοιχεία σας για υπολογισμό.",
+        "recalculation_required": "Εντοπίστηκαν αλλαγές. Εκτελέστε ξανά τον υπολογισμό για ενημερωμένα αποτελέσματα.",
         "select_year": "Επιλέξτε φορολογικό έτος πριν από τον υπολογισμό.",
         "validation_errors": "Διορθώστε τα επισημασμένα πεδία και προσπαθήστε ξανά.",
         "year_error": "Αδυναμία φόρτωσης των δεδομένων φορολογικού έτους."
@@ -664,6 +665,7 @@
         "calculation_failed": "Unable to process calculation.",
         "loading_years": "Loading tax years…",
         "ready": "Configuration loaded. Enter your details to calculate.",
+        "recalculation_required": "Changes detected. Recalculate to update results.",
         "select_year": "Please select a tax year before calculating.",
         "validation_errors": "Please fix the highlighted fields and try again.",
         "year_error": "Unable to load tax year configuration metadata."
