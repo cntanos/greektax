@@ -157,18 +157,18 @@
     "expectations": {
       "summary": {
         "income_total": 25900.0,
-        "tax_total": 2969.15,
-        "net_income": 19338.52,
-        "average_monthly_tax": 247.43
+        "tax_total": 3247.15,
+        "net_income": 19060.52,
+        "average_monthly_tax": 270.6
       },
       "details": {
         "employment": {
           "tax_before_credits": 3746.15,
-          "credits": 777.0,
-          "total_tax": 2969.15,
+          "credits": 499.0,
+          "total_tax": 3247.15,
           "payments_per_year": 14,
           "gross_income_per_payment": 1850.0,
-          "net_income_per_payment": 1381.32
+          "net_income_per_payment": 1361.47
         }
       }
     }
