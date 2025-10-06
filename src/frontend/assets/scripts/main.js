@@ -5528,11 +5528,18 @@ function printSummary() {
 
   const locale = exportData.locale;
   const translate = (key, replacements = {}) => t(key, replacements, locale);
-  const printWindow = window.open("", "_blank", "noopener=yes,noreferrer=yes");
+  const printWindow = window.open("", "_blank");
 
   if (!printWindow) {
     window.print();
     return;
+  }
+
+  try {
+    // Ensure the spawned window cannot navigate the opener in supporting browsers.
+    printWindow.opener = null;
+  } catch (error) {
+    // Ignore – browsers that disallow this assignment will simply keep the default.
   }
 
   const title = translate("print.title") || "GreekTax summary";
@@ -5734,9 +5741,10 @@ function printSummary() {
       </body>
     </html>`;
 
-  printWindow.document.open();
-  printWindow.document.write(documentHtml);
-  printWindow.document.close();
+  const { document: printDocument } = printWindow;
+  printDocument.open();
+  printDocument.write(documentHtml);
+  printDocument.close();
   printWindow.focus();
 
   const handlePrint = () => {
@@ -5747,7 +5755,7 @@ function printSummary() {
     }
   };
 
-  if (printWindow.document.readyState === "complete") {
+  if (printDocument.readyState === "complete") {
     handlePrint();
   } else {
     printWindow.addEventListener("load", handlePrint, { once: true });
