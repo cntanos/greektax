@@ -3365,14 +3365,14 @@ function renderSankey(result) {
 const DISTRIBUTION_EXPENSE_FIELDS = ["deductible_expenses"];
 
 const DISTRIBUTION_CATEGORIES = [
+  { key: "net_income", colorVar: "--flow-net" },
   { key: "taxes", colorVar: "--flow-taxes" },
   { key: "insurance", colorVar: "--flow-contributions" },
   { key: "expenses", colorVar: "--flow-expenses" },
-  { key: "profits", colorVar: "--flow-net" },
 ];
 
 const DISTRIBUTION_FALLBACK_COLORS = {
-  profits: "#0f6dff",
+  net_income: "#0f6dff",
   taxes: "#ff4d6a",
   insurance: "#00bfa6",
   expenses: "#f5a524",
@@ -3394,8 +3394,9 @@ function sumDetailFields(detail, fields) {
 }
 
 function computeDistributionTotals(details) {
-  const totals = { profits: 0, taxes: 0, insurance: 0, expenses: 0 };
+  const totals = { net_income: 0, taxes: 0, insurance: 0, expenses: 0 };
   const entries = Array.isArray(details) ? details : [];
+  let grossTotal = 0;
 
   entries.forEach((detail) => {
     if (!detail) {
@@ -3404,7 +3405,7 @@ function computeDistributionTotals(details) {
 
     const gross = Math.max(toFiniteNumber(detail.gross_income), 0);
     const rawNet = toFiniteNumber(detail.net_income);
-    let profitValue = rawNet > 0 ? rawNet : 0;
+    let netIncomeValue = rawNet > 0 ? rawNet : 0;
 
     const taxCandidate =
       detail.total_tax !== undefined && detail.total_tax !== null
@@ -3422,11 +3423,11 @@ function computeDistributionTotals(details) {
 
     if (rawNet < 0) {
       expenseValue += Math.abs(rawNet);
-      profitValue = 0;
+      netIncomeValue = 0;
     }
 
     if (gross > 0) {
-      const residual = gross - taxValue - profitValue;
+      const residual = gross - taxValue - netIncomeValue;
       if (residual > 0.01) {
         insuranceValue = residual;
       } else if (residual > 0) {
@@ -3443,10 +3444,11 @@ function computeDistributionTotals(details) {
     }
 
     if (gross > 0) {
-      const allocated = taxValue + insuranceValue + expenseValue + profitValue;
+      const allocated =
+        taxValue + insuranceValue + expenseValue + netIncomeValue;
       const difference = gross - allocated;
       if (difference > 0.01) {
-        profitValue += difference;
+        netIncomeValue += difference;
       } else if (difference < -0.01) {
         let remaining = Math.abs(difference);
 
@@ -3462,18 +3464,18 @@ function computeDistributionTotals(details) {
         insuranceValue = reduceValue(insuranceValue);
         expenseValue = reduceValue(expenseValue);
         taxValue = reduceValue(taxValue);
-        profitValue = reduceValue(profitValue);
+        netIncomeValue = reduceValue(netIncomeValue);
       }
     }
 
-    totals.profits += Math.max(profitValue, 0);
+    grossTotal += gross;
+    totals.net_income += Math.max(netIncomeValue, 0);
     totals.taxes += Math.max(taxValue, 0);
     totals.insurance += Math.max(insuranceValue, 0);
     totals.expenses += Math.max(expenseValue, 0);
   });
 
-  const totalValue =
-    totals.profits + totals.taxes + totals.insurance + totals.expenses;
+  const totalValue = grossTotal;
 
   return { totals, totalValue };
 }
@@ -3695,12 +3697,18 @@ function renderDistributionChart(details) {
     }
   });
 
+  if (safeTotal > 0) {
+    labelParts.unshift(
+      `${t("distribution.gross_income")} ${formatCurrency(safeTotal)}`,
+    );
+  }
+
   const totalLabel = document.createElementNS(SVG_NS, "text");
   totalLabel.classList.add("distribution-chart__center-label");
   totalLabel.setAttribute("x", center);
   totalLabel.setAttribute("y", center - 6);
   totalLabel.setAttribute("text-anchor", "middle");
-  totalLabel.textContent = t("distribution.total_income");
+  totalLabel.textContent = t("distribution.gross_income");
   distributionChart.appendChild(totalLabel);
 
   const totalValueText = document.createElementNS(SVG_NS, "text");

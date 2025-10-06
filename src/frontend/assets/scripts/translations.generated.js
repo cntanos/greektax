@@ -62,14 +62,14 @@
         "trade_fee": "Τέλος επιτηδεύματος"
       },
       "distribution": {
-        "description": "Δείτε πώς κατανέμεται το συνολικό εισόδημα μεταξύ κερδών, φόρων, ασφαλιστικών εισφορών και εκπιπτόμενων δαπανών.",
+        "description": "Δείτε πώς κατανέμεται το συνολικό εισόδημα μεταξύ καθαρού εισοδήματος, φόρων, ασφαλιστικών εισφορών και δαπανών.",
         "empty": "Προσθέστε φορολογητέο εισόδημα για να εμφανιστεί η κατανομή σε όλες τις κατηγορίες.",
         "expenses": "Δαπάνες",
         "heading": "Κατανομή συνολικού εισοδήματος",
+        "gross_income": "Ακαθάριστο εισόδημα",
         "insurance": "Ασφαλιστικές εισφορές",
-        "profits": "Κέρδη",
-        "taxes": "Φόροι",
-        "total_income": "Συνολικό εισόδημα"
+        "net_income": "Καθαρό εισόδημα",
+        "taxes": "Φόροι"
       },
       "errors": {
         "invalid_number": "Εισαγάγετε έγκυρο αριθμό για {{field}}.",
@@ -397,14 +397,14 @@
         "trade_fee": "Business activity fee"
       },
       "distribution": {
-        "description": "See how your total income is split between profits, taxes, insurance contributions, and deductible expenses.",
+        "description": "See how your total income is split between net income, taxes, insurance contributions, and expenses.",
         "empty": "Add taxable income above to reveal the allocation across all categories.",
         "expenses": "Expenses",
         "heading": "Income allocation summary",
+        "gross_income": "Gross income",
         "insurance": "Insurance contributions",
-        "profits": "Profits",
-        "taxes": "Taxes",
-        "total_income": "Total income"
+        "net_income": "Net income",
+        "taxes": "Taxes"
       },
       "errors": {
         "invalid_number": "Please enter a valid number for {{field}}.",
