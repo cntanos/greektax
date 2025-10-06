@@ -84,14 +84,21 @@ def _employment_expectations(
     contribution_base = _employment_contribution_base(
         config, gross_income, monthly_income, payments_per_year
     )
-    employee_contrib = contribution_base * employee_rate if include_social else 0.0
+    auto_employee_contrib = (
+        contribution_base * employee_rate if include_social else 0.0
+    )
+    manual_requested = manual_contributions if include_social else 0.0
+    max_employee_contrib = auto_employee_contrib if include_social else 0.0
+    manual_contrib = manual_requested
+    total_employee_contrib = auto_employee_contrib + manual_requested
+    if max_employee_contrib and total_employee_contrib > max_employee_contrib:
+        manual_contrib = max(max_employee_contrib - auto_employee_contrib, 0.0)
+        total_employee_contrib = max_employee_contrib
+    employee_contrib = total_employee_contrib
     employer_contrib = contribution_base * employer_rate if include_social else 0.0
-    manual_contrib = manual_contributions if include_social else 0.0
 
     taxable_income = (
-        gross_income - employee_contrib - manual_contrib
-        if include_social
-        else gross_income
+        gross_income - employee_contrib if include_social else gross_income
     )
     if taxable_income < 0:
         taxable_income = 0.0
@@ -105,7 +112,7 @@ def _employment_expectations(
 
     net_income = gross_income - tax_after_credit
     if include_social:
-        net_income -= employee_contrib + manual_contrib
+        net_income -= employee_contrib
 
     effective_rate = (tax_after_credit / gross_income) if gross_income else 0.0
 
@@ -155,10 +162,15 @@ def _freelance_expectations(request: CalculationRequest) -> dict[str, Any]:
         if include_social
         else 0.0
     )
-    manual_employee_contrib = (
+    manual_requested = (
         request.employment.employee_contributions if include_social else 0.0
     )
-    total_employee_contrib = auto_employee_contrib + manual_employee_contrib
+    max_employee_contrib = auto_employee_contrib if include_social else 0.0
+    manual_employee_contrib = manual_requested
+    total_employee_contrib = auto_employee_contrib + manual_requested
+    if max_employee_contrib and total_employee_contrib > max_employee_contrib:
+        manual_employee_contrib = max(max_employee_contrib - auto_employee_contrib, 0.0)
+        total_employee_contrib = max_employee_contrib
 
     employment_taxable = (
         employment_gross - total_employee_contrib if include_social else employment_gross
@@ -542,8 +554,8 @@ def test_employment_contributions_respect_salary_cap(
     assert expected["employee_contrib"] < gross_income * config.employment.contributions.employee_rate
 
 
-def test_calculate_tax_supports_manual_employee_contributions() -> None:
-    """Extra EFKA payments reduce net income and appear in the breakdown."""
+def test_manual_employee_contributions_respect_salary_cap() -> None:
+    """Manual EFKA payments cannot increase the deductible beyond the cap."""
 
     request = CalculationRequest.model_validate(
         {
@@ -560,16 +572,15 @@ def test_calculate_tax_supports_manual_employee_contributions() -> None:
 
     monthly_income = request.employment.monthly_income or 0.0
     payments = request.employment.payments_per_year or 0
-    manual_contrib = request.employment.employee_contributions
     gross_income = monthly_income * payments
     base_expected = _employment_expectations(
         2024,
         gross_income,
         monthly_income=monthly_income,
         payments_per_year=payments,
-        manual_contributions=manual_contrib,
+        manual_contributions=request.employment.employee_contributions,
     )
-    expected_total_employee = base_expected["employee_contrib"] + manual_contrib
+    expected_total_employee = base_expected["employee_contrib"]
     expected_net_income = base_expected["net_income"]
     expected_taxable_income = base_expected["taxable"]
 
@@ -584,9 +595,7 @@ def test_calculate_tax_supports_manual_employee_contributions() -> None:
     assert employment_detail["employee_contributions"] == pytest.approx(
         expected_total_employee, rel=1e-4
     )
-    assert employment_detail["employee_contributions_manual"] == pytest.approx(
-        manual_contrib
-    )
+    assert "employee_contributions_manual" not in employment_detail
     assert employment_detail["net_income_per_payment"] == pytest.approx(
         expected_net_income / payments, rel=1e-4
     )

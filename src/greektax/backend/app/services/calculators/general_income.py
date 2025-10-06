@@ -85,10 +85,9 @@ def _build_general_income_components(
         include_manual = payload.employment_include_manual_contributions
         include_employer = payload.employment_include_employer_contributions
 
+        employee_rate = config.employment.contributions.employee_rate
         auto_employee_contrib = (
-            contribution_base_income * config.employment.contributions.employee_rate
-            if include_auto
-            else 0.0
+            contribution_base_income * employee_rate if include_auto else 0.0
         )
         employer_contrib = (
             contribution_base_income * config.employment.contributions.employer_rate
@@ -99,7 +98,24 @@ def _build_general_income_components(
             payload.employment_manual_contributions if include_manual else 0.0
         )
 
+        max_employee_contrib = (
+            contribution_base_income * employee_rate
+            if (include_auto or include_manual) and contribution_base_income > 0
+            else 0.0
+        )
+
         employee_contrib = auto_employee_contrib + employee_manual_contrib
+        if max_employee_contrib and employee_contrib > max_employee_contrib:
+            excess = employee_contrib - max_employee_contrib
+            if employee_manual_contrib > 0:
+                manual_reduction = min(employee_manual_contrib, excess)
+                employee_manual_contrib -= manual_reduction
+                excess -= manual_reduction
+            if excess > 0 and auto_employee_contrib > 0:
+                auto_employee_contrib -= min(auto_employee_contrib, excess)
+            employee_contrib = max_employee_contrib
+        elif max_employee_contrib:
+            employee_contrib = min(employee_contrib, max_employee_contrib)
         taxable_income = payload.employment_income - employee_contrib
         if taxable_income < 0:
             taxable_income = 0.0
