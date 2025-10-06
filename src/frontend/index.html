@@ -216,60 +216,70 @@
                   disability).
                 </p>
               </div>
-              <div class="form-control">
-                <label for="birth-year" data-i18n-key="fields.birth-year">
-                  Birth year (optional)
-                </label>
-                <input
-                  id="birth-year"
-                  name="demographics.birth_year"
-                  type="number"
-                  min="1900"
-                  max="2100"
-                  step="1"
-                  aria-describedby="birth-year-hint"
-                />
-                <p
-                  id="birth-year-hint"
-                  class="form-hint"
-                  data-i18n-key="hints.birth-year"
-                >
-                  Add the taxpayer birth year to auto-calculate youth relief
-                  eligibility.
-                </p>
-              </div>
-              <div class="form-control">
-                <label for="age-band" data-i18n-key="fields.age-band">
-                  Youth relief age group
-                </label>
-                <select id="age-band" name="demographics.age_band">
-                  <option
-                    value=""
-                    data-i18n-key="fields.age-band-default"
+            </div>
+            <div class="form-subsection">
+              <h3
+                class="fieldset-subheading"
+                data-i18n-key="calculator.subheadings.demographics"
+              >
+                Demographic details
+              </h3>
+              <div class="form-grid double">
+                <div class="form-control">
+                  <label for="birth-year" data-i18n-key="fields.birth-year">
+                    Birth year (optional)
+                  </label>
+                  <input
+                    id="birth-year"
+                    name="demographics.birth_year"
+                    type="number"
+                    min="1900"
+                    max="2100"
+                    step="1"
+                    aria-describedby="birth-year-hint"
+                  />
+                  <p
+                    id="birth-year-hint"
+                    class="form-hint"
+                    data-i18n-key="hints.birth-year"
                   >
-                    Select age group (optional)
-                  </option>
-                  <option
-                    value="under_25"
-                    data-i18n-key="fields.age-band-under-25"
+                    Add the taxpayer birth year to auto-calculate youth relief
+                    eligibility.
+                  </p>
+                </div>
+                <div class="form-control">
+                  <label for="age-band" data-i18n-key="fields.age-band">
+                    Youth relief age group
+                  </label>
+                  <select id="age-band" name="demographics.age_band">
+                    <option
+                      value=""
+                      data-i18n-key="fields.age-band-default"
+                    >
+                      Select age group (optional)
+                    </option>
+                    <option
+                      value="under_25"
+                      data-i18n-key="fields.age-band-under-25"
+                    >
+                      Under 25 (youth rate)
+                    </option>
+                    <option
+                      value="age26_30"
+                      data-i18n-key="fields.age-band-26-30"
+                    >
+                      Age 26–30 entering workforce
+                    </option>
+                  </select>
+                  <p
+                    id="age-band-hint"
+                    class="form-hint"
+                    data-i18n-key="hints.age-band"
                   >
-                    Under 25 (youth rate)
-                  </option>
-                  <option
-                    value="age26_30"
-                    data-i18n-key="fields.age-band-26-30"
-                  >
-                    Age 26–30 entering workforce
-                  </option>
-                </select>
-                <p
-                  id="age-band-hint"
-                  class="form-hint"
-                  data-i18n-key="hints.age-band"
-                >
-                  Override the automatic youth band when the worker qualifies
-                  through special rules (for example, first-time employment).
-                </p>
+                    Override the automatic youth band when the worker qualifies
+                    through special rules (for example, first-time employment).
+                  </p>
+                </div>
               </div>
             </div>
             <div class="form-grid double">
