@@ -6,6 +6,12 @@ tool for individuals in Greece. The project prioritises accuracy, clarity, and
 maintainability. Development will proceed iteratively using epics and sprints to
 deliver user value in incremental, testable slices.
 
+## Documentation baseline
+- Track overlapping or outdated guidance in [docs/documentation_audit.md](./documentation_audit.md) before touching shared
+  docs so updates target the canonical source.
+- Follow the conventions in [docs/documentation_style.md](./documentation_style.md) when drafting or revising
+  documentation across the repository.
+
 ## Epics Overview
 
 1. **Core Tax Engine**
