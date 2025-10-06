@@ -20,15 +20,15 @@
   maintaining audit-friendly detail rows in the response payload.
 - Trade fee handling reflects the latest filing guidance, only adding the
   charge for professions or start years that require it.
-- Youth age derivation and the 2025–2026 family tax credit ladder now mirror
-  the ministry calculator, with youth relief determined from the 2026
-  reference year and the expanded dependant amounts.
+- Youth age derivation and the 2026 family tax credit ladder now mirror the
+  ministry calculator, with youth relief determined from the 2026 reference
+  year.
 - Demographic inputs now require a birth year and automatically derive youth
   relief, removing manual age-band overrides and redundant confirmation
   toggles.
-- The 2025 employment brackets now embed the ministry's dependant- and youth-
-  specific rates so scenarios like five-child youth households receive the
-  correct progressive relief.
+- The 2025 employment brackets now follow the uniform 9/22/28/36/44 schedule
+  published by the ministry, matching the 2024 ladder without dependant or
+  youth-specific adjustments.
 - The 2026 wage and pension brackets mirror the confirmed youth and large-family
   relief schedule, while dependant credits, rental updates, and freelance EFKA
   bands remain provisional pending official circulars.

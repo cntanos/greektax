@@ -11,7 +11,7 @@ from pydantic import ValidationError
 from greektax.backend.app.models import CalculationRequest, NET_INCOME_INPUT_ERROR
 from greektax.backend.app.services.calculation_service import calculate_tax
 from greektax.backend.config.year_config import (
-    MultiRateBracket,
+    TaxBracket,
     YearConfiguration,
     load_year_configuration,
 )
@@ -282,36 +282,22 @@ def test_employment_contribution_rates_updated_for_2025() -> None:
     assert contributions_2025.monthly_salary_cap == pytest.approx(7572.62)
 
 
-def test_2025_employment_brackets_include_multi_rate_youth_relief() -> None:
-    """The 2025 employment brackets expose dependant and youth relief rates."""
+def test_2025_employment_brackets_follow_standard_schedule() -> None:
+    """The 2025 employment brackets revert to the uniform 9/22/28/36/44 ladder."""
 
     config = load_year_configuration(2025)
     brackets = config.employment.brackets
 
-    assert brackets, "Expected 2025 brackets to be populated"
-    assert all(isinstance(bracket, MultiRateBracket) for bracket in brackets)
+    expected_bounds = [10_000, 20_000, 30_000, 40_000, None]
+    expected_rates = [0.09, 0.22, 0.28, 0.36, 0.44]
 
-    first_band = brackets[0]
-    assert first_band.household.rate_for_dependants(5) == pytest.approx(0.0)
-    assert (
-        first_band.youth_rate_for_dependants("age26_30", 5)
-        == pytest.approx(0.0)
-    )
-
-    second_band = brackets[1]
-    assert second_band.household.rate_for_dependants(0) == pytest.approx(0.2)
-    assert (
-        second_band.youth_rate_for_dependants("under_25", 0)
-        == pytest.approx(0.0)
-    )
-    assert (
-        second_band.youth_rate_for_dependants("age26_30", 0)
-        == pytest.approx(0.09)
-    )
+    assert [bracket.upper_bound for bracket in brackets] == expected_bounds
+    assert all(isinstance(bracket, TaxBracket) for bracket in brackets)
+    assert [bracket.rate for bracket in brackets] == pytest.approx(expected_rates)
 
 
-def test_2025_employment_youth_large_family_alignment() -> None:
-    """A 70k income with five children matches the ministry youth relief outcome."""
+def test_2025_employment_large_family_matches_standard_brackets() -> None:
+    """A 70k income with five children uses the uniform 2025 employment rates."""
 
     request = build_request(
         {
@@ -329,9 +315,9 @@ def test_2025_employment_youth_large_family_alignment() -> None:
         detail for detail in result["details"] if detail["category"] == "employment"
     )
 
-    assert summary["tax_total"] == pytest.approx(11_302.04, rel=1e-4)
+    assert summary["tax_total"] == pytest.approx(16_802.04, rel=1e-4)
     assert employment_detail["taxable_income"] == pytest.approx(60_641.0)
-    assert employment_detail["tax_before_credits"] == pytest.approx(13_082.04)
+    assert employment_detail["tax_before_credits"] == pytest.approx(18_582.04)
     assert employment_detail["credits"] == pytest.approx(1_780.0)
 
 
@@ -2199,8 +2185,8 @@ def test_calculate_tax_trade_fee_auto_exemption_by_year() -> None:
     )
     assert freelance_2025["trade_fee"] == pytest.approx(0.0)
 
-    assert result_2025["summary"]["tax_total"] == pytest.approx(1_300.0)
-    assert result_2025["summary"]["tax_total"] < result_2024["summary"]["tax_total"]
+    assert result_2025["summary"]["tax_total"] == pytest.approx(1_340.0)
+    assert result_2025["summary"]["tax_total"] <= result_2024["summary"]["tax_total"]
 
 
 def test_calculate_tax_with_agricultural_and_other_income() -> None:
