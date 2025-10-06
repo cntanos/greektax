@@ -548,6 +548,40 @@ def test_employment_tax_credit_reduced_using_gross_income() -> None:
     assert employment_detail["credits"] >= 0.0
 
 
+def test_salary_credit_reduction_uses_derived_income_when_no_declared() -> None:
+    """Monthly salary inputs still reduce the credit when above the threshold."""
+
+    request = CalculationRequest.model_validate(
+        {
+            "year": 2024,
+            "dependents": {"children": 0},
+            "employment": {
+                "monthly_income": 2_000,
+                "payments_per_year": 14,
+            },
+        }
+    )
+
+    result = calculate_tax(request)
+    employment_detail = result["details"][0]
+
+    config = load_year_configuration(request.year)
+    base_credit = config.employment.tax_credit.amount_for_children(
+        request.dependents.children
+    )
+
+    monthly_income = request.employment.monthly_income or 0.0
+    payments_per_year = request.employment.payments_per_year or 0
+    derived_income = monthly_income * payments_per_year
+    assert derived_income > 12_000
+
+    reduction = ((derived_income - 12_000) / 1_000) * 20.0
+    expected_credit = max(base_credit - reduction, 0.0)
+
+    assert employment_detail["credits"] == pytest.approx(expected_credit)
+    assert employment_detail["credits"] >= 0.0
+
+
 def test_calculate_tax_with_withholding_tax_balance_due() -> None:
     """Withholding reduces the net tax payable and surfaces in the summary."""
 
