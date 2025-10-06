@@ -287,9 +287,11 @@ const investmentSection = document.getElementById("investment-section");
 const deductionsSection = document.getElementById("deductions-section");
 const obligationsSection = document.getElementById("obligations-section");
 const employmentSection = document.getElementById("employment-section");
+const pensionSection = document.getElementById("pension-section");
 const toggleFreelance = document.getElementById("toggle-freelance");
 const toggleEmployment = document.getElementById("toggle-employment");
 const toggleAgricultural = document.getElementById("toggle-agricultural");
+const togglePension = document.getElementById("toggle-pension");
 const toggleOther = document.getElementById("toggle-other");
 const toggleRental = document.getElementById("toggle-rental");
 const toggleInvestment = document.getElementById("toggle-investment");
@@ -1549,11 +1551,17 @@ function isPensionEnabled() {
 }
 
 function shouldDisplayPartialYearWarning() {
-  if (!isSectionActive(employmentSection)) {
+  const employmentActive = isSectionActive(employmentSection);
+  const pensionActive = isSectionActive(pensionSection);
+
+  if (!employmentActive && !pensionActive) {
     return false;
   }
-  if (hasPartialYearSelection(employmentPaymentsInput)) {
+  if (employmentActive && hasPartialYearSelection(employmentPaymentsInput)) {
     return true;
+  }
+  if (!pensionActive) {
+    return false;
   }
   if (!hasPensionEntries()) {
     return false;
@@ -1562,6 +1570,9 @@ function shouldDisplayPartialYearWarning() {
 }
 
 function hasPensionEntries() {
+  if (!isSectionActive(pensionSection)) {
+    return false;
+  }
   if (currentPensionMode === "monthly") {
     return readNumber(pensionMonthlyIncomeInput) > 0;
   }
@@ -1594,7 +1605,7 @@ function handleSectionToggle(toggle) {
   if (!isChecked) {
     resetSectionInputs(section);
   }
-  if (toggle === toggleEmployment) {
+  if (toggle === toggleEmployment || toggle === togglePension) {
     updatePartialYearWarningState();
   }
 }
@@ -1604,6 +1615,7 @@ function initialiseSectionToggles() {
     toggleEmployment,
     toggleFreelance,
     toggleAgricultural,
+    togglePension,
     toggleOther,
     toggleRental,
     toggleInvestment,
@@ -2884,7 +2896,7 @@ function buildCalculationPayload() {
     payload.withholding_tax = withholdingTax;
   }
 
-  if (isSectionActive(employmentSection) && isPensionEnabled()) {
+  if (isSectionActive(pensionSection) && isPensionEnabled()) {
     const pensionPayload = {};
     const pensionMode = pensionModeSelect?.value || currentPensionMode;
     if (pensionMode === "monthly") {
