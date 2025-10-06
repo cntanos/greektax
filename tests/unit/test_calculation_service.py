@@ -544,6 +544,41 @@ def test_2026_credit_zero_tax_cutover(
     assert employment_next["tax_before_credits"] > employment_next["credits"]
 
 
+@pytest.mark.parametrize(
+    "dependants, expectations",
+    list(MINISTRY_EMPLOYMENT_CREDIT_EXPECTATIONS_2026.items()),
+)
+def test_2026_employment_credit_regression_against_ministry(
+    dependants: int, expectations: dict[int, dict[str, float]]
+) -> None:
+    """Employment credit and pre-credit tax mirror the ministry calculator across brackets."""
+
+    for income in sorted(expectations):
+        request = build_request(
+            {
+                "year": 2026,
+                "dependents": {"children": dependants},
+                "employment": {
+                    "gross_income": income,
+                    "include_social_contributions": False,
+                },
+            }
+        )
+
+        result = calculate_tax(request)
+        employment_detail = next(
+            detail for detail in result["details"] if detail["category"] == "employment"
+        )
+
+        expected = expectations[income]
+        assert employment_detail["tax_before_credits"] == pytest.approx(
+            expected["tax_before"], abs=0.01
+        )
+        assert employment_detail["credits"] == pytest.approx(
+            expected["credit"], abs=0.01
+        )
+
+
 def _freelance_expectations(request: CalculationRequest) -> dict[str, Any]:
     """Return expected freelance and employment metrics for the mixed payload."""
 
