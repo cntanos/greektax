@@ -1,51 +1,49 @@
 # GreekTax
 
-GreekTax is an unofficial, bilingual web application designed to help taxpayers
-in Greece estimate their annual obligations across employment, freelance,
-rental, and other income categories. The project emphasises transparency,
-maintainability, and ease of deployment by using widely adopted web
-technologies.
+GreekTax is an unofficial, bilingual web application that helps taxpayers in
+Greece estimate their annual obligations across employment, freelance, rental,
+and related income categories. The project emphasises transparency,
+maintainability, and ease of deployment through a modern Python stack.
 
 > **Disclaimer**: GreekTax is not an official government tool. Results are for
 > informational purposes only; consult a professional accountant for formal
 > filings.
 
-## Repository Layout
+## Documentation Outline
+
+1. [Overview](#overview)
+2. [Quick Start](#quick-start)
+3. [Architecture & Planning References](#architecture--planning-references)
+4. [Contributor Checklist](#contributor-checklist)
+5. [Versioning & Release Guidance](#versioning--release-guidance)
+
+## Overview
+
+- **Architecture**: Flask API under `src/greektax/backend` and a static
+  front-end under `src/frontend`, both sharing localisation catalogues and
+  configuration assets.
+- **Data-driven tax logic**: Yearly YAML data files under
+  `src/greektax/backend/config/data` allow updates without touching Python code.
+- **Translations**: Shared bilingual catalogues power API responses and the UI,
+  with tooling to embed the latest strings in the static bundle.
+- **Testing focus**: Unit, integration, and regression coverage keeps complex
+  business rules verifiable as regulations change.
+
+Repository layout:
 
 ```
-├── docs/                   # Project plan, architecture notes, and sprint logs
+├── docs/                   # Architecture, roadmap, and localisation references
 ├── src/
-│   ├── greektax/backend/   # Flask-based API scaffolding and configuration
+│   ├── greektax/backend/   # Flask API scaffolding and configuration
 │   └── frontend/           # Static assets and UI placeholders
-├── tests/                  # Unit, integration, and future end-to-end tests
+├── tests/                  # Unit, integration, and regression coverage
 ├── pyproject.toml          # Project metadata and tooling configuration
-└── Requirements.md         # Detailed functional and non-functional requirements
+└── Requirements.md         # Functional and non-functional requirements
 ```
 
-Refer to [`docs/project_plan.md`](docs/project_plan.md) for epics, sprint
-objectives, and delivery roadmap updates.
+## Quick Start
 
-## Architecture Overview
-
-GreekTax is split between a Flask API (`src/greektax/backend`) and a static
-front-end (`src/frontend`). The back-end publishes calculation, configuration,
-and localisation endpoints consumed by the UI, while the front-end embeds the
-shared translation catalogue and issues JSON requests against the API. Yearly
-tax rules are managed as YAML data files under
-`src/greektax/backend/config/data`, letting maintainers add new filing years
-without touching Python code. See [`docs/architecture.md`](docs/architecture.md)
-for a detailed walkthrough of the module boundaries, deployment model, and
-maintenance workflows.
-
-## Development Environment
-
-### Prerequisites
-- Python 3.10+
-- Node.js (optional, for future front-end tooling)
-- Recommended editor: Visual Studio Code with the workspace configuration in
-  [`.vscode/`](.vscode/)
-
-### Setup
+### 1. Set up a local environment
 
 ```bash
 python -m venv .venv
@@ -54,145 +52,65 @@ pip install -r requirements-dev.txt
 pip install -e .
 ```
 
-### Testing & Quality
+Optional: install Node.js if you plan to experiment with future front-end
+tooling.
 
-Run the automated checks to keep the scaffold healthy:
+### 2. Run verification commands
 
-```bash
-pytest
-```
-
-Validate configuration files to surface contributor-facing alerts:
+Use the automated checks to keep the scaffold healthy:
 
 ```bash
-python -m greektax.backend.config.validator
+pytest                         # Execute unit and integration tests
+ruff check src tests           # Lint Python code
+mypy src                       # Static type checks
+python -m greektax.backend.config.validator  # Validate YAML configuration
 ```
 
-### Refreshing front-end translations
-
-Whenever you update the shared catalogues in `src/greektax/translations`,
-regenerate the embedded front-end bundle so the static UI picks up the changes:
+### 3. Refresh localisation bundles when strings change
 
 ```bash
 python scripts/embed_translations.py
 ```
 
-This script reads the canonical JSON resources and emits
-`src/frontend/assets/scripts/translations.generated.js`, which the browser loads
-before the main application script. The generated file should be committed so
-static deployments remain in sync with the latest catalogue content.
+The script rebuilds
+`src/frontend/assets/scripts/translations.generated.js`. Commit the regenerated
+file so static deployments remain in sync with the canonical catalogues. See
+[`docs/i18n.md`](docs/i18n.md) for end-to-end localisation guidance.
 
-Refer to [`docs/i18n.md`](docs/i18n.md) for the full localisation workflow,
-including how to add new strings or support additional languages.
+## Architecture & Planning References
 
-Additional tooling configured for future sprints:
+- [`docs/architecture.md`](docs/architecture.md) — module boundaries, deployment
+  model, and maintenance workflows.
+- [`docs/project_plan.md`](docs/project_plan.md) — roadmap, sprint history, and
+  upcoming milestones.
+- [`docs/i18n.md`](docs/i18n.md) — localisation workflows and translation
+  catalogue conventions.
+- [`Requirements.md`](Requirements.md) — product requirements and acceptance
+  criteria.
 
-- `ruff` for linting (`ruff check src tests`)
-- `mypy` for static type checks (`mypy src`)
+## Contributor Checklist
 
-### Performance Snapshot
+Before opening a pull request:
 
-Capture a lightweight performance and accessibility baseline with the
-instrumented helper:
+- **Prepare the environment**
+  - Create/refresh the virtual environment and install development dependencies.
+  - Activate recommended editor settings (see `.vscode/` for VS Code defaults).
+- **Update artefacts**
+  - Run `pytest`, `ruff check src tests`, and `mypy src`; address failures.
+  - Execute `python -m greektax.backend.config.validator` to catch configuration
+    regressions.
+  - Run `python scripts/embed_translations.py` after localisation updates and
+    commit the generated assets.
+- **Documentation**
+  - Sync relevant references in `docs/` if behaviour, endpoints, or workflows
+    change.
+  - Note roadmap impacts in [`docs/project_plan.md`](docs/project_plan.md).
 
-```bash
-python scripts/performance_snapshot.py
-```
+## Versioning & Release Guidance
 
-The report logs backend calculation timings (including minimum, maximum, and
-average durations), bundle sizes for the key front-end assets, and ARIA usage in
-the HTML shell. See [`docs/performance_baseline.md`](docs/performance_baseline.md)
-for guidance on interpreting the output.
-
-## Current Capabilities
-
-- **Comprehensive calculation engine** – The Flask back end validates incoming
-  payloads, normalises employment and freelance entries, and produces bilingual
-  summaries for income, deductions, and optional obligations such as ENFIA and
-  luxury levies.【F:src/greektax/backend/app/services/calculation_service.py†L1-L240】
-- **Public API contract** – Versioned endpoints expose calculation, metadata,
-  and localisation resources so the static front end and external clients can
-  consume the same business rules.【F:docs/api_contract.md†L1-L226】
-- **Translation pipeline** – Localised strings live in shared catalogues that
-  power both the Flask responses and the static UI. The `embed_translations.py`
-  script regenerates the front-end bundle to keep the two layers in sync.【F:scripts/embed_translations.py†L1-L109】
-- **Static front-end shell** – A responsive calculator front end renders
-  interactive forms, Sankey visualisations, and summaries with language and
-  theme switching powered by the embedded translations.【F:src/frontend/index.html†L1-L560】【F:src/frontend/assets/scripts/main.js†L20-L2549】
-
-## Understanding Calculator Results
-
-- **Social insurance toggle** – Employment results respect the “Include social
-  insurance contributions in net pay” toggle. Leave it enabled for the default
-  EFKA deductions, or disable it to preview a tax-only scenario where both
-  automatic and manual EFKA amounts are zeroed out.
-- **Employer cost** – The summary highlights the employer’s total cost as the
-  gross salary plus statutory employer EFKA contributions (capped at the legal
-  salary ceiling). This helps align the Sankey diagram, donut chart, and totals
-  with real payroll slips.
-
-## Tax Logic & Recent Updates
-
-- Charitable donations yield direct credits within the deduction engine while
-  maintaining audit-friendly detail rows in the response payload.【F:src/greektax/backend/app/services/calculation_service.py†L904-L1020】
-- Trade fee handling reflects the latest filing guidance, only adding the charge
-  for professions or start years that require it.【F:src/greektax/backend/app/services/calculation_service.py†L702-L776】
-- The 2026 wage and pension brackets now mirror the confirmed youth and large-
-  family relief schedule, while dependant credits, rental updates, and freelance
-  EFKA bands remain provisional pending official circulars.【F:src/greektax/backend/config/data/2026.yaml†L1-L141】【F:src/greektax/backend/config/data/2026.yaml†L220-L333】【F:src/greektax/backend/config/data/2026.yaml†L450-L520】
-
-## Configuring the API endpoint
-
-The front-end reads a single `API_BASE` constant near the top of
-`src/frontend/assets/scripts/main.js`. It defaults to the hosted
-`https://cntanos.pythonanywhere.com/api/v1` service so static deployments work
-out of the box. For local development or self-hosted installs, switch the
-commented line to `LOCAL_API_BASE` before building or serving the assets from the
-Flask application. When embedding the calculator in a CMS, serve the static
-bundle from the same origin as your API or fork the repository to bake in the
-desired endpoint.
-
-## Brand & Media Assets
-
-Binary media files are intentionally not stored in this repository. When UI work
-needs CogniSys-branded imagery or logos, reference the assets hosted on
-https://www.cognisys.gr/ or reproduce them with CSS/SVG so pull requests remain
-text-only.
-
-## Roadmap
-
-Development follows iterative sprints grouped by epics. Each sprint update will
-be documented in the project plan. Key focus areas for upcoming sprints include:
-
-1. Completing year-based configuration schemas and validation.
-2. Building the modular tax calculation engine with comprehensive tests.
-3. Delivering a responsive, bilingual user interface integrated with the API.
-
-Contributions are welcome via pull requests. Please consult the project plan and
-TODO markers across the codebase for the current priorities.
-
-## Versioning
-
-GreekTax tracks releases with the semantic pattern **R.X.Y**:
-
-- **Release** (`R`) – cycle number signifying major public milestones. This
-  only increments when a full release is declared.
-- **Major version** (`X`) – increments that bundle new features or significant
-  UI updates. Increase this when a sprint concludes with a packaged
-  deliverable.
-- **Minor version** (`Y`) – iterations for hot-fixes or polish delivered within
-  a sprint. Increment this for follow-up patches within the same sprint.
-
-The current milestone is **R.7.1** (version `0.7.1` in `pyproject.toml`),
-reflecting the sixth major sprint within the initial release cycle.
-
-The canonical version is declared once in [`pyproject.toml`](pyproject.toml) and
-is surfaced automatically via the `/api/v1/config/meta` endpoint and the UI
-footer. Bump the value there to propagate the new release identifier
-everywhere.
-
-## License
-
-GreekTax is released under the [GNU General Public License v3.0](LICENSE).
-
-&copy; 2026 Christos Ntanos for CogniSys. Released under the GNU GPL v3 License.
+- Project versioning is managed via the `version` field in
+  [`pyproject.toml`](pyproject.toml); update it when preparing a release.
+- Tag repository releases with the matching version number and summarise
+  highlights in the project plan.
+- Keep generated artefacts and localisation bundles in sync with the declared
+  version so published packages reflect the documented capabilities.

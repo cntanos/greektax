@@ -12,6 +12,16 @@ deliver user value in incremental, testable slices.
 - Follow the conventions in [docs/documentation_style.md](./documentation_style.md) when drafting or revising
   documentation across the repository.
 
+## Recent tax logic updates
+
+- Charitable donations yield direct credits within the deduction engine while
+  maintaining audit-friendly detail rows in the response payload.
+- Trade fee handling reflects the latest filing guidance, only adding the
+  charge for professions or start years that require it.
+- The 2026 wage and pension brackets mirror the confirmed youth and large-family
+  relief schedule, while dependant credits, rental updates, and freelance EFKA
+  bands remain provisional pending official circulars.
+
 ## Epics Overview
 
 1. **Core Tax Engine**
