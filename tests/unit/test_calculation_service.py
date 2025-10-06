@@ -173,7 +173,7 @@ def _employment_expectations(
     }
 
 
-MINISTRY_EMPLOYMENT_CREDIT_EXPECTATIONS_2026 = {
+TAXHEAVEN_EMPLOYMENT_CREDIT_EXPECTATIONS_2026 = {
     0: {
         12_000: {"tax_before": 1_300.0, "credit": 777.0},
         20_000: {"tax_before": 2_900.0, "credit": 617.0},
@@ -197,61 +197,71 @@ MINISTRY_EMPLOYMENT_CREDIT_EXPECTATIONS_2026 = {
     },
     3: {
         12_000: {"tax_before": 1_080.0, "credit": 1_080.0},
-        20_000: {"tax_before": 1_800.0, "credit": 1_180.0},
-        30_000: {"tax_before": 3_800.0, "credit": 980.0},
-        50_000: {"tax_before": 11_100.0, "credit": 580.0},
-        70_000: {"tax_before": 19_400.0, "credit": 180.0},
+        20_000: {"tax_before": 1_800.0, "credit": 1_132.76},
+        30_000: {"tax_before": 3_800.0, "credit": 932.76},
+        50_000: {"tax_before": 11_100.0, "credit": 532.76},
+        70_000: {"tax_before": 19_400.0, "credit": 132.76},
     },
     4: {
         12_000: {"tax_before": 0.0, "credit": 0.0},
         20_000: {"tax_before": 0.0, "credit": 0.0},
-        30_000: {"tax_before": 1_800.0, "credit": 1_220.0},
-        50_000: {"tax_before": 9_100.0, "credit": 820.0},
-        70_000: {"tax_before": 17_400.0, "credit": 420.0},
+        30_000: {"tax_before": 1_800.0, "credit": 918.0},
+        50_000: {"tax_before": 9_100.0, "credit": 518.0},
+        70_000: {"tax_before": 17_400.0, "credit": 118.0},
     },
     5: {
         12_000: {"tax_before": 0.0, "credit": 0.0},
         20_000: {"tax_before": 0.0, "credit": 0.0},
         30_000: {"tax_before": 1_600.0, "credit": 1_600.0},
-        50_000: {"tax_before": 8_900.0, "credit": 1_780.0},
-        70_000: {"tax_before": 17_200.0, "credit": 1_780.0},
+        50_000: {"tax_before": 8_900.0, "credit": 1_779.86},
+        70_000: {"tax_before": 17_200.0, "credit": 1_779.86},
     },
     6: {
         12_000: {"tax_before": 0.0, "credit": 0.0},
         20_000: {"tax_before": 0.0, "credit": 0.0},
         30_000: {"tax_before": 1_400.0, "credit": 1_400.0},
-        50_000: {"tax_before": 8_700.0, "credit": 2_000.0},
-        70_000: {"tax_before": 17_000.0, "credit": 2_000.0},
+        50_000: {"tax_before": 8_700.0, "credit": 1_999.86},
+        70_000: {"tax_before": 17_000.0, "credit": 1_999.86},
     },
     7: {
         12_000: {"tax_before": 0.0, "credit": 0.0},
         20_000: {"tax_before": 0.0, "credit": 0.0},
         30_000: {"tax_before": 1_400.0, "credit": 1_400.0},
-        50_000: {"tax_before": 8_700.0, "credit": 2_200.0},
-        70_000: {"tax_before": 17_000.0, "credit": 2_200.0},
+        50_000: {"tax_before": 8_700.0, "credit": 2_219.86},
+        70_000: {"tax_before": 17_000.0, "credit": 2_219.86},
     },
     8: {
         12_000: {"tax_before": 0.0, "credit": 0.0},
         20_000: {"tax_before": 0.0, "credit": 0.0},
         30_000: {"tax_before": 1_400.0, "credit": 1_400.0},
-        50_000: {"tax_before": 8_700.0, "credit": 2_440.0},
-        70_000: {"tax_before": 17_000.0, "credit": 2_440.0},
+        50_000: {"tax_before": 8_700.0, "credit": 2_439.86},
+        70_000: {"tax_before": 17_000.0, "credit": 2_439.86},
     },
     9: {
         12_000: {"tax_before": 0.0, "credit": 0.0},
         20_000: {"tax_before": 0.0, "credit": 0.0},
         30_000: {"tax_before": 1_400.0, "credit": 1_400.0},
-        50_000: {"tax_before": 8_700.0, "credit": 2_660.0},
-        70_000: {"tax_before": 17_000.0, "credit": 2_660.0},
+        50_000: {"tax_before": 8_700.0, "credit": 2_659.86},
+        70_000: {"tax_before": 17_000.0, "credit": 2_659.86},
     },
     10: {
         12_000: {"tax_before": 0.0, "credit": 0.0},
         20_000: {"tax_before": 0.0, "credit": 0.0},
         30_000: {"tax_before": 1_400.0, "credit": 1_400.0},
-        50_000: {"tax_before": 8_700.0, "credit": 2_880.0},
-        70_000: {"tax_before": 17_000.0, "credit": 2_880.0},
+        50_000: {"tax_before": 8_700.0, "credit": 2_879.86},
+        70_000: {"tax_before": 17_000.0, "credit": 2_879.86},
     },
 }
+
+
+TAXHEAVEN_PUBLISHED_THRESHOLD_BEHAVIOUR_2026 = [
+    (0, 8_633.0, 776.97, 776.97, 0.0),
+    (1, 10_000.0, 900.0, 900.0, 0.0),
+    (2, 11_375.0, 1_120.0, 1_120.0, 0.0),
+    (3, 14_364.0, 1_292.76, 1_245.48, 47.28),
+    (4, 27_100.0, 1_278.0, 976.0, 302.0),
+    (5, 30_529.0, 1_779.86, 1_779.86, 0.0),
+]
 
 
 def test_employment_contribution_rates_updated_for_2025() -> None:
@@ -325,6 +335,66 @@ def test_2025_employment_youth_large_family_alignment() -> None:
     assert employment_detail["credits"] == pytest.approx(620.0)
 
 
+def test_2026_employment_brackets_match_taxheaven_tables() -> None:
+    """The 2026 employment brackets mirror the Taxheaven dependant ladders."""
+
+    config = load_year_configuration(2026)
+    brackets = config.employment.brackets
+
+    expected_bounds = [10_000, 20_000, 30_000, 40_000, 60_000, None]
+    assert [bracket.upper_bound for bracket in brackets] == expected_bounds
+
+    expected_household_rates = {
+        0: [0.09, 0.20, 0.26, 0.34, 0.39, 0.44],
+        1: [0.09, 0.18, 0.24, 0.34, 0.39, 0.44],
+        2: [0.09, 0.16, 0.22, 0.34, 0.39, 0.44],
+        3: [0.09, 0.09, 0.20, 0.34, 0.39, 0.44],
+        4: [0.0, 0.0, 0.18, 0.34, 0.39, 0.44],
+        5: [0.0, 0.0, 0.16, 0.34, 0.39, 0.44],
+        6: [0.0, 0.0, 0.14, 0.34, 0.39, 0.44],
+    }
+
+    for dependants, expected_rates in expected_household_rates.items():
+        actual_rates = [
+            bracket.rate_for_dependants(dependants) for bracket in brackets
+        ]
+        assert actual_rates == pytest.approx(expected_rates)
+
+    expected_under_25_rates = {
+        0: [0.0, 0.0, 0.26, 0.34, 0.39, 0.44],
+        1: [0.0, 0.0, 0.24, 0.34, 0.39, 0.44],
+        2: [0.0, 0.0, 0.22, 0.34, 0.39, 0.44],
+        3: [0.0, 0.0, 0.20, 0.34, 0.39, 0.44],
+        4: [0.0, 0.0, 0.18, 0.34, 0.39, 0.44],
+        5: [0.0, 0.0, 0.16, 0.34, 0.39, 0.44],
+        6: [0.0, 0.0, 0.14, 0.34, 0.39, 0.44],
+    }
+
+    for dependants, expected_rates in expected_under_25_rates.items():
+        actual_rates = [
+            bracket.youth_rate_for_dependants("under_25", dependants)
+            for bracket in brackets
+        ]
+        assert actual_rates == pytest.approx(expected_rates)
+
+    expected_age26_30_rates = {
+        0: [0.09, 0.09, 0.26, 0.34, 0.39, 0.44],
+        1: [0.09, 0.09, 0.24, 0.34, 0.39, 0.44],
+        2: [0.09, 0.09, 0.22, 0.34, 0.39, 0.44],
+        3: [0.09, 0.09, 0.20, 0.34, 0.39, 0.44],
+        4: [0.0, 0.0, 0.18, 0.34, 0.39, 0.44],
+        5: [0.0, 0.0, 0.16, 0.34, 0.39, 0.44],
+        6: [0.0, 0.0, 0.14, 0.34, 0.39, 0.44],
+    }
+
+    for dependants, expected_rates in expected_age26_30_rates.items():
+        actual_rates = [
+            bracket.youth_rate_for_dependants("age26_30", dependants)
+            for bracket in brackets
+        ]
+        assert actual_rates == pytest.approx(expected_rates)
+
+
 def test_2026_large_family_credit_not_reduced() -> None:
     """Five-child households retain the full 2026 family tax credit despite income."""
 
@@ -347,9 +417,131 @@ def test_2026_large_family_credit_not_reduced() -> None:
     )
 
     assert employment_detail["tax_before_credits"] == pytest.approx(17_200.0)
-    assert employment_detail["credits"] == pytest.approx(1_780.0)
-    assert employment_detail["total_tax"] == pytest.approx(15_420.0)
-    assert summary["net_income"] == pytest.approx(54_580.0)
+    assert employment_detail["credits"] == pytest.approx(1_779.86)
+    assert employment_detail["total_tax"] == pytest.approx(15_420.14)
+    assert summary["net_income"] == pytest.approx(54_579.86)
+
+
+@pytest.mark.parametrize(
+    "dependants, expectations",
+    list(TAXHEAVEN_EMPLOYMENT_CREDIT_EXPECTATIONS_2026.items()),
+)
+def test_2026_employment_credit_regression_against_taxheaven(
+    dependants: int, expectations: dict[int, dict[str, float]]
+) -> None:
+    """Employment credit and pre-credit tax mirror the Taxheaven reference across brackets."""
+
+    for income in sorted(expectations):
+        request = build_request(
+            {
+                "year": 2026,
+                "dependents": {"children": dependants},
+                "employment": {
+                    "gross_income": income,
+                    "include_social_contributions": False,
+                },
+            }
+        )
+
+        result = calculate_tax(request)
+        employment_detail = next(
+            detail for detail in result["details"] if detail["category"] == "employment"
+        )
+
+        expected = expectations[income]
+        assert employment_detail["tax_before_credits"] == pytest.approx(
+            expected["tax_before"], abs=0.01
+        )
+        assert employment_detail["credits"] == pytest.approx(
+            expected["credit"], abs=0.01
+        )
+
+
+@pytest.mark.parametrize(
+    "dependants, published_income, expected_before, expected_credit, expected_tax",
+    TAXHEAVEN_PUBLISHED_THRESHOLD_BEHAVIOUR_2026,
+)
+def test_2026_taxheaven_threshold_behaviour(
+    dependants: int,
+    published_income: float,
+    expected_before: float,
+    expected_credit: float,
+    expected_tax: float,
+) -> None:
+    """Published “tax-free” thresholds still respect the credit reduction rule."""
+
+    request = build_request(
+        {
+            "year": 2026,
+            "dependents": {"children": dependants},
+            "employment": {
+                "gross_income": published_income,
+                "include_social_contributions": False,
+            },
+        }
+    )
+
+    result = calculate_tax(request)
+    employment_detail = next(
+        detail for detail in result["details"] if detail["category"] == "employment"
+    )
+
+    assert employment_detail["tax_before_credits"] == pytest.approx(
+        expected_before, abs=0.01
+    )
+    assert employment_detail["credits"] == pytest.approx(
+        expected_credit, abs=0.01
+    )
+    assert employment_detail["total_tax"] == pytest.approx(expected_tax, abs=0.01)
+
+
+@pytest.mark.parametrize(
+    "dependants, zero_income, next_euro",
+    [
+        (3, 13_934.18, 13_935.0),
+        (4, 25_590.0, 25_591.0),
+    ],
+)
+def test_2026_credit_zero_tax_cutover(
+    dependants: int, zero_income: float, next_euro: float
+) -> None:
+    """Medium households hit zero tax below the Taxheaven allowances."""
+
+    request_zero = build_request(
+        {
+            "year": 2026,
+            "dependents": {"children": dependants},
+            "employment": {
+                "gross_income": zero_income,
+                "include_social_contributions": False,
+            },
+        }
+    )
+    result_zero = calculate_tax(request_zero)
+    employment_zero = next(
+        detail for detail in result_zero["details"] if detail["category"] == "employment"
+    )
+    assert employment_zero["total_tax"] == pytest.approx(0.0, abs=0.01)
+    assert employment_zero["tax_before_credits"] == pytest.approx(
+        employment_zero["credits"], abs=0.01
+    )
+
+    request_next = build_request(
+        {
+            "year": 2026,
+            "dependents": {"children": dependants},
+            "employment": {
+                "gross_income": next_euro,
+                "include_social_contributions": False,
+            },
+        }
+    )
+    result_next = calculate_tax(request_next)
+    employment_next = next(
+        detail for detail in result_next["details"] if detail["category"] == "employment"
+    )
+    assert employment_next["total_tax"] > 0.0
+    assert employment_next["tax_before_credits"] > employment_next["credits"]
 
 
 @pytest.mark.parametrize(
@@ -1761,8 +1953,8 @@ def test_2026_presumptive_relief_partial_and_toggle_control() -> None:
     assert "presumptive_adjustments" not in gated_result["meta"]
 
 
-def test_2026_dependant_credit_tiers_match_ministry_schedule() -> None:
-    """Dependent credit tiers for 2026 mirror the published ministry ladder."""
+def test_2026_dependant_credit_tiers_match_taxheaven_schedule() -> None:
+    """Dependent credit tiers for 2026 match the Taxheaven-published ladder."""
 
     config = load_year_configuration(2026)
     credit = config.employment.tax_credit
@@ -1773,26 +1965,26 @@ def test_2026_dependant_credit_tiers_match_ministry_schedule() -> None:
         0: 777.0,
         1: 900.0,
         2: 1_120.0,
-        3: 1_340.0,
-        4: 1_580.0,
-        5: 1_780.0,
-        6: 2_000.0,
-        7: 2_200.0,
-        8: 2_440.0,
-        9: 2_660.0,
-        10: 2_880.0,
-        11: 3_100.0,
-        12: 3_320.0,
-        13: 3_540.0,
-        14: 3_760.0,
-        15: 3_980.0,
+        3: 1_292.76,
+        4: 1_278.0,
+        5: 1_779.86,
+        6: 1_999.86,
+        7: 2_219.86,
+        8: 2_439.86,
+        9: 2_659.86,
+        10: 2_879.86,
+        11: 3_099.86,
+        12: 3_319.86,
+        13: 3_539.86,
+        14: 3_759.86,
+        15: 3_979.86,
     }
 
     for dependants, amount in expected_amounts.items():
         assert credit.amount_for_children(dependants) == pytest.approx(amount)
 
     # The incremental amount applies beyond the published table.
-    assert credit.amount_for_children(16) == pytest.approx(4_200.0)
+    assert credit.amount_for_children(16) == pytest.approx(4_199.86)
 
 
 def test_2026_rental_mid_band_cut() -> None:
