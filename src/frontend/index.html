@@ -775,190 +775,217 @@
                 </p>
               </div>
             </div>
-            <div class="form-grid double">
-              <div class="form-control">
-                <label
-                  for="freelance-efka-category"
-                  data-i18n-key="fields.freelance-efka-category"
-                >
-                  EFKA contribution class
-                </label>
-                <select id="freelance-efka-category"></select>
-                <p
-                  id="freelance-efka-category-hint"
-                  class="form-hint"
-                  data-static-hint="true"
-                ></p>
-              </div>
-              <div class="form-control">
-                <label
-                  for="freelance-efka-months"
-                  data-i18n-key="fields.freelance-efka-months"
-                >
-                  Contribution months
-                </label>
-                <input
-                  id="freelance-efka-months"
-                  name="freelance.efka_months"
-                  type="number"
-                  min="0"
-                  max="24"
-                  step="1"
-                  value="12"
-                />
-              </div>
-              <div class="form-control">
-                <label
-                  for="freelance-activity-start-year"
-                  data-i18n-key="fields.freelance-activity-start-year"
-                >
-                  Year freelance activity started
-                </label>
-                <input
-                  id="freelance-activity-start-year"
-                  type="number"
-                  min="1900"
-                  max="2100"
-                  step="1"
-                  value="2000"
-                />
-                <p
-                  class="form-hint"
-                  data-static-hint="true"
-                  data-i18n-key="hints.freelance-activity-start-year"
-                >
-                  Determines if the new-business 5-year fee exemption applies.
-                </p>
-              </div>
-            </div>
             <input
               id="freelance-years-active"
               name="freelance.years_active"
               type="hidden"
               value="0"
             />
-            <p
-              id="freelance-efka-summary"
-              class="form-hint"
-              data-static-hint="true"
-            ></p>
-            <div class="form-control">
-              <details id="freelance-manual-contributions">
-                <summary data-i18n-key="fields.freelance-manual-contributions"></summary>
-                <p
-                  class="form-hint"
-                  data-i18n-key="fields.freelance-manual-contributions-hint"
-                ></p>
+            <div class="form-subsection">
+              <h3
+                class="fieldset-subheading"
+                data-i18n-key="ui.freelance_contributions_heading"
+              >
+                Social security contributions
+              </h3>
+              <p
+                class="form-hint"
+                data-i18n-key="ui.freelance_contributions_hint"
+              >
+                Select an EFKA class to preload monthly payments or override them
+                with manual totals.
+              </p>
+              <div class="form-stack form-stack--tight">
                 <div class="form-grid double">
                   <div class="form-control">
-                    <div class="label-with-tooltip">
-                      <label
-                        for="freelance-contributions"
-                        data-i18n-key="fields.freelance-contributions"
-                      >
-                        Manual EFKA contributions (€)
-                      </label>
-                      <button
-                        type="button"
-                        class="info-badge"
-                        aria-describedby="freelance-contributions-tooltip"
-                      >
-                        <span aria-hidden="true">i</span>
-                        <span
-                          class="visually-hidden"
-                          data-i18n-key="ui.info_tooltip_label"
-                        >
-                          More information about this field
-                        </span>
-                      </button>
-                      <span
-                        id="freelance-contributions-tooltip"
-                        class="info-tooltip"
-                        role="tooltip"
-                        data-i18n-key="ui.freelance_mandatory_tooltip"
-                      >
-                        Mandatory EFKA and auxiliary payments reduce taxable
-                        profit euro-for-euro when supported by receipts.
-                      </span>
-                    </div>
-                    <input
-                      id="freelance-contributions"
-                      name="freelance.mandatory_contributions"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value="0"
-                    />
+                    <label
+                      for="freelance-efka-category"
+                      data-i18n-key="fields.freelance-efka-category"
+                    >
+                      EFKA contribution class
+                    </label>
+                    <select id="freelance-efka-category"></select>
+                    <p
+                      id="freelance-efka-category-hint"
+                      class="form-hint"
+                      data-static-hint="true"
+                    ></p>
                   </div>
                   <div class="form-control">
                     <label
-                      for="freelance-auxiliary-contributions"
-                      data-i18n-key="fields.freelance-auxiliary-contributions"
+                      for="freelance-efka-months"
+                      data-i18n-key="fields.freelance-efka-months"
                     >
-                      Manual auxiliary fund contributions (€)
+                      Contribution months
                     </label>
                     <input
-                      id="freelance-auxiliary-contributions"
-                      name="freelance.auxiliary_contributions"
+                      id="freelance-efka-months"
+                      name="freelance.efka_months"
                       type="number"
                       min="0"
-                      step="0.01"
-                      value="0"
-                    />
-                  </div>
-                  <div class="form-control">
-                    <label
-                      for="freelance-lump-sum-contributions"
-                      data-i18n-key="fields.freelance-lump-sum-contributions"
-                    >
-                      Manual lump-sum fund contributions (€)
-                    </label>
-                    <input
-                      id="freelance-lump-sum-contributions"
-                      name="freelance.lump_sum_contributions"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value="0"
+                      max="24"
+                      step="1"
+                      value="12"
                     />
                   </div>
                 </div>
-              </details>
-            </div>
-            <div class="form-grid double">
-              <div class="form-control">
-                <label
-                  for="freelance-trade-fee-location"
-                  data-i18n-key="fields.freelance-trade-fee-location"
-                >
-                  Trade fee location
-                </label>
-                <select id="freelance-trade-fee-location"></select>
                 <p
-                  id="freelance-trade-fee-hint"
+                  id="freelance-efka-summary"
                   class="form-hint"
                   data-static-hint="true"
-                  data-i18n-key="hints.freelance-trade-fee-location"
-                >
-                  Standard: full fee; Reduced: half fee for eligible small
-                  towns/islands.
-                </p>
+                ></p>
+                <details id="freelance-manual-contributions" class="form-details">
+                  <summary data-i18n-key="fields.freelance-manual-contributions"></summary>
+                  <p
+                    class="form-hint"
+                    data-i18n-key="fields.freelance-manual-contributions-hint"
+                  ></p>
+                  <div class="form-grid double">
+                    <div class="form-control">
+                      <div class="label-with-tooltip">
+                        <label
+                          for="freelance-contributions"
+                          data-i18n-key="fields.freelance-contributions"
+                        >
+                          Manual EFKA contributions (€)
+                        </label>
+                        <button
+                          type="button"
+                          class="info-badge"
+                          aria-describedby="freelance-contributions-tooltip"
+                        >
+                          <span aria-hidden="true">i</span>
+                          <span
+                            class="visually-hidden"
+                            data-i18n-key="ui.info_tooltip_label"
+                          >
+                            More information about this field
+                          </span>
+                        </button>
+                        <span
+                          id="freelance-contributions-tooltip"
+                          class="info-tooltip"
+                          role="tooltip"
+                          data-i18n-key="ui.freelance_mandatory_tooltip"
+                        >
+                          Mandatory EFKA and auxiliary payments reduce taxable
+                          profit euro-for-euro when supported by receipts.
+                        </span>
+                      </div>
+                      <input
+                        id="freelance-contributions"
+                        name="freelance.mandatory_contributions"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value="0"
+                      />
+                    </div>
+                    <div class="form-control">
+                      <label
+                        for="freelance-auxiliary-contributions"
+                        data-i18n-key="fields.freelance-auxiliary-contributions"
+                      >
+                        Manual auxiliary fund contributions (€)
+                      </label>
+                      <input
+                        id="freelance-auxiliary-contributions"
+                        name="freelance.auxiliary_contributions"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value="0"
+                      />
+                    </div>
+                    <div class="form-control">
+                      <label
+                        for="freelance-lump-sum-contributions"
+                        data-i18n-key="fields.freelance-lump-sum-contributions"
+                      >
+                        Manual lump-sum fund contributions (€)
+                      </label>
+                      <input
+                        id="freelance-lump-sum-contributions"
+                        name="freelance.lump_sum_contributions"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value="0"
+                      />
+                    </div>
+                  </div>
+                </details>
               </div>
-              <div class="form-control">
-                <span class="inline-field">
-                  <input
-                    id="trade-fee-toggle"
-                    type="checkbox"
-                    name="freelance.include_trade_fee"
-                    checked
-                  />
+            </div>
+            <div class="form-subsection">
+              <h3
+                class="fieldset-subheading"
+                data-i18n-key="ui.freelance_trade_fee_heading"
+              >
+                Trade fee and exemptions
+              </h3>
+              <p class="form-hint" data-i18n-key="ui.freelance_trade_fee_hint">
+                Track eligibility for the business activity fee and potential
+                reductions.
+              </p>
+              <div class="form-grid double">
+                <div class="form-control">
                   <label
-                    for="trade-fee-toggle"
-                    data-i18n-key="fields.trade-fee-toggle"
+                    for="freelance-trade-fee-location"
+                    data-i18n-key="fields.freelance-trade-fee-location"
                   >
-              Business activity fee
+                    Trade fee location
                   </label>
-                </span>
+                  <select id="freelance-trade-fee-location"></select>
+                  <p
+                    id="freelance-trade-fee-hint"
+                    class="form-hint"
+                    data-static-hint="true"
+                    data-i18n-key="hints.freelance-trade-fee-location"
+                  >
+                    Standard: full fee; Reduced: half fee for eligible small
+                    towns/islands.
+                  </p>
+                </div>
+                <div class="form-control">
+                  <span class="inline-field">
+                    <input
+                      id="trade-fee-toggle"
+                      type="checkbox"
+                      name="freelance.include_trade_fee"
+                      checked
+                    />
+                    <label
+                      for="trade-fee-toggle"
+                      data-i18n-key="fields.trade-fee-toggle"
+                    >
+                      Business activity fee
+                    </label>
+                  </span>
+                </div>
+                <div class="form-control">
+                  <label
+                    for="freelance-activity-start-year"
+                    data-i18n-key="fields.freelance-activity-start-year"
+                  >
+                    Year freelance activity started
+                  </label>
+                  <input
+                    id="freelance-activity-start-year"
+                    type="number"
+                    min="1900"
+                    max="2100"
+                    step="1"
+                    value="2000"
+                  />
+                  <p
+                    class="form-hint"
+                    data-static-hint="true"
+                    data-i18n-key="hints.freelance-activity-start-year"
+                  >
+                    Determines if the new-business 5-year fee exemption applies.
+                  </p>
+                </div>
               </div>
             </div>
             <p
