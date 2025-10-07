@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: production
-      url: https://${{ secrets.PYTHONANYWHERE_WEBAPP }}
+      url: https://${{ vars.PYTHONANYWHERE_WEBAPP_HOST }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
