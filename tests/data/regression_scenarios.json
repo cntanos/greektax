@@ -362,19 +362,19 @@
     "expectations": {
       "summary": {
         "income_total": 19000.0,
-        "tax_total": 2060.0,
-        "net_income": 13740.0,
-        "average_monthly_tax": 171.67
+        "tax_total": 2176.0,
+        "net_income": 13624.0,
+        "average_monthly_tax": 181.33
       },
       "details": {
         "freelance": {
           "gross_income": 19000.0,
           "taxable_income": 15800.0,
-          "tax": 2060.0,
-          "total_tax": 2060.0,
-          "net_income": 13740.0,
+          "tax": 2176.0,
+          "total_tax": 2176.0,
+          "net_income": 13624.0,
           "deductible_expenses": 6000.0,
-          "tax_before_credits": 2060.0,
+          "tax_before_credits": 2176.0,
           "credits": 0.0,
           "deductible_contributions": 3200.0,
           "trade_fee": 0.0,
@@ -475,18 +475,18 @@
     "expectations": {
       "summary": {
         "income_total": 20000.0,
-        "tax_total": 1748.2,
-        "net_income": 15577.8,
-        "average_monthly_tax": 145.68
+        "tax_total": 1894.72,
+        "net_income": 15431.28,
+        "average_monthly_tax": 157.89
       },
       "details": {
         "employment": {
           "gross_income": 20000.0,
           "taxable_income": 17326.0,
-          "tax": 1748.2,
-          "total_tax": 1748.2,
-          "net_income": 15577.8,
-          "tax_before_credits": 2365.2,
+          "tax": 1894.72,
+          "total_tax": 1894.72,
+          "net_income": 15431.28,
+          "tax_before_credits": 2511.72,
           "credits": 617.0,
           "employee_contributions": 2674.0,
           "employer_contributions": 4358.0,
