@@ -9,9 +9,55 @@
 const REMOTE_API_BASE = "https://cntanos.pythonanywhere.com/api/v1";
 const LOCAL_API_BASE = "/api/v1";
 
-// Default to the remote API; toggle the line below for local development.
-const API_BASE = REMOTE_API_BASE;
-// const API_BASE = LOCAL_API_BASE; // Uncomment to use the local API during development.
+function resolveApiBase() {
+  const defaultBase = REMOTE_API_BASE;
+
+  if (typeof window === "undefined") {
+    return LOCAL_API_BASE;
+  }
+
+  const windowOverride =
+    typeof window.GREEKTAX_API_BASE === "string"
+      ? window.GREEKTAX_API_BASE.trim()
+      : "";
+  if (windowOverride) {
+    return windowOverride;
+  }
+
+  const documentRef = window.document || null;
+  const metaElement =
+    documentRef && documentRef.querySelector
+      ? documentRef.querySelector("meta[data-api-base]")
+      : null;
+  if (metaElement) {
+    const metaOverride =
+      typeof metaElement.dataset?.apiBase === "string"
+        ? metaElement.dataset.apiBase.trim()
+        : (metaElement.getAttribute("data-api-base") || "").trim();
+    if (metaOverride) {
+      return metaOverride;
+    }
+  }
+
+  const locationRef = window.location || null;
+  if (locationRef) {
+    const hostname = typeof locationRef.hostname === "string"
+      ? locationRef.hostname.trim().toLowerCase()
+      : "";
+    if (
+      hostname === "localhost" ||
+      hostname === "127.0.0.1" ||
+      hostname === "::1" ||
+      hostname.endsWith(".localhost")
+    ) {
+      return LOCAL_API_BASE;
+    }
+  }
+
+  return defaultBase;
+}
+
+const API_BASE = resolveApiBase();
 const CALCULATIONS_ENDPOINT = `${API_BASE}/calculations`;
 const CONFIG_YEARS_ENDPOINT = `${API_BASE}/config/years`;
 const CONFIG_META_ENDPOINT = `${API_BASE}/config/meta`;
