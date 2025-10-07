@@ -1,5 +1,6 @@
 """Application factory for GreekTax backend services."""
 
+import os
 from importlib import util as importlib_util
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable, cast
@@ -31,14 +32,26 @@ FRONTEND_ROOT = Path(__file__).resolve().parents[4] / "src" / "frontend"
 ASSETS_ROOT = FRONTEND_ROOT / "assets"
 
 
-def _apply_default_cors_headers(response: ResponseReturnValue) -> ResponseReturnValue:
-    """Attach permissive CORS headers when Flask-Cors is unavailable."""
+def _parse_allowed_origins(raw: str | None) -> set[str]:
+    """Convert an environment variable into a normalised set of origins."""
+
+    if not raw:
+        return set()
+
+    return {origin.strip() for origin in raw.split(",") if origin.strip()}
+
+
+def _apply_default_cors_headers(
+    response: ResponseReturnValue,
+    allowed_origins: set[str],
+) -> ResponseReturnValue:
+    """Attach CORS headers for allowed origins when Flask-Cors is unavailable."""
 
     if not isinstance(response, Response):
         return response
 
     origin = request.headers.get("Origin")
-    if origin:
+    if origin and origin in allowed_origins:
         response.headers["Access-Control-Allow-Origin"] = origin
         response.headers.setdefault("Vary", "Origin")
         response.headers["Access-Control-Allow-Credentials"] = "false"
@@ -50,6 +63,23 @@ def _apply_default_cors_headers(response: ResponseReturnValue) -> ResponseReturn
             "Access-Control-Request-Method",
             request.method,
         )
+    else:
+        response.headers.pop("Access-Control-Allow-Origin", None)
+        response.headers.pop("Access-Control-Allow-Credentials", None)
+        response.headers.pop("Access-Control-Allow-Headers", None)
+        response.headers.pop("Access-Control-Allow-Methods", None)
+
+        vary = response.headers.get("Vary")
+        if vary:
+            vary_values = {value.strip() for value in vary.split(",")}
+            vary_values.discard("Origin")
+            if vary_values:
+                response.headers["Vary"] = ", ".join(sorted(vary_values))
+            else:
+                response.headers.pop("Vary", None)
+
+        if origin and request.method == "OPTIONS":
+            response.status_code = 403
 
     return response
 
@@ -59,10 +89,20 @@ def create_app() -> Flask:
 
     app = Flask(__name__)
 
+    allowed_origins = _parse_allowed_origins(
+        os.getenv("GREEKTAX_ALLOWED_ORIGINS")
+    )
+
+    if not allowed_origins:
+        warn(
+            "No allowed origins configured; cross-origin requests will be rejected.",
+            stacklevel=1,
+        )
+
     if CORS is not None:
         CORS(
             app,
-            resources={r"/api/*": {"origins": "*"}},
+            resources={r"/api/*": {"origins": sorted(allowed_origins)}},
             supports_credentials=False,
             methods=["GET", "OPTIONS", "POST"],
             allow_headers=["Content-Type"],
@@ -77,13 +117,18 @@ def create_app() -> Flask:
         @app.before_request
         def _handle_preflight() -> ResponseReturnValue | None:
             if request.method == "OPTIONS":
+                origin = request.headers.get("Origin")
+                if origin and origin not in allowed_origins:
+                    response = app.make_response(("", 403))
+                    return _apply_default_cors_headers(response, allowed_origins)
+
                 response = app.make_default_options_response()
-                return _apply_default_cors_headers(response)
+                return _apply_default_cors_headers(response, allowed_origins)
             return None
 
         @app.after_request
         def _attach_cors_headers(response: ResponseReturnValue) -> ResponseReturnValue:
-            return _apply_default_cors_headers(response)
+            return _apply_default_cors_headers(response, allowed_origins)
 
     register_routes(app)
 
