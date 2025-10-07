@@ -96,6 +96,34 @@ flask --app greektax.backend.app:create_app run
 If the variable is unset or empty, cross-origin requests are rejected for both
 the Flask-Cors integration and the built-in fallback.
 
+### 4a. Configure PythonAnywhere production settings
+
+PythonAnywhere's free tier does not expose an environment-variable UI, so set
+`GREEKTAX_ALLOWED_ORIGINS` inside the WSGI entrypoint instead. Replace
+`/var/www/cntanos_pythonanywhere_com_wsgi.py` with the snippet below (adjust the
+username if you fork the project):
+
+```python
+import os
+import sys
+from pathlib import Path
+
+os.environ.setdefault("GREEKTAX_ALLOWED_ORIGINS", "https://www.cognisys.gr")
+
+project_root = Path("/home/cntanos/greektax")
+sys.path.insert(0, str(project_root / "src"))
+
+from greektax.backend.app import create_app  # noqa: E402
+
+application = create_app()
+```
+
+- `os.environ.setdefault` injects the production allow-list so only your public
+  UI domain can call the API. Update the URL if the front-end moves.
+- The `sys.path` insertion ensures the WSGI loader can import the Flask app.
+- After saving the file, click **Reload** in the PythonAnywhere Web dashboard to
+  apply the changes.
+
 ### 5. Point static deployments at the correct API base URL
 
 The front-end script now detects the API endpoint from the hosting environment
@@ -138,6 +166,17 @@ without requiring a custom build. Hosting providers can inject
 
   The JSON file can be generated during deployment (e.g. via CI secrets) to
   avoid manual edits to the bundled assets.
+
+#### 5a. cPanel deployment expectations
+
+- The repository's `.cpanel.yml` assumes WordPress rewrites
+  `https://www.cognisys.gr/greektax/` into the document root at
+  `~/public_html/wp-content/uploads/greektax`. Keep that rewrite rule in place or
+  adjust the `DEPLOYPATH` export in the script to match your hosting layout.
+- Leave the deployed directory world-readable. Earlier revisions attempted to
+  remove world permissions and produced 403 responses for CSS/JS assets; the
+  current script intentionally omits any `chmod` step so Apache/Nginx can serve
+  the files.
 
 ## Development Environment
 
