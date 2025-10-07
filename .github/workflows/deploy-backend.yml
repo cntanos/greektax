@@ -46,24 +46,62 @@ jobs:
         run: mypy src
       - name: Validate YAML configs
         run: python -m greektax.backend.config.validator
+      - name: Validate deployment secrets
+        env:
+          PYTHONANYWHERE_USERNAME: ${{ secrets.PYTHONANYWHERE_USERNAME }}
+          PYTHONANYWHERE_VENV: ${{ secrets.PYTHONANYWHERE_VENV }}
+          PYTHONANYWHERE_API_TOKEN: ${{ secrets.PYTHONANYWHERE_API_TOKEN }}
+          PYTHONANYWHERE_WEBAPP: ${{ secrets.PYTHONANYWHERE_WEBAPP }}
+          PYTHONANYWHERE_SSH_KEY: ${{ secrets.PYTHONANYWHERE_SSH_KEY }}
+        run: |
+          set -euo pipefail
+
+          missing=0
+          for var in \
+            PYTHONANYWHERE_USERNAME \
+            PYTHONANYWHERE_VENV \
+            PYTHONANYWHERE_API_TOKEN \
+            PYTHONANYWHERE_WEBAPP \
+            PYTHONANYWHERE_SSH_KEY
+          do
+            if [ -z "${!var}" ]; then
+              echo "::error::${var} is empty; update the repository secret before deploying."
+              missing=1
+            fi
+          done
+
+          if [ "${missing}" -ne 0 ]; then
+            exit 1
+          fi
+
+          temp_key="$(mktemp)"
+          trap 'rm -f "${temp_key}"' EXIT
+          printf '%s\n' "${PYTHONANYWHERE_SSH_KEY}" | tr -d '\r' > "${temp_key}"
+          chmod 600 "${temp_key}"
+
+          if ! ssh-keygen -lf "${temp_key}" >/dev/null 2>&1; then
+            echo "::error::PYTHONANYWHERE_SSH_KEY is not a valid SSH private key."
+            exit 1
+          fi
       - name: Prepare SSH key
         id: prepare-key
         env:
           PYTHONANYWHERE_SSH_KEY: ${{ secrets.PYTHONANYWHERE_SSH_KEY }}
         run: |
-          ssh_dir="${HOME}/.ssh"
-          key_file="${ssh_dir}/pythonanywhere_key"
-          mkdir -p "${ssh_dir}"
-          chmod 700 "${ssh_dir}"
-          printf '%s\n' "${PYTHONANYWHERE_SSH_KEY}" | tr -d '\r' > "${key_file}"
-          chmod 600 "${key_file}"
-          echo "key_path=${key_file}" >> "${GITHUB_OUTPUT}"
+          set -euo pipefail
+
+          sanitized_key="$(printf '%s\n' "${PYTHONANYWHERE_SSH_KEY}" | tr -d '\r')"
+          {
+            echo 'key<<EOF'
+            printf '%s\n' "${sanitized_key}"
+            echo 'EOF'
+          } >> "${GITHUB_OUTPUT}"
       - name: Push code to PythonAnywhere
         uses: appleboy/ssh-action@v0.1.10
         with:
           host: ssh.pythonanywhere.com
           username: ${{ env.PYTHONANYWHERE_USERNAME }}
-          key_path: ${{ steps.prepare-key.outputs.key_path }}
+          key: ${{ steps.prepare-key.outputs.key }}
           script: |
             set -euo pipefail
             cd "${PYTHONANYWHERE_APP_DIR}"
