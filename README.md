@@ -2,7 +2,7 @@
 
 GreekTax is a bilingual web application that helps taxpayers in
 Greece estimate their annual obligations across employment, freelance, rental,
-and related income categories. The project emphasises transparency,
+agricultural, and related income categories. The project emphasises transparency,
 maintainability, and ease of deployment through a modern Python stack.
 
 > **Disclaimer**: GreekTax is not an official government tool. Results are for
