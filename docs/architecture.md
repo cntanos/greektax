@@ -145,9 +145,18 @@ environments without requiring code redeploys.
 ## Deployment Interaction
 
 In production the static front-end and the Flask API are hosted on separate
-origins. The UI uses the `API_BASE` constant near the top of
-`assets/scripts/main.js` to decide which server to contact, defaulting to the
-hosted PythonAnywhere instance. Developers can switch to the same-origin Flask
-deployment by toggling the provided constant before publishing. Each API request
-returns localised payloads or configuration snapshots, so the front-end remains
-thin and defers all tax-specific behaviour to the backend service.
+origins. The UI now resolves the API base URL dynamically through
+`resolveApiBase()` in [`assets/scripts/main.js`](../src/frontend/assets/scripts/main.js),
+which checks (in order):
+
+1. A `window.GREEKTAX_API_BASE` override injected by the hosting platform.
+2. A `<meta data-api-base>` tag rendered into the page template.
+3. Localhost-style hostnames to fall back to the same-origin Flask deployment
+   during development.
+
+If none of these signals are present the script uses the default
+PythonAnywhere endpoint baked into `REMOTE_API_BASE`. This mirrors the behaviour
+documented in the README deployment section and keeps the static bundle
+configurable without code edits. Each API request returns localised payloads or
+configuration snapshots, so the front-end remains thin and defers all
+tax-specific behaviour to the backend service.
