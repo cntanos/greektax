@@ -102,15 +102,15 @@ jobs:
           host: ssh.pythonanywhere.com
           username: ${{ env.PYTHONANYWHERE_USERNAME }}
           key: ${{ steps.prepare-key.outputs.key }}
+          envs: |
+            PYTHONANYWHERE_USERNAME=${{ env.PYTHONANYWHERE_USERNAME }}
+            PYTHONANYWHERE_APP_DIR=${{ env.PYTHONANYWHERE_APP_DIR }}
+            PYTHONANYWHERE_VENV=${{ env.PYTHONANYWHERE_VENV }}
+            PYTHONANYWHERE_API_TOKEN=${{ env.PYTHONANYWHERE_API_TOKEN }}
+            PYTHONANYWHERE_WEBAPP=${{ env.PYTHONANYWHERE_WEBAPP }}
           script: |
             set -euo pipefail
-            cd "${PYTHONANYWHERE_APP_DIR}"
-            git fetch --prune
-            git reset --hard origin/main
-            source "${PYTHONANYWHERE_VENV}/bin/activate"
-            pip install --upgrade pip
-            pip install -r requirements.txt
-            pip install .
+            bash "/home/${PYTHONANYWHERE_USERNAME}/update_greektax.sh"
       - name: Reload web app
         run: |
           curl -fsS -X POST \
