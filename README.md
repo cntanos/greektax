@@ -96,6 +96,34 @@ flask --app greektax.backend.app:create_app run
 If the variable is unset or empty, cross-origin requests are rejected for both
 the Flask-Cors integration and the built-in fallback.
 
+### 4a. Configure PythonAnywhere production settings
+
+PythonAnywhere's free tier does not expose an environment-variable UI, so set
+`GREEKTAX_ALLOWED_ORIGINS` inside the WSGI entrypoint instead. Replace
+`/var/www/cntanos_pythonanywhere_com_wsgi.py` with the snippet below (adjust the
+username if you fork the project):
+
+```python
+import os
+import sys
+from pathlib import Path
+
+os.environ.setdefault("GREEKTAX_ALLOWED_ORIGINS", "https://www.cognisys.gr")
+
+project_root = Path("/home/cntanos/greektax")
+sys.path.insert(0, str(project_root / "src"))
+
+from greektax.backend.app import create_app  # noqa: E402
+
+application = create_app()
+```
+
+- `os.environ.setdefault` injects the production allow-list so only your public
+  UI domain can call the API. Update the URL if the front-end moves.
+- The `sys.path` insertion ensures the WSGI loader can import the Flask app.
+- After saving the file, click **Reload** in the PythonAnywhere Web dashboard to
+  apply the changes.
+
 ### 5. Point static deployments at the correct API base URL
 
 The front-end script now detects the API endpoint from the hosting environment

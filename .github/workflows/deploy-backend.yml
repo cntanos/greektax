@@ -1,0 +1,67 @@
+name: Deploy backend
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "src/greektax/**"
+      - "requirements.txt"
+      - "requirements-dev.txt"
+      - "pyproject.toml"
+      - "scripts/**"
+
+concurrency:
+  group: deploy-backend
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://${{ secrets.PYTHONANYWHERE_WEBAPP }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+          pip install -e .
+      - name: Run pytest
+        run: pytest
+      - name: Run ruff
+        run: ruff check src tests
+      - name: Run mypy
+        run: mypy src
+      - name: Validate YAML configs
+        run: python -m greektax.backend.config.validator
+      - name: Push code to PythonAnywhere
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ssh.pythonanywhere.com
+          username: ${{ secrets.PYTHONANYWHERE_USERNAME }}
+          key: ${{ secrets.PYTHONANYWHERE_SSH_KEY }}
+          script: |
+            set -euo pipefail
+            cd /home/${PYTHONANYWHERE_USERNAME}/greektax
+            git fetch --prune
+            git reset --hard origin/main
+            source ${{ secrets.PYTHONANYWHERE_VENV }}/bin/activate
+            pip install --upgrade pip
+            pip install -r requirements.txt
+            pip install .
+      - name: Reload web app
+        env:
+          USERNAME: ${{ secrets.PYTHONANYWHERE_USERNAME }}
+          WEBAPP: ${{ secrets.PYTHONANYWHERE_WEBAPP }}
+          TOKEN: ${{ secrets.PYTHONANYWHERE_API_TOKEN }}
+        run: |
+          curl -fsS -X POST \
+            -H "Authorization: Token ${TOKEN}" \
+            https://www.pythonanywhere.com/api/v0/user/${USERNAME}/webapps/${WEBAPP}/reload/
