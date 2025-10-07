@@ -77,6 +77,25 @@ The script rebuilds
 file so static deployments remain in sync with the canonical catalogues. See
 [`docs/i18n.md`](docs/i18n.md) for end-to-end localisation guidance.
 
+### 4. Configure cross-origin access
+
+The API enforces an allow-list for browser origins via the
+`GREEKTAX_ALLOWED_ORIGINS` environment variable. Set it to a comma-separated
+list before running the server so front-end deployments can call the API:
+
+```bash
+export GREEKTAX_ALLOWED_ORIGINS="http://localhost:5173"
+flask --app greektax.backend.app:create_app run
+```
+
+- **Staging**: include the staging UI origin alongside any developer domains,
+  e.g. `GREEKTAX_ALLOWED_ORIGINS="http://localhost:5173,https://staging.tax.example"`.
+- **Production**: restrict the list to the public domain that serves the UI,
+  e.g. `GREEKTAX_ALLOWED_ORIGINS="https://app.tax.example"`.
+
+If the variable is unset or empty, cross-origin requests are rejected for both
+the Flask-Cors integration and the built-in fallback.
+
 ## Development Environment
 
 Use the [Operational Workflows Index](docs/operations.md) as the entry point for
