@@ -47,18 +47,23 @@ jobs:
       - name: Validate YAML configs
         run: python -m greektax.backend.config.validator
       - name: Prepare SSH key
+        id: prepare-key
         env:
           PYTHONANYWHERE_SSH_KEY: ${{ secrets.PYTHONANYWHERE_SSH_KEY }}
         run: |
-          mkdir -p ~/.ssh
-          printf '%s' "${PYTHONANYWHERE_SSH_KEY}" | tr -d '\r' > ~/.ssh/pythonanywhere_key
-          chmod 600 ~/.ssh/pythonanywhere_key
+          ssh_dir="${HOME}/.ssh"
+          key_file="${ssh_dir}/pythonanywhere_key"
+          mkdir -p "${ssh_dir}"
+          chmod 700 "${ssh_dir}"
+          printf '%s\n' "${PYTHONANYWHERE_SSH_KEY}" | tr -d '\r' > "${key_file}"
+          chmod 600 "${key_file}"
+          echo "key_path=${key_file}" >> "${GITHUB_OUTPUT}"
       - name: Push code to PythonAnywhere
         uses: appleboy/ssh-action@v0.1.10
         with:
           host: ssh.pythonanywhere.com
           username: ${{ env.PYTHONANYWHERE_USERNAME }}
-          key_path: ~/.ssh/pythonanywhere_key
+          key_path: ${{ steps.prepare-key.outputs.key_path }}
           script: |
             set -euo pipefail
             cd "${PYTHONANYWHERE_APP_DIR}"
