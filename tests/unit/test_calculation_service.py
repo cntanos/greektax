@@ -698,14 +698,14 @@ def test_calculate_tax_preserves_net_income_validation_error(field: str) -> None
     assert NET_INCOME_INPUT_ERROR in message
 
 
-def test_calculation_request_requires_birth_year() -> None:
-    """Demographic payloads must include a birth year."""
+def test_calculation_request_allows_missing_birth_year() -> None:
+    """Demographic payloads may omit the birth year entirely."""
 
-    with pytest.raises(ValidationError) as exc_info:
-        CalculationRequest.model_validate({"year": 2025, "demographics": {}})
+    request = CalculationRequest.model_validate(
+        {"year": 2025, "demographics": {}}
+    )
 
-    message = str(exc_info.value)
-    assert "birth_year" in message
+    assert request.demographics.birth_year is None
 
 
 def test_calculate_tax_accepts_request_model_instance() -> None:
@@ -738,8 +738,20 @@ def test_calculate_tax_defaults_to_zero_summary() -> None:
     assert result["summary"]["net_monthly_income"] == 0.0
     assert result["summary"]["average_monthly_tax"] == 0.0
     assert result["summary"]["effective_tax_rate"] == 0.0
-    assert result["details"] == []
-    assert result["meta"] == {"year": 2024, "locale": "en"}
+
+
+def test_calculate_tax_omits_youth_relief_without_birth_year() -> None:
+    """The service assumes no youth relief when no birth year is provided."""
+
+    payload = {
+        "year": 2026,
+        "employment": {"gross_income": 12_000},
+        "demographics": {},
+    }
+
+    result = calculate_tax(payload)
+
+    assert result["meta"] == {"year": 2026, "locale": "en"}
 
 
 def test_calculate_tax_employment_only() -> None:

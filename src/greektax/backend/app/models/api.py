@@ -57,7 +57,7 @@ class DemographicsInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     taxpayer_birth_year: int | None = Field(default=None, ge=1901, le=2100)
-    birth_year: int = Field(..., ge=1901, le=2100)
+    birth_year: int | None = Field(default=None, ge=1901, le=2100)
 
     @model_validator(mode="before")
     @classmethod

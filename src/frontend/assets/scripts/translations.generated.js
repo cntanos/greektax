@@ -210,7 +210,7 @@
       },
       "hints": {
         "agricultural-professional-farmer": "Επιλέξτε το αν είστε εγγεγραμμένος ως επαγγελματίας αγρότης για το φορολογικό έτος ώστε να εφαρμοστούν τυχόν διαθέσιμες ελαφρύνσεις.",
-        "birth-year": "Δηλώστε το έτος γέννησης (1901–2025) για αυτόματο υπολογισμό της έκπτωσης νεανικής απασχόλησης.",
+        "birth-year": "Δηλώστε το έτος γέννησης (1901–2025) για αυτόματο υπολογισμό της έκπτωσης νεανικής απασχόλησης. Αφήστε το πεδίο κενό για να θεωρηθεί ότι δεν εφαρμόζεται η έκπτωση.",
         "children-eligibility": "Μετρήστε τα εξαρτώμενα τέκνα που δικαιούνται την οικογενειακή έκπτωση ΑΑΔΕ (ανήλικοι, φοιτητές έως 24 ή τέκνα με αναπηρία). Υποστηρίζονται έως 15 τέκνα.",
         "employment-employee-contributions": "Καταχωρήστε το ετήσιο σύνολο εισφορών ΕΦΚΑ που πληρώνετε απευθείας εκτός μισθοδοσίας (π.χ. προαιρετικές συμπληρωματικές). Οι περισσότεροι μισθωτοί το αφήνουν στο 0 γιατί η μισθοδοσία καλύπτει ήδη τον ΕΦΚΑ.",
         "employment-employee-contributions-preview": "Η μισθοδοσία περιλαμβάνει {{amount}} ετήσιες εισφορές ΕΦΚΑ. Αν το ετήσιο ποσό διαφέρει, καταχωρήστε το παρακάτω.",
@@ -579,7 +579,7 @@
       },
       "hints": {
         "agricultural-professional-farmer": "Check this if you are registered as a professional farmer for the tax year. It enables any reliefs available for that status.",
-        "birth-year": "Enter the taxpayer birth year (1901–2025) to calculate youth relief eligibility automatically.",
+        "birth-year": "Enter the taxpayer birth year (1901–2025) to calculate youth relief eligibility automatically. Leave the field blank to assume no youth relief applies.",
         "children-eligibility": "Count dependent children recognised for the AADE family tax credit (minors, students up to 24, or dependents with a disability). Up to 15 children are supported.",
         "employment-employee-contributions": "Enter the annual EFKA contributions you pay directly outside payroll (for example, voluntary top-ups). Most employees will leave this at 0 because payroll already covers EFKA.",
         "employment-employee-contributions-preview": "Payroll currently includes {{amount}} in annual EFKA contributions. Enter your yearly total below if it differs.",
