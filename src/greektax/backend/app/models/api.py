@@ -108,7 +108,7 @@ class EmploymentInput(BaseModel):
 
     @model_validator(mode="after")
     def _synchronise_contribution_flags(self) -> EmploymentInput:
-        fields_set = getattr(self, "model_fields_set", set())
+        fields_set: set[str] = set(getattr(self, "model_fields_set", set()))
         if "include_social_contributions" in fields_set:
             base = bool(self.include_social_contributions)
             if "include_employee_contributions" not in fields_set:
@@ -173,7 +173,7 @@ class FreelanceInput(BaseModel):
     @classmethod
     def _normalise_optional_bool(cls, value: Any, info: ValidationInfo) -> bool:
         if value is None:
-            defaults = {
+            defaults: dict[str, bool] = {
                 "include_trade_fee": True,
                 "include_category_contributions": True,
                 "include_mandatory_contributions": True,
@@ -181,7 +181,8 @@ class FreelanceInput(BaseModel):
                 "include_lump_sum_contributions": True,
                 "newly_self_employed": False,
             }
-            return defaults.get(info.field_name, False)
+            field_name = info.field_name or ""
+            return defaults.get(field_name, False)
         return bool(value)
 
     @field_validator("trade_fee_location", mode="before")
