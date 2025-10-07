@@ -167,6 +167,17 @@ without requiring a custom build. Hosting providers can inject
   The JSON file can be generated during deployment (e.g. via CI secrets) to
   avoid manual edits to the bundled assets.
 
+#### 5a. cPanel deployment expectations
+
+- The repository's `.cpanel.yml` assumes WordPress rewrites
+  `https://www.cognisys.gr/greektax/` into the document root at
+  `~/public_html/wp-content/uploads/greektax`. Keep that rewrite rule in place or
+  adjust the `DEPLOYPATH` export in the script to match your hosting layout.
+- Leave the deployed directory world-readable. Earlier revisions attempted to
+  remove world permissions and produced 403 responses for CSS/JS assets; the
+  current script intentionally omits any `chmod` step so Apache/Nginx can serve
+  the files.
+
 ## Development Environment
 
 Use the [Operational Workflows Index](docs/operations.md) as the entry point for
