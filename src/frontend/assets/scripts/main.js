@@ -45,11 +45,11 @@ const TRANSLATIONS_ENDPOINT = (locale) =>
     : `${API_BASE}/translations`;
 
 const translationsByLocale = new Map();
-let availableTranslationLocales = ["en"];
+let availableTranslationLocales = ["el", "en"];
 let fallbackLocale = "en";
 
 
-let currentLocale = "en";
+let currentLocale = "el";
 let currentTheme = DEFAULT_THEME;
 const yearMetadataByYear = new Map();
 let currentYearMetadata = null;
@@ -762,7 +762,7 @@ function cancelIdleWork(handle) {
   }
 }
 
-function resolveStoredLocale(defaultLocale = "en") {
+function resolveStoredLocale(defaultLocale = "el") {
   try {
     const stored = window.localStorage.getItem(STORAGE_KEY);
     return normaliseLocaleChoice(stored || defaultLocale);
@@ -1295,7 +1295,7 @@ function updateLocaleButtonState(locale) {
   }
 
   localeButtons.forEach((button) => {
-    const value = button.dataset.localeOption || "en";
+    const value = button.dataset.localeOption || "el";
     const isActive = value === locale;
     button.classList.toggle("is-active", isActive);
     button.setAttribute("aria-pressed", isActive ? "true" : "false");
@@ -1401,7 +1401,7 @@ function initialiseLocaleControls() {
 
   localeButtons.forEach((button) => {
     button.addEventListener("click", () => {
-      const value = button.dataset.localeOption || "en";
+      const value = button.dataset.localeOption || "el";
       if (normaliseLocaleChoice(value) === currentLocale) {
         return;
       }
