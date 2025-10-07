@@ -60,7 +60,6 @@ function resolveApiBase() {
 const API_BASE = resolveApiBase();
 const CALCULATIONS_ENDPOINT = `${API_BASE}/calculations`;
 const CONFIG_YEARS_ENDPOINT = `${API_BASE}/config/years`;
-const CONFIG_YEARS_FALLBACK_URL = "./assets/data/config-years.json";
 const CONFIG_META_ENDPOINT = `${API_BASE}/config/meta`;
 const CONFIG_INVESTMENT_ENDPOINT = (year, locale) =>
   `${API_BASE}/config/${year}/investment-categories?locale=${encodeURIComponent(
@@ -2470,63 +2469,6 @@ function applyHintToField(hint) {
   }
 }
 
-async function fetchYearConfigurationFallback(cause) {
-  try {
-    const response = await fetch(CONFIG_YEARS_FALLBACK_URL, {
-      credentials: "omit",
-      cache: "no-cache",
-    });
-    if (!response.ok) {
-      const error = new Error(
-        `Unable to load fallback year metadata (${response.status})`,
-      );
-      error.name = "HttpError";
-      error.status = response.status;
-      if (cause) {
-        error.cause = cause;
-      }
-      throw error;
-    }
-
-    const payload = await response.json();
-    if (cause) {
-      console.warn(
-        "Using bundled year metadata because the API endpoint was unavailable.",
-        cause,
-      );
-    } else {
-      console.warn("Using bundled year metadata because API lookup failed.");
-    }
-    return { payload, source: "fallback" };
-  } catch (error) {
-    if (cause && !error.cause) {
-      error.cause = cause;
-    }
-    throw error;
-  }
-}
-
-async function fetchYearConfigurationPayload() {
-  let response;
-  try {
-    response = await fetch(CONFIG_YEARS_ENDPOINT, { credentials: "omit" });
-  } catch (networkError) {
-    console.error("Year metadata request failed", networkError);
-    return fetchYearConfigurationFallback(networkError);
-  }
-
-  if (response.ok) {
-    const payload = await response.json();
-    return { payload, source: "api" };
-  }
-
-  const error = new Error(`Unable to load years (${response.status})`);
-  error.name = "HttpError";
-  error.status = response.status;
-  console.warn("Year metadata endpoint returned an error", error);
-  return fetchYearConfigurationFallback(error);
-}
-
 async function loadYearOptions() {
   if (!yearSelect) {
     return;
@@ -2534,7 +2476,12 @@ async function loadYearOptions() {
 
   setCalculatorStatus(t("status.loading_years"));
   try {
-    const { payload, source } = await fetchYearConfigurationPayload();
+    const response = await fetch(CONFIG_YEARS_ENDPOINT);
+    if (!response.ok) {
+      throw new Error(`Unable to load years (${response.status})`);
+    }
+
+    const payload = await response.json();
     const years = Array.isArray(payload.years) ? payload.years : [];
     yearSelect.innerHTML = "";
     yearMetadataByYear.clear();
@@ -2581,8 +2528,7 @@ async function loadYearOptions() {
       applyYearMetadata(selectedYear);
     }
 
-    const statusTone = source === "fallback" ? "warning" : null;
-    setCalculatorStatus(t("status.ready"), { tone: statusTone });
+    setCalculatorStatus(t("status.ready"));
   } catch (error) {
     console.error("Failed to load year metadata", error);
     setCalculatorStatus(t("status.year_error"), { isError: true });
