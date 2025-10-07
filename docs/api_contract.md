@@ -91,8 +91,8 @@ schema. Unknown top-level or nested keys are rejected (`extra="forbid"`).
 
 | Field | Type | Required | Rules |
 | --- | --- | --- | --- |
-| `birth_year` | integer | ✅ | Must be between 1901 and 2100. The value cannot exceed the filing year and, for tax years 2025 and 2026, values above 2025 are rejected. Used to derive youth relief automatically. |
-| `taxpayer_birth_year` | integer | ❌ | Deprecated alias for `birth_year`. When provided it must match the required `birth_year` value. |
+| `birth_year` | integer | ❌ | Optional field between 1901 and 2100. The value cannot exceed the filing year and, for tax years 2025 and 2026, values above 2025 are rejected. When omitted the calculator assumes the taxpayer does not qualify for youth relief. |
+| `taxpayer_birth_year` | integer | ❌ | Deprecated alias for `birth_year`. When provided it must match the supplied `birth_year` value. |
 
 ### Employment & Pension sections
 

@@ -233,7 +233,7 @@
     },
     "hints": {
       "children-eligibility": "Count dependent children recognised for the AADE family tax credit (minors, students up to 24, or dependents with a disability). Up to 15 children are supported.",
-      "birth-year": "Enter the taxpayer birth year (1901–2025) to calculate youth relief eligibility automatically.",
+      "birth-year": "Enter the taxpayer birth year (1901–2025) to calculate youth relief eligibility automatically. Leave the field blank to assume no youth relief applies.",
       "employment-employee-contributions": "Enter the annual EFKA contributions you pay directly outside payroll (for example, voluntary top-ups). Most employees will leave this at 0 because payroll already covers EFKA.",
       "agricultural-professional-farmer": "Check this if you are registered as a professional farmer for the tax year. It enables any reliefs available for that status.",
       "employment-income": "Enter the total gross salary for the year when you have a single annual figure.",
