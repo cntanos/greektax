@@ -110,8 +110,7 @@ jobs:
             PYTHONANYWHERE_WEBAPP=${{ env.PYTHONANYWHERE_WEBAPP }}
           script: |
             set -euo pipefail
-            cd "/home/${PYTHONANYWHERE_USERNAME}"
-            ./update_greektax.sh
+            ~/update_greektax.sh
       - name: Reload web app
         run: |
           curl -fsS -X POST \
