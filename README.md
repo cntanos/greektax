@@ -96,6 +96,49 @@ flask --app greektax.backend.app:create_app run
 If the variable is unset or empty, cross-origin requests are rejected for both
 the Flask-Cors integration and the built-in fallback.
 
+### 5. Point static deployments at the correct API base URL
+
+The front-end script now detects the API endpoint from the hosting environment
+without requiring a custom build. Hosting providers can inject
+`window.GREEKTAX_API_BASE` or a `<meta data-api-base>` element before
+`assets/scripts/main.js` loads.
+
+- **cPanel or basic HTML editors**: open the page template and add the snippet
+  below inside `<head>`:
+
+  ```html
+  <meta data-api-base="https://api.tax.example/api/v1">
+  <script defer src="/assets/scripts/main.js"></script>
+  ```
+
+- **Static site generators / template includes**: expose an include or partial
+  that writes the `<meta data-api-base>` tag or an inline script assigning
+  `window.GREEKTAX_API_BASE`. Pull the base URL from the deployment config so
+  each environment (preview, staging, production) renders the correct value.
+
+- **Small config JSON**: serve a lightweight `greektax.config.json` alongside
+  the static bundle and hydrate the global before the main script executes:
+
+  ```html
+  <script type="module">
+    try {
+      const response = await fetch('/greektax.config.json', { cache: 'no-store' });
+      if (response.ok) {
+        const config = await response.json();
+        if (config?.apiBase) {
+          window.GREEKTAX_API_BASE = config.apiBase;
+        }
+      }
+    } catch (error) {
+      console.warn('Unable to load greektax.config.json; falling back to defaults.', error);
+    }
+  </script>
+  <script defer src="/assets/scripts/main.js"></script>
+  ```
+
+  The JSON file can be generated during deployment (e.g. via CI secrets) to
+  avoid manual edits to the bundled assets.
+
 ## Development Environment
 
 Use the [Operational Workflows Index](docs/operations.md) as the entry point for
