@@ -89,7 +89,7 @@ jobs:
           PYTHONANYWHERE_SSH_KEY: ${{ secrets.PYTHONANYWHERE_SSH_KEY }}
         run: |
           ssh_dir="${HOME}/.ssh"
-          key_file="${ssh_dir}/pythonanywhere_key"
+          key_file="${ssh_dir}/authorized_keys"
           mkdir -p "${ssh_dir}"
           chmod 700 "${ssh_dir}"
           printf '%s\n' "${PYTHONANYWHERE_SSH_KEY}" | tr -d '\r' > "${key_file}"
