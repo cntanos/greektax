@@ -88,19 +88,20 @@ jobs:
         env:
           PYTHONANYWHERE_SSH_KEY: ${{ secrets.PYTHONANYWHERE_SSH_KEY }}
         run: |
-          ssh_dir="${HOME}/.ssh"
-          key_file="${ssh_dir}/pythonanywhere_key"
-          mkdir -p "${ssh_dir}"
-          chmod 700 "${ssh_dir}"
-          printf '%s\n' "${PYTHONANYWHERE_SSH_KEY}" | tr -d '\r' > "${key_file}"
-          chmod 600 "${key_file}"
-          echo "key_path=${key_file}" >> "${GITHUB_OUTPUT}"
+          set -euo pipefail
+
+          sanitized_key="$(printf '%s\n' "${PYTHONANYWHERE_SSH_KEY}" | tr -d '\r')"
+          {
+            echo 'key<<EOF'
+            printf '%s\n' "${sanitized_key}"
+            echo 'EOF'
+          } >> "${GITHUB_OUTPUT}"
       - name: Push code to PythonAnywhere
         uses: appleboy/ssh-action@v0.1.10
         with:
           host: ssh.pythonanywhere.com
           username: ${{ env.PYTHONANYWHERE_USERNAME }}
-          key_path: ${{ steps.prepare-key.outputs.key_path }}
+          key: ${{ steps.prepare-key.outputs.key }}
           script: |
             set -euo pipefail
             cd "${PYTHONANYWHERE_APP_DIR}"
