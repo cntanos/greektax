@@ -8,14 +8,13 @@ from typing import Any
 import pytest
 from pydantic import ValidationError
 
-from greektax.backend.app.models import CalculationRequest, NET_INCOME_INPUT_ERROR
+from greektax.backend.app.models import NET_INCOME_INPUT_ERROR, CalculationRequest
 from greektax.backend.app.services.calculation_service import calculate_tax
 from greektax.backend.config.year_config import (
     TaxBracket,
     YearConfiguration,
     load_year_configuration,
 )
-
 
 DEFAULT_DEMOGRAPHICS = {"birth_year": 1990}
 
@@ -82,7 +81,7 @@ def _employment_contribution_base(
     return gross_income
 
 
-def _employment_expectations(
+def _employment_expectations(  # noqa: PLR0913
     year: int,
     gross_income: float,
     *,
@@ -107,10 +106,8 @@ def _employment_expectations(
     )
     manual_requested = manual_contributions if include_social else 0.0
     max_employee_contrib = auto_employee_contrib if include_social else 0.0
-    manual_contrib = manual_requested
     total_employee_contrib = auto_employee_contrib + manual_requested
     if max_employee_contrib and total_employee_contrib > max_employee_contrib:
-        manual_contrib = max(max_employee_contrib - auto_employee_contrib, 0.0)
         total_employee_contrib = max_employee_contrib
     employee_contrib = total_employee_contrib
     employer_contrib = contribution_base * employer_rate if include_social else 0.0
@@ -566,10 +563,8 @@ def _freelance_expectations(request: CalculationRequest) -> dict[str, Any]:
         request.employment.employee_contributions if include_social else 0.0
     )
     max_employee_contrib = auto_employee_contrib if include_social else 0.0
-    manual_employee_contrib = manual_requested
     total_employee_contrib = auto_employee_contrib + manual_requested
     if max_employee_contrib and total_employee_contrib > max_employee_contrib:
-        manual_employee_contrib = max(max_employee_contrib - auto_employee_contrib, 0.0)
         total_employee_contrib = max_employee_contrib
 
     employment_taxable = (

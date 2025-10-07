@@ -72,7 +72,7 @@ class DemographicsInput(BaseModel):
         return data
 
     @model_validator(mode="after")
-    def _align_birth_year_aliases(self) -> "DemographicsInput":
+    def _align_birth_year_aliases(self) -> DemographicsInput:
         birth_year = self.birth_year or self.taxpayer_birth_year
         if self.taxpayer_birth_year is not None and self.taxpayer_birth_year != birth_year:
             raise ValueError(
@@ -107,7 +107,7 @@ class EmploymentInput(BaseModel):
         return value
 
     @model_validator(mode="after")
-    def _synchronise_contribution_flags(self) -> "EmploymentInput":
+    def _synchronise_contribution_flags(self) -> EmploymentInput:
         fields_set = getattr(self, "model_fields_set", set())
         if "include_social_contributions" in fields_set:
             base = bool(self.include_social_contributions)

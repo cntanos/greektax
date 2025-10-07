@@ -14,7 +14,6 @@ from .year_config import (
     EFKACategoryConfig,
     EmploymentConfig,
     FamilyTaxCreditMetadata,
-    FreelanceConfig,
     PayrollConfig,
     TradeFeeConfig,
     YearConfiguration,

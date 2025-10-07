@@ -36,10 +36,12 @@ def main() -> None:
     ordered_locales = {key: locales[key] for key in sorted(locales)}
     json_payload = json.dumps(ordered_locales, ensure_ascii=False, indent=2, sort_keys=True)
 
+    indented_payload = json_payload.replace("\n", "\n  ")
+
     content_lines = [
         HEADER,
         "(function () {",
-        "  const translations = %s;" % json_payload.replace("\n", "\n  "),
+        f"  const translations = {indented_payload};",
         FOOTER,
         "})();",
         "",

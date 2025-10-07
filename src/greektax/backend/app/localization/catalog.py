@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from functools import lru_cache
-from importlib import resources
 import json
+from dataclasses import dataclass
+from functools import cache
+from importlib import resources
 from typing import Any, Mapping
 
 _BASE_LOCALE = "en"
@@ -33,7 +33,7 @@ class Catalogue:
     frontend: Mapping[str, Any]
 
 
-@lru_cache(maxsize=None)
+@cache
 def _available_locales() -> tuple[str, ...]:
     """Return the set of locales with published translation payloads."""
 
@@ -48,7 +48,7 @@ def _available_locales() -> tuple[str, ...]:
     return tuple(locales) or (_BASE_LOCALE,)
 
 
-@lru_cache(maxsize=None)
+@cache
 def _read_catalogue_payload(locale: str) -> dict[str, Any]:
     """Load the raw translation payload for the requested locale."""
 
@@ -73,7 +73,7 @@ def _read_catalogue_payload(locale: str) -> dict[str, Any]:
     return {"backend": backend, "frontend": frontend}
 
 
-@lru_cache(maxsize=None)
+@cache
 def _load_catalogue(locale: str) -> Catalogue:
     """Return a cached catalogue representation for the locale."""
 
