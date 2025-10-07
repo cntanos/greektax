@@ -63,7 +63,7 @@ Use the automated checks to keep the scaffold healthy:
 pytest                         # Execute unit and integration tests
 ruff check src tests           # Lint Python code
 mypy src                       # Static type checks
-python -m greektax.backend.config.validator  # Validate YAML configuration
+python scripts/validate_config.py           # Validate YAML configuration
 ```
 
 ### 3. Refresh localisation bundles when strings change
@@ -204,7 +204,7 @@ Before opening a pull request:
   - Activate recommended editor settings (see `.vscode/` for VS Code defaults).
 - **Update artefacts**
   - Run `pytest`, `ruff check src tests`, and `mypy src`; address failures.
-  - Execute `python -m greektax.backend.config.validator` to catch configuration
+  - Execute `python scripts/validate_config.py` to catch configuration
     regressions.
   - Run `python scripts/embed_translations.py` after localisation updates and
     commit the generated assets.

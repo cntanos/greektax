@@ -109,7 +109,7 @@ Adding a new filing year involves:
 
 1. Copying the most recent YAML file (for example `2026.yaml`) and updating the
    progressive tax brackets, contribution rates, deduction rules, and metadata.
-2. Running `python -m greektax.backend.config.validator` to validate the schema
+2. Running `python scripts/validate_config.py` to validate the schema
    and surface configuration warnings before committing.
 3. Verifying the new year appears through `/api/v1/config/years`; the UI will
    automatically list the year once the file is present.
