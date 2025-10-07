@@ -6,7 +6,6 @@ from unittest.mock import patch
 
 import pytest
 import yaml
-
 from flask.testing import FlaskClient
 
 from greektax.backend.config import year_config
@@ -80,7 +79,7 @@ def test_list_years_endpoint(client: FlaskClient) -> None:
     assert "employment.partial_year_review" in warning_ids
     assert all(
         entry not in warning_ids
-        for entry in {"config.pending_deduction_updates", "freelance.trade_fee_sunset"}
+        for entry in ("config.pending_deduction_updates", "freelance.trade_fee_sunset")
     )
 
     legacy_trade_fee = legacy_year["freelance"]["trade_fee"]

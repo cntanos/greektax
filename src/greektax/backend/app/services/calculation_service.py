@@ -26,7 +26,6 @@ from greektax.backend.app.models import (
     CalculationResponse,
     DetailTotals,
     format_validation_error,
-    youth_age_reference_year,
 )
 from greektax.backend.config.year_config import (
     PayrollConfig,

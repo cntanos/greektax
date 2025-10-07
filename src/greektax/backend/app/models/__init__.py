@@ -17,25 +17,25 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from .api import (
+    NET_INCOME_INPUT_ERROR,
     AgriculturalIncomeInput,
     CalculationRequest,
     CalculationResponse,
     DeductionBreakdownEntry,
     DeductionsInput,
-    DetailEntry,
-    DependentsInput,
     DemographicsInput,
+    DependentsInput,
+    DetailEntry,
     EmploymentInput,
     FreelanceInput,
-    PensionInput,
-    RentalInput,
     ObligationsInput,
     OtherIncomeInput,
+    PensionInput,
+    RentalInput,
     ResponseMeta,
     Summary,
     SummaryLabels,
     format_validation_error,
-    NET_INCOME_INPUT_ERROR,
 )
 
 __all__ = [
@@ -129,7 +129,7 @@ class CalculationInput(BaseModel):
     taxpayer_birth_year: int | None = None
 
     @model_validator(mode="after")
-    def _validate_taxpayer_birth_year(self) -> "CalculationInput":
+    def _validate_taxpayer_birth_year(self) -> CalculationInput:
         birth_year = self.taxpayer_birth_year
         if birth_year is None:
             return self
@@ -142,7 +142,7 @@ class CalculationInput(BaseModel):
 
         if birth_year > max_allowed:
             raise ValueError(
-                "taxpayer_birth_year must be %d or earlier" % max_allowed
+                f"taxpayer_birth_year must be {max_allowed} or earlier"
             )
 
         return self

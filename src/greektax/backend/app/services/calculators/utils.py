@@ -78,8 +78,7 @@ def allocate_progressive_tax(
             bracket_capacity = upper - lower_bound
             if bracket_capacity < 0:
                 bracket_capacity = 0.0
-            if bracket_capacity > total_remaining:
-                bracket_capacity = total_remaining
+            bracket_capacity = min(bracket_capacity, total_remaining)
 
         if bracket_capacity <= 0:
             lower_bound = upper if upper is not None else lower_bound
@@ -106,11 +105,9 @@ def allocate_progressive_tax(
             else:
                 share = remaining_income / active_total
                 allocation = bracket_capacity * share
-                if allocation > remaining_income:
-                    allocation = remaining_income
+                allocation = min(allocation, remaining_income)
                 remaining_capacity = bracket_capacity - allocated
-                if allocation > remaining_capacity:
-                    allocation = remaining_capacity
+                allocation = min(allocation, remaining_capacity)
 
             if allocation < 0:
                 allocation = 0.0
