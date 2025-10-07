@@ -21,7 +21,10 @@ class Translator:
     _fallback: Mapping[str, str]
 
     def __call__(self, key: str) -> str:
-        return self._messages.get(key) or self._fallback.get(key, key)
+        message = self._messages.get(key)
+        if message is not None:
+            return message
+        return self._fallback.get(key, key)
 
 
 @dataclass(frozen=True)
@@ -43,7 +46,10 @@ def _available_locales() -> tuple[str, ...]:
         return (_BASE_LOCALE,)
 
     locales = sorted(
-        entry.stem for entry in root.iterdir() if entry.suffix == ".json"
+        entry_name[:-5]
+        for entry in root.iterdir()
+        if (entry_name := getattr(entry, "name", None))
+        and entry_name.endswith(".json")
     )
     return tuple(locales) or (_BASE_LOCALE,)
 
