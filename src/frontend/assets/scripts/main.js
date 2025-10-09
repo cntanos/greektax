@@ -75,6 +75,16 @@ const DEFAULT_THEME = "dark";
 const PLOTLY_SDK_URL = "https://cdn.plot.ly/plotly-2.26.0.min.js";
 const PLOTLY_SDK_ATTRIBUTE = "data-plotly-sdk";
 const SVG_NS = "http://www.w3.org/2000/svg";
+const AUTO_SELECTABLE_INPUT_TYPES = new Set([
+  "email",
+  "number",
+  "password",
+  "search",
+  "tel",
+  "text",
+  "url",
+]);
+const AUTO_SELECT_DATASET_KEY = "autoSelectPending";
 
 let plotlyLoaderPromise = null;
 let pendingPlotlyJob = null;
@@ -1743,6 +1753,97 @@ function updateTradeFeeNote(metadata) {
 
 function isNumericInputElement(element) {
   return element instanceof HTMLInputElement && element.type === "number";
+}
+
+function isAutoSelectableInputElement(element) {
+  if (!(element instanceof HTMLInputElement)) {
+    return false;
+  }
+  if (element.disabled || element.readOnly) {
+    return false;
+  }
+  const type = typeof element.type === "string" ? element.type.toLowerCase() : "";
+  if (!type || type === "text") {
+    return true;
+  }
+  return AUTO_SELECTABLE_INPUT_TYPES.has(type);
+}
+
+function clearAutoSelectState(input) {
+  if (!isAutoSelectableInputElement(input)) {
+    return;
+  }
+  if (input.dataset) {
+    delete input.dataset[AUTO_SELECT_DATASET_KEY];
+  }
+}
+
+function handleAutoSelectFocus(event) {
+  const target = event.target;
+  if (!isAutoSelectableInputElement(target)) {
+    return;
+  }
+  if (!target.dataset) {
+    return;
+  }
+  if (typeof target.select !== "function") {
+    return;
+  }
+  const value = target.value ?? "";
+  if (value.length === 0) {
+    clearAutoSelectState(target);
+    return;
+  }
+  target.dataset[AUTO_SELECT_DATASET_KEY] = "pending";
+  window.requestAnimationFrame(() => {
+    if (target.dataset?.[AUTO_SELECT_DATASET_KEY] !== "pending") {
+      return;
+    }
+    try {
+      target.select();
+    } catch (error) {
+      clearAutoSelectState(target);
+    }
+  });
+}
+
+function handleAutoSelectMouseUp(event) {
+  const target = event.target;
+  if (!isAutoSelectableInputElement(target)) {
+    return;
+  }
+  if (target.dataset?.[AUTO_SELECT_DATASET_KEY] === "pending") {
+    event.preventDefault();
+  }
+  clearAutoSelectState(target);
+}
+
+function handleAutoSelectKeyInteraction(event) {
+  const target = event.target;
+  if (!isAutoSelectableInputElement(target)) {
+    return;
+  }
+  clearAutoSelectState(target);
+}
+
+function attachInputSelectionHandlers() {
+  if (!calculatorForm) {
+    return;
+  }
+
+  calculatorForm.addEventListener("focusin", handleAutoSelectFocus);
+  calculatorForm.addEventListener("mouseup", handleAutoSelectMouseUp);
+  calculatorForm.addEventListener(
+    "keydown",
+    handleAutoSelectKeyInteraction,
+    true,
+  );
+  calculatorForm.addEventListener(
+    "keyup",
+    handleAutoSelectKeyInteraction,
+    true,
+  );
+  calculatorForm.addEventListener("focusout", handleAutoSelectKeyInteraction);
 }
 
 function getNumericInputs() {
@@ -5753,6 +5854,7 @@ function initialiseCalculator() {
   clearButton?.addEventListener("click", clearCalculatorForm);
 
   attachValidationHandlers();
+  attachInputSelectionHandlers();
   updatePartialYearWarningState();
 
   updateEmploymentContributionPreview(lastCalculation?.details || []);
