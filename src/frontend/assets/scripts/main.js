@@ -4567,13 +4567,13 @@ function renderDistributionChart(details) {
 }
 
 function resolveSummaryLabel(key, labels = {}, localeOverride = currentLocale) {
-  if (labels && typeof labels[key] === "string" && labels[key].trim()) {
-    return labels[key];
-  }
   const translationKey = `summary.${key}`;
   const translated = t(translationKey, {}, localeOverride);
   if (translated && translated !== translationKey) {
     return translated;
+  }
+  if (labels && typeof labels[key] === "string" && labels[key].trim()) {
+    return labels[key];
   }
   return key;
 }
