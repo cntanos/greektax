@@ -5,8 +5,16 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Any, Iterable, Mapping, Sequence
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, computed_field
-from pydantic import field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    ValidationError,
+    computed_field,
+    field_validator,
+    model_validator,
+)
+from typing_extensions import Self
 
 
 class ConfigurationError(ValueError):
@@ -28,7 +36,7 @@ class TaxBracket(ImmutableModel):
     estimate: bool = False
 
     @model_validator(mode="after")
-    def _validate_values(self) -> "TaxBracket":
+    def _validate_values(self) -> TaxBracket:
         if self.rate < 0:
             raise ConfigurationError("Tax rates must be non-negative")
         if self.upper_bound is not None and self.upper_bound <= 0:
@@ -50,7 +58,7 @@ class HouseholdRateTable(ImmutableModel):
         raise ConfigurationError("Household rate tables require dependant mappings")
 
     @model_validator(mode="after")
-    def _validate_dependants(self) -> "HouseholdRateTable":
+    def _validate_dependants(self) -> HouseholdRateTable:
         if not self.dependants:
             raise ConfigurationError("Household rate tables require dependant mappings")
         for dependant, rate in self.dependants.items():
@@ -99,7 +107,7 @@ class YouthRateTable(ImmutableModel):
         raise ConfigurationError("Youth dependant rates must be provided as a mapping")
 
     @model_validator(mode="after")
-    def _validate_rates(self) -> "YouthRateTable":
+    def _validate_rates(self) -> YouthRateTable:
         if self.rate is not None and self.rate < 0:
             raise ConfigurationError("Youth rates must be non-negative")
         for dependant, rate in self.dependants.items():
@@ -170,7 +178,7 @@ class MultiRateBracket(ImmutableModel):
         raise ConfigurationError("Youth rate tables must be provided as a mapping")
 
     @model_validator(mode="after")
-    def _validate_bounds(self) -> "MultiRateBracket":
+    def _validate_bounds(self) -> MultiRateBracket:
         if self.upper_bound is not None and self.upper_bound <= 0:
             raise ConfigurationError("Upper bounds must be positive values")
         return self
@@ -225,7 +233,7 @@ class EmploymentTaxCredit(ImmutableModel):
         return _coerce_boolean(value)
 
     @model_validator(mode="after")
-    def _validate_values(self) -> "EmploymentTaxCredit":
+    def _validate_values(self) -> EmploymentTaxCredit:
         for child_count, amount in self.amounts_by_children.items():
             if child_count < 0:
                 raise ConfigurationError("Child counts must be non-negative")
@@ -270,7 +278,7 @@ class FamilyTaxCreditMetadata(ImmutableModel):
         return _coerce_boolean(value)
 
     @model_validator(mode="after")
-    def _validate_reduction(self) -> "FamilyTaxCreditMetadata":
+    def _validate_reduction(self) -> FamilyTaxCreditMetadata:
         if self.reduction_factor is not None and self.reduction_factor < 0:
             raise ConfigurationError(
                 "Family tax credit reduction_factor must be non-negative when provided"
@@ -294,7 +302,7 @@ class PayrollConfig(ImmutableModel):
         )
 
     @model_validator(mode="after")
-    def _validate_payroll(self) -> "PayrollConfig":
+    def _validate_payroll(self) -> PayrollConfig:
         allowed = list(dict.fromkeys(self.allowed_payments_per_year))
         if not allowed:
             raise ConfigurationError("At least one payroll frequency must be provided")
@@ -321,7 +329,7 @@ class ContributionRates(ImmutableModel):
     monthly_salary_cap: float | None = None
 
     @model_validator(mode="after")
-    def _validate_rates(self) -> "ContributionRates":
+    def _validate_rates(self) -> ContributionRates:
         if self.employee_rate < 0:
             raise ConfigurationError("Contribution rates must be non-negative")
         if self.employer_rate < 0:
@@ -349,7 +357,7 @@ class EmploymentConfig(ImmutableModel):
         return value
 
     @model_validator(mode="after")
-    def _validate_config(self) -> "EmploymentConfig":
+    def _validate_config(self) -> EmploymentConfig:
         if not self.brackets:
             raise ConfigurationError("Employment configuration must include 'tax_brackets'")
         if self.tekmiria_reduction_factor is not None and self.tekmiria_reduction_factor < 0:
@@ -383,7 +391,7 @@ class PensionConfig(ImmutableModel):
     contributions: ContributionRates
 
     @model_validator(mode="after")
-    def _validate_config(self) -> "PensionConfig":
+    def _validate_config(self) -> PensionConfig:
         if not self.brackets:
             raise ConfigurationError("Pension configuration must include 'tax_brackets'")
         return self
@@ -399,7 +407,7 @@ class TradeFeeSunset(ImmutableModel):
     documentation_url: str | None = None
 
     @model_validator(mode="after")
-    def _validate_values(self) -> "TradeFeeSunset":
+    def _validate_values(self) -> TradeFeeSunset:
         if self.year is not None and self.year <= 0:
             raise ConfigurationError("Trade fee sunset 'year' must be a positive integer")
         return self
@@ -420,7 +428,7 @@ class TradeFeeConfig(ImmutableModel):
         return _coerce_boolean(value)
 
     @model_validator(mode="after")
-    def _validate_amounts(self) -> "TradeFeeConfig":
+    def _validate_amounts(self) -> TradeFeeConfig:
         if self.standard_amount < 0:
             raise ConfigurationError("'standard_amount' must be a non-negative number")
         if self.reduced_amount is not None and self.reduced_amount < 0:
@@ -454,7 +462,7 @@ class EFKACategoryConfig(ImmutableModel):
         return _coerce_boolean(value)
 
     @model_validator(mode="after")
-    def _validate_amounts(self) -> "EFKACategoryConfig":
+    def _validate_amounts(self) -> EFKACategoryConfig:
         if self.monthly_amount < 0:
             raise ConfigurationError("EFKA 'monthly_amount' must be non-negative")
         for field_name in (
@@ -483,7 +491,7 @@ class FreelanceConfig(ImmutableModel):
         return _coerce_boolean(value)
 
     @model_validator(mode="after")
-    def _validate_config(self) -> "FreelanceConfig":
+    def _validate_config(self) -> FreelanceConfig:
         if not self.brackets:
             raise ConfigurationError("Freelance configuration must include 'tax_brackets'")
         return self
@@ -495,7 +503,7 @@ class AgriculturalConfig(ImmutableModel):
     brackets: Sequence[ProgressiveTaxBracket] = Field(alias="tax_brackets")
 
     @model_validator(mode="after")
-    def _validate_config(self) -> "AgriculturalConfig":
+    def _validate_config(self) -> AgriculturalConfig:
         if not self.brackets:
             raise ConfigurationError(
                 "Agricultural configuration must include 'tax_brackets'"
@@ -509,7 +517,7 @@ class OtherIncomeConfig(ImmutableModel):
     brackets: Sequence[ProgressiveTaxBracket] = Field(alias="tax_brackets")
 
     @model_validator(mode="after")
-    def _validate_config(self) -> "OtherIncomeConfig":
+    def _validate_config(self) -> OtherIncomeConfig:
         if not self.brackets:
             raise ConfigurationError("Other income configuration must include 'tax_brackets'")
         return self
@@ -521,7 +529,7 @@ class RentalConfig(ImmutableModel):
     brackets: Sequence[ProgressiveTaxBracket] = Field(alias="tax_brackets")
 
     @model_validator(mode="after")
-    def _validate_config(self) -> "RentalConfig":
+    def _validate_config(self) -> RentalConfig:
         if not self.brackets:
             raise ConfigurationError("Rental configuration must include 'tax_brackets'")
         return self
@@ -550,7 +558,7 @@ class DonationCreditConfig(ImmutableModel):
     income_cap_rate: float | None = None
 
     @model_validator(mode="after")
-    def _validate_rates(self) -> "DonationCreditConfig":
+    def _validate_rates(self) -> DonationCreditConfig:
         if self.credit_rate < 0 or self.credit_rate > 1:
             raise ConfigurationError("Donation credit rate must be between 0 and 1")
         if self.income_cap_rate is not None and not (0 <= self.income_cap_rate <= 1):
@@ -568,7 +576,7 @@ class MedicalCreditConfig(ImmutableModel):
     max_credit: float
 
     @model_validator(mode="after")
-    def _validate_rates(self) -> "MedicalCreditConfig":
+    def _validate_rates(self) -> MedicalCreditConfig:
         if self.credit_rate < 0 or self.credit_rate > 1:
             raise ConfigurationError("Medical credit rate must be between 0 and 1")
         if self.income_threshold_rate < 0 or self.income_threshold_rate > 1:
@@ -587,7 +595,7 @@ class CappedExpenseCreditConfig(ImmutableModel):
     max_eligible_expense: float
 
     @model_validator(mode="after")
-    def _validate_rates(self) -> "CappedExpenseCreditConfig":
+    def _validate_rates(self) -> CappedExpenseCreditConfig:
         if self.credit_rate < 0 or self.credit_rate > 1:
             raise ConfigurationError("Credit rate must be between 0 and 1")
         if self.max_eligible_expense < 0:
@@ -604,7 +612,7 @@ class DeductionThreshold(ImmutableModel):
     notes_key: str | None = None
 
     @model_validator(mode="after")
-    def _validate_threshold(self) -> "DeductionThreshold":
+    def _validate_threshold(self) -> DeductionThreshold:
         if (
             self.amount is None
             and self.percentage is None
@@ -741,7 +749,7 @@ class YearWarning(ImmutableModel):
         raise ConfigurationError("Warning 'applies_to' must be an iterable when provided")
 
     @model_validator(mode="after")
-    def _validate_severity(self) -> "YearWarning":
+    def _validate_severity(self) -> Self:
         if self.severity not in {"info", "warning", "error"}:
             raise ConfigurationError("Warning 'severity' must be one of: info, warning, error")
         return self
@@ -825,7 +833,7 @@ class YearConfiguration(ImmutableModel):
         return prepared
 
     @model_validator(mode="after")
-    def _validate_year(self) -> "YearConfiguration":
+    def _validate_year(self) -> YearConfiguration:
         progressive_sections = (
             self.employment.brackets,
             self.pension.brackets,
@@ -872,7 +880,7 @@ class TaxYearManifest(ImmutableModel):
     years: Sequence[TaxYearManifestEntry]
 
     @model_validator(mode="after")
-    def _validate_years(self) -> "TaxYearManifest":
+    def _validate_years(self) -> TaxYearManifest:
         seen: set[int] = set()
         for entry in self.years:
             if entry.year in seen:

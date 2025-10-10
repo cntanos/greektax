@@ -12,6 +12,7 @@ from pydantic import ValidationError
 from .schema import (
     AgriculturalConfig,
     CappedExpenseCreditConfig,
+    ConfigurationError,
     ContributionRates,
     DeductionAllowance,
     DeductionConfig,
@@ -41,7 +42,6 @@ from .schema import (
     YearConfiguration,
     YearWarning,
     YouthRateTable,
-    ConfigurationError,
 )
 
 CONFIG_DIRECTORY = Path(__file__).resolve().parent / "data"
