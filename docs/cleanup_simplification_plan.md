@@ -49,6 +49,17 @@ refactors that keep the application deployable throughout the effort.
 - Update `scripts/validate_config.py` and associated tests to use the shared
   schema loader, ensuring validation fails fast when data drift occurs.
 
+#### Progress
+
+- [x] Shared the schema across services via `backend.config.schema`, replacing
+  bespoke parsing logic in `year_config.py` while keeping helper methods such as
+  `available_years` stable for callers. Compatibility notes: [Configuration
+  Schema Modernisation Notes](reference/config_schema_design_notes.md).
+- [x] Introduced `data/manifest.yaml` to declare supported tax years and updated
+  loader plus validation tooling to consume it, keeping existing YAML filenames
+  unchanged for backwards compatibility. Compatibility notes: [Manifest layer
+  guidance](reference/config_schema_design_notes.md#proposed-schema-structure).
+
 ### 2. Calculation service simplification
 
 - Map existing service responsibilities (request parsing, calculation, response
