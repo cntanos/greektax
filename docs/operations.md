@@ -30,3 +30,16 @@ connect so contributors can plan multi-disciplinary changes without surprises.
 - **Stay aligned**: Account for new localisation strings in layouts and rerun
   performance snapshots if asset budgets shift.
 - **Full workflow**: [`docs/ui_improvement_plan.md`](ui_improvement_plan.md)
+
+## Year configuration refreshes
+- **When to use**: At the start of a new filing year or when the Ministry of
+  Finance publishes updated brackets, deductions, or contribution schedules.
+- **Key actions**: Duplicate the most recent YAML file under
+  `src/greektax/backend/config/data`, adjust the economic parameters, and run
+  `python scripts/validate_config.py` to ensure the schema stays compliant.
+- **Stay aligned**: Follow up with `pytest` to exercise the calculator against
+  the refreshed dataset and update the public requirements summary so guidance
+  in [`Requirements.md`](../Requirements.md) stays accurate.
+- **Full workflow**: Coordinate with the localisation guide in
+  [`docs/i18n.md`](i18n.md) when new deductions introduce user-facing copy or
+  metadata that the UI must surface.
