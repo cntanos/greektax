@@ -1,5 +1,4 @@
 """Unit tests for the calculation service."""
-
 from __future__ import annotations
 
 from copy import deepcopy
@@ -19,8 +18,8 @@ from greektax.backend.app.models import (
     SummaryLabels,
 )
 from greektax.backend.app.services.calculation_service import (
-    CalculationResponse,
     _RESPONSE_VALIDATION_ENV,
+    CalculationResponse,
     _construct_response_model,
     calculate_tax,
 )
