@@ -24,7 +24,12 @@ from greektax.backend.app.models import (
     CalculationInput,
     CalculationRequest,
     CalculationResponse,
+    DeductionBreakdownEntry,
+    DetailEntry,
     DetailTotals,
+    ResponseMeta,
+    Summary,
+    SummaryLabels,
     format_validation_error,
 )
 from greektax.backend.config.year_config import (
@@ -45,12 +50,104 @@ from .calculators import (
 
 _LOGGER = logging.getLogger(__name__)
 
+_RESPONSE_VALIDATION_ENV = "GREEKTAX_VALIDATE_CALCULATION_RESPONSE"
+
 
 def _profiling_enabled() -> bool:
     """Return ``True`` when calculation profiling should be captured."""
 
     flag = os.getenv("GREEKTAX_PROFILE_CALCULATIONS", "")
     return flag.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _response_validation_enabled() -> bool:
+    """Return ``True`` when response models should undergo validation."""
+
+    flag = os.getenv(_RESPONSE_VALIDATION_ENV, "")
+    return flag.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _construct_response_model(
+    summary: Mapping[str, Any] | Summary,
+    details: list[Mapping[str, Any] | DetailEntry],
+    meta: Mapping[str, Any] | ResponseMeta,
+) -> CalculationResponse:
+    """Construct a ``CalculationResponse`` using fast-path construction by default."""
+
+    payload = {
+        "summary": summary,
+        "details": details,
+        "meta": meta,
+    }
+
+    if _response_validation_enabled():
+        return CalculationResponse.model_validate(payload)
+
+    if isinstance(summary, Summary):
+        summary_model = summary
+    else:
+        raw_summary = (
+            summary.model_dump(mode="python", serialize_as_any=True)
+            if hasattr(summary, "model_dump")
+            else summary
+        )
+        if not isinstance(raw_summary, Mapping):
+            raw_summary = dict(raw_summary)
+        summary_payload = dict(raw_summary)
+        labels_data = summary_payload.pop("labels", {})
+        raw_labels = (
+            labels_data.model_dump(mode="python", serialize_as_any=True)
+            if hasattr(labels_data, "model_dump")
+            else labels_data
+        )
+        if not isinstance(raw_labels, Mapping):
+            raw_labels = dict(raw_labels)
+        labels_payload = dict(raw_labels)
+        breakdown_data = summary_payload.get("deductions_breakdown")
+        if breakdown_data is not None:
+            breakdown_models: list[DeductionBreakdownEntry] = []
+            for entry in breakdown_data:
+                if isinstance(entry, DeductionBreakdownEntry):
+                    breakdown_models.append(entry)
+                elif hasattr(entry, "model_dump"):
+                    breakdown_models.append(
+                        DeductionBreakdownEntry.model_construct(
+                            **entry.model_dump(mode="python", serialize_as_any=True)
+                        )
+                    )
+                else:
+                    breakdown_models.append(
+                        DeductionBreakdownEntry.model_construct(**dict(entry))
+                    )
+            summary_payload["deductions_breakdown"] = breakdown_models
+        summary_model = Summary.model_construct(
+            labels=SummaryLabels.model_construct(**labels_payload),
+            **summary_payload,
+        )
+
+    detail_models: list[DetailEntry] = []
+    for entry in details:
+        if isinstance(entry, DetailEntry):
+            detail_models.append(entry)
+            continue
+        if hasattr(entry, "model_dump"):
+            payload_entry = entry.model_dump(mode="python", serialize_as_any=True)
+        else:
+            payload_entry = dict(entry)
+        detail_models.append(DetailEntry.model_construct(**payload_entry))
+
+    if isinstance(meta, ResponseMeta):
+        meta_model = meta
+    else:
+        if hasattr(meta, "model_dump"):
+            meta_payload = meta.model_dump(mode="python", serialize_as_any=True)
+        else:
+            meta_payload = dict(meta)
+        meta_model = ResponseMeta.model_construct(**meta_payload)
+
+    return CalculationResponse.model_construct(
+        summary=summary_model, details=detail_models, meta=meta_model
+    )
 
 
 @contextmanager
@@ -495,12 +592,6 @@ def calculate_tax(
         if adjustments:
             meta_payload["presumptive_adjustments"] = adjustments
 
-    response_model = CalculationResponse.model_validate(
-        {
-            "summary": summary,
-            "details": details,
-            "meta": meta_payload,
-        }
-    )
+    response_model = _construct_response_model(summary, details, meta_payload)
 
     return response_model.model_dump(mode="json", exclude_none=True)
