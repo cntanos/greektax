@@ -17,7 +17,9 @@ def test_meta_endpoint(client: FlaskClient) -> None:
 
     assert response.status_code == HTTPStatus.OK
     payload = response.get_json()
-    assert payload == {"version": get_project_version()}
+    assert payload["version"] == get_project_version()
+    assert payload["supported_years"] == list(year_config.available_years())
+    assert payload["default_year"] == payload["supported_years"][-1]
 
 
 def test_list_years_endpoint(client: FlaskClient) -> None:
@@ -26,6 +28,7 @@ def test_list_years_endpoint(client: FlaskClient) -> None:
     assert response.status_code == HTTPStatus.OK
     payload = response.get_json()
     years = payload["years"]
+    assert payload["supported_years"] == list(year_config.available_years())
     assert any(entry["year"] == 2024 for entry in years)
     assert any(entry["year"] == 2025 for entry in years)
     assert any(entry["year"] == 2026 for entry in years)
