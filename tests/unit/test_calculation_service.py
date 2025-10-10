@@ -912,7 +912,7 @@ def test_calculate_tax_with_withholding_tax_balance_due() -> None:
     assert summary["balance_due"] == pytest.approx(expected_balance_due)
     assert summary["balance_due_is_refund"] is False
     assert summary["net_income"] == pytest.approx(expected["net_income"])
-    assert summary["labels"]["balance_due"] == "Net tax due"
+    assert summary["labels"]["balance_due"] == "Primary tax balance (+/-)"
 
 
 def test_calculate_tax_with_withholding_tax_refund() -> None:
@@ -939,7 +939,7 @@ def test_calculate_tax_with_withholding_tax_refund() -> None:
     assert summary["balance_due"] == pytest.approx(expected_refund)
     assert summary["balance_due_is_refund"] is True
     assert summary["net_income"] == pytest.approx(expected["net_income"])
-    assert summary["labels"]["balance_due"] == "Refund due"
+    assert summary["labels"]["balance_due"] == "Primary tax balance (+/-)"
 
 
 @pytest.mark.parametrize("payments_per_year", [14, 12])
@@ -1508,7 +1508,7 @@ def test_calculate_tax_respects_locale_toggle() -> None:
 
     assert result["meta"]["locale"] == "el"
     assert result["details"][0]["label"] == "Εισόδημα μισθωτών"
-    assert result["summary"]["labels"]["income_total"] == "Συνολικό εισόδημα"
+    assert result["summary"]["labels"]["income_total"] == "Συνολικό δηλωθέν εισόδημα"
 
 
 def test_youth_relief_applies_for_under_25_birth_year() -> None:

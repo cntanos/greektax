@@ -1162,6 +1162,20 @@ function coerceFiniteNumber(value) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+function sumDetailField(details, field) {
+  if (!Array.isArray(details) || !field) {
+    return 0;
+  }
+
+  return details.reduce((total, detail) => {
+    if (!detail || typeof detail !== "object") {
+      return total;
+    }
+    const value = coerceFiniteNumber(detail[field]);
+    return Number.isFinite(value) ? total + value : total;
+  }, 0);
+}
+
 function formatNumberParts(value, fractionDigits, localeConfig) {
   const rounded = fractionDigits >= 0 ? Math.round(value * 10 ** fractionDigits) / 10 ** fractionDigits : value;
   const sign = rounded < 0 ? "-" : "";
@@ -4579,31 +4593,122 @@ function resolveDetailLabel(detail, key, labels = {}, localeOverride = currentLo
   return key;
 }
 
-function renderSummary(summary) {
+function prepareSummaryDisplay(summary, details = []) {
+  const baseSummary = summary || {};
+  const labels = { ...(baseSummary.labels || {}) };
+  const entries = [];
+  const values = {};
+
+  const pushEntry = (
+    key,
+    value,
+    { formatter = formatCurrency, className = null, includeWhenZero = true } = {},
+  ) => {
+    if (value === null || value === undefined) {
+      return;
+    }
+
+    let numericValue = value;
+    if (typeof numericValue !== "number" || !Number.isFinite(numericValue)) {
+      numericValue = coerceFiniteNumber(numericValue);
+    }
+    const isNumeric = Number.isFinite(numericValue);
+    const finalValue = isNumeric ? numericValue : value;
+    const isZero = isNumeric && Math.abs(finalValue) < 0.0005;
+
+    if (!includeWhenZero && isZero) {
+      return;
+    }
+
+    values[key] = finalValue;
+    if (!labels[key]) {
+      const translationKey = `summary.${key}`;
+      const translated = t(translationKey);
+      if (translated && translated !== translationKey) {
+        labels[key] = translated;
+      }
+    }
+
+    entries.push({ key, value: finalValue, formatter, className });
+  };
+
+  const declaredIncome = coerceFiniteNumber(baseSummary.income_total);
+  const taxableIncome = coerceFiniteNumber(baseSummary.taxable_income);
+  const incomeReliefs = Math.max(declaredIncome - taxableIncome, 0);
+  const scaleTax = sumDetailField(details, "tax_before_credits");
+  const hasSummaryCredits = Object.prototype.hasOwnProperty.call(
+    baseSummary,
+    "deductions_applied",
+  );
+  const taxCredits = hasSummaryCredits
+    ? coerceFiniteNumber(baseSummary.deductions_applied)
+    : sumDetailField(details, "credits");
+  const assessedTax = Math.max(sumDetailField(details, "tax"), 0);
+  const totalTax = coerceFiniteNumber(baseSummary.tax_total);
+  const hasWithholding = Object.prototype.hasOwnProperty.call(
+    baseSummary,
+    "withholding_tax",
+  );
+  const withholdingTax = hasWithholding
+    ? coerceFiniteNumber(baseSummary.withholding_tax)
+    : 0;
+  const refundReduction = Math.max(totalTax - assessedTax, 0);
+  const netIncome = coerceFiniteNumber(baseSummary.net_income);
+  const netMonthlyIncome = coerceFiniteNumber(baseSummary.net_monthly_income);
+  const averageMonthlyTax = coerceFiniteNumber(baseSummary.average_monthly_tax);
+  const effectiveTaxRate = Number.isFinite(baseSummary.effective_tax_rate)
+    ? baseSummary.effective_tax_rate
+    : 0;
+  const isRefund = baseSummary.balance_due_is_refund === true;
+  const hasBalanceKey = Object.prototype.hasOwnProperty.call(baseSummary, "balance_due");
+  const rawBalance = hasBalanceKey ? coerceFiniteNumber(baseSummary.balance_due) : 0;
+  const shouldShowBalance = hasBalanceKey || hasWithholding || Math.abs(rawBalance) > 0.004;
+  const signedBalance = isRefund ? -rawBalance : rawBalance;
+
+  pushEntry("income_total", declaredIncome, { className: "primary" });
+  pushEntry("income_reliefs", incomeReliefs);
+  pushEntry("taxable_income", taxableIncome, { className: "primary" });
+  pushEntry("tax_scale", scaleTax, { className: "accent" });
+  pushEntry("tax_credits", taxCredits);
+  pushEntry("tax_due", assessedTax, { className: "accent" });
+  if (hasWithholding && Math.abs(withholdingTax) > 0.004) {
+    pushEntry("withholding_tax", withholdingTax);
+  }
+  if (refundReduction > 0.004) {
+    pushEntry("refund_reduction", refundReduction);
+  }
+  if (shouldShowBalance) {
+    pushEntry("balance_due", signedBalance, { className: "accent" });
+  }
+  pushEntry("tax_total", totalTax, { className: "accent" });
+  pushEntry("net_income", netIncome, { className: "primary" });
+  pushEntry("net_monthly_income", netMonthlyIncome, { className: "primary" });
+  pushEntry("average_monthly_tax", averageMonthlyTax, { className: "accent" });
+  pushEntry("effective_tax_rate", effectiveTaxRate, {
+    className: "accent",
+    formatter: (value) =>
+      formatPercent(value, {
+        maximumFractionDigits: 1,
+        minimumFractionDigits: 0,
+      }),
+  });
+
+  return {
+    entries,
+    labels,
+    values,
+    balanceDueIsRefund: isRefund,
+  };
+}
+
+function renderSummary(summary, details = []) {
   if (!summaryGrid) {
     return;
   }
 
+  const prepared = prepareSummaryDisplay(summary, details);
   summaryGrid.innerHTML = "";
-  const labels = summary.labels || {};
-  const summaryFields = [
-    { key: "income_total", formatter: formatCurrency },
-    { key: "taxable_income", formatter: formatCurrency },
-    { key: "deductions_entered", formatter: formatCurrency },
-    { key: "deductions_applied", formatter: formatCurrency },
-    { key: "tax_total", formatter: formatCurrency, className: "accent" },
-    { key: "withholding_tax", formatter: formatCurrency },
-    { key: "balance_due", formatter: formatCurrency, className: "accent" },
-    { key: "net_income", formatter: formatCurrency, className: "primary" },
-    { key: "net_monthly_income", formatter: formatCurrency },
-    { key: "average_monthly_tax", formatter: formatCurrency },
-    { key: "effective_tax_rate", formatter: formatPercent },
-  ];
-
-  summaryFields.forEach(({ key, formatter, className }) => {
-    if (!(key in summary)) {
-      return;
-    }
+  prepared.entries.forEach(({ key, value, formatter, className }) => {
     const wrapper = document.createElement("dl");
     const classes = ["summary-item"];
     if (className) {
@@ -4612,15 +4717,15 @@ function renderSummary(summary) {
     wrapper.className = classes.join(" ");
     wrapper.dataset.field = key;
     if (key === "balance_due") {
-      wrapper.dataset.variant = summary.balance_due_is_refund ? "refund" : "due";
+      wrapper.dataset.variant = prepared.balanceDueIsRefund ? "refund" : "due";
     }
 
     const dt = document.createElement("dt");
-    dt.textContent = resolveSummaryLabel(key, labels);
+    dt.textContent = resolveSummaryLabel(key, prepared.labels);
     dt.dataset.field = key;
 
     const dd = document.createElement("dd");
-    dd.textContent = formatter(summary[key]);
+    dd.textContent = formatter(value);
     dd.dataset.field = key;
 
     wrapper.appendChild(dt);
@@ -4840,7 +4945,7 @@ function renderCalculation(result) {
 
   renderSankey(result);
   renderDistributionChart(result.details || []);
-  renderSummary(result.summary || {});
+  renderSummary(result.summary || {}, result.details || []);
   renderDetails(result.details || []);
 }
 
@@ -5044,10 +5149,15 @@ function escapeCsvValue(value) {
 
 const SUMMARY_EXPORT_FIELDS = [
   { key: "income_total", type: "currency" },
+  { key: "income_reliefs", type: "currency" },
   { key: "taxable_income", type: "currency" },
-  { key: "tax_total", type: "currency" },
+  { key: "tax_scale", type: "currency" },
+  { key: "tax_credits", type: "currency" },
+  { key: "tax_due", type: "currency" },
   { key: "withholding_tax", type: "currency", optional: true },
+  { key: "refund_reduction", type: "currency", optional: true },
   { key: "balance_due", type: "currency", optional: true },
+  { key: "tax_total", type: "currency" },
   { key: "net_income", type: "currency" },
   { key: "net_monthly_income", type: "currency" },
   { key: "average_monthly_tax", type: "currency" },
@@ -5056,8 +5166,6 @@ const SUMMARY_EXPORT_FIELDS = [
     type: "percent",
     formatOptions: { maximumFractionDigits: 1, minimumFractionDigits: 0 },
   },
-  { key: "deductions_entered", type: "currency" },
-  { key: "deductions_applied", type: "currency" },
 ];
 
 const DETAIL_EXPORT_FIELDS = [
@@ -5177,9 +5285,16 @@ function buildSummaryExportData(calculation, {
   }
 
   const locale = normaliseLocaleChoice(localeOverride || getActiveLocale());
-  const summary = calculation.summary || {};
-  const summaryLabels = summary.labels || {};
+  const rawSummary = calculation.summary || {};
   const details = Array.isArray(calculation.details) ? calculation.details : [];
+  const preparedSummary = prepareSummaryDisplay(rawSummary, details);
+  const summary = {
+    ...rawSummary,
+    ...preparedSummary.values,
+    labels: preparedSummary.labels,
+    balance_due_is_refund: rawSummary.balance_due_is_refund,
+  };
+  const summaryLabels = summary.labels || {};
   const meta = calculation.meta || {};
   const generatedAtDate = new Date();
   const generatedAtIso = generatedAtDate.toISOString();
@@ -5193,7 +5308,7 @@ function buildSummaryExportData(calculation, {
     details: [],
     deductions: [],
     meta: { entries: [], raw: meta },
-    summaryRaw: summary,
+    summaryRaw: rawSummary,
     detailsRaw: details,
   };
 

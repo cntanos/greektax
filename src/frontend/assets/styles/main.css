@@ -1111,17 +1111,25 @@ main {
 }
 
 .summary-item[data-field="deductions_entered"],
-.summary-item[data-field="deductions_applied"] {
+.summary-item[data-field="deductions_applied"],
+.summary-item[data-field="income_reliefs"],
+.summary-item[data-field="tax_credits"],
+.summary-item[data-field="refund_reduction"] {
   background: var(--summary-deductions-bg);
   border-color: var(--summary-deductions-border);
 }
 
 .summary-item[data-field="deductions_entered"] dd,
-.summary-item[data-field="deductions_applied"] dd {
+.summary-item[data-field="deductions_applied"] dd,
+.summary-item[data-field="income_reliefs"] dd,
+.summary-item[data-field="tax_credits"] dd,
+.summary-item[data-field="refund_reduction"] dd {
   color: var(--summary-deductions-text);
 }
 
 .summary-item[data-field="tax_total"],
+.summary-item[data-field="tax_scale"],
+.summary-item[data-field="tax_due"],
 .summary-item[data-field="average_monthly_tax"],
 .summary-item[data-field="effective_tax_rate"] {
   background: var(--summary-tax-bg);
@@ -1129,6 +1137,8 @@ main {
 }
 
 .summary-item[data-field="tax_total"] dd,
+.summary-item[data-field="tax_scale"] dd,
+.summary-item[data-field="tax_due"] dd,
 .summary-item[data-field="average_monthly_tax"] dd,
 .summary-item[data-field="effective_tax_rate"] dd {
   color: var(--summary-tax-text);
