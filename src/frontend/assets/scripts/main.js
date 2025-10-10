@@ -3387,9 +3387,11 @@ function buildCalculationPayload() {
   if (birthYear >= 1901 && birthYear <= 2025) {
     demographics.birth_year = birthYear;
   }
-  if (taxResidencyTransferCheckbox?.checked) {
-    demographics.tax_residency_transfer_to_greece = true;
-  }
+
+  const taxResidencyTransferEnabled = Boolean(
+    taxResidencyTransferCheckbox?.checked,
+  );
+  demographics.tax_residency_transfer_to_greece = taxResidencyTransferEnabled;
 
   payload.demographics = demographics;
 

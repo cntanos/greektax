@@ -851,6 +851,31 @@ def test_tax_residency_transfer_applies_after_employee_contributions() -> None:
         baseline_summary["income_total"]
     )
 
+
+def test_tax_residency_transfer_reduces_total_tax() -> None:
+    """Turning on the relocation incentive lowers the overall tax due."""
+
+    baseline = calculate_tax(
+        {
+            "year": 2025,
+            "demographics": {},
+            "employment": {"gross_income": 30_000},
+        }
+    )
+
+    relocation = calculate_tax(
+        {
+            "year": 2025,
+            "demographics": {"tax_residency_transfer_to_greece": True},
+            "employment": {"gross_income": 30_000},
+        }
+    )
+
+    assert relocation["summary"]["tax_total"] < baseline["summary"]["tax_total"]
+    assert relocation["summary"]["taxable_income"] == pytest.approx(
+        baseline["summary"]["taxable_income"] * 0.5
+    )
+
 def test_calculate_tax_employment_only() -> None:
     """Employment income uses progressive rates and tax credit."""
 
