@@ -22,13 +22,40 @@
   const modulePath =
     loaderScript.getAttribute("data-module") ?? "./main.js";
 
+  const resolveModuleUrl = () => {
+    const trimmedPath = modulePath.trim();
+    if (!trimmedPath) {
+      throw new Error("Empty front-end module path");
+    }
+
+    // Absolute URLs (including protocol-relative URLs) should be respected as-is.
+    const absoluteUrlPattern = /^(?:[a-zA-Z][a-zA-Z\d+\-.]*:)?\/\//;
+    if (absoluteUrlPattern.test(trimmedPath)) {
+      if (trimmedPath.startsWith("//")) {
+        const protocol = typeof window !== "undefined" && window.location
+          ? window.location.protocol
+          : "https:";
+        return `${protocol}${trimmedPath}`;
+      }
+      return trimmedPath;
+    }
+
+    try {
+      return new URL(
+        trimmedPath,
+        document?.baseURI ?? window?.location?.href ?? "",
+      ).toString();
+    } catch (error) {
+      // Rethrow to ensure the calling context handles the failure uniformly.
+      throw error instanceof Error
+        ? error
+        : new Error("Failed to resolve front-end module URL");
+    }
+  };
+
   let moduleUrl;
   try {
-    if (loaderScript.src) {
-      moduleUrl = new URL(modulePath, loaderScript.src).toString();
-    } else {
-      moduleUrl = new URL(modulePath, document.baseURI).toString();
-    }
+    moduleUrl = resolveModuleUrl();
   } catch (error) {
     console.error(
       "GreekTax could not resolve the front-end module path.",
