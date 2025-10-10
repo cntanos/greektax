@@ -749,6 +749,43 @@ def test_calculate_tax_omits_youth_relief_without_birth_year() -> None:
     assert result["meta"] == {"year": 2026, "locale": "en"}
 
 
+@pytest.mark.parametrize("year", [2024, 2025, 2026])
+def test_tax_residency_transfer_halves_employment_taxable_income(year: int) -> None:
+    """Relocating tax residency halves taxable employment income across years."""
+
+    base_payload = {
+        "year": year,
+        "demographics": {"birth_year": 1985},
+        "employment": {"gross_income": 36_000},
+    }
+
+    baseline_request = build_request(base_payload)
+    baseline_result = calculate_tax(baseline_request)
+    baseline_detail = next(
+        detail
+        for detail in baseline_result["details"]
+        if detail["category"] == "employment"
+    )
+
+    relocation_payload = deepcopy(base_payload)
+    relocation_payload["demographics"]["tax_residency_transfer_to_greece"] = True
+    relocation_request = build_request(relocation_payload)
+    relocation_result = calculate_tax(relocation_request)
+    relocation_detail = next(
+        detail
+        for detail in relocation_result["details"]
+        if detail["category"] == "employment"
+    )
+
+    assert relocation_detail["gross_income"] == pytest.approx(
+        baseline_detail["gross_income"]
+    )
+    assert relocation_detail["taxable_income"] == pytest.approx(
+        baseline_detail["taxable_income"] * 0.5
+    )
+    assert relocation_detail["total_tax"] < baseline_detail["total_tax"]
+
+
 def test_calculate_tax_employment_only() -> None:
     """Employment income uses progressive rates and tax credit."""
 

@@ -127,6 +127,7 @@ class CalculationInput(BaseModel):
     deductions_insurance: float
     toggles: Mapping[str, bool] = Field(default_factory=dict)
     taxpayer_birth_year: int | None = None
+    tax_residency_transfer_to_greece: bool = False
 
     @model_validator(mode="after")
     def _validate_taxpayer_birth_year(self) -> CalculationInput:
