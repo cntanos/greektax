@@ -60,13 +60,13 @@ def _serialise_model(value: Any, *, prune_none: bool = False) -> Any:
         return payload
 
     if isinstance(value, Mapping):
-        payload: dict[Any, Any] = {}
+        mapping_payload: dict[Any, Any] = {}
         for key, item in value.items():
             serialised = _serialise_model(item, prune_none=prune_none)
             if prune_none and serialised is None:
                 continue
-            payload[key] = serialised
-        return payload
+            mapping_payload[key] = serialised
+        return mapping_payload
 
     if isinstance(value, Sequence) and not isinstance(value, str | bytes | bytearray):
         return [
