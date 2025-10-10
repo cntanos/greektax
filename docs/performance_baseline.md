@@ -41,7 +41,7 @@ Sample output captured after the sprint improvements:
 ```
 
 The calculation timings rely on the profiling hooks in
-`greektax/backend/app/services/calculation_service.py`. Setting the environment
+`greektax/backend/services/calculation_service.py`. Setting the environment
 variable `GREEKTAX_PROFILE_CALCULATIONS=true` prints per-section timings for
 ad-hoc investigations while keeping the API contract unchanged. The snapshot now
 reports minimum and maximum iteration durations to surface jitter alongside the

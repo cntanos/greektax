@@ -17,7 +17,7 @@ from greektax.backend.app.models import (
     Summary,
     SummaryLabels,
 )
-from greektax.backend.app.services.calculation_service import (
+from greektax.backend.services.calculation_service import (
     _RESPONSE_VALIDATION_ENV,
     CalculationResponse,
     _construct_response_model,
@@ -1115,7 +1115,7 @@ def test_calculate_tax_fast_path_skips_response_validation(monkeypatch: pytest.M
         raise AssertionError("model_validate should not be invoked in fast path")
 
     monkeypatch.setattr(
-        "greektax.backend.app.services.calculation_service.CalculationResponse.model_validate",
+        "greektax.backend.services.calculation_service.CalculationResponse.model_validate",
         classmethod(_raise_validation),
     )
 
@@ -1142,7 +1142,7 @@ def test_calculate_tax_optional_validation_matches_fast_path(
         return original_validate(value, *args, **kwargs)
 
     monkeypatch.setattr(
-        "greektax.backend.app.services.calculation_service.CalculationResponse.model_validate",
+        "greektax.backend.services.calculation_service.CalculationResponse.model_validate",
         classmethod(_counting_validate),
     )
     monkeypatch.setenv("GREEKTAX_VALIDATE_CALCULATION_RESPONSE", "true")

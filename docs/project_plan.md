@@ -294,7 +294,7 @@
 **Highlights**
 - Streamlined general-income processing with slot-based dataclasses and
   aggregated totals so repeated calculations reuse intermediate results while
-  preserving localisation-rich detail output.【F:src/greektax/backend/app/services/calculation_service.py†L46-L84】【F:src/greektax/backend/app/services/calculation_service.py†L904-L1020】
+  preserving localisation-rich detail output.【F:src/greektax/backend/services/calculation_service.py†L46-L84】【F:src/greektax/backend/services/calculation_service.py†L904-L1020】
 - Deferred Plotly bootstrapping and staged theme re-renders to keep the Sankey
   diagram responsive on slower devices and to smooth the dark-mode transition
   experience.【F:src/frontend/assets/scripts/main.js†L24-L113】【F:src/frontend/assets/scripts/main.js†L2363-L2549】

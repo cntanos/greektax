@@ -74,6 +74,23 @@ refactors that keep the application deployable throughout the effort.
   future contributors can update individual steps without touching the entire
   service.
 
+#### Progress
+
+- [x] Relocated the calculation orchestration layer to
+  `backend/services/`, introducing dedicated helpers for request parsing and
+  response formatting so the route only coordinates high-level steps.
+  Request parsing now captures locale resolution in
+  `services/request_parser.py`, while responses flow through
+  `services/response_builder.py` before returning JSON. 【F:src/greektax/backend/services/request_parser.py†L1-L39】【F:src/greektax/backend/services/response_builder.py†L1-L16】【F:src/greektax/backend/app/routes/calculations.py†L1-L20】
+- [x] Removed the unused share/export endpoints from the Flask surface and
+  added explicit 404 regression tests guarding those legacy paths alongside
+  unit tests proving the new helpers honour Accept-Language and response
+  formatting semantics. 【F:tests/integration/test_legacy_paths.py†L1-L20】【F:tests/unit/test_request_parser.py†L1-L38】【F:tests/unit/test_response_builder.py†L1-L16】
+- [x] Confirmed regression parity by re-running the scenario suite against the
+  reorganised services; the calculation endpoint test harness continues to match
+  stored expectations, documenting the preserved data flow from parsed payload
+  to JSON response. 【F:tests/integration/test_calculation_endpoint.py†L15-L94】
+
 ### 3. API surface consolidation
 
 - Audit the route modules under `app/routes` and identify opportunities to
