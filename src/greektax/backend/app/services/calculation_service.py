@@ -12,6 +12,7 @@ import logging
 import os
 from collections.abc import Mapping, Sequence
 from contextlib import contextmanager
+from dataclasses import dataclass
 from numbers import Real
 from time import perf_counter
 from types import MappingProxyType
@@ -179,28 +180,50 @@ def _validate_payments(
 
 
 
+@dataclass(frozen=True)
+class EmploymentAmounts:
+    income: float
+    monthly_income: float | None
+    payments_per_year: int | None
+    manual_contributions: float
+    declared_gross_income: float
 
-def _normalise_payload(
+
+@dataclass(frozen=True)
+class PensionAmounts:
+    income: float
+    monthly_income: float | None
+    payments_per_year: int | None
+    declared_gross_income: float
+
+
+@dataclass(frozen=True)
+class FreelanceAmounts:
+    profit: float
+    gross_revenue: float
+    deductible_expenses: float
+    category_id: str | None
+    category_months: int | None
+    category_contribution: float
+    additional_contributions: float
+    auxiliary_contributions: float
+    lump_sum_contributions: float
+
+
+@dataclass(frozen=True)
+class AdditionalIncomeAmounts:
+    rental_gross_income: float
+    rental_deductible_expenses: float
+    investment_amounts: Mapping[str, float]
+    agricultural_gross_revenue: float
+    agricultural_deductible_expenses: float
+    agricultural_professional_farmer: bool
+    other_taxable_income: float
+
+
+def _normalise_employment(
     request: CalculationRequest, config: YearConfiguration
-) -> CalculationInput:
-    locale = request.locale or "en"
-
-    children = request.dependents.children
-    demographics = request.demographics
-
-    meta_toggles_raw = config.meta.get("toggles")
-    meta_toggles: dict[str, bool] = {}
-    if isinstance(meta_toggles_raw, Mapping):
-        meta_toggles = {str(key): bool(value) for key, value in meta_toggles_raw.items()}
-
-    merged_toggles: dict[str, bool] = dict(meta_toggles)
-    if request.toggles:
-        merged_toggles.update({key: bool(value) for key, value in request.toggles.items()})
-
-    toggles = MappingProxyType(merged_toggles)
-
-    birth_year = demographics.birth_year
-
+) -> EmploymentAmounts:
     employment_input = request.employment
     employment_payroll = config.employment.payroll
     employment_payments = _validate_payments(
@@ -226,8 +249,52 @@ def _normalise_payload(
 
     employment_manual_contributions = employment_input.employee_contributions
 
-    withholding_tax = request.withholding_tax
+    return EmploymentAmounts(
+        income=employment_income,
+        monthly_income=employment_monthly_income,
+        payments_per_year=employment_payments,
+        manual_contributions=employment_manual_contributions,
+        declared_gross_income=employment_declared_gross,
+    )
 
+
+def _normalise_pension(
+    request: CalculationRequest, config: YearConfiguration
+) -> PensionAmounts:
+    pension_input = request.pension
+    pension_payroll = config.pension.payroll
+    pension_payments = _validate_payments(
+        pension_input.payments_per_year,
+        pension_payroll,
+        "pension.payments_per_year",
+    )
+
+    pension_monthly_income: float | None = None
+    pension_income = 0.0
+    pension_declared_gross = pension_input.gross_income
+
+    if pension_input.monthly_income is not None and pension_input.monthly_income > 0:
+        payments = pension_payments or pension_payroll.default_payments_per_year
+        pension_payments = payments
+        pension_monthly_income = pension_input.monthly_income
+        pension_income = pension_monthly_income * payments
+
+    if pension_input.gross_income > 0:
+        pension_income = pension_input.gross_income
+        if pension_payments and pension_monthly_income is None:
+            pension_monthly_income = pension_income / pension_payments
+
+    return PensionAmounts(
+        income=pension_income,
+        monthly_income=pension_monthly_income,
+        payments_per_year=pension_payments,
+        declared_gross_income=pension_declared_gross,
+    )
+
+
+def _normalise_freelance(
+    request: CalculationRequest, config: YearConfiguration
+) -> FreelanceAmounts:
     freelance_input = request.freelance
     freelance_gross_revenue = freelance_input.gross_revenue
     freelance_deductible_expenses = freelance_input.deductible_expenses
@@ -274,34 +341,20 @@ def _normalise_payload(
     auxiliary_contributions = freelance_input.auxiliary_contributions
     lump_sum_contributions = freelance_input.lump_sum_contributions
 
-    include_trade_fee = freelance_input.include_trade_fee
-    trade_fee_location = freelance_input.trade_fee_location
-    years_active = freelance_input.years_active
-    newly_self_employed = freelance_input.newly_self_employed
-
-    pension_input = request.pension
-    pension_payroll = config.pension.payroll
-    pension_payments = _validate_payments(
-        pension_input.payments_per_year,
-        pension_payroll,
-        "pension.payments_per_year",
+    return FreelanceAmounts(
+        profit=profit,
+        gross_revenue=freelance_gross_revenue,
+        deductible_expenses=freelance_deductible_expenses,
+        category_id=category_config.id if category_config else None,
+        category_months=category_months,
+        category_contribution=category_contribution,
+        additional_contributions=additional_contributions,
+        auxiliary_contributions=auxiliary_contributions,
+        lump_sum_contributions=lump_sum_contributions,
     )
 
-    pension_monthly_income: float | None = None
-    pension_income = 0.0
-    pension_declared_gross = pension_input.gross_income
 
-    if pension_input.monthly_income is not None and pension_input.monthly_income > 0:
-        payments = pension_payments or pension_payroll.default_payments_per_year
-        pension_payments = payments
-        pension_monthly_income = pension_input.monthly_income
-        pension_income = pension_monthly_income * payments
-
-    if pension_input.gross_income > 0:
-        pension_income = pension_input.gross_income
-        if pension_payments and pension_monthly_income is None:
-            pension_monthly_income = pension_income / pension_payments
-
+def _normalise_additional_income(request: CalculationRequest) -> AdditionalIncomeAmounts:
     rental_input = request.rental
     rental_gross = rental_input.gross_income
     rental_expenses = rental_input.deductible_expenses
@@ -315,24 +368,95 @@ def _normalise_payload(
 
     other_income = request.other.taxable_income
 
-    if birth_year is not None and request.year in {2025, 2026}:
-        birth_year_limit = 2025
-        if birth_year > birth_year_limit:
-            has_income = any(
-                (
-                    employment_income > 0,
-                    pension_income > 0,
-                    profit > 0,
-                    rental_gross > 0,
-                    agricultural_revenue > 0,
-                    other_income > 0,
-                    any(amount > 0 for amount in investment_amounts.values()),
-                )
-            )
-            if has_income:
-                raise ValueError(
-                    "Invalid calculation payload: demographics.birth_year must be 2025 or earlier when income is provided"
-                )
+    return AdditionalIncomeAmounts(
+        rental_gross_income=rental_gross,
+        rental_deductible_expenses=rental_expenses,
+        investment_amounts=investment_amounts,
+        agricultural_gross_revenue=agricultural_revenue,
+        agricultural_deductible_expenses=agricultural_expenses,
+        agricultural_professional_farmer=agricultural_professional,
+        other_taxable_income=other_income,
+    )
+
+
+def _validate_birth_year_guard(
+    birth_year: int | None,
+    year: int,
+    employment: EmploymentAmounts,
+    pension: PensionAmounts,
+    freelance: FreelanceAmounts,
+    additional_income: AdditionalIncomeAmounts,
+) -> None:
+    if birth_year is None or year not in {2025, 2026}:
+        return
+
+    birth_year_limit = 2025
+    if birth_year <= birth_year_limit:
+        return
+
+    has_income = any(
+        (
+            employment.income > 0,
+            pension.income > 0,
+            freelance.profit > 0,
+            additional_income.rental_gross_income > 0,
+            additional_income.agricultural_gross_revenue > 0,
+            additional_income.other_taxable_income > 0,
+            any(amount > 0 for amount in additional_income.investment_amounts.values()),
+        )
+    )
+    if has_income:
+        raise ValueError(
+            "Invalid calculation payload: demographics.birth_year must be 2025 or earlier when income is provided"
+        )
+
+
+
+def _normalise_payload(
+    request: CalculationRequest, config: YearConfiguration
+) -> CalculationInput:
+    locale = request.locale or "en"
+
+    children = request.dependents.children
+    demographics = request.demographics
+
+    meta_toggles_raw = config.meta.get("toggles")
+    meta_toggles: dict[str, bool] = {}
+    if isinstance(meta_toggles_raw, Mapping):
+        meta_toggles = {str(key): bool(value) for key, value in meta_toggles_raw.items()}
+
+    merged_toggles: dict[str, bool] = dict(meta_toggles)
+    if request.toggles:
+        merged_toggles.update({key: bool(value) for key, value in request.toggles.items()})
+
+    toggles = MappingProxyType(merged_toggles)
+
+    birth_year = demographics.birth_year
+
+    employment_values = _normalise_employment(request, config)
+    employment_input = request.employment
+    withholding_tax = request.withholding_tax
+
+    pension_values = _normalise_pension(request, config)
+    pension_input = request.pension
+
+    freelance_values = _normalise_freelance(request, config)
+    freelance_input = request.freelance
+    include_trade_fee = freelance_input.include_trade_fee
+    trade_fee_location = freelance_input.trade_fee_location
+    years_active = freelance_input.years_active
+    newly_self_employed = freelance_input.newly_self_employed
+
+    additional_income = _normalise_additional_income(request)
+
+    _validate_birth_year_guard(
+        birth_year,
+        request.year,
+        employment_values,
+        pension_values,
+        freelance_values,
+        additional_income,
+    )
 
     obligations = request.obligations
     enfia_due = obligations.enfia
@@ -349,10 +473,10 @@ def _normalise_payload(
         locale=locale,
         children=children,
         taxpayer_birth_year=birth_year,
-        employment_income=employment_income,
-        employment_monthly_income=employment_monthly_income,
-        employment_payments_per_year=employment_payments,
-        employment_manual_contributions=employment_manual_contributions,
+        employment_income=employment_values.income,
+        employment_monthly_income=employment_values.monthly_income,
+        employment_payments_per_year=employment_values.payments_per_year,
+        employment_manual_contributions=employment_values.manual_contributions,
         employment_include_social_contributions=
         request.employment.include_social_contributions,
         employment_include_employee_contributions=
@@ -361,21 +485,27 @@ def _normalise_payload(
         employment_input.include_manual_employee_contributions,
         employment_include_employer_contributions=
         employment_input.include_employer_contributions,
-        employment_declared_gross_income=employment_declared_gross,
+        employment_declared_gross_income=
+        employment_values.declared_gross_income,
         withholding_tax=withholding_tax,
-        pension_income=pension_income,
-        pension_monthly_income=pension_monthly_income,
-        pension_payments_per_year=pension_payments,
-        pension_declared_gross_income=pension_declared_gross,
-        freelance_profit=profit,
-        freelance_gross_revenue=freelance_gross_revenue,
-        freelance_deductible_expenses=freelance_deductible_expenses,
-        freelance_category_id=category_config.id if category_config else None,
-        freelance_category_months=category_months,
-        freelance_category_contribution=category_contribution,
-        freelance_additional_contributions=additional_contributions,
-        freelance_auxiliary_contributions=auxiliary_contributions,
-        freelance_lump_sum_contributions=lump_sum_contributions,
+        pension_income=pension_values.income,
+        pension_monthly_income=pension_values.monthly_income,
+        pension_payments_per_year=pension_values.payments_per_year,
+        pension_declared_gross_income=
+        pension_values.declared_gross_income,
+        freelance_profit=freelance_values.profit,
+        freelance_gross_revenue=freelance_values.gross_revenue,
+        freelance_deductible_expenses=
+        freelance_values.deductible_expenses,
+        freelance_category_id=freelance_values.category_id,
+        freelance_category_months=freelance_values.category_months,
+        freelance_category_contribution=freelance_values.category_contribution,
+        freelance_additional_contributions=
+        freelance_values.additional_contributions,
+        freelance_auxiliary_contributions=
+        freelance_values.auxiliary_contributions,
+        freelance_lump_sum_contributions=
+        freelance_values.lump_sum_contributions,
         freelance_include_category_contributions=
         freelance_input.include_category_contributions,
         freelance_include_mandatory_contributions=
@@ -388,15 +518,19 @@ def _normalise_payload(
         freelance_trade_fee_location=trade_fee_location,
         freelance_years_active=years_active,
         freelance_newly_self_employed=newly_self_employed,
-        rental_gross_income=rental_gross,
-        rental_deductible_expenses=rental_expenses,
-        investment_amounts=investment_amounts,
+        rental_gross_income=additional_income.rental_gross_income,
+        rental_deductible_expenses=
+        additional_income.rental_deductible_expenses,
+        investment_amounts=additional_income.investment_amounts,
         enfia_due=enfia_due,
         luxury_due=luxury_due,
-        agricultural_gross_revenue=agricultural_revenue,
-        agricultural_deductible_expenses=agricultural_expenses,
-        agricultural_professional_farmer=agricultural_professional,
-        other_taxable_income=other_income,
+        agricultural_gross_revenue=
+        additional_income.agricultural_gross_revenue,
+        agricultural_deductible_expenses=
+        additional_income.agricultural_deductible_expenses,
+        agricultural_professional_farmer=
+        additional_income.agricultural_professional_farmer,
+        other_taxable_income=additional_income.other_taxable_income,
         deductions_donations=deductions_donations,
         deductions_medical=deductions_medical,
         deductions_education=deductions_education,
