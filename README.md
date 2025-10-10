@@ -136,7 +136,11 @@ without requiring a custom build. Hosting providers can inject
 
   ```html
   <meta data-api-base="https://api.tax.example/api/v1">
-  <script defer src="/assets/scripts/main.js"></script>
+  <script
+    defer
+    src="/assets/scripts/bootstrap.js"
+    data-module="/assets/scripts/main.js"
+  ></script>
   ```
 
 - **Static site generators / template includes**: expose an include or partial
@@ -161,7 +165,11 @@ without requiring a custom build. Hosting providers can inject
       console.warn('Unable to load greektax.config.json; falling back to defaults.', error);
     }
   </script>
-  <script defer src="/assets/scripts/main.js"></script>
+  <script
+    defer
+    src="/assets/scripts/bootstrap.js"
+    data-module="/assets/scripts/main.js"
+  ></script>
   ```
 
   The JSON file can be generated during deployment (e.g. via CI secrets) to
