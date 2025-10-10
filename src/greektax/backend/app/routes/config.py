@@ -93,7 +93,11 @@ def _serialise_defaults(meta: Mapping[str, Any], section: str) -> dict[str, bool
 
 
 def _serialise_trade_fee(config: TradeFeeConfig) -> dict[str, Any]:
-    return _serialise_model(config, prune_none=True)
+    payload = _serialise_model(config, prune_none=False)
+    if isinstance(payload, Mapping) and payload.get("sunset") is None:
+        payload = dict(payload)
+        payload.pop("sunset", None)
+    return payload
 
 
 def _serialise_multi_rate_bracket(bracket: MultiRateBracket) -> dict[str, Any]:

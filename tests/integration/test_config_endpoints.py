@@ -97,7 +97,7 @@ def test_list_years_endpoint_discovers_new_config_file(
     client: FlaskClient, tmp_path
 ) -> None:
     original_directory = year_config.CONFIG_DIRECTORY
-    for filename in ("2024.yaml", "2025.yaml"):
+    for filename in ("2024.yaml", "2025.yaml", "2026.yaml"):
         copy2(original_directory / filename, tmp_path / filename)
 
     new_year_path = tmp_path / "2030.yaml"
@@ -109,12 +109,27 @@ def test_list_years_endpoint_discovers_new_config_file(
         yaml.safe_dump(config, sort_keys=False, allow_unicode=True)
     )
 
+    manifest_path = tmp_path / "manifest.yaml"
+    copy2(original_directory / "manifest.yaml", manifest_path)
+    manifest = yaml.safe_load(manifest_path.read_text())
+    manifest.setdefault("years", []).append({"year": 2030})
+    manifest_path.write_text(
+        yaml.safe_dump(manifest, sort_keys=False, allow_unicode=True)
+    )
+
     year_config.load_year_configuration.cache_clear()
-    with patch.object(year_config, "CONFIG_DIRECTORY", tmp_path):
+    year_config.load_manifest.cache_clear()
+    with patch.multiple(
+        year_config,
+        CONFIG_DIRECTORY=tmp_path,
+        MANIFEST_FILE=manifest_path,
+    ):
         year_config.load_year_configuration.cache_clear()
+        year_config.load_manifest.cache_clear()
         response = client.get("/api/v1/config/years")
 
     year_config.load_year_configuration.cache_clear()
+    year_config.load_manifest.cache_clear()
 
     assert response.status_code == HTTPStatus.OK
     payload = response.get_json()

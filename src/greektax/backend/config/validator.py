@@ -465,7 +465,9 @@ def validate_year_configuration(config: YearConfiguration) -> list[str]:
 
     errors.extend(_validate_trade_fee(config.freelance.trade_fee))
     errors.extend(_validate_efka_categories(config.freelance.efka_categories))
-    errors.extend(_validate_family_tax_credit(config.employment.family_tax_credit))
+    errors.extend(
+        _validate_family_tax_credit(config.employment.family_tax_credit_info)
+    )
     errors.extend(_validate_tekmiria_reduction(config.employment))
     errors.extend(_validate_investment_rates(config.investment.rates))
     errors.extend(_validate_deductions(config.deductions))
