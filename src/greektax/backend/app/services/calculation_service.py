@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import logging
 import os
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from contextlib import contextmanager
 from numbers import Real
 from time import perf_counter
@@ -69,7 +69,7 @@ def _response_validation_enabled() -> bool:
 
 def _construct_response_model(
     summary: Mapping[str, Any] | Summary,
-    details: list[Mapping[str, Any] | DetailEntry],
+    details: Sequence[Mapping[str, Any] | DetailEntry],
     meta: Mapping[str, Any] | ResponseMeta,
 ) -> CalculationResponse:
     """Construct a ``CalculationResponse`` using fast-path construction by default."""
