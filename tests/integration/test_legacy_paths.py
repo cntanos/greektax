@@ -4,7 +4,6 @@ from http import HTTPStatus
 
 from flask.testing import FlaskClient
 
-
 LEGACY_PATHS = (
     "/api/v1/share",
     "/api/v1/share/<token>",

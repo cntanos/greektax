@@ -17,6 +17,11 @@ from greektax.backend.app.models import (
     Summary,
     SummaryLabels,
 )
+from greektax.backend.config.year_config import (
+    TaxBracket,
+    YearConfiguration,
+    load_year_configuration,
+)
 from greektax.backend.services.calculation_service import (
     _RESPONSE_VALIDATION_ENV,
     CalculationResponse,
@@ -27,11 +32,6 @@ from greektax.backend.services.calculation_service import (
     _normalise_pension,
     _validate_birth_year_guard,
     calculate_tax,
-)
-from greektax.backend.config.year_config import (
-    TaxBracket,
-    YearConfiguration,
-    load_year_configuration,
 )
 
 DEFAULT_DEMOGRAPHICS = {"birth_year": 1990}
