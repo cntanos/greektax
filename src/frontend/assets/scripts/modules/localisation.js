@@ -1,15 +1,45 @@
+import translationMetadata from "../../../../greektax/translations/metadata.json";
+
 const STORAGE_KEY = "greektax.locale";
 
+const SUPPORTED_LOCALES = Array.isArray(translationMetadata?.locales)
+  ? translationMetadata.locales.map((value) => String(value))
+  : ["en"];
+const BASE_LOCALE = typeof translationMetadata?.base_locale === "string"
+  ? translationMetadata.base_locale
+  : "en";
+const DEFAULT_LOCALE = typeof translationMetadata?.default_frontend_locale === "string"
+  ? translationMetadata.default_frontend_locale
+  : SUPPORTED_LOCALES.find((value) => value !== BASE_LOCALE) || BASE_LOCALE;
+
 const translationsByLocale = new Map();
-let availableTranslationLocales = ["el", "en"];
-let fallbackLocale = "en";
-let currentLocale = "el";
+let availableTranslationLocales = Array.from(new Set([...SUPPORTED_LOCALES]));
+let fallbackLocale = BASE_LOCALE;
+let currentLocale = DEFAULT_LOCALE;
+
+function normaliseLocaleSlug(locale) {
+  if (typeof locale !== "string") {
+    return null;
+  }
+  const trimmed = locale.trim();
+  if (!trimmed) {
+    return null;
+  }
+  return trimmed.toLowerCase().split("-")[0];
+}
 
 export function normaliseLocaleChoice(locale) {
-  if (typeof locale !== "string" || !locale) {
+  const slug = normaliseLocaleSlug(locale);
+  if (!slug) {
     return fallbackLocale;
   }
-  return locale.toLowerCase().split("-")[0];
+  if (availableTranslationLocales.includes(slug)) {
+    return slug;
+  }
+  if (SUPPORTED_LOCALES.includes(slug)) {
+    return slug;
+  }
+  return fallbackLocale;
 }
 
 function getWindowRef(windowOverride) {
@@ -43,15 +73,17 @@ function ingestTranslationPayload(payload) {
   }
 
   if (Array.isArray(payload.available_locales) && payload.available_locales.length) {
-    availableTranslationLocales = payload.available_locales
-      .map((value) => (typeof value === "string" ? value.toLowerCase().split("-")[0] : null))
-      .filter((value) => value);
+    const merged = new Set(SUPPORTED_LOCALES);
+    for (const candidate of payload.available_locales) {
+      const slug = normaliseLocaleSlug(candidate);
+      if (slug) {
+        merged.add(slug);
+      }
+    }
+    availableTranslationLocales = Array.from(merged);
   }
 
-  const resolvedLocale =
-    typeof payload.locale === "string"
-      ? payload.locale.toLowerCase().split("-")[0]
-      : null;
+  const resolvedLocale = normaliseLocaleSlug(payload.locale);
   if (resolvedLocale && payload.frontend && typeof payload.frontend === "object") {
     storeFrontendTranslations(resolvedLocale, payload.frontend);
   }
@@ -60,11 +92,10 @@ function ingestTranslationPayload(payload) {
   if (
     fallbackPayload &&
     typeof fallbackPayload === "object" &&
-    typeof fallbackPayload.locale === "string" &&
     fallbackPayload.frontend &&
     typeof fallbackPayload.frontend === "object"
   ) {
-    const fallbackResolved = fallbackPayload.locale.toLowerCase().split("-")[0];
+    const fallbackResolved = normaliseLocaleChoice(fallbackPayload.locale);
     fallbackLocale = fallbackResolved;
     storeFrontendTranslations(fallbackResolved, fallbackPayload.frontend);
     if (!availableTranslationLocales.includes(fallbackResolved)) {
@@ -219,9 +250,9 @@ const numberFormatterCache = new Map();
 
 export function __resetLocalisationState() {
   translationsByLocale.clear();
-  availableTranslationLocales = ["el", "en"];
-  fallbackLocale = "en";
-  currentLocale = "el";
+  availableTranslationLocales = Array.from(new Set([...SUPPORTED_LOCALES]));
+  fallbackLocale = BASE_LOCALE;
+  currentLocale = DEFAULT_LOCALE;
   numberFormatterCache.clear();
 }
 
@@ -233,7 +264,7 @@ function getFallbackFormat(locale) {
 }
 
 export function getActiveLocale() {
-  return normaliseLocaleChoice(currentLocale || fallbackLocale || "en");
+  return normaliseLocaleChoice(currentLocale || fallbackLocale || BASE_LOCALE);
 }
 
 export function getCurrentLocale() {
@@ -520,7 +551,7 @@ export function formatListForLocale(items) {
   return `${head}, ${conjunctionWord} ${tail}`;
 }
 
-export function resolveStoredLocale(defaultLocale = "el", storageOverride = null) {
+export function resolveStoredLocale(defaultLocale = DEFAULT_LOCALE, storageOverride = null) {
   const storage = getStorage(storageOverride);
   try {
     const stored = storage?.getItem?.(STORAGE_KEY);

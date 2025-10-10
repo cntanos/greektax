@@ -10,7 +10,7 @@ from typing import Dict, Iterable, Tuple
 REPO_ROOT = Path(__file__).resolve().parents[2]
 TRANSLATIONS_DIR = REPO_ROOT / "src" / "greektax" / "translations"
 FRONTEND_HTML = REPO_ROOT / "src" / "frontend" / "index.html"
-EMBEDDED_BUNDLE = REPO_ROOT / "src" / "frontend" / "assets" / "scripts" / "translations.generated.js"
+METADATA_PATH = TRANSLATIONS_DIR / "metadata.json"
 
 
 def _flatten_catalogue(catalogue: Dict[str, object], prefix: str = "") -> Iterable[Tuple[str, str]]:
@@ -30,24 +30,36 @@ def _load_frontend_catalogue(locale: str) -> Dict[str, object]:
     return frontend
 
 
-def _read_embedded_translations() -> Dict[str, object]:
-    content = EMBEDDED_BUNDLE.read_text(encoding="utf-8")
-    match = re.search(r"const translations = (\{.*?\});\s*\n", content, re.DOTALL)
-    if not match:  # pragma: no cover - corrupted bundle
-        raise AssertionError("Unable to parse embedded translations bundle")
-    return json.loads(match.group(1))
+def _load_metadata() -> Dict[str, object]:
+    return json.loads(METADATA_PATH.read_text(encoding="utf-8"))
 
 
-def test_embedded_bundle_matches_source_catalogues() -> None:
-    """The generated frontend bundle should mirror the shared JSON catalogues."""
+def _load_backend_catalogue(locale: str) -> Dict[str, object]:
+    payload = json.loads((TRANSLATIONS_DIR / f"{locale}.json").read_text(encoding="utf-8"))
+    backend = payload.get("backend")
+    if not isinstance(backend, dict):  # pragma: no cover - defensive guard
+        raise AssertionError(f"Locale {locale!r} missing backend catalogue")
+    return backend
 
-    embedded = _read_embedded_translations()
-    source = {
-        path.stem: _load_frontend_catalogue(path.stem)
-        for path in sorted(TRANSLATIONS_DIR.glob("*.json"))
-    }
 
-    assert embedded == source
+def test_metadata_matches_source_catalogues() -> None:
+    """Metadata snapshot should stay aligned with the source translation files."""
+
+    metadata = _load_metadata()
+
+    locales = sorted(
+        path.stem for path in TRANSLATIONS_DIR.glob("*.json") if path.name != METADATA_PATH.name
+    )
+    assert metadata["locales"] == locales
+
+    base_locale = metadata["base_locale"]
+    assert base_locale in locales
+
+    frontend_keys = sorted(key for key, _ in _flatten_catalogue(_load_frontend_catalogue(base_locale)))
+    backend_keys = sorted(key for key, _ in _flatten_catalogue(_load_backend_catalogue(base_locale)))
+
+    assert metadata["frontend"]["keys"] == frontend_keys
+    assert metadata["backend"]["keys"] == backend_keys
 
 
 def test_all_frontend_keys_have_translations() -> None:
@@ -60,6 +72,8 @@ def test_all_frontend_keys_have_translations() -> None:
     assert all_keys, "No translation keys discovered in frontend markup"
 
     for path in sorted(TRANSLATIONS_DIR.glob("*.json")):
+        if path.name == METADATA_PATH.name:
+            continue
         locale = path.stem
         catalogue = dict(_flatten_catalogue(_load_frontend_catalogue(locale)))
         missing = sorted(key for key in all_keys if key not in catalogue)

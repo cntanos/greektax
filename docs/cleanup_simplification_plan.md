@@ -159,6 +159,17 @@ refactors that keep the application deployable throughout the effort.
 - Simplify locale detection on the front-end to a single source of truth while
   preserving overrides via `window.GREEKTAX_API_BASE` and storage keys.
 
+#### Progress
+
+- [x] Added `scripts/validate_translations.py` to generate shared metadata at
+  `src/greektax/translations/metadata.json`, produce front-end TypeScript
+  definitions, and log placeholder mismatches or orphaned keys across the
+  catalogues. The latest run highlighted a narrow set of export/EFKA strings for
+  follow-up pruning.
+- [x] Updated the localisation module to consume the generated metadata for
+  supported locales, trimming bespoke normalisation logic and ensuring storage
+  defaults align with the canonical locale ordering.
+
 ### 6. Documentation and workflow consolidation
 
 - Follow through on the documentation audit by trimming overlapping sections in
