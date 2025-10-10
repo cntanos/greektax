@@ -58,6 +58,7 @@ class DemographicsInput(BaseModel):
 
     taxpayer_birth_year: int | None = Field(default=None, ge=1901, le=2100)
     birth_year: int | None = Field(default=None, ge=1901, le=2100)
+    tax_residency_transfer_to_greece: bool = False
 
     @model_validator(mode="before")
     @classmethod

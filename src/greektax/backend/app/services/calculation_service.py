@@ -311,6 +311,9 @@ def _normalise_payload(
         deductions_education=deductions_education,
         deductions_insurance=deductions_insurance,
         toggles=toggles,
+        tax_residency_transfer_to_greece=(
+            request.demographics.tax_residency_transfer_to_greece
+        ),
     )
 
     return normalised

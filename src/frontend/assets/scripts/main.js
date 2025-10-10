@@ -104,6 +104,31 @@ const translationsByLocale = new Map();
 let availableTranslationLocales = ["el", "en"];
 let fallbackLocale = "en";
 
+function isPlainObject(value) {
+  return Boolean(
+    value && typeof value === "object" && !Array.isArray(value) && value !== null,
+  );
+}
+
+function mergeTranslationCatalogues(base, overrides) {
+  if (!isPlainObject(overrides)) {
+    return base || {};
+  }
+
+  const result = isPlainObject(base) ? { ...base } : {};
+
+  Object.entries(overrides).forEach(([key, value]) => {
+    const existing = result[key];
+    if (isPlainObject(existing) && isPlainObject(value)) {
+      result[key] = mergeTranslationCatalogues(existing, value);
+    } else {
+      result[key] = value;
+    }
+  });
+
+  return result;
+}
+
 
 let currentLocale = "el";
 let currentTheme = DEFAULT_THEME;
@@ -292,8 +317,39 @@ function storeFrontendTranslations(locale, frontend) {
   if (!locale || !frontend || typeof frontend !== "object") {
     return;
   }
-  translationsByLocale.set(locale, frontend);
+  const normalizedLocale = normaliseLocaleChoice(locale);
+  const existing = translationsByLocale.get(normalizedLocale);
+  const merged = mergeTranslationCatalogues(existing, frontend);
+  translationsByLocale.set(normalizedLocale, merged);
 }
+
+function getEmbeddedTranslationsPayload() {
+  if (typeof window !== "undefined" && window.__GREEKTAX_EMBEDDED_TRANSLATIONS__) {
+    return window.__GREEKTAX_EMBEDDED_TRANSLATIONS__;
+  }
+  if (
+    typeof globalThis !== "undefined" &&
+    globalThis.__GREEKTAX_EMBEDDED_TRANSLATIONS__
+  ) {
+    return globalThis.__GREEKTAX_EMBEDDED_TRANSLATIONS__;
+  }
+  return null;
+}
+
+function seedEmbeddedTranslations() {
+  const embedded = getEmbeddedTranslationsPayload();
+  if (!isPlainObject(embedded)) {
+    return;
+  }
+
+  Object.entries(embedded).forEach(([locale, catalogue]) => {
+    if (isPlainObject(catalogue)) {
+      storeFrontendTranslations(locale, catalogue);
+    }
+  });
+}
+
+seedEmbeddedTranslations();
 
 async function requestTranslations(locale) {
   const response = await fetch(TRANSLATIONS_ENDPOINT(locale));
@@ -396,6 +452,9 @@ const themeButtons = Array.from(
 const yearSelect = document.getElementById("year-select");
 const childrenInput = document.getElementById("children-input");
 const birthYearInput = document.getElementById("birth-year");
+const taxResidencyTransferCheckbox = document.getElementById(
+  "tax-residency-transfer",
+);
 const employmentIncomeInput = document.getElementById("employment-income");
 const employmentMonthlyIncomeInput = document.getElementById(
   "employment-monthly-income",
@@ -3327,6 +3386,9 @@ function buildCalculationPayload() {
   const birthYear = readInteger(birthYearInput);
   if (birthYear >= 1901 && birthYear <= 2025) {
     demographics.birth_year = birthYear;
+  }
+  if (taxResidencyTransferCheckbox?.checked) {
+    demographics.tax_residency_transfer_to_greece = true;
   }
 
   payload.demographics = demographics;
