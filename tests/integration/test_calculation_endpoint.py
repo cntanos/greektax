@@ -175,3 +175,34 @@ def test_calculation_endpoint_handles_employment_and_pension_toggles(
 
     assert employment_detail["gross_income"] == pytest.approx(18_000.0)
     assert pension_detail["gross_income"] == pytest.approx(9_000.0)
+
+
+def test_calculation_endpoint_applies_tax_residency_transfer(
+    client: FlaskClient,
+) -> None:
+    """Tax residency transfer should halve employment taxable income."""
+
+    base_payload = {
+        "year": 2024,
+        "employment": {"gross_income": 40_000},
+        "demographics": {},
+    }
+    base_response = client.post("/api/v1/calculations", json=base_payload)
+    assert base_response.status_code == HTTPStatus.OK
+    base_summary = base_response.get_json()["summary"]
+
+    relocation_response = client.post(
+        "/api/v1/calculations",
+        json={
+            "year": 2024,
+            "employment": {"gross_income": 40_000},
+            "demographics": {"tax_residency_transfer_to_greece": True},
+        },
+    )
+    assert relocation_response.status_code == HTTPStatus.OK
+    relocation_summary = relocation_response.get_json()["summary"]
+
+    assert relocation_summary["taxable_income"] == pytest.approx(
+        base_summary["taxable_income"] / 2,
+    )
+    assert relocation_summary["tax_total"] < base_summary["tax_total"]
