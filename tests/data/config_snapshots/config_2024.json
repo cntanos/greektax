@@ -1,0 +1,359 @@
+{
+  "agricultural": {
+    "brackets": [
+      {
+        "rate": 0.09,
+        "type": "single",
+        "upper": 10000.0
+      },
+      {
+        "rate": 0.22,
+        "type": "single",
+        "upper": 20000.0
+      },
+      {
+        "rate": 0.28,
+        "type": "single",
+        "upper": 30000.0
+      },
+      {
+        "rate": 0.36,
+        "type": "single",
+        "upper": 40000.0
+      },
+      {
+        "rate": 0.44,
+        "type": "single",
+        "upper": null
+      }
+    ]
+  },
+  "employment": {
+    "brackets": [
+      {
+        "rate": 0.09,
+        "type": "single",
+        "upper": 10000.0
+      },
+      {
+        "rate": 0.22,
+        "type": "single",
+        "upper": 20000.0
+      },
+      {
+        "rate": 0.28,
+        "type": "single",
+        "upper": 30000.0
+      },
+      {
+        "rate": 0.36,
+        "type": "single",
+        "upper": 40000.0
+      },
+      {
+        "rate": 0.44,
+        "type": "single",
+        "upper": null
+      }
+    ],
+    "contributions": {
+      "employee_rate": 0.1387,
+      "employer_rate": 0.2229,
+      "monthly_salary_cap": 7126.94
+    },
+    "defaults": {},
+    "family_tax_credit": {
+      "estimate": false,
+      "pending_confirmation": false,
+      "reduction_factor": null
+    },
+    "payroll": {
+      "allowed_payments_per_year": [
+        10,
+        12,
+        14
+      ],
+      "default_payments_per_year": 14
+    },
+    "tekmiria": {
+      "enabled": false,
+      "reduction_factor": null
+    },
+    "tekmiria_reduction_factor": null,
+    "youth": {
+      "bands": []
+    }
+  },
+  "freelance": {
+    "brackets": [
+      {
+        "rate": 0.09,
+        "type": "single",
+        "upper": 10000.0
+      },
+      {
+        "rate": 0.22,
+        "type": "single",
+        "upper": 20000.0
+      },
+      {
+        "rate": 0.28,
+        "type": "single",
+        "upper": 30000.0
+      },
+      {
+        "rate": 0.36,
+        "type": "single",
+        "upper": 40000.0
+      },
+      {
+        "rate": 0.44,
+        "type": "single",
+        "upper": null
+      }
+    ],
+    "defaults": {},
+    "efka_categories": [
+      {
+        "auxiliary_monthly_amount": null,
+        "description_key": null,
+        "estimate": false,
+        "health_monthly_amount": 50.0,
+        "id": "general_class_1",
+        "label_key": "forms.freelance.efka.category.general_class_1",
+        "lump_sum_monthly_amount": null,
+        "monthly_amount": 252.08,
+        "pension_monthly_amount": 202.08
+      },
+      {
+        "auxiliary_monthly_amount": null,
+        "description_key": null,
+        "estimate": false,
+        "health_monthly_amount": 60.0,
+        "id": "general_class_2",
+        "label_key": "forms.freelance.efka.category.general_class_2",
+        "lump_sum_monthly_amount": null,
+        "monthly_amount": 302.59,
+        "pension_monthly_amount": 242.59
+      },
+      {
+        "auxiliary_monthly_amount": null,
+        "description_key": null,
+        "estimate": false,
+        "health_monthly_amount": 70.0,
+        "id": "general_class_3",
+        "label_key": "forms.freelance.efka.category.general_class_3",
+        "lump_sum_monthly_amount": null,
+        "monthly_amount": 363.47,
+        "pension_monthly_amount": 293.47
+      },
+      {
+        "auxiliary_monthly_amount": null,
+        "description_key": null,
+        "estimate": false,
+        "health_monthly_amount": 85.0,
+        "id": "general_class_4",
+        "label_key": "forms.freelance.efka.category.general_class_4",
+        "lump_sum_monthly_amount": null,
+        "monthly_amount": 437.61,
+        "pension_monthly_amount": 352.61
+      },
+      {
+        "auxiliary_monthly_amount": null,
+        "description_key": null,
+        "estimate": false,
+        "health_monthly_amount": 95.0,
+        "id": "general_class_5",
+        "label_key": "forms.freelance.efka.category.general_class_5",
+        "lump_sum_monthly_amount": null,
+        "monthly_amount": 516.47,
+        "pension_monthly_amount": 421.47
+      },
+      {
+        "auxiliary_monthly_amount": null,
+        "description_key": null,
+        "estimate": false,
+        "health_monthly_amount": 109.0,
+        "id": "general_class_6",
+        "label_key": "forms.freelance.efka.category.general_class_6",
+        "lump_sum_monthly_amount": null,
+        "monthly_amount": 607.96,
+        "pension_monthly_amount": 498.96
+      },
+      {
+        "auxiliary_monthly_amount": null,
+        "description_key": "forms.freelance.efka.category.general_reduced_description",
+        "estimate": false,
+        "health_monthly_amount": 41.0,
+        "id": "general_reduced",
+        "label_key": "forms.freelance.efka.category.general_reduced",
+        "lump_sum_monthly_amount": null,
+        "monthly_amount": 151.25,
+        "pension_monthly_amount": 110.25
+      },
+      {
+        "auxiliary_monthly_amount": 42.51,
+        "description_key": "forms.freelance.efka.category.engineer_description",
+        "estimate": false,
+        "health_monthly_amount": 72.19,
+        "id": "engineer_class_1",
+        "label_key": "forms.freelance.efka.category.engineer_class_1",
+        "lump_sum_monthly_amount": 27.64,
+        "monthly_amount": 327.29,
+        "pension_monthly_amount": 255.1
+      },
+      {
+        "auxiliary_monthly_amount": 49.61,
+        "description_key": "forms.freelance.efka.category.engineer_description",
+        "estimate": false,
+        "health_monthly_amount": 86.55,
+        "id": "engineer_class_2",
+        "label_key": "forms.freelance.efka.category.engineer_class_2",
+        "lump_sum_monthly_amount": 32.38,
+        "monthly_amount": 389.73,
+        "pension_monthly_amount": 303.18
+      },
+      {
+        "auxiliary_monthly_amount": 58.99,
+        "description_key": "forms.freelance.efka.category.engineer_description",
+        "estimate": false,
+        "health_monthly_amount": 102.7,
+        "id": "engineer_class_3",
+        "label_key": "forms.freelance.efka.category.engineer_class_3",
+        "lump_sum_monthly_amount": 38.52,
+        "monthly_amount": 464.54,
+        "pension_monthly_amount": 361.84
+      }
+    ],
+    "pending_contribution_update": false,
+    "trade_fee": {
+      "fee_sunset": false,
+      "newly_self_employed_reduction_years": 5,
+      "reduced_amount": 325.0,
+      "standard_amount": 650.0,
+      "sunset": {
+        "description_key": "hints.freelance-trade-fee-sunset",
+        "documentation_key": null,
+        "documentation_url": "https://www.aade.gr/epiheiriseis/telos-epitidevmatos",
+        "status_key": "statuses.trade_fee.scheduled",
+        "year": 2025
+      }
+    },
+    "youth": {
+      "bands": []
+    }
+  },
+  "meta": {
+    "notes": "Initial 2024 configuration with employment and freelance coverage",
+    "status": "draft",
+    "version": 1
+  },
+  "other": {
+    "brackets": [
+      {
+        "rate": 0.09,
+        "type": "single",
+        "upper": 10000.0
+      },
+      {
+        "rate": 0.22,
+        "type": "single",
+        "upper": 20000.0
+      },
+      {
+        "rate": 0.28,
+        "type": "single",
+        "upper": 30000.0
+      },
+      {
+        "rate": 0.36,
+        "type": "single",
+        "upper": 40000.0
+      },
+      {
+        "rate": 0.44,
+        "type": "single",
+        "upper": null
+      }
+    ]
+  },
+  "pension": {
+    "brackets": [
+      {
+        "rate": 0.09,
+        "type": "single",
+        "upper": 10000.0
+      },
+      {
+        "rate": 0.22,
+        "type": "single",
+        "upper": 20000.0
+      },
+      {
+        "rate": 0.28,
+        "type": "single",
+        "upper": 30000.0
+      },
+      {
+        "rate": 0.36,
+        "type": "single",
+        "upper": 40000.0
+      },
+      {
+        "rate": 0.44,
+        "type": "single",
+        "upper": null
+      }
+    ],
+    "contributions": {
+      "employee_rate": 0.0,
+      "employer_rate": 0.0,
+      "monthly_salary_cap": null
+    },
+    "payroll": {
+      "allowed_payments_per_year": [
+        10,
+        12,
+        14
+      ],
+      "default_payments_per_year": 14
+    },
+    "youth": {
+      "bands": []
+    }
+  },
+  "rental": {
+    "brackets": [
+      {
+        "rate": 0.15,
+        "type": "single",
+        "upper": 12000.0
+      },
+      {
+        "rate": 0.35,
+        "type": "single",
+        "upper": 35000.0
+      },
+      {
+        "rate": 0.45,
+        "type": "single",
+        "upper": null
+      }
+    ]
+  },
+  "toggles": {},
+  "warnings": [
+    {
+      "applies_to": [
+        "employment",
+        "pension"
+      ],
+      "documentation_key": "warnings.links.partial_year_review",
+      "documentation_url": "https://www.sepenet.gr/el/library/content/apolysi-symvasi-ergasias",
+      "id": "employment.partial_year_review",
+      "message_key": "warnings.employment.partial_year_review",
+      "severity": "warning"
+    }
+  ],
+  "year": 2024
+}

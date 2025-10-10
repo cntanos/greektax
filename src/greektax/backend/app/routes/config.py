@@ -8,7 +8,8 @@ messages without duplicating business rules.
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from typing import Any
+from dataclasses import fields, is_dataclass
+from typing import Any, get_args, get_origin, get_type_hints
 
 from flask import Blueprint, jsonify, request
 
@@ -31,19 +32,54 @@ from greektax.backend.version import get_project_version
 blueprint = Blueprint("config", __name__, url_prefix="/api/v1/config")
 
 
-def _serialise_payroll_config(config: PayrollConfig) -> dict[str, Any]:
-    return {
-        "allowed_payments_per_year": list(config.allowed_payments_per_year),
-        "default_payments_per_year": config.default_payments_per_year,
-    }
+def _annotation_contains_dataclass(annotation: Any) -> bool:
+    if annotation is None:
+        return False
+
+    origin = get_origin(annotation)
+    if origin is None:
+        return is_dataclass(annotation)
+
+    return any(_annotation_contains_dataclass(arg) for arg in get_args(annotation))
 
 
-def _serialise_contributions(contributions: ContributionRates) -> dict[str, Any]:
-    return {
-        "employee_rate": contributions.employee_rate,
-        "employer_rate": contributions.employer_rate,
-        "monthly_salary_cap": contributions.monthly_salary_cap,
-    }
+def _serialise_model(value: Any, *, prune_none: bool = False) -> Any:
+    """Convert dataclasses or Pydantic models into JSON-ready structures."""
+
+    if value is None:
+        return None
+
+    if hasattr(value, "model_dump"):
+        data = value.model_dump(mode="python")  # type: ignore[call-arg]
+        return _serialise_model(data, prune_none=prune_none)
+
+    if is_dataclass(value):
+        hints = get_type_hints(type(value))
+        payload: dict[str, Any] = {}
+        for field in fields(value):
+            field_value = getattr(value, field.name)
+            hint = hints.get(field.name)
+            if prune_none and field_value is None and _annotation_contains_dataclass(hint):
+                continue
+            payload[field.name] = _serialise_model(field_value, prune_none=prune_none)
+        return payload
+
+    if isinstance(value, Mapping):
+        payload: dict[Any, Any] = {}
+        for key, item in value.items():
+            serialised = _serialise_model(item, prune_none=prune_none)
+            if prune_none and serialised is None:
+                continue
+            payload[key] = serialised
+        return payload
+
+    if isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray)):
+        return [
+            _serialise_model(item, prune_none=prune_none)
+            for item in value
+        ]
+
+    return value
 
 
 def _serialise_defaults(meta: Mapping[str, Any], section: str) -> dict[str, bool]:
@@ -61,62 +97,8 @@ def _serialise_defaults(meta: Mapping[str, Any], section: str) -> dict[str, bool
     return defaults
 
 
-def _serialise_family_tax_credit(config: EmploymentConfig) -> dict[str, Any]:
-    return {
-        "pending_confirmation": config.family_tax_credit.pending_confirmation,
-        "estimate": config.family_tax_credit.estimate,
-        "reduction_factor": config.family_tax_credit.reduction_factor,
-    }
-
-
 def _serialise_trade_fee(config: TradeFeeConfig) -> dict[str, Any]:
-    payload: dict[str, Any] = {
-        "standard_amount": config.standard_amount,
-        "reduced_amount": config.reduced_amount,
-        "newly_self_employed_reduction_years": config.newly_self_employed_reduction_years,
-        "fee_sunset": config.fee_sunset,
-    }
-    if config.sunset:
-        payload["sunset"] = {
-            "status_key": config.sunset.status_key,
-            "year": config.sunset.year,
-            "description_key": config.sunset.description_key,
-            "documentation_key": config.sunset.documentation_key,
-            "documentation_url": config.sunset.documentation_url,
-        }
-    return payload
-
-
-def _serialise_efka_categories(
-    categories: Sequence[EFKACategoryConfig],
-) -> list[dict[str, Any]]:
-    serialised: list[dict[str, Any]] = []
-    for category in categories:
-        serialised.append(
-            {
-                "id": category.id,
-                "label_key": category.label_key,
-                "monthly_amount": category.monthly_amount,
-                "auxiliary_monthly_amount": category.auxiliary_monthly_amount,
-                "description_key": category.description_key,
-                "pension_monthly_amount": category.pension_monthly_amount,
-                "health_monthly_amount": category.health_monthly_amount,
-                "lump_sum_monthly_amount": category.lump_sum_monthly_amount,
-                "estimate": category.estimate,
-            }
-        )
-    return serialised
-
-
-def _serialise_warning(entry: YearWarning) -> dict[str, Any]:
-    return {
-        "id": entry.id,
-        "message_key": entry.message_key,
-        "severity": entry.severity,
-        "applies_to": list(entry.applies_to),
-        "documentation_key": entry.documentation_key,
-        "documentation_url": entry.documentation_url,
-    }
+    return _serialise_model(config, prune_none=True)
 
 
 def _serialise_multi_rate_bracket(bracket: MultiRateBracket) -> dict[str, Any]:
@@ -199,49 +181,56 @@ def _serialise_year(year: int) -> dict[str, Any]:
     employment_defaults = _serialise_defaults(meta, "employment")
     freelance_defaults = _serialise_defaults(meta, "freelance")
 
+    employment_config = config.employment
+    pension_config = config.pension
+    freelance_config = config.freelance
+
     return {
         "year": year,
         "meta": meta,
         "toggles": toggles,
         "employment": {
-            "payroll": _serialise_payroll_config(config.employment.payroll),
-            "contributions": _serialise_contributions(config.employment.contributions),
-            "family_tax_credit": _serialise_family_tax_credit(config.employment),
-            "tekmiria_reduction_factor": config.employment.tekmiria_reduction_factor,
+            "payroll": _serialise_model(employment_config.payroll),
+            "contributions": _serialise_model(employment_config.contributions),
+            "family_tax_credit": _serialise_model(
+                employment_config.family_tax_credit
+            ),
+            "tekmiria_reduction_factor": employment_config.tekmiria_reduction_factor,
             "brackets": employment_brackets,
             "defaults": employment_defaults,
             "youth": {
-                "bands": _collect_youth_bands(config.employment.brackets),
+                "bands": _collect_youth_bands(employment_config.brackets),
             },
             "tekmiria": {
                 "enabled": bool(toggles.get("tekmiria_reduction")),
-                "reduction_factor": config.employment.tekmiria_reduction_factor,
+                "reduction_factor": employment_config.tekmiria_reduction_factor,
             },
         },
         "pension": {
-            "payroll": _serialise_payroll_config(config.pension.payroll),
-            "contributions": _serialise_contributions(config.pension.contributions),
+            "payroll": _serialise_model(pension_config.payroll),
+            "contributions": _serialise_model(pension_config.contributions),
             "brackets": pension_brackets,
             "youth": {
-                "bands": _collect_youth_bands(config.pension.brackets),
+                "bands": _collect_youth_bands(pension_config.brackets),
             },
         },
         "freelance": {
-            "trade_fee": _serialise_trade_fee(config.freelance.trade_fee),
-            "efka_categories": _serialise_efka_categories(
-                config.freelance.efka_categories
-            ),
-            "pending_contribution_update": config.freelance.pending_contribution_update,
+            "trade_fee": _serialise_trade_fee(freelance_config.trade_fee),
+            "efka_categories": [
+                _serialise_model(category)
+                for category in freelance_config.efka_categories
+            ],
+            "pending_contribution_update": freelance_config.pending_contribution_update,
             "brackets": freelance_brackets,
             "defaults": freelance_defaults,
             "youth": {
-                "bands": _collect_youth_bands(config.freelance.brackets),
+                "bands": _collect_youth_bands(freelance_config.brackets),
             },
         },
         "agricultural": {"brackets": agricultural_brackets},
         "other": {"brackets": other_brackets},
         "rental": {"brackets": rental_brackets},
-        "warnings": [_serialise_warning(entry) for entry in config.warnings],
+        "warnings": [_serialise_model(entry) for entry in config.warnings],
     }
 
 
