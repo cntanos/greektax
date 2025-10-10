@@ -130,6 +130,13 @@ refactors that keep the application deployable throughout the effort.
 1. **Discovery (1 sprint)** – Finalise inventory of configuration files,
    redundant scripts, and unused translations. Produce design docs for the
    configuration schema and front-end modularisation.
+   - Baseline inventory captured in
+     [`Configuration and Tooling Inventory`](reference/configuration_inventory.md),
+     covering tax-year YAML files, bespoke scripts, and translation catalogues
+     alongside noted redundancies and gaps.
+   - Draft design direction documented in
+     [`Configuration Schema Modernisation Notes`](reference/config_schema_design_notes.md)
+     and [`Front-end Modularisation Notes`](reference/frontend_modularisation_notes.md).
 2. **Core refactors (2–3 sprints)** – Ship the new configuration loader,
    simplify the calculation service, and modularise the front-end. Keep changes
    behind feature flags until regression tests pass.
