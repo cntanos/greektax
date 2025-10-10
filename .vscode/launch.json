@@ -2,8 +2,8 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "API: Flask dev server",
-            "type": "debugpy",
+            "name": "Backend: Flask API",
+            "type": "python",
             "request": "launch",
             "python": "${command:python.interpreterPath}",
             "module": "flask",
@@ -30,8 +30,24 @@
             "internalConsoleOptions": "neverOpen"
         },
         {
+            "name": "Backend: Attach to running API",
+            "type": "python",
+            "request": "attach",
+            "connect": {
+                "host": "127.0.0.1",
+                "port": 5678
+            },
+            "pathMappings": [
+                {
+                    "localRoot": "${workspaceFolder}",
+                    "remoteRoot": "${workspaceFolder}"
+                }
+            ],
+            "justMyCode": true
+        },
+        {
             "name": "Tests: Pytest (workspace)",
-            "type": "debugpy",
+            "type": "python",
             "request": "launch",
             "python": "${command:python.interpreterPath}",
             "module": "pytest",
@@ -43,16 +59,37 @@
             "env": {
                 "PYTHONPATH": "${workspaceFolder}/src"
             },
-            "justMyCode": false,
             "console": "integratedTerminal",
             "internalConsoleOptions": "neverOpen",
+            "justMyCode": false,
+            "purpose": [
+                "debug-test"
+            ]
+        },
+        {
+            "name": "Tests: Pytest (file)",
+            "type": "python",
+            "request": "launch",
+            "python": "${command:python.interpreterPath}",
+            "module": "pytest",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "${relativeFile}"
+            ],
+            "envFile": "${workspaceFolder}/.env",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "justMyCode": false,
             "purpose": [
                 "debug-test"
             ]
         },
         {
             "name": "Tests: Pytest (-k filter)",
-            "type": "debugpy",
+            "type": "python",
             "request": "launch",
             "python": "${command:python.interpreterPath}",
             "module": "pytest",
@@ -66,13 +103,13 @@
             "env": {
                 "PYTHONPATH": "${workspaceFolder}/src"
             },
-            "justMyCode": false,
             "console": "integratedTerminal",
-            "internalConsoleOptions": "neverOpen"
+            "internalConsoleOptions": "neverOpen",
+            "justMyCode": false
         },
         {
-            "name": "Maintenance: Validate year configs",
-            "type": "debugpy",
+            "name": "Scripts: Validate config",
+            "type": "python",
             "request": "launch",
             "python": "${command:python.interpreterPath}",
             "program": "${workspaceFolder}/scripts/validate_config.py",
@@ -81,13 +118,43 @@
             "env": {
                 "PYTHONPATH": "${workspaceFolder}/src"
             },
-            "justMyCode": true,
             "console": "integratedTerminal",
-            "internalConsoleOptions": "neverOpen"
+            "internalConsoleOptions": "neverOpen",
+            "justMyCode": true
         },
         {
-            "name": "Python: Current File (workspace)",
-            "type": "debugpy",
+            "name": "Scripts: Embed translations",
+            "type": "python",
+            "request": "launch",
+            "python": "${command:python.interpreterPath}",
+            "program": "${workspaceFolder}/scripts/embed_translations.py",
+            "cwd": "${workspaceFolder}",
+            "envFile": "${workspaceFolder}/.env",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "justMyCode": true
+        },
+        {
+            "name": "Scripts: Performance snapshot",
+            "type": "python",
+            "request": "launch",
+            "python": "${command:python.interpreterPath}",
+            "program": "${workspaceFolder}/scripts/performance_snapshot.py",
+            "cwd": "${workspaceFolder}",
+            "envFile": "${workspaceFolder}/.env",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "justMyCode": true
+        },
+        {
+            "name": "Python: Current file",
+            "type": "python",
             "request": "launch",
             "python": "${command:python.interpreterPath}",
             "program": "${file}",
@@ -96,16 +163,16 @@
             "env": {
                 "PYTHONPATH": "${workspaceFolder}/src"
             },
-            "justMyCode": true,
             "console": "integratedTerminal",
-            "internalConsoleOptions": "neverOpen"
+            "internalConsoleOptions": "neverOpen",
+            "justMyCode": true
         }
     ],
     "inputs": [
         {
             "id": "pytestFilter",
             "type": "promptString",
-            "description": "pytest -k expression to match",
+            "description": "Pytest -k expression",
             "default": "integration"
         }
     ]
