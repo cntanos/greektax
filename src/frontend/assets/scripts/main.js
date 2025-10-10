@@ -5586,18 +5586,6 @@ function buildSummaryExportData(calculation, {
     });
   }
 
-  if (Array.isArray(meta.presumptive_adjustments) && meta.presumptive_adjustments.length) {
-    metaEntries.push({
-      key: "presumptive_adjustments",
-      label:
-        t("export.meta.presumptive_adjustments", {}, locale) ||
-        "Presumptive adjustments",
-      raw: meta.presumptive_adjustments,
-      formatted: formatList(meta.presumptive_adjustments, locale),
-      type: "list",
-    });
-  }
-
   exportData.meta.entries = metaEntries;
 
   return exportData;

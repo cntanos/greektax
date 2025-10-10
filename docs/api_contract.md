@@ -78,7 +78,7 @@ schema. Unknown top-level or nested keys are rejected (`extra="forbid"`).
 | `other` | object | ❌ | Miscellaneous taxable income inputs. Defaults to zero amounts. |
 | `obligations` | object | ❌ | Flat obligations such as ENFIA and luxury tax. Defaults to zero amounts. |
 | `deductions` | object | ❌ | User-entered deduction amounts. Defaults to zero amounts. |
-| `toggles` | object | ❌ | Optional boolean feature flags (e.g., presumptive relief opt-in). Defaults to `{}` and is merged with configuration toggles from `YearConfiguration.meta`. |
+| `toggles` | object | ❌ | Optional boolean feature flags. Defaults to `{}` and is merged with configuration toggles from `YearConfiguration.meta`. |
 | `withholding_tax` | number | ❌ | Amount of tax already withheld. Defaults to `0`. Must be non-negative. |
 
 ### Dependents
@@ -191,10 +191,7 @@ numeric truthy/falsy representations supported by Pydantic.
   "investment": {"dividends": 800, "interest": 120},
   "obligations": {"enfia": 260},
   "deductions": {"donations": 150, "insurance": 300},
-  "toggles": {
-    "presumptive_relief": true,
-    "tekmiria_reduction": false
-  },
+  "toggles": {"tekmiria_reduction": false},
   "withholding_tax": 1000
 }
 ```
@@ -332,10 +329,7 @@ Key characteristics of the new validation layer:
   "meta": {
     "year": 2024,
     "locale": "en",
-    "youth_relief_category": "under_25",
-    "presumptive_adjustments": [
-      "presumptive_income"
-    ]
+    "youth_relief_category": "under_25"
   }
 }
 ```

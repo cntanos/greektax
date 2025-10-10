@@ -325,7 +325,6 @@ def _meta_payload_template() -> dict[str, Any]:
         "year": 2024,
         "locale": "en",
         "youth_relief_category": "standard",
-        "presumptive_adjustments": ["freelance"],
     }
 
 
@@ -2356,32 +2355,6 @@ def test_calculate_tax_multi_year_credit_difference() -> None:
     assert expected_2025["credit"] == pytest.approx(expected_2024["credit"])
     assert expected_2026["credit"] == pytest.approx(expected_2025["credit"])
     assert result_2026["meta"]["year"] == request_2026.year
-
-
-def test_2026_presumptive_relief_defaults_disabled() -> None:
-    """Presumptive adjustments are no longer surfaced for 2026."""
-
-    payload = {"year": 2026, "demographics": {"birth_year": 1985}}
-
-    result = calculate_tax(payload)
-
-    assert "presumptive_adjustments" not in result["meta"]
-
-
-def test_2026_presumptive_relief_ignores_toggle_overrides() -> None:
-    """User-provided toggles or demographics do not trigger presumptive adjustments."""
-
-    payload = {
-        "year": 2026,
-        "demographics": {"birth_year": 1985},
-        "toggles": {"tekmiria_reduction": False, "presumptive_relief": True},
-    }
-
-    result = calculate_tax(payload)
-
-    assert "presumptive_adjustments" not in result["meta"]
-
-
 def test_2026_dependant_credit_tiers_match_taxheaven_schedule() -> None:
     """Dependent credit tiers for 2026 match the Taxheaven-published ladder."""
 

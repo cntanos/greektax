@@ -40,7 +40,7 @@ def test_list_years_endpoint(client: FlaskClient) -> None:
     assert 12 in employment_meta["payroll"]["allowed_payments_per_year"]
     assert employment_meta["contributions"]["employee_rate"] >= 0
     toggles = current_year["meta"].get("toggles", {})
-    assert set(toggles.keys()).issuperset({"presumptive_relief", "tekmiria_reduction"})
+    assert set(toggles.keys()).issuperset({"tekmiria_reduction"})
 
     pension_meta = current_year["pension"]
     assert pension_meta["payroll"]["allowed_payments_per_year"]
