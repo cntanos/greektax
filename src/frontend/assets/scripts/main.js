@@ -993,6 +993,15 @@ function captureCalculatorState() {
   const nameUsage = buildCalculatorFormNameUsage();
 
   elements.forEach((element) => {
+    if (element instanceof HTMLFieldSetElement) {
+      return;
+    }
+    if (element instanceof HTMLButtonElement) {
+      const type = (element.type || "").toLowerCase();
+      if (!type || type === "button" || type === "submit" || type === "reset") {
+        return;
+      }
+    }
     const key = getElementPersistenceKey(element, nameUsage);
     if (!key) {
       warnMissingPersistenceKey(element);
