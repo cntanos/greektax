@@ -993,6 +993,15 @@ function captureCalculatorState() {
   const nameUsage = buildCalculatorFormNameUsage();
 
   elements.forEach((element) => {
+    if (element instanceof HTMLFieldSetElement) {
+      return;
+    }
+    if (element instanceof HTMLButtonElement) {
+      const type = (element.type || "").toLowerCase();
+      if (!type || type === "button" || type === "submit" || type === "reset") {
+        return;
+      }
+    }
     const key = getElementPersistenceKey(element, nameUsage);
     if (!key) {
       warnMissingPersistenceKey(element);
@@ -3387,9 +3396,11 @@ function buildCalculationPayload() {
   if (birthYear >= 1901 && birthYear <= 2025) {
     demographics.birth_year = birthYear;
   }
-  if (taxResidencyTransferCheckbox?.checked) {
-    demographics.tax_residency_transfer_to_greece = true;
-  }
+
+  const taxResidencyTransferEnabled = Boolean(
+    taxResidencyTransferCheckbox?.checked,
+  );
+  demographics.tax_residency_transfer_to_greece = taxResidencyTransferEnabled;
 
   payload.demographics = demographics;
 
