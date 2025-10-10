@@ -125,6 +125,30 @@ refactors that keep the application deployable throughout the effort.
 - Add unit tests for the extracted modules using Vitest or Jest, and wire them
   into the existing CI workflow alongside Python tests.
 
+#### Progress
+
+- [x] Introduced a Vite-powered build that bundles the modular entry point while
+  exposing Vitest for front-end unit coverage. Config captured in
+  `vite.config.js`, `vitest.config.js`, and the updated `package.json` scripts.
+  【F:vite.config.js†L1-L27】【F:vitest.config.js†L1-L19】【F:package.json†L1-L59】
+- [x] Split the former 1,400-line bootstrap into feature modules. `main.js`
+  now composes dedicated API, localisation, theming, Sankey, and state
+  utilities, keeping DOM access inside the shared helper layer.
+  【F:src/frontend/assets/scripts/main.js†L1-L200】
+- [x] Landed focused modules for the API client, localisation, and theming
+  flows alongside shared DOM helpers. Each module exposes the minimal surface
+  necessary for `main.js` and carries unit tests validating the behaviour.
+  【F:src/frontend/assets/scripts/modules/apiClient.js†L1-L200】【F:src/frontend/assets/scripts/modules/localisation.js†L1-L240】【F:src/frontend/assets/scripts/modules/theming.js†L1-L200】【F:src/frontend/assets/scripts/utils/dom.js†L1-L200】【F:tests/apiClient.test.js†L1-L120】【F:tests/localisation.test.js†L1-L120】【F:tests/theming.test.js†L1-L120】【F:tests/dom.test.js†L1-L120】
+
+#### Follow-up
+
+- [ ] Finish extracting the visualisation/Sankey logic into a dedicated module
+  and add Vitest coverage mirroring user interactions.
+- [ ] Expand the shared DOM helpers with dataset parsing and attribute
+  assertions so remaining legacy snippets can migrate off direct selectors.
+- [ ] Document a front-end testing playbook that links the Vitest suite to CI
+  expectations and clarifies when to write integration vs. unit coverage.
+
 ### 5. Translation and localisation hygiene
 
 - Consolidate translation metadata by generating TypeScript definition files
