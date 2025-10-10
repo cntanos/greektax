@@ -150,7 +150,7 @@ class MultiRateBracket(ImmutableModel):
         if not isinstance(data, Mapping):
             raise ConfigurationError("Progressive bracket definitions must be mappings")
 
-        prepared = dict(data)
+        prepared: dict[str, Any] = dict(data)
         rates_section = prepared.pop("rates", None)
         if not isinstance(rates_section, Mapping):
             raise ConfigurationError("Progressive bracket 'rates' section is required")
@@ -184,7 +184,6 @@ class MultiRateBracket(ImmutableModel):
         return self
 
     @computed_field
-    @property
     def rate(self) -> float:
         return self.household.rate_for_dependants(0)
 
@@ -371,12 +370,10 @@ class EmploymentConfig(ImmutableModel):
         object.__setattr__(self, "family_tax_credit", metadata)
         return self
 
-    @computed_field
     @property
     def family_tax_credit_info(self) -> FamilyTaxCreditMetadata:
         return self.family_tax_credit or FamilyTaxCreditMetadata()
 
-    @computed_field
     @property
     def tax_credit_metadata(self) -> FamilyTaxCreditMetadata:
         return self.family_tax_credit_info
@@ -781,7 +778,7 @@ class YearConfiguration(ImmutableModel):
 
     @model_validator(mode="before")
     @classmethod
-    def _flatten_income(cls, data: Any) -> Mapping[str, Any]:
+    def _flatten_income(cls, data: Any) -> dict[str, Any]:
         if not isinstance(data, Mapping):
             raise ConfigurationError("Configuration file must define a mapping at the top level")
 
@@ -806,7 +803,7 @@ class YearConfiguration(ImmutableModel):
             "investment",
         }
 
-        sections: dict[str, Mapping[str, Any]] = {}
+        sections: dict[str, dict[str, Any]] = {}
         for section in required_sections:
             payload = income.get(section)
             if not isinstance(payload, Mapping):
@@ -868,7 +865,6 @@ class TaxYearManifestEntry(ImmutableModel):
     status: str = "active"
     notes_url: str | None = None
 
-    @computed_field
     @property
     def resolved_filename(self) -> str:
         return self.filename or f"{self.year}.yaml"
@@ -896,7 +892,6 @@ class TaxYearManifest(ImmutableModel):
                 return entry
         raise KeyError(year)
 
-    @computed_field
     @property
     def supported_years(self) -> tuple[int, ...]:
         return tuple(sorted(entry.year for entry in self.years))
