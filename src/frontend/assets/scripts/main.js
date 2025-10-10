@@ -6,72 +6,43 @@
  * returned by the Flask back-end.
  */
 
-const REMOTE_API_BASE = "https://cntanos.pythonanywhere.com/api/v1";
-const LOCAL_API_BASE = "/api/v1";
+import { applyTheme, initialiseThemeControls } from "./modules/theming.js";
+import { createApiClient } from "./modules/apiClient.js";
+import {
+  coerceFiniteNumber,
+  ensureTranslations,
+  formatCurrency,
+  formatDateTime,
+  formatInteger,
+  formatList,
+  formatListForLocale,
+  formatNumber,
+  formatPercent,
+  formatTemplate,
+  getActiveLocale,
+  getCurrentLocale,
+  getFallbackLocale,
+  getMessagesSection,
+  normaliseLocaleChoice,
+  persistLocale,
+  resolveLocaleTag,
+  resolveStoredLocale,
+  setActiveLocale,
+  t,
+} from "./modules/localisation.js";
+import {
+  createElement,
+  select,
+  selectAll,
+  setAriaPressed,
+  setHidden,
+  setText,
+  toggleClass,
+} from "./utils/dom.js";
 
-function resolveApiBase() {
-  const defaultBase = REMOTE_API_BASE;
-
-  if (typeof window === "undefined") {
-    return LOCAL_API_BASE;
-  }
-
-  const windowOverride =
-    typeof window.GREEKTAX_API_BASE === "string"
-      ? window.GREEKTAX_API_BASE.trim()
-      : "";
-  if (windowOverride) {
-    return windowOverride;
-  }
-
-  const documentRef = window.document || null;
-  const metaElement =
-    documentRef && documentRef.querySelector
-      ? documentRef.querySelector("meta[data-api-base]")
-      : null;
-  if (metaElement) {
-    const metaOverride =
-      typeof metaElement.dataset?.apiBase === "string"
-        ? metaElement.dataset.apiBase.trim()
-        : (metaElement.getAttribute("data-api-base") || "").trim();
-    if (metaOverride) {
-      return metaOverride;
-    }
-  }
-
-  const locationRef = window.location || null;
-  if (locationRef) {
-    const hostname = typeof locationRef.hostname === "string"
-      ? locationRef.hostname.trim().toLowerCase()
-      : "";
-    if (
-      hostname === "localhost" ||
-      hostname === "127.0.0.1" ||
-      hostname === "::1" ||
-      hostname.endsWith(".localhost")
-    ) {
-      return LOCAL_API_BASE;
-    }
-  }
-
-  return defaultBase;
-}
-
-const API_BASE = resolveApiBase();
-const CALCULATIONS_ENDPOINT = `${API_BASE}/calculations`;
-const CONFIG_YEARS_ENDPOINT = `${API_BASE}/config/years`;
-const CONFIG_META_ENDPOINT = `${API_BASE}/config/meta`;
-const CONFIG_INVESTMENT_ENDPOINT = (year, locale) =>
-  `${API_BASE}/config/${year}/investment-categories?locale=${encodeURIComponent(
-    locale,
-  )}`;
-const CONFIG_DEDUCTIONS_ENDPOINT = (year, locale) =>
-  `${API_BASE}/config/${year}/deductions?locale=${encodeURIComponent(locale)}`;
-const STORAGE_KEY = "greektax.locale";
+const apiClient = createApiClient();
 const CALCULATOR_STORAGE_KEY = "greektax.calculator.v1";
 const CALCULATOR_STORAGE_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours
-const THEME_STORAGE_KEY = "greektax.theme";
-const DEFAULT_THEME = "dark";
 const PLOTLY_SDK_URL = "https://cdn.plot.ly/plotly-2.26.0.min.js";
 const PLOTLY_SDK_ATTRIBUTE = "data-plotly-sdk";
 const SVG_NS = "http://www.w3.org/2000/svg";
@@ -92,21 +63,7 @@ let sankeyRenderSequence = 0;
 let sankeyPlotlyRef = null;
 let sankeyResizeObserver = null;
 let sankeyWindowResizeHandler = null;
-let hasAppliedThemeOnce = false;
-let themeTransitionHandle = null;
 
-const TRANSLATIONS_ENDPOINT = (locale) =>
-  locale
-    ? `${API_BASE}/translations/${encodeURIComponent(locale)}`
-    : `${API_BASE}/translations`;
-
-const translationsByLocale = new Map();
-let availableTranslationLocales = ["el", "en"];
-let fallbackLocale = "en";
-
-
-let currentLocale = "el";
-let currentTheme = DEFAULT_THEME;
 const yearMetadataByYear = new Map();
 let currentYearMetadata = null;
 let currentEmploymentMode = "annual";
@@ -345,124 +302,6 @@ function warnMissingPersistenceKey(element) {
   }
 }
 
-function normaliseLocaleChoice(locale) {
-  if (typeof locale !== "string" || !locale) {
-    return fallbackLocale;
-  }
-  return locale.toLowerCase().split("-")[0];
-}
-
-function getFrontendCatalog(locale) {
-  const entry = translationsByLocale.get(locale);
-  return entry && typeof entry === "object" ? entry : null;
-}
-
-function storeFrontendTranslations(locale, frontend) {
-  if (!locale || !frontend || typeof frontend !== "object") {
-    return;
-  }
-  translationsByLocale.set(locale, frontend);
-}
-
-async function requestTranslations(locale) {
-  const response = await fetch(TRANSLATIONS_ENDPOINT(locale));
-  if (!response.ok) {
-    throw new Error(`Unable to load translations (${response.status})`);
-  }
-
-  const payload = await response.json();
-  if (!payload || typeof payload !== "object") {
-    throw new Error("Unexpected translations payload");
-  }
-
-  if (Array.isArray(payload.available_locales) && payload.available_locales.length) {
-    availableTranslationLocales = payload.available_locales
-      .map((value) =>
-        typeof value === "string" ? value.toLowerCase().split("-")[0] : null,
-      )
-      .filter((value) => value);
-  }
-
-  const resolvedLocale =
-    typeof payload.locale === "string"
-      ? payload.locale.toLowerCase().split("-")[0]
-      : null;
-  if (resolvedLocale && payload.frontend && typeof payload.frontend === "object") {
-    storeFrontendTranslations(resolvedLocale, payload.frontend);
-  }
-
-  const fallbackPayload = payload.fallback;
-  if (
-    fallbackPayload &&
-    typeof fallbackPayload === "object" &&
-    typeof fallbackPayload.locale === "string" &&
-    fallbackPayload.frontend &&
-    typeof fallbackPayload.frontend === "object"
-  ) {
-    const fallbackResolved = fallbackPayload.locale.toLowerCase().split("-")[0];
-    fallbackLocale = fallbackResolved;
-    storeFrontendTranslations(fallbackResolved, fallbackPayload.frontend);
-    if (!availableTranslationLocales.includes(fallbackResolved)) {
-      availableTranslationLocales.push(fallbackResolved);
-    }
-  }
-
-  if (resolvedLocale && !availableTranslationLocales.includes(resolvedLocale)) {
-    availableTranslationLocales.push(resolvedLocale);
-  }
-
-  if (!availableTranslationLocales.length) {
-    availableTranslationLocales = [fallbackLocale];
-  } else {
-    availableTranslationLocales = Array.from(new Set(availableTranslationLocales));
-  }
-
-  return resolvedLocale || fallbackLocale;
-}
-
-async function ensureTranslations(locale) {
-  const target = normaliseLocaleChoice(locale);
-  if (!translationsByLocale.has(target)) {
-    try {
-      return await requestTranslations(target);
-    } catch (error) {
-      console.error("Failed to load translations", error);
-      if (!translationsByLocale.has(fallbackLocale)) {
-        try {
-          await requestTranslations(fallbackLocale);
-        } catch (fallbackError) {
-          console.error("Failed to load fallback translations", fallbackError);
-        }
-      }
-    }
-  }
-  return translationsByLocale.has(target) ? target : fallbackLocale;
-}
-
-function getMessagesSection(locale, section) {
-  const catalogue = getFrontendCatalog(locale);
-  if (catalogue && section in catalogue && typeof catalogue[section] === "object") {
-    return catalogue[section];
-  }
-  const fallbackCatalogue = getFrontendCatalog(fallbackLocale);
-  if (
-    fallbackCatalogue &&
-    section in fallbackCatalogue &&
-    typeof fallbackCatalogue[section] === "object"
-  ) {
-    return fallbackCatalogue[section];
-  }
-  return {};
-}
-
-const localeButtons = Array.from(
-  document.querySelectorAll("[data-locale-option]"),
-);
-const themeButtons = Array.from(
-  document.querySelectorAll("[data-theme-option]"),
-);
-
-const yearSelect = document.getElementById("year-select");
 const childrenInput = document.getElementById("children-input");
 const birthYearInput = document.getElementById("birth-year");
 const employmentIncomeInput = document.getElementById("employment-income");
@@ -515,9 +354,7 @@ const freelanceTradeFeeLocationSelect = document.getElementById(
 const freelanceTradeFeeHint = document.getElementById("freelance-trade-fee-hint");
 const freelanceYearsActiveInput = document.getElementById("freelance-years-active");
 const freelanceEfkaSummary = document.getElementById("freelance-efka-summary");
-const bracketSummaryElements = Array.from(
-  document.querySelectorAll("[data-bracket-summary]"),
-);
+const bracketSummaryElements = selectAll("[data-bracket-summary]");
 const bracketSummaryBySection = new Map();
 bracketSummaryElements.forEach((element) => {
   const section = element.getAttribute("data-bracket-summary");
@@ -583,39 +420,8 @@ const clearButton = document.getElementById("clear-button");
 const downloadButton = document.getElementById("download-button");
 const downloadCsvButton = document.getElementById("download-csv-button");
 const printButton = document.getElementById("print-button");
-
-function lookupMessage(locale, keyParts) {
-  let cursor = getFrontendCatalog(locale);
-  for (const part of keyParts) {
-    if (cursor && typeof cursor === "object" && part in cursor) {
-      cursor = cursor[part];
-    } else {
-      return undefined;
-    }
-  }
-  return cursor;
-}
-
-function formatTemplate(template, replacements) {
-  return Object.entries(replacements).reduce((accumulator, [key, value]) => {
-    const pattern = new RegExp(`{{\\s*${key}\\s*}}`, "g");
-    return accumulator.replace(pattern, String(value));
-  }, template);
-}
-
-function t(key, replacements = {}, locale = currentLocale) {
-  const keyParts = key.split(".");
-  const primary = lookupMessage(locale, keyParts);
-  const fallback =
-    locale === fallbackLocale ? undefined : lookupMessage(fallbackLocale, keyParts);
-  const template =
-    typeof primary === "string"
-      ? primary
-      : typeof fallback === "string"
-      ? fallback
-      : key;
-  return formatTemplate(template, replacements);
-}
+const localeButtons = selectAll("[data-locale-option]");
+const themeButtons = selectAll("[data-theme-option]");
 
 function getCssVariable(name, fallback = "") {
   if (typeof window === "undefined") {
@@ -887,45 +693,6 @@ function cancelIdleWork(handle) {
   }
 }
 
-function resolveStoredLocale(defaultLocale = "el") {
-  try {
-    const stored = window.localStorage.getItem(STORAGE_KEY);
-    return normaliseLocaleChoice(stored || defaultLocale);
-  } catch (error) {
-    console.warn("Unable to access localStorage", error);
-    return normaliseLocaleChoice(defaultLocale);
-  }
-}
-
-function persistLocale(locale) {
-  try {
-    window.localStorage.setItem(STORAGE_KEY, locale);
-  } catch (error) {
-    console.warn("Unable to persist locale preference", error);
-  }
-}
-
-function resolveStoredTheme(defaultTheme = DEFAULT_THEME) {
-  try {
-    const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
-    if (stored === "dark" || stored === "light") {
-      return stored;
-    }
-    return defaultTheme;
-  } catch (error) {
-    console.warn("Unable to access theme preference", error);
-    return defaultTheme;
-  }
-}
-
-function persistTheme(theme) {
-  try {
-    window.localStorage.setItem(THEME_STORAGE_KEY, theme);
-  } catch (error) {
-    console.warn("Unable to persist theme preference", error);
-  }
-}
-
 function loadStoredCalculatorState() {
   try {
     const raw = window.localStorage.getItem(CALCULATOR_STORAGE_KEY);
@@ -1117,119 +884,6 @@ function schedulePersistCalculatorState() {
   }
 }
 
-function resolveLocaleTag(locale) {
-  if (locale === "el") {
-    return "el-GR";
-  }
-  if (locale === "en") {
-    return "en-GB";
-  }
-  return locale || "en-GB";
-}
-
-const NON_BREAKING_SPACE = "\u00a0";
-const GROUPING_REGEX = /\B(?=(\d{3})+(?!\d))/g;
-const DEFAULT_CURRENCY = "EUR";
-
-const FALLBACK_NUMBER_FORMATS = {
-  el: {
-    decimal: ",",
-    group: ".",
-    currencyPattern: (value, { useNonBreakingSpace }) =>
-      `${value}${useNonBreakingSpace ? NON_BREAKING_SPACE : " "}€`,
-    percentSuffix: "%",
-  },
-  en: {
-    decimal: ".",
-    group: ",",
-    currencyPattern: (value) => `€${value}`,
-    percentSuffix: "%",
-  },
-};
-
-const numberFormatterCache = new Map();
-
-function getFallbackFormat(locale) {
-  if (locale in FALLBACK_NUMBER_FORMATS) {
-    return FALLBACK_NUMBER_FORMATS[locale];
-  }
-  return FALLBACK_NUMBER_FORMATS.en;
-}
-
-function getActiveLocale() {
-  return normaliseLocaleChoice(currentLocale || fallbackLocale || "en");
-}
-
-function formatListForLocale(items) {
-  const values = Array.isArray(items)
-    ? items.filter((item) => typeof item === "string" && item.trim())
-    : [];
-  if (!values.length) {
-    return "";
-  }
-
-  if (typeof Intl !== "undefined" && typeof Intl.ListFormat === "function") {
-    try {
-      const formatter = new Intl.ListFormat(getActiveLocale(), {
-        style: "long",
-        type: "conjunction",
-      });
-      return formatter.format(values);
-    } catch (error) {
-      console.warn("Unable to format list for locale", error);
-    }
-  }
-
-  if (values.length === 1) {
-    return values[0];
-  }
-
-  const conjunctionKey = "ui.list_and";
-  const conjunction = t(conjunctionKey);
-  const conjunctionWord =
-    conjunction && conjunction !== conjunctionKey ? conjunction : "and";
-
-  if (values.length === 2) {
-    return `${values[0]} ${conjunctionWord} ${values[1]}`;
-  }
-
-  const head = values.slice(0, -1).join(", ");
-  const tail = values[values.length - 1];
-  return `${head}, ${conjunctionWord} ${tail}`;
-}
-
-function getNumberFormatter(locale, options) {
-  if (typeof Intl === "undefined" || typeof Intl.NumberFormat === "undefined") {
-    return null;
-  }
-
-  const resolvedLocale = resolveLocaleTag(locale);
-  const key = [
-    resolvedLocale,
-    options.style || "decimal",
-    options.currency || "",
-    options.minimumFractionDigits ?? "",
-    options.maximumFractionDigits ?? "",
-    options.useGrouping === false ? "nogroup" : "group",
-  ].join("|");
-
-  if (!numberFormatterCache.has(key)) {
-    try {
-      numberFormatterCache.set(key, new Intl.NumberFormat(resolvedLocale, options));
-    } catch (error) {
-      console.warn("Unable to create number formatter", error);
-      numberFormatterCache.set(key, null);
-    }
-  }
-
-  return numberFormatterCache.get(key);
-}
-
-function coerceFiniteNumber(value) {
-  const parsed = Number.parseFloat(value ?? 0);
-  return Number.isFinite(parsed) ? parsed : 0;
-}
-
 function sumDetailField(details, field) {
   if (!Array.isArray(details) || !field) {
     return 0;
@@ -1262,171 +916,6 @@ function formatNumberParts(value, fractionDigits, localeConfig) {
   return { sign, integerPart, fractionPart: "" };
 }
 
-function formatNumber(value, {
-  locale = getActiveLocale(),
-  minimumFractionDigits = 0,
-  maximumFractionDigits = 2,
-  useNonBreakingSpace = true,
-} = {}) {
-  const numeric = coerceFiniteNumber(value);
-  const formatter = getNumberFormatter(resolveLocaleTag(locale), {
-    style: "decimal",
-    minimumFractionDigits,
-    maximumFractionDigits,
-  });
-
-  if (formatter) {
-    let formatted = formatter.format(numeric);
-    if (!useNonBreakingSpace) {
-      formatted = formatted.replace(/\u00a0/g, " ");
-    }
-    return formatted;
-  }
-
-  const fallback = getFallbackFormat(locale);
-  const parts = formatNumberParts(numeric, maximumFractionDigits, fallback);
-  let fractionPart = parts.fractionPart;
-  if (fractionPart && maximumFractionDigits > minimumFractionDigits) {
-    fractionPart = fractionPart.replace(/0+$/, "");
-  }
-  if (fractionPart && minimumFractionDigits > 0) {
-    while (fractionPart.length < minimumFractionDigits) {
-      fractionPart += "0";
-    }
-  }
-  const decimalPart = fractionPart
-    ? `${fallback.decimal}${fractionPart}`
-    : minimumFractionDigits > 0
-    ? `${fallback.decimal}${"0".repeat(minimumFractionDigits)}`
-    : "";
-  return `${parts.sign}${parts.integerPart}${decimalPart}`;
-}
-
-function formatInteger(value, { locale = getActiveLocale() } = {}) {
-  const numeric = Math.round(coerceFiniteNumber(value));
-  const formatter = getNumberFormatter(resolveLocaleTag(locale), {
-    style: "decimal",
-    maximumFractionDigits: 0,
-    minimumFractionDigits: 0,
-  });
-  if (formatter) {
-    return formatter.format(numeric);
-  }
-  const fallback = getFallbackFormat(locale);
-  const parts = formatNumberParts(numeric, 0, fallback);
-  return `${parts.sign}${parts.integerPart}`;
-}
-
-function formatCurrency(value, {
-  locale = getActiveLocale(),
-  useNonBreakingSpace = true,
-} = {}) {
-  const numeric = coerceFiniteNumber(value);
-  const formatter = getNumberFormatter(resolveLocaleTag(locale), {
-    style: "currency",
-    currency: DEFAULT_CURRENCY,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-
-  if (formatter) {
-    let formatted = formatter.format(numeric);
-    if (!useNonBreakingSpace) {
-      formatted = formatted.replace(/\u00a0/g, " ");
-    }
-    return formatted;
-  }
-
-  const fallback = getFallbackFormat(locale);
-  const parts = formatNumberParts(numeric, 2, fallback);
-  const valuePart = `${parts.integerPart}${fallback.decimal}${parts.fractionPart}`;
-  const formattedValue = fallback.currencyPattern(valuePart, { useNonBreakingSpace });
-  return `${parts.sign}${formattedValue}`;
-}
-
-function formatPercent(value, {
-  locale = getActiveLocale(),
-  maximumFractionDigits = 1,
-  minimumFractionDigits = 0,
-  useNonBreakingSpace = true,
-} = {}) {
-  const numeric = coerceFiniteNumber(value);
-  const formatter = getNumberFormatter(resolveLocaleTag(locale), {
-    style: "percent",
-    minimumFractionDigits,
-    maximumFractionDigits,
-  });
-
-  if (formatter) {
-    let formatted = formatter.format(numeric);
-    if (!useNonBreakingSpace) {
-      formatted = formatted.replace(/\u00a0/g, " ");
-    }
-    return formatted;
-  }
-
-  const fallback = getFallbackFormat(locale);
-  const scaled = numeric * 100;
-  const parts = formatNumberParts(scaled, Math.max(maximumFractionDigits, minimumFractionDigits), fallback);
-  let fractionPart = parts.fractionPart;
-  if (fractionPart) {
-    fractionPart = fractionPart.replace(/0+$/, "");
-  }
-  if (fractionPart && fractionPart.length < minimumFractionDigits) {
-    while (fractionPart.length < minimumFractionDigits) {
-      fractionPart += "0";
-    }
-  }
-  const decimalPart = fractionPart ? `${fallback.decimal}${fractionPart}` : "";
-  return `${parts.sign}${parts.integerPart}${decimalPart}${fallback.percentSuffix}`;
-}
-
-function formatDateTime(value, { locale = getActiveLocale() } = {}) {
-  if (!value) {
-    return "";
-  }
-  const date = value instanceof Date ? value : new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return String(value);
-  }
-  if (typeof Intl !== "undefined" && typeof Intl.DateTimeFormat !== "undefined") {
-    try {
-      const formatter = new Intl.DateTimeFormat(resolveLocaleTag(locale), {
-        dateStyle: "medium",
-        timeStyle: "short",
-      });
-      return formatter.format(date);
-    } catch (error) {
-      console.warn("Unable to format date", error);
-    }
-  }
-  return date.toISOString();
-}
-
-function formatList(items, localeOverride = getActiveLocale()) {
-  if (!Array.isArray(items) || items.length === 0) {
-    return "";
-  }
-  if (typeof Intl !== "undefined" && typeof Intl.ListFormat !== "undefined") {
-    try {
-      const formatter = new Intl.ListFormat(resolveLocaleTag(localeOverride), {
-        style: "long",
-        type: "conjunction",
-      });
-      return formatter.format(items);
-    } catch (error) {
-      // Fall back to manual formatting below.
-    }
-  }
-  if (items.length === 1) {
-    return items[0];
-  }
-  const rest = items.slice(0, -1).join(", ");
-  const last = items[items.length - 1];
-  const conjunction = t("ui.list_and", {}, localeOverride) || "and";
-  return `${rest} ${conjunction} ${last}`;
-}
-
 function updateLocaleButtonState(locale) {
   if (!localeButtons.length) {
     return;
@@ -1435,60 +924,16 @@ function updateLocaleButtonState(locale) {
   localeButtons.forEach((button) => {
     const value = button.dataset.localeOption || "el";
     const isActive = value === locale;
-    button.classList.toggle("is-active", isActive);
-    button.setAttribute("aria-pressed", isActive ? "true" : "false");
+    toggleClass(button, "is-active", isActive);
+    setAriaPressed(button, isActive);
   });
-}
-
-function updateThemeButtonState(theme) {
-  if (!themeButtons.length) {
-    return;
-  }
-
-  themeButtons.forEach((button) => {
-    const value = button.dataset.themeOption || DEFAULT_THEME;
-    const isActive = value === theme;
-    button.classList.toggle("is-active", isActive);
-    button.setAttribute("aria-pressed", isActive ? "true" : "false");
-  });
-}
-
-function applyTheme(theme) {
-  const normalized =
-    theme === "dark" || theme === "light" ? theme : DEFAULT_THEME;
-  currentTheme = normalized;
-  const root = document.documentElement;
-  if (hasAppliedThemeOnce) {
-    root.classList.add("theme-transition");
-    if (themeTransitionHandle) {
-      window.clearTimeout(themeTransitionHandle);
-    }
-    themeTransitionHandle = window.setTimeout(() => {
-      root.classList.remove("theme-transition");
-      themeTransitionHandle = null;
-    }, 280);
-  }
-  root.setAttribute("data-theme", normalized);
-  updateThemeButtonState(normalized);
-  persistTheme(normalized);
-  hasAppliedThemeOnce = true;
-  const rerenderResults = () => {
-    if (lastCalculation) {
-      renderCalculation(lastCalculation);
-    }
-  };
-  if (typeof window.requestAnimationFrame === "function") {
-    window.requestAnimationFrame(() => {
-      window.requestAnimationFrame(rerenderResults);
-    });
-  } else {
-    window.setTimeout(rerenderResults, 0);
-  }
 }
 
 async function applyLocale(locale) {
-  const resolved = await ensureTranslations(locale);
-  currentLocale = resolved;
+  const resolved = await ensureTranslations(locale, (targetLocale) =>
+    apiClient.fetchTranslations(targetLocale),
+  );
+  setActiveLocale(resolved);
   persistLocale(resolved);
   document.documentElement.lang = resolved;
   updateLocaleButtonState(resolved);
@@ -1509,7 +954,7 @@ async function applyLocale(locale) {
 }
 
 function localiseStaticText() {
-  document.querySelectorAll("[data-i18n-key]").forEach((element) => {
+  selectAll("[data-i18n-key]").forEach((element) => {
     const key = element.getAttribute("data-i18n-key");
     if (!key) {
       return;
@@ -1520,7 +965,7 @@ function localiseStaticText() {
     }
   });
 
-  document.querySelectorAll("[data-i18n-placeholder]").forEach((element) => {
+  selectAll("[data-i18n-placeholder]").forEach((element) => {
     const key = element.getAttribute("data-i18n-placeholder");
     if (!key) {
       return;
@@ -1540,26 +985,10 @@ function initialiseLocaleControls() {
   localeButtons.forEach((button) => {
     button.addEventListener("click", () => {
       const value = button.dataset.localeOption || "el";
-      if (normaliseLocaleChoice(value) === currentLocale) {
+      if (normaliseLocaleChoice(value) === getCurrentLocale()) {
         return;
       }
       void applyLocale(value);
-    });
-  });
-}
-
-function initialiseThemeControls() {
-  if (!themeButtons.length) {
-    return;
-  }
-
-  themeButtons.forEach((button) => {
-    button.addEventListener("click", () => {
-      const value = button.dataset.themeOption || DEFAULT_THEME;
-      if (value === currentTheme) {
-        return;
-      }
-      applyTheme(value);
     });
   });
 }
@@ -1568,7 +997,7 @@ function setCalculatorStatus(message, { isError = false, tone = null } = {}) {
   if (!calculatorStatus) {
     return;
   }
-  calculatorStatus.textContent = message;
+  setText(calculatorStatus, message);
   let status = "info";
   if (isError) {
     status = "error";
@@ -2659,12 +2088,7 @@ async function loadYearOptions() {
 
   setCalculatorStatus(t("status.loading_years"));
   try {
-    const response = await fetch(CONFIG_YEARS_ENDPOINT);
-    if (!response.ok) {
-      throw new Error(`Unable to load years (${response.status})`);
-    }
-
-    const payload = await response.json();
+    const payload = await apiClient.fetchYears();
     const years = Array.isArray(payload.years) ? payload.years : [];
     yearSelect.innerHTML = "";
     yearMetadataByYear.clear();
@@ -2719,7 +2143,7 @@ async function loadYearOptions() {
 }
 
 async function refreshApplicationVersion() {
-  const versionElement = document.querySelector("[data-app-version]");
+  const versionElement = select("[data-app-version]");
   if (!versionElement) {
     return;
   }
@@ -2728,12 +2152,7 @@ async function refreshApplicationVersion() {
     versionElement.dataset.versionFallback?.trim() || versionElement.textContent || "";
 
   try {
-    const response = await fetch(CONFIG_META_ENDPOINT, { credentials: "omit" });
-    if (!response.ok) {
-      throw new Error(`Unable to load application metadata (${response.status})`);
-    }
-
-    const payload = await response.json();
+    const payload = await apiClient.fetchMeta();
     const version =
       typeof payload?.version === "string" ? payload.version.trim() : "";
     if (version) {
@@ -2755,21 +2174,21 @@ function renderInvestmentFields(categories) {
   preserveCurrentFormValues();
   investmentFieldsContainer.innerHTML = "";
   if (!categories.length) {
-    const message = document.createElement("p");
-    message.textContent = t("forms.no_investment_categories");
+    const message = createElement("p", {
+      text: t("forms.no_investment_categories"),
+    });
     investmentFieldsContainer.appendChild(message);
     return;
   }
 
   categories.forEach((category) => {
-    const wrapper = document.createElement("div");
-    wrapper.className = "form-control";
+    const wrapper = createElement("div", { className: "form-control" });
 
-    const label = document.createElement("label");
+    const label = createElement("label");
     label.setAttribute("for", `investment-${category.id}`);
-    label.textContent = `${category.label} (${formatPercent(category.rate)})`;
+    setText(label, `${category.label} (${formatPercent(category.rate)})`);
 
-    const input = document.createElement("input");
+    const input = createElement("input");
     input.type = "number";
     input.min = "0";
     input.step = "0.01";
@@ -2797,14 +2216,10 @@ async function refreshInvestmentCategories() {
   }
 
   try {
-    const response = await fetch(
-      CONFIG_INVESTMENT_ENDPOINT(year, currentLocale || "en"),
+    const payload = await apiClient.fetchInvestmentCategories(
+      year,
+      getCurrentLocale() || "en",
     );
-    if (!response.ok) {
-      throw new Error(`Unable to load investment categories (${response.status})`);
-    }
-
-    const payload = await response.json();
     currentInvestmentCategories = Array.isArray(payload.categories)
       ? payload.categories
       : [];
@@ -3155,14 +2570,10 @@ async function refreshDeductionHints() {
   }
 
   try {
-    const response = await fetch(
-      CONFIG_DEDUCTIONS_ENDPOINT(year, currentLocale || "en"),
+    const payload = await apiClient.fetchDeductionHints(
+      year,
+      getCurrentLocale() || "en",
     );
-    if (!response.ok) {
-      throw new Error(`Unable to load deduction hints (${response.status})`);
-    }
-
-    const payload = await response.json();
     currentDeductionHints = Array.isArray(payload.hints) ? payload.hints : [];
     dynamicFieldLabels = {};
     deductionValidationByInput = {};
@@ -3193,12 +2604,12 @@ function getFieldLabel(input) {
     return dynamicFieldLabels[input.id];
   }
 
-  const messages = getMessagesSection(currentLocale, "fields");
+  const messages = getMessagesSection(getCurrentLocale(), "fields");
   if (messages[input.id]) {
     return messages[input.id];
   }
 
-  const fallbackMessages = getMessagesSection(fallbackLocale, "fields");
+  const fallbackMessages = getMessagesSection(getFallbackLocale(), "fields");
   if (fallbackMessages[input.id]) {
     return fallbackMessages[input.id];
   }
@@ -3249,7 +2660,7 @@ function setFieldError(input, message) {
     errorElement.className = "form-error";
     container.appendChild(errorElement);
   }
-  errorElement.textContent = message;
+  setText(errorElement, message);
 }
 
 function validateNumberInput(input) {
@@ -3390,7 +2801,7 @@ function readInteger(input) {
 
 function buildCalculationPayload() {
   const year = Number.parseInt(yearSelect?.value ?? "0", 10);
-  const payload = { year, locale: currentLocale };
+  const payload = { year, locale: getCurrentLocale() };
 
   const demographics = {};
   const toggles = {};
@@ -3819,10 +3230,8 @@ function renderSankey(result) {
   });
 
   if (!values.length) {
-    if (sankeyEmptyState) {
-      sankeyEmptyState.hidden = false;
-    }
-    sankeyWrapper.hidden = false;
+    setHidden(sankeyEmptyState, false);
+    setHidden(sankeyWrapper, false);
     sankeyChart.setAttribute("aria-hidden", "true");
     sankeyChart.removeAttribute("aria-label");
     if (pendingPlotlyJob !== null) {
@@ -3835,13 +3244,8 @@ function renderSankey(result) {
     return;
   }
 
-  if (sankeyEmptyState) {
-    sankeyEmptyState.hidden = true;
-  }
-
-  if (sankeyWrapper.hidden) {
-    sankeyWrapper.hidden = false;
-  }
+  setHidden(sankeyEmptyState, true);
+  setHidden(sankeyWrapper, false);
 
   const nodeColors = nodeLabels.map(
     (label) =>
@@ -4634,7 +4038,7 @@ function renderDistributionChart(details) {
   distributionWrapper.hidden = false;
 }
 
-function resolveSummaryLabel(key, labels = {}, localeOverride = currentLocale) {
+function resolveSummaryLabel(key, labels = {}, localeOverride = getCurrentLocale()) {
   const translationKey = `summary.${key}`;
   const translated = t(translationKey, {}, localeOverride);
   if (translated && translated !== translationKey) {
@@ -4646,7 +4050,7 @@ function resolveSummaryLabel(key, labels = {}, localeOverride = currentLocale) {
   return key;
 }
 
-function resolveDetailLabel(detail, key, labels = {}, localeOverride = currentLocale) {
+function resolveDetailLabel(detail, key, labels = {}, localeOverride = getCurrentLocale()) {
   if (key === "trade_fee" && detail && typeof detail.trade_fee_label === "string") {
     return detail.trade_fee_label;
   }
@@ -4810,7 +4214,7 @@ function renderDetailCard(detail) {
   title.textContent = detail.label || detail.category;
   card.appendChild(title);
 
-  const detailLabels = getMessagesSection(currentLocale, "detailFields");
+  const detailLabels = getMessagesSection(getCurrentLocale(), "detailFields");
 
   const dl = document.createElement("dl");
   const fieldOrder = [
@@ -5149,21 +4553,7 @@ async function submitCalculation(event) {
   setCalculatorStatus(t("status.calculating"));
 
   try {
-    const response = await fetch(CALCULATIONS_ENDPOINT, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Accept-Language": currentLocale,
-      },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      const errorPayload = await response.json().catch(() => ({}));
-      throw new Error(errorPayload.message || response.statusText);
-    }
-
-    const result = await response.json();
+    const result = await apiClient.submitCalculation(payload, getCurrentLocale());
     renderCalculation(result);
     setCalculatorStatus(t("status.calculation_complete"));
   } catch (error) {
@@ -6049,13 +5439,19 @@ function initialiseCalculator() {
 }
 
 async function bootstrap() {
+  const onThemeApplied = () => {
+    if (lastCalculation) {
+      renderCalculation(lastCalculation);
+    }
+  };
+
   const initialTheme = resolveStoredTheme();
-  applyTheme(initialTheme);
+  applyTheme(initialTheme, { buttons: themeButtons, onThemeApplied });
   const initialLocale = resolveStoredLocale();
   await applyLocale(initialLocale);
 
   initialiseLocaleControls();
-  initialiseThemeControls();
+  initialiseThemeControls(themeButtons, { onThemeApplied });
   initialiseCalculator();
   void refreshApplicationVersion();
 
