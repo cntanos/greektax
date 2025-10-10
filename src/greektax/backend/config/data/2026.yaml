@@ -5,7 +5,6 @@ meta:
   notes: "2026 configuration with confirmed wage and pension brackets plus provisional credits"
   toggles:
     tekmiria_reduction: true
-    presumptive_relief: true
 income:
   employment:
     payroll:

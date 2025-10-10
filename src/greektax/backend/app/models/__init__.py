@@ -315,14 +315,6 @@ class CalculationInput(BaseModel):
         return any(amount > 0 for amount in self.investment_amounts.values())
 
     @property
-    def presumptive_adjustments(self) -> tuple[str, ...]:
-        return tuple()
-
-    @property
-    def presumptive_relief_applied(self) -> bool:
-        return False
-
-    @property
     def has_enfia_obligation(self) -> bool:
         return self.enfia_due > 0
 

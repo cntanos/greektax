@@ -104,7 +104,6 @@
           "currency": "Νόμισμα",
           "generated_at": "Χρόνος δημιουργίας",
           "locale": "Γλώσσα",
-          "presumptive_adjustments": "Τεκμαρτές προσαρμογές",
           "year": "Φορολογικό έτος",
           "youth_relief_category": "Κατηγορία έκπτωσης νέων"
         }
@@ -478,7 +477,6 @@
           "currency": "Currency",
           "generated_at": "Generated",
           "locale": "Locale",
-          "presumptive_adjustments": "Presumptive adjustments",
           "year": "Tax year",
           "youth_relief_category": "Youth relief category"
         }

@@ -356,8 +356,7 @@
         "year": "Φορολογικό έτος",
         "locale": "Γλώσσα",
         "currency": "Νόμισμα",
-        "youth_relief_category": "Κατηγορία έκπτωσης νέων",
-        "presumptive_adjustments": "Τεκμαρτές προσαρμογές"
+        "youth_relief_category": "Κατηγορία έκπτωσης νέων"
       },
       "deductions": {
         "entered": "Ποσό που καταχωρήθηκε",

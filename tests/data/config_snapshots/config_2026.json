@@ -1239,7 +1239,6 @@
     "notes": "2026 configuration with confirmed wage and pension brackets plus provisional credits",
     "status": "draft",
     "toggles": {
-      "presumptive_relief": true,
       "tekmiria_reduction": true
     },
     "version": 1
@@ -2154,7 +2153,6 @@
     ]
   },
   "toggles": {
-    "presumptive_relief": true,
     "tekmiria_reduction": true
   },
   "warnings": [

@@ -356,8 +356,7 @@
         "year": "Tax year",
         "locale": "Locale",
         "currency": "Currency",
-        "youth_relief_category": "Youth relief category",
-        "presumptive_adjustments": "Presumptive adjustments"
+        "youth_relief_category": "Youth relief category"
       },
       "deductions": {
         "entered": "Entered amount",

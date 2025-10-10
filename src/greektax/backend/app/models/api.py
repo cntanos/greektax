@@ -395,7 +395,6 @@ class ResponseMeta(BaseModel):
     year: int
     locale: str
     youth_relief_category: str | None = None
-    presumptive_adjustments: list[str] | None = None
 
 
 class CalculationResponse(BaseModel):

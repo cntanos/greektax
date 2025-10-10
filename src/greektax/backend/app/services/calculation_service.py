@@ -717,11 +717,6 @@ def calculate_tax(
     if youth_category:
         meta_payload["youth_relief_category"] = youth_category
 
-    if normalised.presumptive_relief_applied:
-        adjustments = list(normalised.presumptive_adjustments)
-        if adjustments:
-            meta_payload["presumptive_adjustments"] = adjustments
-
     response_model = _construct_response_model(summary, details, meta_payload)
 
     return response_model.model_dump(mode="json", exclude_none=True)
