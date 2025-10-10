@@ -59,7 +59,7 @@ def test_calculation_endpoint_uses_accept_language_header(client: FlaskClient) -
     assert response.status_code == HTTPStatus.OK
     payload = response.get_json()
     assert payload["meta"]["locale"] == "el"
-    assert payload["summary"]["labels"]["income_total"] == "Συνολικό εισόδημα"
+    assert payload["summary"]["labels"]["income_total"] == "Συνολικό δηλωθέν εισόδημα"
 
 
 def test_calculation_endpoint_returns_validation_error(client: FlaskClient) -> None:
