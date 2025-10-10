@@ -255,7 +255,7 @@ class CalculationRequest(BaseModel):
     year: int = Field(..., ge=0)
     locale: str = Field(default="en")
     dependents: DependentsInput = Field(default_factory=DependentsInput)
-    demographics: DemographicsInput
+    demographics: DemographicsInput = Field(default_factory=DemographicsInput)
     employment: EmploymentInput = Field(default_factory=EmploymentInput)
     pension: PensionInput = Field(default_factory=PensionInput)
     freelance: FreelanceInput = Field(default_factory=FreelanceInput)
