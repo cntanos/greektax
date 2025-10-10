@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import importlib
 import sys
 from pathlib import Path
 
@@ -11,11 +12,15 @@ from pathlib import Path
 # contributors can execute the validator without first installing the package.
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SRC_DIR = REPO_ROOT / "src"
-if str(SRC_DIR) not in sys.path:
-    sys.path.insert(0, str(SRC_DIR))
 
-from greektax.backend.config.validator import main
+
+def _bootstrap() -> int:
+    if str(SRC_DIR) not in sys.path:
+        sys.path.insert(0, str(SRC_DIR))
+
+    module = importlib.import_module("greektax.backend.config.validator")
+    return module.main()
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(_bootstrap())

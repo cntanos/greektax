@@ -15,15 +15,10 @@ from flask import Blueprint, jsonify, request
 
 from greektax.backend.app.localization import get_translator, normalise_locale
 from greektax.backend.config.year_config import (
-    ContributionRates,
-    EFKACategoryConfig,
-    EmploymentConfig,
     MultiRateBracket,
-    PayrollConfig,
     ProgressiveTaxBracket,
     TaxBracket,
     TradeFeeConfig,
-    YearWarning,
     available_years,
     load_year_configuration,
 )
@@ -73,7 +68,7 @@ def _serialise_model(value: Any, *, prune_none: bool = False) -> Any:
             payload[key] = serialised
         return payload
 
-    if isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray)):
+    if isinstance(value, Sequence) and not isinstance(value, str | bytes | bytearray):
         return [
             _serialise_model(item, prune_none=prune_none)
             for item in value
