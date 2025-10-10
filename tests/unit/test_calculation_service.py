@@ -3,14 +3,25 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from types import MappingProxyType
 from typing import Any
 
 import pytest
 from pydantic import ValidationError
 
-from greektax.backend.app.models import NET_INCOME_INPUT_ERROR, CalculationRequest
+from greektax.backend.app.models import (
+    NET_INCOME_INPUT_ERROR,
+    CalculationRequest,
+    DeductionBreakdownEntry,
+    DetailEntry,
+    ResponseMeta,
+    Summary,
+    SummaryLabels,
+)
 from greektax.backend.app.services.calculation_service import (
     CalculationResponse,
+    _RESPONSE_VALIDATION_ENV,
+    _construct_response_model,
     calculate_tax,
 )
 from greektax.backend.config.year_config import (
@@ -31,6 +42,169 @@ def build_request(payload: dict[str, Any]) -> CalculationRequest:
             alias_year = DEFAULT_DEMOGRAPHICS["birth_year"]
         demographics["birth_year"] = alias_year
     return CalculationRequest.model_validate(data)
+
+
+def _summary_payload_template() -> dict[str, Any]:
+    labels = {
+        "income_total": "Total income",
+        "taxable_income": "Taxable income",
+        "tax_total": "Total tax",
+        "net_income": "Net income",
+        "net_monthly_income": "Net monthly income",
+        "average_monthly_tax": "Average monthly tax",
+        "effective_tax_rate": "Effective tax rate",
+        "deductions_entered": "Deductions entered",
+        "deductions_applied": "Deductions applied",
+        "withholding_tax": "Withholding tax",
+        "balance_due": "Balance due",
+    }
+
+    breakdown = [
+        {
+            "type": "charity",
+            "label": "Charitable donations",
+            "entered": 150.0,
+            "eligible": 120.0,
+            "credit_rate": 0.1,
+            "credit_requested": 12.0,
+            "credit_applied": 10.0,
+        },
+        {
+            "type": "medical",
+            "label": "Medical expenses",
+            "entered": 200.0,
+            "eligible": 180.0,
+            "credit_rate": 0.05,
+            "credit_requested": 9.0,
+            "credit_applied": 9.0,
+            "notes": "Limited relief",
+        },
+    ]
+
+    return {
+        "income_total": 1_200.0,
+        "taxable_income": 1_000.0,
+        "tax_total": 220.0,
+        "net_income": 980.0,
+        "net_monthly_income": 81.6666666667,
+        "average_monthly_tax": 18.3333333333,
+        "effective_tax_rate": 0.22,
+        "deductions_entered": 150.0,
+        "deductions_applied": 130.0,
+        "labels": labels,
+        "withholding_tax": 180.0,
+        "balance_due": 40.0,
+        "balance_due_is_refund": False,
+        "deductions_breakdown": breakdown,
+    }
+
+
+def _details_payload_template() -> list[dict[str, Any]]:
+    return [
+        {"category": "income", "label": "Employment", "amount": 1_200.0},
+        {
+            "category": "deduction",
+            "label": "Charitable donations",
+            "amount": -10.0,
+            "notes": "Eligible",
+        },
+    ]
+
+
+def _meta_payload_template() -> dict[str, Any]:
+    return {
+        "year": 2024,
+        "locale": "en",
+        "youth_relief_category": "standard",
+        "presumptive_adjustments": ["freelance"],
+    }
+
+
+def _response_payload_variant(
+    variant: str,
+) -> tuple[Any, list[Any] | tuple[Any, ...], Any]:
+    summary_payload = _summary_payload_template()
+    details_payload = _details_payload_template()
+    meta_payload = _meta_payload_template()
+
+    if variant == "dicts":
+        return summary_payload, details_payload, meta_payload
+
+    if variant == "models":
+        summary_model = Summary.model_validate(summary_payload)
+        detail_models = [
+            DetailEntry.model_validate(entry) for entry in details_payload
+        ]
+        meta_model = ResponseMeta.model_validate(meta_payload)
+        return summary_model, detail_models, meta_model
+
+    if variant == "mixed":
+        summary_mixed = dict(summary_payload)
+        summary_mixed["labels"] = SummaryLabels.model_validate(summary_payload["labels"])
+        breakdown_payload = summary_payload["deductions_breakdown"]
+        summary_mixed["deductions_breakdown"] = [
+            DeductionBreakdownEntry.model_validate(breakdown_payload[0]),
+            MappingProxyType(dict(breakdown_payload[1])),
+        ]
+        summary_value = MappingProxyType(summary_mixed)
+
+        details_value = [
+            DetailEntry.model_validate(details_payload[0]),
+            MappingProxyType(dict(details_payload[1])),
+        ]
+        meta_value = ResponseMeta.model_validate(meta_payload)
+        return summary_value, details_value, meta_value
+
+    if variant == "partial":
+        partial_summary = {
+            key: summary_payload[key]
+            for key in [
+                "income_total",
+                "taxable_income",
+                "tax_total",
+                "net_income",
+                "net_monthly_income",
+                "average_monthly_tax",
+                "effective_tax_rate",
+                "deductions_entered",
+                "deductions_applied",
+            ]
+        }
+        partial_summary["labels"] = dict(summary_payload["labels"])
+        partial_summary["deductions_breakdown"] = None
+
+        partial_details: list[Any] = [
+            {"category": "income", "label": "Employment"}
+        ]
+        partial_meta = {"year": meta_payload["year"], "locale": meta_payload["locale"]}
+        return partial_summary, partial_details, partial_meta
+
+    raise AssertionError(f"Unknown variant: {variant}")
+
+
+@pytest.mark.parametrize("variant", ["dicts", "models", "mixed", "partial"])
+def test_construct_response_model_normalises_payloads(
+    variant: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Fast-path and validated responses should serialise identically."""
+
+    monkeypatch.delenv(_RESPONSE_VALIDATION_ENV, raising=False)
+    summary_value, details_value, meta_value = _response_payload_variant(variant)
+    fast_response = _construct_response_model(summary_value, details_value, meta_value)
+
+    monkeypatch.setenv(_RESPONSE_VALIDATION_ENV, "true")
+    summary_validated, details_validated, meta_validated = _response_payload_variant(
+        variant
+    )
+    validated_response = _construct_response_model(
+        summary_validated, details_validated, meta_validated
+    )
+
+    assert isinstance(fast_response, CalculationResponse)
+    assert isinstance(validated_response, CalculationResponse)
+    assert fast_response.model_dump(mode="python", serialize_as_any=True) == (
+        validated_response.model_dump(mode="python", serialize_as_any=True)
+    )
 
 
 def _progressive_tax(amount: float, brackets, *, dependants: int = 0) -> float:
