@@ -119,6 +119,8 @@ def _build_general_income_components(
         taxable_income = payload.employment_income - employee_contrib
         if taxable_income < 0:
             taxable_income = 0.0
+        if payload.tax_residency_transfer_to_greece and taxable_income > 0:
+            taxable_income *= 0.5
         include_employee_total = include_auto or include_manual
         components.append(
             GeneralIncomeComponent(

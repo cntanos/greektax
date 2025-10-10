@@ -396,6 +396,9 @@ const themeButtons = Array.from(
 const yearSelect = document.getElementById("year-select");
 const childrenInput = document.getElementById("children-input");
 const birthYearInput = document.getElementById("birth-year");
+const taxResidencyTransferCheckbox = document.getElementById(
+  "tax-residency-transfer",
+);
 const employmentIncomeInput = document.getElementById("employment-income");
 const employmentMonthlyIncomeInput = document.getElementById(
   "employment-monthly-income",
@@ -3327,6 +3330,9 @@ function buildCalculationPayload() {
   const birthYear = readInteger(birthYearInput);
   if (birthYear >= 1901 && birthYear <= 2025) {
     demographics.birth_year = birthYear;
+  }
+  if (taxResidencyTransferCheckbox?.checked) {
+    demographics.tax_residency_transfer_to_greece = true;
   }
 
   payload.demographics = demographics;
