@@ -1,18 +1,13 @@
 {
     "version": "0.2.0",
-    "configurations": [      
+    "configurations": [
         {
-            "name": "Backend API (Flask)",
+            "name": "API: Flask dev server",
             "type": "debugpy",
             "request": "launch",
-            "python": "${workspaceFolder}/.venv/Scripts/python.exe",
+            "python": "${command:python.interpreterPath}",
             "module": "flask",
             "cwd": "${workspaceFolder}",
-            "env": {
-                "FLASK_DEBUG": "1",
-                "PYTHONPATH": "${workspaceFolder}/src"
-            },
-            "envFile": "${workspaceFolder}/.env",
             "args": [
                 "--app",
                 "greektax.backend.app:create_app",
@@ -24,65 +19,85 @@
                 "--no-debugger",
                 "--no-reload"
             ],
+            "envFile": "${workspaceFolder}/.env",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src",
+                "FLASK_DEBUG": "1"
+            },
             "jinja": true,
             "justMyCode": true,
             "console": "integratedTerminal",
             "internalConsoleOptions": "neverOpen"
         },
         {
-            "name": "API Tests (pytest - all)",
+            "name": "Tests: Pytest (workspace)",
             "type": "debugpy",
             "request": "launch",
-            "python": "${workspaceFolder}/.venv/Scripts/python.exe",
+            "python": "${command:python.interpreterPath}",
             "module": "pytest",
             "cwd": "${workspaceFolder}",
             "args": [
                 "tests"
             ],
-            "console": "integratedTerminal",
-            "justMyCode": false,
+            "envFile": "${workspaceFolder}/.env",
             "env": {
                 "PYTHONPATH": "${workspaceFolder}/src"
             },
-            "envFile": "${workspaceFolder}/.env",
+            "justMyCode": false,
+            "console": "integratedTerminal",
             "internalConsoleOptions": "neverOpen",
             "purpose": [
                 "debug-test"
             ]
         },
         {
-            "name": "API Tests (pytest - focused)",
+            "name": "Tests: Pytest (-k filter)",
             "type": "debugpy",
             "request": "launch",
-            "python": "${workspaceFolder}/.venv/Scripts/python.exe",
+            "python": "${command:python.interpreterPath}",
             "module": "pytest",
             "cwd": "${workspaceFolder}",
             "args": [
-                "tests",
                 "-k",
-                "${input:pytestFilter}"
+                "${input:pytestFilter}",
+                "tests"
             ],
-            "console": "integratedTerminal",
-            "justMyCode": false,
+            "envFile": "${workspaceFolder}/.env",
             "env": {
                 "PYTHONPATH": "${workspaceFolder}/src"
             },
-            "envFile": "${workspaceFolder}/.env",
+            "justMyCode": false,
+            "console": "integratedTerminal",
             "internalConsoleOptions": "neverOpen"
         },
         {
-            "name": "Python: Current File",
+            "name": "Maintenance: Validate year configs",
             "type": "debugpy",
             "request": "launch",
-            "python": "${workspaceFolder}/.venv/Scripts/python.exe",
-            "program": "${file}",
+            "python": "${command:python.interpreterPath}",
+            "program": "${workspaceFolder}/scripts/validate_config.py",
             "cwd": "${workspaceFolder}",
-            "console": "integratedTerminal",
-            "justMyCode": true,
+            "envFile": "${workspaceFolder}/.env",
             "env": {
                 "PYTHONPATH": "${workspaceFolder}/src"
             },
+            "justMyCode": true,
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen"
+        },
+        {
+            "name": "Python: Current File (workspace)",
+            "type": "debugpy",
+            "request": "launch",
+            "python": "${command:python.interpreterPath}",
+            "program": "${file}",
+            "cwd": "${fileDirname}",
             "envFile": "${workspaceFolder}/.env",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+            "justMyCode": true,
+            "console": "integratedTerminal",
             "internalConsoleOptions": "neverOpen"
         }
     ],
@@ -90,7 +105,7 @@
         {
             "id": "pytestFilter",
             "type": "promptString",
-            "description": "pytest -k expression to filter tests",
+            "description": "pytest -k expression to match",
             "default": "integration"
         }
     ]
