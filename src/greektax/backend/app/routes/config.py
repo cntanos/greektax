@@ -8,23 +8,71 @@ messages without duplicating business rules.
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from dataclasses import fields, is_dataclass
+from dataclasses import dataclass, fields, is_dataclass
 from typing import Any, get_args, get_origin, get_type_hints
 
 from flask import Blueprint, jsonify, request
 
-from greektax.backend.app.localization import get_translator, normalise_locale
+from greektax.backend.app.http import ProblemResponse, problem_response
+from greektax.backend.app.localization import (
+    Translator,
+    get_translator,
+    normalise_locale,
+)
 from greektax.backend.config.year_config import (
     MultiRateBracket,
     ProgressiveTaxBracket,
     TaxBracket,
     TradeFeeConfig,
     available_years,
+    load_manifest,
     load_year_configuration,
+    YearConfiguration,
 )
 from greektax.backend.version import get_project_version
 
 blueprint = Blueprint("config", __name__, url_prefix="/api/v1/config")
+
+
+@dataclass(frozen=True)
+class YearRouteContext:
+    """Common context shared by year-scoped configuration endpoints."""
+
+    year: int
+    locale: str
+    translator: Translator
+    configuration: YearConfiguration
+
+
+def _build_year_context(year: int, locale_hint: str | None) -> YearRouteContext | ProblemResponse:
+    """Resolve configuration and localisation helpers for a given year."""
+
+    try:
+        configuration = load_year_configuration(year)
+    except FileNotFoundError as exc:  # pragma: no cover - defensive routing
+        return problem_response("not_found", status=404, message=str(exc))
+
+    locale = normalise_locale(locale_hint)
+    translator = get_translator(locale)
+    return YearRouteContext(
+        year=year,
+        locale=translator.locale,
+        translator=translator,
+        configuration=configuration,
+    )
+
+
+def get_configuration_metadata() -> dict[str, Any]:
+    """Expose runtime metadata derived from the configuration manifest."""
+
+    manifest = load_manifest()
+    supported_years = list(manifest.supported_years)
+    default_year = supported_years[-1] if supported_years else None
+    return {
+        "version": get_project_version(),
+        "supported_years": supported_years,
+        "default_year": default_year,
+    }
 
 
 def _annotation_contains_dataclass(annotation: Any) -> bool:
@@ -237,7 +285,7 @@ def _serialise_year(year: int) -> dict[str, Any]:
 def get_application_metadata() -> tuple[Any, int]:
     """Expose lightweight application metadata such as the version identifier."""
 
-    payload = {"version": get_project_version()}
+    payload = get_configuration_metadata()
     return jsonify(payload), 200
 
 
@@ -246,8 +294,12 @@ def list_years() -> tuple[Any, int]:
     """Return all configured years with lightweight metadata."""
 
     years = [_serialise_year(year) for year in available_years()]
-    default_year = years[-1]["year"] if years else None
-    payload = {"years": years, "default_year": default_year}
+    metadata = get_configuration_metadata()
+    payload = {
+        "years": years,
+        "default_year": metadata["default_year"],
+        "supported_years": metadata["supported_years"],
+    }
     return jsonify(payload), 200
 
 
@@ -255,26 +307,26 @@ def list_years() -> tuple[Any, int]:
 def get_investment_categories(year: int) -> tuple[Any, int]:
     """Expose configured investment categories with locale-aware labels."""
 
-    try:
-        config = load_year_configuration(year)
-    except FileNotFoundError as exc:  # pragma: no cover - defensive routing
-        return jsonify({"error": "not_found", "message": str(exc)}), 404
-
     locale_hint = request.args.get("locale")
-    locale = normalise_locale(locale_hint)
-    translator = get_translator(locale)
+    context = _build_year_context(year, locale_hint)
+    if isinstance(context, ProblemResponse):
+        return context.to_response()
 
     categories = []
-    for key, rate in sorted(config.investment.rates.items()):
+    for key, rate in sorted(context.configuration.investment.rates.items()):
         categories.append(
             {
                 "id": key,
-                "label": translator(f"details.investment.{key}"),
+                "label": context.translator(f"details.investment.{key}"),
                 "rate": rate,
             }
         )
 
-    payload = {"year": year, "locale": translator.locale, "categories": categories}
+    payload = {
+        "year": context.year,
+        "locale": context.locale,
+        "categories": categories,
+    }
     return jsonify(payload), 200
 
 
@@ -282,46 +334,46 @@ def get_investment_categories(year: int) -> tuple[Any, int]:
 def get_deduction_hints(year: int) -> tuple[Any, int]:
     """Expose deduction hint metadata with locale-aware labelling."""
 
-    try:
-        config = load_year_configuration(year)
-    except FileNotFoundError as exc:  # pragma: no cover - defensive routing
-        return jsonify({"error": "not_found", "message": str(exc)}), 404
-
     locale_hint = request.args.get("locale")
-    locale = normalise_locale(locale_hint)
-    translator = get_translator(locale)
+    context = _build_year_context(year, locale_hint)
+    if isinstance(context, ProblemResponse):
+        return context.to_response()
 
     hints: list[dict[str, Any]] = []
-    for hint in config.deductions.hints:
+    for hint in context.configuration.deductions.hints:
         entry: dict[str, Any] = {
             "id": hint.id,
             "applies_to": list(hint.applies_to),
-            "label": translator(hint.label_key),
+            "label": context.translator(hint.label_key),
             "input_id": hint.input_id,
             "validation": dict(hint.validation),
         }
         if hint.description_key:
-            entry["description"] = translator(hint.description_key)
+            entry["description"] = context.translator(hint.description_key)
 
         allowances: list[dict[str, Any]] = []
         for allowance in hint.allowances:
             allowance_entry: dict[str, Any] = {
-                "label": translator(allowance.label_key),
+                "label": context.translator(allowance.label_key),
                 "thresholds": [],
             }
             if allowance.description_key:
-                allowance_entry["description"] = translator(allowance.description_key)
+                allowance_entry["description"] = context.translator(
+                    allowance.description_key
+                )
 
             for threshold in allowance.thresholds:
                 threshold_entry: dict[str, Any] = {
-                    "label": translator(threshold.label_key),
+                    "label": context.translator(threshold.label_key),
                 }
                 if threshold.amount is not None:
                     threshold_entry["amount"] = threshold.amount
                 if threshold.percentage is not None:
                     threshold_entry["percentage"] = threshold.percentage
                 if threshold.notes_key:
-                    threshold_entry["notes"] = translator(threshold.notes_key)
+                    threshold_entry["notes"] = context.translator(
+                        threshold.notes_key
+                    )
                 allowance_entry["thresholds"].append(threshold_entry)
 
             allowances.append(allowance_entry)
@@ -330,5 +382,5 @@ def get_deduction_hints(year: int) -> tuple[Any, int]:
             entry["allowances"] = allowances
         hints.append(entry)
 
-    payload = {"year": year, "locale": translator.locale, "hints": hints}
+    payload = {"year": context.year, "locale": context.locale, "hints": hints}
     return jsonify(payload), 200

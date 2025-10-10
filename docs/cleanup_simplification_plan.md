@@ -103,6 +103,13 @@ refactors that keep the application deployable throughout the effort.
 - Update OpenAPI or API contract documentation to reflect the simplified
   response shapes and error payloads.
 
+#### Progress
+
+- [x] Unified configuration routes around a shared year context helper and the
+  reusable `ProblemResponse`, eliminating duplicate locale handling while
+  updating health/meta responses to surface manifest-driven `supported_years`
+  and `default_year` fields for clients consuming the revised contract.
+
 ### 4. Front-end restructuring
 
 - Break the monolithic `main.js` file into modules that align with the major UI
