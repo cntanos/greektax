@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import logging
 import os
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
 from numbers import Real
@@ -382,10 +382,7 @@ def _normalise_additional_income(request: CalculationRequest) -> AdditionalIncom
 def _validate_birth_year_guard(
     birth_year: int | None,
     year: int,
-    employment: EmploymentAmounts,
-    pension: PensionAmounts,
-    freelance: FreelanceAmounts,
-    additional_income: AdditionalIncomeAmounts,
+    income_sources: Iterable[Real],
 ) -> None:
     if birth_year is None or year not in {2025, 2026}:
         return
@@ -394,17 +391,7 @@ def _validate_birth_year_guard(
     if birth_year <= birth_year_limit:
         return
 
-    has_income = any(
-        (
-            employment.income > 0,
-            pension.income > 0,
-            freelance.profit > 0,
-            additional_income.rental_gross_income > 0,
-            additional_income.agricultural_gross_revenue > 0,
-            additional_income.other_taxable_income > 0,
-            any(amount > 0 for amount in additional_income.investment_amounts.values()),
-        )
-    )
+    has_income = any(amount > 0 for amount in income_sources)
     if has_income:
         raise ValueError(
             "Invalid calculation payload: demographics.birth_year must be 2025 or earlier when income is provided"
@@ -438,7 +425,6 @@ def _normalise_payload(
     withholding_tax = request.withholding_tax
 
     pension_values = _normalise_pension(request, config)
-    pension_input = request.pension
 
     freelance_values = _normalise_freelance(request, config)
     freelance_input = request.freelance
@@ -452,10 +438,15 @@ def _normalise_payload(
     _validate_birth_year_guard(
         birth_year,
         request.year,
-        employment_values,
-        pension_values,
-        freelance_values,
-        additional_income,
+        (
+            employment_values.income,
+            pension_values.income,
+            freelance_values.profit,
+            additional_income.rental_gross_income,
+            additional_income.agricultural_gross_revenue,
+            additional_income.other_taxable_income,
+            *additional_income.investment_amounts.values(),
+        ),
     )
 
     obligations = request.obligations
