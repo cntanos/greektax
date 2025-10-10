@@ -211,10 +211,15 @@ def test_validate_birth_year_guard_blocks_income_payloads() -> None:
         _validate_birth_year_guard(
             request.demographics.birth_year,
             request.year,
-            employment,
-            pension,
-            freelance,
-            additional,
+            (
+                employment.income,
+                pension.income,
+                freelance.profit,
+                additional.rental_gross_income,
+                additional.agricultural_gross_revenue,
+                additional.other_taxable_income,
+                *additional.investment_amounts.values(),
+            ),
         )
 
 
@@ -236,10 +241,15 @@ def test_validate_birth_year_guard_allows_no_income() -> None:
     _validate_birth_year_guard(
         request.demographics.birth_year,
         request.year,
-        employment,
-        pension,
-        freelance,
-        additional,
+        (
+            employment.income,
+            pension.income,
+            freelance.profit,
+            additional.rental_gross_income,
+            additional.agricultural_gross_revenue,
+            additional.other_taxable_income,
+            *additional.investment_amounts.values(),
+        ),
     )
 
 

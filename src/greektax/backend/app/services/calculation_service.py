@@ -10,13 +10,12 @@ from __future__ import annotations
 
 import logging
 import os
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
-from numbers import Real
 from time import perf_counter
 from types import MappingProxyType
-from typing import Any, TypeVar
+from typing import Any, SupportsFloat, TypeVar
 
 from pydantic import BaseModel, ValidationError
 
@@ -382,10 +381,7 @@ def _normalise_additional_income(request: CalculationRequest) -> AdditionalIncom
 def _validate_birth_year_guard(
     birth_year: int | None,
     year: int,
-    employment: EmploymentAmounts,
-    pension: PensionAmounts,
-    freelance: FreelanceAmounts,
-    additional_income: AdditionalIncomeAmounts,
+    income_sources: Iterable[SupportsFloat],
 ) -> None:
     if birth_year is None or year not in {2025, 2026}:
         return
@@ -394,17 +390,7 @@ def _validate_birth_year_guard(
     if birth_year <= birth_year_limit:
         return
 
-    has_income = any(
-        (
-            employment.income > 0,
-            pension.income > 0,
-            freelance.profit > 0,
-            additional_income.rental_gross_income > 0,
-            additional_income.agricultural_gross_revenue > 0,
-            additional_income.other_taxable_income > 0,
-            any(amount > 0 for amount in additional_income.investment_amounts.values()),
-        )
-    )
+    has_income = any(float(amount) > 0 for amount in income_sources)
     if has_income:
         raise ValueError(
             "Invalid calculation payload: demographics.birth_year must be 2025 or earlier when income is provided"
@@ -438,7 +424,6 @@ def _normalise_payload(
     withholding_tax = request.withholding_tax
 
     pension_values = _normalise_pension(request, config)
-    pension_input = request.pension
 
     freelance_values = _normalise_freelance(request, config)
     freelance_input = request.freelance
@@ -452,10 +437,15 @@ def _normalise_payload(
     _validate_birth_year_guard(
         birth_year,
         request.year,
-        employment_values,
-        pension_values,
-        freelance_values,
-        additional_income,
+        (
+            employment_values.income,
+            pension_values.income,
+            freelance_values.profit,
+            additional_income.rental_gross_income,
+            additional_income.agricultural_gross_revenue,
+            additional_income.other_taxable_income,
+            *additional_income.investment_amounts.values(),
+        ),
     )
 
     obligations = request.obligations
@@ -545,20 +535,32 @@ def _update_totals_from_detail(
     detail: Mapping[str, Any], totals: DetailTotals
 ) -> None:
     gross = detail.get("gross_income")
-    if isinstance(gross, Real):
-        totals.income += float(gross)
+    if gross is not None:
+        try:
+            totals.income += float(gross)
+        except (TypeError, ValueError):
+            pass
 
     tax = detail.get("total_tax")
-    if isinstance(tax, Real):
-        totals.tax += float(tax)
+    if tax is not None:
+        try:
+            totals.tax += float(tax)
+        except (TypeError, ValueError):
+            pass
 
     net = detail.get("net_income")
-    if isinstance(net, Real):
-        totals.net += float(net)
+    if net is not None:
+        try:
+            totals.net += float(net)
+        except (TypeError, ValueError):
+            pass
 
     taxable_income = detail.get("taxable_income")
-    if isinstance(taxable_income, Real):
-        totals.taxable += float(taxable_income)
+    if taxable_income is not None:
+        try:
+            totals.taxable += float(taxable_income)
+        except (TypeError, ValueError):
+            pass
 
 
 def calculate_tax(
