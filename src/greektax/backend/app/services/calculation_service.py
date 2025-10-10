@@ -13,10 +13,9 @@ import os
 from collections.abc import Iterable, Mapping, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
-from numbers import Real
 from time import perf_counter
 from types import MappingProxyType
-from typing import Any, TypeVar
+from typing import Any, SupportsFloat, TypeVar
 
 from pydantic import BaseModel, ValidationError
 
@@ -382,7 +381,7 @@ def _normalise_additional_income(request: CalculationRequest) -> AdditionalIncom
 def _validate_birth_year_guard(
     birth_year: int | None,
     year: int,
-    income_sources: Iterable[Real],
+    income_sources: Iterable[SupportsFloat],
 ) -> None:
     if birth_year is None or year not in {2025, 2026}:
         return
@@ -391,7 +390,7 @@ def _validate_birth_year_guard(
     if birth_year <= birth_year_limit:
         return
 
-    has_income = any(amount > 0 for amount in income_sources)
+    has_income = any(float(amount) > 0 for amount in income_sources)
     if has_income:
         raise ValueError(
             "Invalid calculation payload: demographics.birth_year must be 2025 or earlier when income is provided"
@@ -536,20 +535,32 @@ def _update_totals_from_detail(
     detail: Mapping[str, Any], totals: DetailTotals
 ) -> None:
     gross = detail.get("gross_income")
-    if isinstance(gross, Real):
-        totals.income += float(gross)
+    if gross is not None:
+        try:
+            totals.income += float(gross)
+        except (TypeError, ValueError):
+            pass
 
     tax = detail.get("total_tax")
-    if isinstance(tax, Real):
-        totals.tax += float(tax)
+    if tax is not None:
+        try:
+            totals.tax += float(tax)
+        except (TypeError, ValueError):
+            pass
 
     net = detail.get("net_income")
-    if isinstance(net, Real):
-        totals.net += float(net)
+    if net is not None:
+        try:
+            totals.net += float(net)
+        except (TypeError, ValueError):
+            pass
 
     taxable_income = detail.get("taxable_income")
-    if isinstance(taxable_income, Real):
-        totals.taxable += float(taxable_income)
+    if taxable_income is not None:
+        try:
+            totals.taxable += float(taxable_income)
+        except (TypeError, ValueError):
+            pass
 
 
 def calculate_tax(
