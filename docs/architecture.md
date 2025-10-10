@@ -20,7 +20,7 @@ across deployments.
                 └──────────┬───────────┘
                            │
         Browser ───────────┼────────────> Flask API / WSGI ──> Calculation service
-                           │                                  (`app/services/calculation_service.py`)
+                           │                                  (`services/calculation_service.py`)
                            ▼
                  Locale & configuration assets (`src/greektax`)
 ```
@@ -60,7 +60,7 @@ run `flask --app greektax.backend.app` to host the endpoints.
 | Module | Primary owner | Responsibilities |
 | --- | --- | --- |
 | `app/routes/*` | API surface | HTTP endpoints, payload parsing, and error handling. |
-| `app/services/calculation_service.py` | Calculation orchestration | Validates requests, merges configuration toggles, and coordinates category calculators. |
+| `services/calculation_service.py` | Calculation orchestration | Validates requests, merges configuration toggles, and coordinates category calculators. |
 | `config/year_config.py` | Configuration loader | Parses year YAML files, validates structure, and exposes helper dataclasses. |
 | `app/models/api.py` | API contract | Defines the Pydantic request/response models used for validation. |
 | `app/models/__init__.py` | Normalised domain models | Converts the API payload into calculator-friendly structures. |
@@ -136,7 +136,7 @@ sequenceDiagram
 ```
 
 The calculation service documented above lives in
-[`app/services/calculation_service.py`](../src/greektax/backend/app/services/calculation_service.py)
+[`services/calculation_service.py`](../src/greektax/backend/services/calculation_service.py)
 and is the single integration point for the calculator logic. Its reliance on
 [`config/year_config.py`](../src/greektax/backend/config/year_config.py) keeps the
 deployment story data-driven: shipping a new YAML file immediately affects all

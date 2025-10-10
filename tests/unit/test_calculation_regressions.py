@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from greektax.backend.app.services.calculation_service import calculate_tax
+from greektax.backend.services.calculation_service import calculate_tax
 
 _DATA_PATH = Path(__file__).resolve().parents[1] / "data" / "regression_scenarios.json"
 

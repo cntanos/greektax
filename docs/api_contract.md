@@ -12,7 +12,7 @@ Key implementation entry points:
   [`app/models/api.py`](../src/greektax/backend/app/models/api.py) and mirror the
   shapes described below.
 - Calculation orchestration happens inside
-  [`app/services/calculation_service.py`](../src/greektax/backend/app/services/calculation_service.py),
+  [`services/calculation_service.py`](../src/greektax/backend/services/calculation_service.py),
   which normalises payloads, applies configuration toggles, and delegates to the
   category calculators.
 - Year-specific thresholds and toggles are loaded from YAML through
@@ -348,7 +348,7 @@ The response always includes:
 - `meta`: Echoes the tax `year` and the resolved `locale` used for labels.
 
 The orchestration layer in
-[`app/services/calculation_service.py`](../src/greektax/backend/app/services/calculation_service.py)
+[`services/calculation_service.py`](../src/greektax/backend/services/calculation_service.py)
 produces this payload after loading the structured year metadata via
 [`config/year_config.py`](../src/greektax/backend/config/year_config.py) and the
 Pydantic response models highlighted earlier.
