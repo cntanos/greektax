@@ -777,6 +777,9 @@ def test_tax_residency_transfer_halves_employment_taxable_income(year: int) -> N
         if detail["category"] == "employment"
     )
 
+    relocation_summary = relocation_result["summary"]
+    baseline_summary = baseline_result["summary"]
+
     assert relocation_detail["gross_income"] == pytest.approx(
         baseline_detail["gross_income"]
     )
@@ -784,6 +787,14 @@ def test_tax_residency_transfer_halves_employment_taxable_income(year: int) -> N
         baseline_detail["taxable_income"] * 0.5
     )
     assert relocation_detail["total_tax"] < baseline_detail["total_tax"]
+    assert relocation_summary["income_total"] == pytest.approx(
+        baseline_summary["income_total"]
+    )
+    assert relocation_summary["taxable_income"] == pytest.approx(
+        baseline_summary["taxable_income"] * 0.5
+    )
+    assert relocation_summary["tax_total"] < baseline_summary["tax_total"]
+    assert relocation_summary["net_income"] > baseline_summary["net_income"]
 
 
 def test_calculate_tax_employment_only() -> None:
