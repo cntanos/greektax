@@ -159,13 +159,54 @@ const EMPLOYMENT_CONTRIBUTION_PREVIEW_MESSAGES = {
   },
 };
 
-function buildCalculatorFormNameUsage() {
-  const usage = new Map();
+let calculatorPersistenceMetadataCache = null;
+let calculatorPersistenceMetadataSignature = null;
+let calculatorPersistenceObserver = null;
+
+function invalidateCalculatorPersistenceMetadata() {
+  calculatorPersistenceMetadataCache = null;
+  calculatorPersistenceMetadataSignature = null;
+}
+
+function computeCalculatorPersistenceSignature(elements) {
+  if (!elements || !elements.length) {
+    return "0";
+  }
+  return `${elements.length}:${elements
+    .map((element) => {
+      if (!element) {
+        return "";
+      }
+      const tagName = typeof element.tagName === "string" ? element.tagName : "";
+      const type = typeof element.type === "string" ? element.type : "";
+      const name = typeof element.name === "string" ? element.name : "";
+      const id = typeof element.id === "string" ? element.id : "";
+      const persistKey =
+        element.dataset && typeof element.dataset.persistKey === "string"
+          ? element.dataset.persistKey
+          : "";
+      return [tagName, type, name, id, persistKey].join("|");
+    })
+    .join("\u241f")}`;
+}
+
+function getCalculatorPersistenceMetadata() {
   if (!calculatorForm) {
-    return usage;
+    invalidateCalculatorPersistenceMetadata();
+    return { elements: [], nameUsage: new Map() };
   }
 
-  Array.from(calculatorForm.elements || []).forEach((element) => {
+  const elements = Array.from(calculatorForm.elements || []);
+  const signature = computeCalculatorPersistenceSignature(elements);
+
+  if (calculatorPersistenceMetadataCache) {
+    if (calculatorPersistenceMetadataSignature === signature) {
+      return calculatorPersistenceMetadataCache;
+    }
+  }
+
+  const nameUsage = new Map();
+  elements.forEach((element) => {
     if (!element || typeof element.name !== "string") {
       return;
     }
@@ -173,15 +214,43 @@ function buildCalculatorFormNameUsage() {
     if (!trimmed) {
       return;
     }
-    usage.set(trimmed, (usage.get(trimmed) || 0) + 1);
+    nameUsage.set(trimmed, (nameUsage.get(trimmed) || 0) + 1);
   });
 
-  return usage;
+  calculatorPersistenceMetadataCache = { elements, nameUsage };
+  calculatorPersistenceMetadataSignature = signature;
+  return calculatorPersistenceMetadataCache;
+}
+
+function setupCalculatorPersistenceObserver() {
+  if (!calculatorForm || typeof MutationObserver === "undefined") {
+    return;
+  }
+
+  if (calculatorPersistenceObserver) {
+    calculatorPersistenceObserver.disconnect();
+    calculatorPersistenceObserver = null;
+  }
+
+  const observer = new MutationObserver(() => {
+    invalidateCalculatorPersistenceMetadata();
+  });
+  observer.observe(calculatorForm, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ["name", "id", "data-persist-key"],
+  });
+  calculatorPersistenceObserver = observer;
 }
 
 function getElementPersistenceKey(element, nameUsage = null) {
   if (!element) {
     return null;
+  }
+
+  if (!nameUsage && calculatorForm) {
+    ({ nameUsage } = getCalculatorPersistenceMetadata());
   }
 
   const datasetKey =
@@ -930,8 +999,7 @@ function captureCalculatorState() {
   }
 
   const values = {};
-  const elements = Array.from(calculatorForm.elements || []);
-  const nameUsage = buildCalculatorFormNameUsage();
+  const { elements, nameUsage } = getCalculatorPersistenceMetadata();
 
   elements.forEach((element) => {
     const key = getElementPersistenceKey(element, nameUsage);
@@ -2109,7 +2177,7 @@ function applyPendingCalculatorState() {
   const sourceState = pendingCalculatorState;
   const remaining = {};
   let yearUpdated = false;
-  const nameUsage = buildCalculatorFormNameUsage();
+  const { nameUsage } = getCalculatorPersistenceMetadata();
   const yearKey = getElementPersistenceKey(yearSelect, nameUsage);
   const yearKeyCandidates = new Set();
   if (yearKey) {
@@ -5890,6 +5958,9 @@ function initialiseCalculator() {
   if (!calculatorForm || !yearSelect) {
     return;
   }
+
+  setupCalculatorPersistenceObserver();
+  invalidateCalculatorPersistenceMetadata();
 
   const storedCalculatorState = loadStoredCalculatorState();
   assignLoadedCalculatorState(storedCalculatorState);
