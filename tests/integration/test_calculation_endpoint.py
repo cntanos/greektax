@@ -206,3 +206,34 @@ def test_calculation_endpoint_applies_tax_residency_transfer(
         base_summary["taxable_income"] / 2,
     )
     assert relocation_summary["tax_total"] < base_summary["tax_total"]
+
+
+def test_calculation_endpoint_defaults_missing_demographics(
+    client: FlaskClient,
+) -> None:
+    """Omitting demographics from the payload should default to empty values."""
+
+    payload_without_demographics = {
+        "year": 2024,
+        "employment": {"gross_income": 25_000},
+    }
+    explicit_default_payload = {
+        "year": 2024,
+        "employment": {"gross_income": 25_000},
+        "demographics": {},
+    }
+
+    missing_response = client.post(
+        "/api/v1/calculations", json=payload_without_demographics
+    )
+    explicit_response = client.post(
+        "/api/v1/calculations", json=explicit_default_payload
+    )
+
+    assert missing_response.status_code == HTTPStatus.OK
+    assert explicit_response.status_code == HTTPStatus.OK
+
+    missing_summary = missing_response.get_json()["summary"]
+    explicit_summary = explicit_response.get_json()["summary"]
+
+    assert missing_summary == explicit_summary
