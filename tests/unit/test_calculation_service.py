@@ -22,6 +22,11 @@ from greektax.backend.app.services.calculation_service import (
     CalculationResponse,
     _RESPONSE_VALIDATION_ENV,
     _construct_response_model,
+    _normalise_additional_income,
+    _normalise_employment,
+    _normalise_freelance,
+    _normalise_pension,
+    _validate_birth_year_guard,
     calculate_tax,
 )
 from greektax.backend.config.year_config import (
@@ -42,6 +47,201 @@ def build_request(payload: dict[str, Any]) -> CalculationRequest:
             alias_year = DEFAULT_DEMOGRAPHICS["birth_year"]
         demographics["birth_year"] = alias_year
     return CalculationRequest.model_validate(data)
+
+
+def test_normalise_employment_prefers_monthly_income_defaults() -> None:
+    config = load_year_configuration(2024)
+    request = build_request(
+        {
+            "year": 2024,
+            "employment": {
+                "monthly_income": 1_200.0,
+                "employee_contributions": 150.0,
+            },
+        }
+    )
+
+    employment = _normalise_employment(request, config)
+
+    default_payments = config.employment.payroll.default_payments_per_year
+    assert employment.payments_per_year == default_payments
+    assert employment.monthly_income == 1_200.0
+    assert employment.income == pytest.approx(1_200.0 * default_payments)
+    assert employment.manual_contributions == 150.0
+    assert employment.declared_gross_income == request.employment.gross_income
+
+
+def test_normalise_employment_uses_declared_gross_income() -> None:
+    config = load_year_configuration(2024)
+    payments_choice = next(
+        iter(config.employment.payroll.allowed_payments_per_year)
+    )
+    request = build_request(
+        {
+            "year": 2024,
+            "employment": {
+                "gross_income": 24_000.0,
+                "monthly_income": 1_000.0,
+                "payments_per_year": payments_choice,
+            },
+        }
+    )
+
+    employment = _normalise_employment(request, config)
+
+    assert employment.income == 24_000.0
+    assert employment.payments_per_year == payments_choice
+    # Explicit monthly input should be preserved when gross income overrides
+    assert employment.monthly_income == 1_000.0
+
+
+def test_normalise_pension_matches_employment_behaviour() -> None:
+    config = load_year_configuration(2024)
+    request = build_request(
+        {
+            "year": 2024,
+            "pension": {
+                "monthly_income": 900.0,
+            },
+        }
+    )
+
+    pension = _normalise_pension(request, config)
+
+    default_payments = config.pension.payroll.default_payments_per_year
+    assert pension.payments_per_year == default_payments
+    assert pension.income == pytest.approx(900.0 * default_payments)
+    assert pension.monthly_income == 900.0
+
+
+def test_normalise_freelance_derives_profit_and_contributions() -> None:
+    config = load_year_configuration(2024)
+    category = config.freelance.efka_categories[0]
+    request = build_request(
+        {
+            "year": 2024,
+            "freelance": {
+                "gross_revenue": 12_000.0,
+                "deductible_expenses": 3_000.0,
+                "efka_category": category.id,
+                "efka_months": None,
+                "include_category_contributions": True,
+                "mandatory_contributions": 200.0,
+                "auxiliary_contributions": 50.0,
+                "lump_sum_contributions": 25.0,
+            },
+        }
+    )
+
+    freelance = _normalise_freelance(request, config)
+
+    assert freelance.profit == pytest.approx(9_000.0)
+    assert freelance.category_id == category.id
+    assert freelance.category_months == 12
+    assert freelance.category_contribution == pytest.approx(
+        category.monthly_amount * 12
+    )
+    assert freelance.additional_contributions == 200.0
+    assert freelance.auxiliary_contributions == 50.0
+    assert freelance.lump_sum_contributions == 25.0
+
+
+def test_normalise_freelance_rejects_unknown_category() -> None:
+    config = load_year_configuration(2024)
+    request = build_request(
+        {
+            "year": 2024,
+            "freelance": {
+                "efka_category": "unknown",
+            },
+        }
+    )
+
+    with pytest.raises(ValueError, match="Unknown EFKA category selection"):
+        _normalise_freelance(request, config)
+
+
+def test_normalise_additional_income_wraps_mappings() -> None:
+    request = build_request(
+        {
+            "year": 2024,
+            "rental": {
+                "gross_income": 5_000.0,
+                "deductible_expenses": 500.0,
+            },
+            "investment": {"stocks": 1_000.0, "bonds": 0.0},
+            "agricultural": {
+                "gross_revenue": 2_500.0,
+                "deductible_expenses": 250.0,
+                "professional_farmer": True,
+            },
+            "other": {"taxable_income": 750.0},
+        }
+    )
+
+    additional = _normalise_additional_income(request)
+
+    assert additional.rental_gross_income == 5_000.0
+    assert additional.rental_deductible_expenses == 500.0
+    assert dict(additional.investment_amounts) == {"stocks": 1_000.0, "bonds": 0.0}
+    with pytest.raises(TypeError):
+        additional.investment_amounts["stocks"] = 0.0  # type: ignore[index]
+    assert additional.agricultural_gross_revenue == 2_500.0
+    assert additional.agricultural_deductible_expenses == 250.0
+    assert additional.agricultural_professional_farmer is True
+    assert additional.other_taxable_income == 750.0
+
+
+def test_validate_birth_year_guard_blocks_income_payloads() -> None:
+    config = load_year_configuration(2025)
+    request = build_request(
+        {
+            "year": 2025,
+            "demographics": {"birth_year": 2026},
+            "employment": {"gross_income": 10_000.0},
+            "investment": {"interest": 100.0},
+        }
+    )
+
+    employment = _normalise_employment(request, config)
+    pension = _normalise_pension(request, config)
+    freelance = _normalise_freelance(request, config)
+    additional = _normalise_additional_income(request)
+
+    with pytest.raises(ValueError, match="birth_year must be 2025 or earlier"):
+        _validate_birth_year_guard(
+            request.demographics.birth_year,
+            request.year,
+            employment,
+            pension,
+            freelance,
+            additional,
+        )
+
+
+def test_validate_birth_year_guard_allows_no_income() -> None:
+    config = load_year_configuration(2026)
+    request = build_request(
+        {
+            "year": 2026,
+            "demographics": {"birth_year": 2026},
+        }
+    )
+
+    employment = _normalise_employment(request, config)
+    pension = _normalise_pension(request, config)
+    freelance = _normalise_freelance(request, config)
+    additional = _normalise_additional_income(request)
+
+    # Should not raise
+    _validate_birth_year_guard(
+        request.demographics.birth_year,
+        request.year,
+        employment,
+        pension,
+        freelance,
+        additional,
+    )
 
 
 def _summary_payload_template() -> dict[str, Any]:
