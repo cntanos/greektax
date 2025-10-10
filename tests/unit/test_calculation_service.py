@@ -797,6 +797,60 @@ def test_tax_residency_transfer_halves_employment_taxable_income(year: int) -> N
     assert relocation_summary["net_income"] > baseline_summary["net_income"]
 
 
+def test_tax_residency_transfer_applies_after_employee_contributions() -> None:
+    """The relocation incentive applies to the employment tax base post contributions."""
+
+    base_payload = {
+        "year": 2025,
+        "demographics": {"birth_year": 1982},
+        "employment": {
+            "gross_income": 48_000,
+            "employee_contributions": 1_200,
+            "include_employee_contributions": True,
+            "include_manual_employee_contributions": True,
+        },
+    }
+
+    baseline_request = build_request(base_payload)
+    baseline_result = calculate_tax(baseline_request)
+    baseline_detail = next(
+        detail
+        for detail in baseline_result["details"]
+        if detail["category"] == "employment"
+    )
+
+    relocation_payload = deepcopy(base_payload)
+    relocation_payload["demographics"]["tax_residency_transfer_to_greece"] = True
+    relocation_request = build_request(relocation_payload)
+    relocation_result = calculate_tax(relocation_request)
+    relocation_detail = next(
+        detail
+        for detail in relocation_result["details"]
+        if detail["category"] == "employment"
+    )
+
+    baseline_summary = baseline_result["summary"]
+    relocation_summary = relocation_result["summary"]
+
+    assert relocation_detail["employee_contributions"] == pytest.approx(
+        baseline_detail["employee_contributions"]
+    )
+
+    taxable_base_after_contributions = baseline_detail["gross_income"] - baseline_detail[
+        "employee_contributions"
+    ]
+    taxable_base_after_contributions = max(taxable_base_after_contributions, 0.0)
+
+    assert relocation_detail["taxable_income"] == pytest.approx(
+        taxable_base_after_contributions * 0.5
+    )
+    assert relocation_summary["taxable_income"] == pytest.approx(
+        taxable_base_after_contributions * 0.5
+    )
+    assert relocation_summary["income_total"] == pytest.approx(
+        baseline_summary["income_total"]
+    )
+
 def test_calculate_tax_employment_only() -> None:
     """Employment income uses progressive rates and tax credit."""
 
