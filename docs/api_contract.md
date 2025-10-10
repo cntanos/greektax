@@ -93,6 +93,7 @@ schema. Unknown top-level or nested keys are rejected (`extra="forbid"`).
 | --- | --- | --- | --- |
 | `birth_year` | integer | ❌ | Optional field between 1901 and 2100. The value cannot exceed the filing year and, for tax years 2025 and 2026, values above 2025 are rejected. When omitted the calculator assumes the taxpayer does not qualify for youth relief. |
 | `taxpayer_birth_year` | integer | ❌ | Deprecated alias for `birth_year`. When provided it must match the supplied `birth_year` value. |
+| `tax_residency_transfer_to_greece` | boolean | ❌ | Defaults to `false`. When `true`, applies the 50% employment income exemption offered to individuals relocating their tax residency to Greece. |
 
 ### Employment & Pension sections
 
@@ -173,7 +174,8 @@ numeric truthy/falsy representations supported by Pydantic.
   "locale": "el",
   "dependents": {"children": 2},
   "demographics": {
-    "birth_year": 1998
+    "birth_year": 1998,
+    "tax_residency_transfer_to_greece": true
   },
   "employment": {
     "gross_income": 24000,
