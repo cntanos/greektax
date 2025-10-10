@@ -24,10 +24,10 @@ from greektax.backend.config.year_config import (
     ProgressiveTaxBracket,
     TaxBracket,
     TradeFeeConfig,
+    YearConfiguration,
     available_years,
     load_manifest,
     load_year_configuration,
-    YearConfiguration,
 )
 from greektax.backend.version import get_project_version
 

@@ -10,8 +10,8 @@ from flask import Flask, Response, jsonify, request, send_from_directory
 from flask.typing import ResponseReturnValue
 from werkzeug.exceptions import BadRequest
 
-from .routes import register_routes
 from .http import problem_response
+from .routes import register_routes
 from .routes.config import get_configuration_metadata
 
 if TYPE_CHECKING:  # pragma: no cover - only for static type checkers
