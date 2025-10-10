@@ -1,0 +1,2174 @@
+{
+  "agricultural": {
+    "brackets": [
+      {
+        "base_rate": 0.085,
+        "estimate": false,
+        "household": {
+          "rates": [
+            {
+              "dependants": 0,
+              "rate": 0.085
+            },
+            {
+              "dependants": 1,
+              "rate": 0.08
+            },
+            {
+              "dependants": 2,
+              "rate": 0.075
+            },
+            {
+              "dependants": 3,
+              "rate": 0.07
+            },
+            {
+              "dependants": 4,
+              "rate": 0.065
+            }
+          ],
+          "reduction_factor": 0.02
+        },
+        "pending_confirmation": false,
+        "type": "multi",
+        "upper": 12000.0,
+        "youth": [
+          {
+            "band": "age26_30",
+            "rate": 0.06
+          },
+          {
+            "band": "under_25",
+            "rate": 0.05
+          }
+        ]
+      },
+      {
+        "base_rate": 0.22,
+        "estimate": false,
+        "household": {
+          "rates": [
+            {
+              "dependants": 0,
+              "rate": 0.22
+            },
+            {
+              "dependants": 1,
+              "rate": 0.215
+            },
+            {
+              "dependants": 2,
+              "rate": 0.205
+            },
+            {
+              "dependants": 3,
+              "rate": 0.195
+            },
+            {
+              "dependants": 4,
+              "rate": 0.185
+            }
+          ],
+          "reduction_factor": 0.015
+        },
+        "pending_confirmation": false,
+        "type": "multi",
+        "upper": 24000.0,
+        "youth": [
+          {
+            "band": "age26_30",
+            "rate": 0.195
+          },
+          {
+            "band": "under_25",
+            "rate": 0.18
+          }
+        ]
+      },
+      {
+        "base_rate": 0.29,
+        "estimate": false,
+        "household": {
+          "rates": [
+            {
+              "dependants": 0,
+              "rate": 0.29
+            },
+            {
+              "dependants": 1,
+              "rate": 0.285
+            },
+            {
+              "dependants": 2,
+              "rate": 0.275
+            },
+            {
+              "dependants": 3,
+              "rate": 0.265
+            },
+            {
+              "dependants": 4,
+              "rate": 0.255
+            }
+          ],
+          "reduction_factor": 0.01
+        },
+        "pending_confirmation": false,
+        "type": "multi",
+        "upper": 36000.0,
+        "youth": [
+          {
+            "band": "age26_30",
+            "rate": 0.255
+          },
+          {
+            "band": "under_25",
+            "rate": 0.23
+          }
+        ]
+      },
+      {
+        "base_rate": 0.37,
+        "estimate": false,
+        "household": {
+          "rates": [
+            {
+              "dependants": 0,
+              "rate": 0.37
+            },
+            {
+              "dependants": 1,
+              "rate": 0.365
+            },
+            {
+              "dependants": 2,
+              "rate": 0.355
+            },
+            {
+              "dependants": 3,
+              "rate": 0.345
+            },
+            {
+              "dependants": 4,
+              "rate": 0.335
+            }
+          ],
+          "reduction_factor": 0.01
+        },
+        "pending_confirmation": false,
+        "type": "multi",
+        "upper": 50000.0,
+        "youth": [
+          {
+            "band": "age26_30",
+            "rate": 0.32
+          },
+          {
+            "band": "under_25",
+            "rate": 0.3
+          }
+        ]
+      },
+      {
+        "base_rate": 0.45,
+        "estimate": false,
+        "household": {
+          "rates": [
+            {
+              "dependants": 0,
+              "rate": 0.45
+            },
+            {
+              "dependants": 1,
+              "rate": 0.445
+            },
+            {
+              "dependants": 2,
+              "rate": 0.435
+            },
+            {
+              "dependants": 3,
+              "rate": 0.425
+            },
+            {
+              "dependants": 4,
+              "rate": 0.415
+            }
+          ],
+          "reduction_factor": 0.01
+        },
+        "pending_confirmation": true,
+        "type": "multi",
+        "upper": null,
+        "youth": [
+          {
+            "band": "age26_30",
+            "rate": 0.38
+          },
+          {
+            "band": "under_25",
+            "rate": 0.36
+          }
+        ]
+      }
+    ]
+  },
+  "employment": {
+    "brackets": [
+      {
+        "base_rate": 0.09,
+        "estimate": false,
+        "household": {
+          "rates": [
+            {
+              "dependants": 0,
+              "rate": 0.09
+            },
+            {
+              "dependants": 1,
+              "rate": 0.09
+            },
+            {
+              "dependants": 2,
+              "rate": 0.09
+            },
+            {
+              "dependants": 3,
+              "rate": 0.09
+            },
+            {
+              "dependants": 4,
+              "rate": 0.0
+            },
+            {
+              "dependants": 5,
+              "rate": 0.0
+            },
+            {
+              "dependants": 6,
+              "rate": 0.0
+            }
+          ],
+          "reduction_factor": null
+        },
+        "pending_confirmation": false,
+        "type": "multi",
+        "upper": 10000.0,
+        "youth": [
+          {
+            "band": "age26_30",
+            "dependant_rates": [
+              {
+                "dependants": 0,
+                "rate": 0.09
+              },
+              {
+                "dependants": 1,
+                "rate": 0.09
+              },
+              {
+                "dependants": 2,
+                "rate": 0.09
+              },
+              {
+                "dependants": 3,
+                "rate": 0.09
+              },
+              {
+                "dependants": 4,
+                "rate": 0.0
+              },
+              {
+                "dependants": 5,
+                "rate": 0.0
+              },
+              {
+                "dependants": 6,
+                "rate": 0.0
+              }
+            ]
+          },
+          {
+            "band": "under_25",
+            "dependant_rates": [
+              {
+                "dependants": 0,
+                "rate": 0.0
+              },
+              {
+                "dependants": 1,
+                "rate": 0.0
+              },
+              {
+                "dependants": 2,
+                "rate": 0.0
+              },
+              {
+                "dependants": 3,
+                "rate": 0.0
+              },
+              {
+                "dependants": 4,
+                "rate": 0.0
+              },
+              {
+                "dependants": 5,
+                "rate": 0.0
+              },
+              {
+                "dependants": 6,
+                "rate": 0.0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "base_rate": 0.2,
+        "estimate": false,
+        "household": {
+          "rates": [
+            {
+              "dependants": 0,
+              "rate": 0.2
+            },
+            {
+              "dependants": 1,
+              "rate": 0.18
+            },
+            {
+              "dependants": 2,
+              "rate": 0.16
+            },
+            {
+              "dependants": 3,
+              "rate": 0.09
+            },
+            {
+              "dependants": 4,
+              "rate": 0.0
+            },
+            {
+              "dependants": 5,
+              "rate": 0.0
+            },
+            {
+              "dependants": 6,
+              "rate": 0.0
+            }
+          ],
+          "reduction_factor": null
+        },
+        "pending_confirmation": false,
+        "type": "multi",
+        "upper": 20000.0,
+        "youth": [
+          {
+            "band": "age26_30",
+            "dependant_rates": [
+              {
+                "dependants": 0,
+                "rate": 0.09
+              },
+              {
+                "dependants": 1,
+                "rate": 0.09
+              },
+              {
+                "dependants": 2,
+                "rate": 0.09
+              },
+              {
+                "dependants": 3,
+                "rate": 0.09
+              },
+              {
+                "dependants": 4,
+                "rate": 0.0
+              },
+              {
+                "dependants": 5,
+                "rate": 0.0
+              },
+              {
+                "dependants": 6,
+                "rate": 0.0
+              }
+            ]
+          },
+          {
+            "band": "under_25",
+            "dependant_rates": [
+              {
+                "dependants": 0,
+                "rate": 0.0
+              },
+              {
+                "dependants": 1,
+                "rate": 0.0
+              },
+              {
+                "dependants": 2,
+                "rate": 0.0
+              },
+              {
+                "dependants": 3,
+                "rate": 0.0
+              },
+              {
+                "dependants": 4,
+                "rate": 0.0
+              },
+              {
+                "dependants": 5,
+                "rate": 0.0
+              },
+              {
+                "dependants": 6,
+                "rate": 0.0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "base_rate": 0.26,
+        "estimate": false,
+        "household": {
+          "rates": [
+            {
+              "dependants": 0,
+              "rate": 0.26
+            },
+            {
+              "dependants": 1,
+              "rate": 0.24
+            },
+            {
+              "dependants": 2,
+              "rate": 0.22
+            },
+            {
+              "dependants": 3,
+              "rate": 0.2
+            },
+            {
+              "dependants": 4,
+              "rate": 0.18
+            },
+            {
+              "dependants": 5,
+              "rate": 0.16
+            },
+            {
+              "dependants": 6,
+              "rate": 0.14
+            }
+          ],
+          "reduction_factor": null
+        },
+        "pending_confirmation": false,
+        "type": "multi",
+        "upper": 30000.0,
+        "youth": [
+          {
+            "band": "age26_30",
+            "dependant_rates": [
+              {
+                "dependants": 0,
+                "rate": 0.26
+              },
+              {
+                "dependants": 1,
+                "rate": 0.24
+              },
+              {
+                "dependants": 2,
+                "rate": 0.22
+              },
+              {
+                "dependants": 3,
+                "rate": 0.2
+              },
+              {
+                "dependants": 4,
+                "rate": 0.18
+              },
+              {
+                "dependants": 5,
+                "rate": 0.16
+              },
+              {
+                "dependants": 6,
+                "rate": 0.14
+              }
+            ]
+          },
+          {
+            "band": "under_25",
+            "dependant_rates": [
+              {
+                "dependants": 0,
+                "rate": 0.26
+              },
+              {
+                "dependants": 1,
+                "rate": 0.24
+              },
+              {
+                "dependants": 2,
+                "rate": 0.22
+              },
+              {
+                "dependants": 3,
+                "rate": 0.2
+              },
+              {
+                "dependants": 4,
+                "rate": 0.18
+              },
+              {
+                "dependants": 5,
+                "rate": 0.16
+              },
+              {
+                "dependants": 6,
+                "rate": 0.14
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "base_rate": 0.34,
+        "estimate": false,
+        "household": {
+          "rates": [
+            {
+              "dependants": 0,
+              "rate": 0.34
+            },
+            {
+              "dependants": 1,
+              "rate": 0.34
+            },
+            {
+              "dependants": 2,
+              "rate": 0.34
+            },
+            {
+              "dependants": 3,
+              "rate": 0.34
+            },
+            {
+              "dependants": 4,
+              "rate": 0.34
+            },
+            {
+              "dependants": 5,
+              "rate": 0.34
+            },
+            {
+              "dependants": 6,
+              "rate": 0.34
+            }
+          ],
+          "reduction_factor": null
+        },
+        "pending_confirmation": false,
+        "type": "multi",
+        "upper": 40000.0,
+        "youth": [
+          {
+            "band": "age26_30",
+            "dependant_rates": [
+              {
+                "dependants": 0,
+                "rate": 0.34
+              },
+              {
+                "dependants": 1,
+                "rate": 0.34
+              },
+              {
+                "dependants": 2,
+                "rate": 0.34
+              },
+              {
+                "dependants": 3,
+                "rate": 0.34
+              },
+              {
+                "dependants": 4,
+                "rate": 0.34
+              },
+              {
+                "dependants": 5,
+                "rate": 0.34
+              },
+              {
+                "dependants": 6,
+                "rate": 0.34
+              }
+            ]
+          },
+          {
+            "band": "under_25",
+            "dependant_rates": [
+              {
+                "dependants": 0,
+                "rate": 0.34
+              },
+              {
+                "dependants": 1,
+                "rate": 0.34
+              },
+              {
+                "dependants": 2,
+                "rate": 0.34
+              },
+              {
+                "dependants": 3,
+                "rate": 0.34
+              },
+              {
+                "dependants": 4,
+                "rate": 0.34
+              },
+              {
+                "dependants": 5,
+                "rate": 0.34
+              },
+              {
+                "dependants": 6,
+                "rate": 0.34
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "base_rate": 0.39,
+        "estimate": false,
+        "household": {
+          "rates": [
+            {
+              "dependants": 0,
+              "rate": 0.39
+            },
+            {
+              "dependants": 1,
+              "rate": 0.39
+            },
+            {
+              "dependants": 2,
+              "rate": 0.39
+            },
+            {
+              "dependants": 3,
+              "rate": 0.39
+            },
+            {
+              "dependants": 4,
+              "rate": 0.39
+            },
+            {
+              "dependants": 5,
+              "rate": 0.39
+            },
+            {
+              "dependants": 6,
+              "rate": 0.39
+            }
+          ],
+          "reduction_factor": null
+        },
+        "pending_confirmation": false,
+        "type": "multi",
+        "upper": 60000.0,
+        "youth": [
+          {
+            "band": "age26_30",
+            "dependant_rates": [
+              {
+                "dependants": 0,
+                "rate": 0.39
+              },
+              {
+                "dependants": 1,
+                "rate": 0.39
+              },
+              {
+                "dependants": 2,
+                "rate": 0.39
+              },
+              {
+                "dependants": 3,
+                "rate": 0.39
+              },
+              {
+                "dependants": 4,
+                "rate": 0.39
+              },
+              {
+                "dependants": 5,
+                "rate": 0.39
+              },
+              {
+                "dependants": 6,
+                "rate": 0.39
+              }
+            ]
+          },
+          {
+            "band": "under_25",
+            "dependant_rates": [
+              {
+                "dependants": 0,
+                "rate": 0.39
+              },
+              {
+                "dependants": 1,
+                "rate": 0.39
+              },
+              {
+                "dependants": 2,
+                "rate": 0.39
+              },
+              {
+                "dependants": 3,
+                "rate": 0.39
+              },
+              {
+                "dependants": 4,
+                "rate": 0.39
+              },
+              {
+                "dependants": 5,
+                "rate": 0.39
+              },
+              {
+                "dependants": 6,
+                "rate": 0.39
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "base_rate": 0.44,
+        "estimate": false,
+        "household": {
+          "rates": [
+            {
+              "dependants": 0,
+              "rate": 0.44
+            },
+            {
+              "dependants": 1,
+              "rate": 0.44
+            },
+            {
+              "dependants": 2,
+              "rate": 0.44
+            },
+            {
+              "dependants": 3,
+              "rate": 0.44
+            },
+            {
+              "dependants": 4,
+              "rate": 0.44
+            },
+            {
+              "dependants": 5,
+              "rate": 0.44
+            },
+            {
+              "dependants": 6,
+              "rate": 0.44
+            }
+          ],
+          "reduction_factor": null
+        },
+        "pending_confirmation": false,
+        "type": "multi",
+        "upper": null,
+        "youth": [
+          {
+            "band": "age26_30",
+            "dependant_rates": [
+              {
+                "dependants": 0,
+                "rate": 0.44
+              },
+              {
+                "dependants": 1,
+                "rate": 0.44
+              },
+              {
+                "dependants": 2,
+                "rate": 0.44
+              },
+              {
+                "dependants": 3,
+                "rate": 0.44
+              },
+              {
+                "dependants": 4,
+                "rate": 0.44
+              },
+              {
+                "dependants": 5,
+                "rate": 0.44
+              },
+              {
+                "dependants": 6,
+                "rate": 0.44
+              }
+            ]
+          },
+          {
+            "band": "under_25",
+            "dependant_rates": [
+              {
+                "dependants": 0,
+                "rate": 0.44
+              },
+              {
+                "dependants": 1,
+                "rate": 0.44
+              },
+              {
+                "dependants": 2,
+                "rate": 0.44
+              },
+              {
+                "dependants": 3,
+                "rate": 0.44
+              },
+              {
+                "dependants": 4,
+                "rate": 0.44
+              },
+              {
+                "dependants": 5,
+                "rate": 0.44
+              },
+              {
+                "dependants": 6,
+                "rate": 0.44
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "contributions": {
+      "employee_rate": 0.1337,
+      "employer_rate": 0.2179,
+      "monthly_salary_cap": 7572.62
+    },
+    "defaults": {},
+    "family_tax_credit": {
+      "estimate": true,
+      "pending_confirmation": true,
+      "reduction_factor": 0.95
+    },
+    "payroll": {
+      "allowed_payments_per_year": [
+        10,
+        12,
+        14
+      ],
+      "default_payments_per_year": 14
+    },
+    "tekmiria": {
+      "enabled": true,
+      "reduction_factor": 0.9
+    },
+    "tekmiria_reduction_factor": 0.9,
+    "youth": {
+      "bands": [
+        "age26_30",
+        "under_25"
+      ]
+    }
+  },
+  "freelance": {
+    "brackets": [
+      {
+        "base_rate": 0.085,
+        "estimate": false,
+        "household": {
+          "rates": [
+            {
+              "dependants": 0,
+              "rate": 0.085
+            },
+            {
+              "dependants": 1,
+              "rate": 0.08
+            },
+            {
+              "dependants": 2,
+              "rate": 0.075
+            },
+            {
+              "dependants": 3,
+              "rate": 0.07
+            },
+            {
+              "dependants": 4,
+              "rate": 0.065
+            }
+          ],
+          "reduction_factor": 0.02
+        },
+        "pending_confirmation": false,
+        "type": "multi",
+        "upper": 12000.0,
+        "youth": [
+          {
+            "band": "age26_30",
+            "rate": 0.06
+          },
+          {
+            "band": "under_25",
+            "rate": 0.05
+          }
+        ]
+      },
+      {
+        "base_rate": 0.22,
+        "estimate": false,
+        "household": {
+          "rates": [
+            {
+              "dependants": 0,
+              "rate": 0.22
+            },
+            {
+              "dependants": 1,
+              "rate": 0.215
+            },
+            {
+              "dependants": 2,
+              "rate": 0.205
+            },
+            {
+              "dependants": 3,
+              "rate": 0.195
+            },
+            {
+              "dependants": 4,
+              "rate": 0.185
+            }
+          ],
+          "reduction_factor": 0.015
+        },
+        "pending_confirmation": false,
+        "type": "multi",
+        "upper": 24000.0,
+        "youth": [
+          {
+            "band": "age26_30",
+            "rate": 0.195
+          },
+          {
+            "band": "under_25",
+            "rate": 0.18
+          }
+        ]
+      },
+      {
+        "base_rate": 0.29,
+        "estimate": false,
+        "household": {
+          "rates": [
+            {
+              "dependants": 0,
+              "rate": 0.29
+            },
+            {
+              "dependants": 1,
+              "rate": 0.285
+            },
+            {
+              "dependants": 2,
+              "rate": 0.275
+            },
+            {
+              "dependants": 3,
+              "rate": 0.265
+            },
+            {
+              "dependants": 4,
+              "rate": 0.255
+            }
+          ],
+          "reduction_factor": 0.01
+        },
+        "pending_confirmation": false,
+        "type": "multi",
+        "upper": 36000.0,
+        "youth": [
+          {
+            "band": "age26_30",
+            "rate": 0.255
+          },
+          {
+            "band": "under_25",
+            "rate": 0.23
+          }
+        ]
+      },
+      {
+        "base_rate": 0.37,
+        "estimate": false,
+        "household": {
+          "rates": [
+            {
+              "dependants": 0,
+              "rate": 0.37
+            },
+            {
+              "dependants": 1,
+              "rate": 0.365
+            },
+            {
+              "dependants": 2,
+              "rate": 0.355
+            },
+            {
+              "dependants": 3,
+              "rate": 0.345
+            },
+            {
+              "dependants": 4,
+              "rate": 0.335
+            }
+          ],
+          "reduction_factor": 0.01
+        },
+        "pending_confirmation": false,
+        "type": "multi",
+        "upper": 50000.0,
+        "youth": [
+          {
+            "band": "age26_30",
+            "rate": 0.32
+          },
+          {
+            "band": "under_25",
+            "rate": 0.3
+          }
+        ]
+      },
+      {
+        "base_rate": 0.45,
+        "estimate": false,
+        "household": {
+          "rates": [
+            {
+              "dependants": 0,
+              "rate": 0.45
+            },
+            {
+              "dependants": 1,
+              "rate": 0.445
+            },
+            {
+              "dependants": 2,
+              "rate": 0.435
+            },
+            {
+              "dependants": 3,
+              "rate": 0.425
+            },
+            {
+              "dependants": 4,
+              "rate": 0.415
+            }
+          ],
+          "reduction_factor": 0.01
+        },
+        "pending_confirmation": true,
+        "type": "multi",
+        "upper": null,
+        "youth": [
+          {
+            "band": "age26_30",
+            "rate": 0.38
+          },
+          {
+            "band": "under_25",
+            "rate": 0.36
+          }
+        ]
+      }
+    ],
+    "defaults": {},
+    "efka_categories": [
+      {
+        "auxiliary_monthly_amount": null,
+        "description_key": null,
+        "estimate": true,
+        "health_monthly_amount": 53.55,
+        "id": "general_class_1",
+        "label_key": "forms.freelance.efka.category.general_class_1",
+        "lump_sum_monthly_amount": null,
+        "monthly_amount": 273.94,
+        "pension_monthly_amount": 220.4
+      },
+      {
+        "auxiliary_monthly_amount": null,
+        "description_key": null,
+        "estimate": true,
+        "health_monthly_amount": 65.1,
+        "id": "general_class_2",
+        "label_key": "forms.freelance.efka.category.general_class_2",
+        "lump_sum_monthly_amount": null,
+        "monthly_amount": 328.84,
+        "pension_monthly_amount": 263.74
+      },
+      {
+        "auxiliary_monthly_amount": null,
+        "description_key": null,
+        "estimate": true,
+        "health_monthly_amount": 75.6,
+        "id": "general_class_3",
+        "label_key": "forms.freelance.efka.category.general_class_3",
+        "lump_sum_monthly_amount": null,
+        "monthly_amount": 395.0,
+        "pension_monthly_amount": 319.4
+      },
+      {
+        "auxiliary_monthly_amount": null,
+        "description_key": null,
+        "estimate": true,
+        "health_monthly_amount": 91.35,
+        "id": "general_class_4",
+        "label_key": "forms.freelance.efka.category.general_class_4",
+        "lump_sum_monthly_amount": null,
+        "monthly_amount": 475.58,
+        "pension_monthly_amount": 384.23
+      },
+      {
+        "auxiliary_monthly_amount": null,
+        "description_key": null,
+        "estimate": true,
+        "health_monthly_amount": 102.9,
+        "id": "general_class_5",
+        "label_key": "forms.freelance.efka.category.general_class_5",
+        "lump_sum_monthly_amount": null,
+        "monthly_amount": 561.28,
+        "pension_monthly_amount": 458.38
+      },
+      {
+        "auxiliary_monthly_amount": null,
+        "description_key": null,
+        "estimate": true,
+        "health_monthly_amount": 118.65,
+        "id": "general_class_6",
+        "label_key": "forms.freelance.efka.category.general_class_6",
+        "lump_sum_monthly_amount": null,
+        "monthly_amount": 660.7,
+        "pension_monthly_amount": 542.05
+      },
+      {
+        "auxiliary_monthly_amount": null,
+        "description_key": "forms.freelance.efka.category.general_reduced_description",
+        "estimate": true,
+        "health_monthly_amount": 44.1,
+        "id": "general_reduced",
+        "label_key": "forms.freelance.efka.category.general_reduced",
+        "lump_sum_monthly_amount": null,
+        "monthly_amount": 164.37,
+        "pension_monthly_amount": 120.27
+      },
+      {
+        "auxiliary_monthly_amount": 46.19,
+        "description_key": "forms.freelance.efka.category.engineer_description",
+        "estimate": true,
+        "health_monthly_amount": 78.46,
+        "id": "engineer_class_1",
+        "label_key": "forms.freelance.efka.category.engineer_class_1",
+        "lump_sum_monthly_amount": 30.04,
+        "monthly_amount": 355.69,
+        "pension_monthly_amount": 277.23
+      },
+      {
+        "auxiliary_monthly_amount": 53.92,
+        "description_key": "forms.freelance.efka.category.engineer_description",
+        "estimate": true,
+        "health_monthly_amount": 94.58,
+        "id": "engineer_class_2",
+        "label_key": "forms.freelance.efka.category.engineer_class_2",
+        "lump_sum_monthly_amount": 35.13,
+        "monthly_amount": 423.54,
+        "pension_monthly_amount": 328.95
+      },
+      {
+        "auxiliary_monthly_amount": 63.06,
+        "description_key": "forms.freelance.efka.category.engineer_description",
+        "estimate": true,
+        "health_monthly_amount": 111.41,
+        "id": "engineer_class_3",
+        "label_key": "forms.freelance.efka.category.engineer_class_3",
+        "lump_sum_monthly_amount": 41.86,
+        "monthly_amount": 504.84,
+        "pension_monthly_amount": 393.44
+      }
+    ],
+    "pending_contribution_update": true,
+    "trade_fee": {
+      "fee_sunset": true,
+      "newly_self_employed_reduction_years": null,
+      "reduced_amount": 0.0,
+      "standard_amount": 0.0
+    },
+    "youth": {
+      "bands": [
+        "age26_30",
+        "under_25"
+      ]
+    }
+  },
+  "meta": {
+    "notes": "2026 configuration with confirmed wage and pension brackets plus provisional credits",
+    "status": "draft",
+    "toggles": {
+      "presumptive_relief": true,
+      "tekmiria_reduction": true
+    },
+    "version": 1
+  },
+  "other": {
+    "brackets": [
+      {
+        "base_rate": 0.085,
+        "estimate": false,
+        "household": {
+          "rates": [
+            {
+              "dependants": 0,
+              "rate": 0.085
+            },
+            {
+              "dependants": 1,
+              "rate": 0.08
+            },
+            {
+              "dependants": 2,
+              "rate": 0.075
+            },
+            {
+              "dependants": 3,
+              "rate": 0.07
+            },
+            {
+              "dependants": 4,
+              "rate": 0.065
+            }
+          ],
+          "reduction_factor": 0.02
+        },
+        "pending_confirmation": false,
+        "type": "multi",
+        "upper": 12000.0,
+        "youth": [
+          {
+            "band": "age26_30",
+            "rate": 0.06
+          },
+          {
+            "band": "under_25",
+            "rate": 0.05
+          }
+        ]
+      },
+      {
+        "base_rate": 0.22,
+        "estimate": false,
+        "household": {
+          "rates": [
+            {
+              "dependants": 0,
+              "rate": 0.22
+            },
+            {
+              "dependants": 1,
+              "rate": 0.215
+            },
+            {
+              "dependants": 2,
+              "rate": 0.205
+            },
+            {
+              "dependants": 3,
+              "rate": 0.195
+            },
+            {
+              "dependants": 4,
+              "rate": 0.185
+            }
+          ],
+          "reduction_factor": 0.015
+        },
+        "pending_confirmation": false,
+        "type": "multi",
+        "upper": 24000.0,
+        "youth": [
+          {
+            "band": "age26_30",
+            "rate": 0.195
+          },
+          {
+            "band": "under_25",
+            "rate": 0.18
+          }
+        ]
+      },
+      {
+        "base_rate": 0.29,
+        "estimate": false,
+        "household": {
+          "rates": [
+            {
+              "dependants": 0,
+              "rate": 0.29
+            },
+            {
+              "dependants": 1,
+              "rate": 0.285
+            },
+            {
+              "dependants": 2,
+              "rate": 0.275
+            },
+            {
+              "dependants": 3,
+              "rate": 0.265
+            },
+            {
+              "dependants": 4,
+              "rate": 0.255
+            }
+          ],
+          "reduction_factor": 0.01
+        },
+        "pending_confirmation": false,
+        "type": "multi",
+        "upper": 36000.0,
+        "youth": [
+          {
+            "band": "age26_30",
+            "rate": 0.255
+          },
+          {
+            "band": "under_25",
+            "rate": 0.23
+          }
+        ]
+      },
+      {
+        "base_rate": 0.37,
+        "estimate": false,
+        "household": {
+          "rates": [
+            {
+              "dependants": 0,
+              "rate": 0.37
+            },
+            {
+              "dependants": 1,
+              "rate": 0.365
+            },
+            {
+              "dependants": 2,
+              "rate": 0.355
+            },
+            {
+              "dependants": 3,
+              "rate": 0.345
+            },
+            {
+              "dependants": 4,
+              "rate": 0.335
+            }
+          ],
+          "reduction_factor": 0.01
+        },
+        "pending_confirmation": false,
+        "type": "multi",
+        "upper": 50000.0,
+        "youth": [
+          {
+            "band": "age26_30",
+            "rate": 0.32
+          },
+          {
+            "band": "under_25",
+            "rate": 0.3
+          }
+        ]
+      },
+      {
+        "base_rate": 0.45,
+        "estimate": false,
+        "household": {
+          "rates": [
+            {
+              "dependants": 0,
+              "rate": 0.45
+            },
+            {
+              "dependants": 1,
+              "rate": 0.445
+            },
+            {
+              "dependants": 2,
+              "rate": 0.435
+            },
+            {
+              "dependants": 3,
+              "rate": 0.425
+            },
+            {
+              "dependants": 4,
+              "rate": 0.415
+            }
+          ],
+          "reduction_factor": 0.01
+        },
+        "pending_confirmation": true,
+        "type": "multi",
+        "upper": null,
+        "youth": [
+          {
+            "band": "age26_30",
+            "rate": 0.38
+          },
+          {
+            "band": "under_25",
+            "rate": 0.36
+          }
+        ]
+      }
+    ]
+  },
+  "pension": {
+    "brackets": [
+      {
+        "base_rate": 0.09,
+        "estimate": false,
+        "household": {
+          "rates": [
+            {
+              "dependants": 0,
+              "rate": 0.09
+            },
+            {
+              "dependants": 1,
+              "rate": 0.09
+            },
+            {
+              "dependants": 2,
+              "rate": 0.09
+            },
+            {
+              "dependants": 3,
+              "rate": 0.09
+            },
+            {
+              "dependants": 4,
+              "rate": 0.0
+            },
+            {
+              "dependants": 5,
+              "rate": 0.0
+            },
+            {
+              "dependants": 6,
+              "rate": 0.0
+            }
+          ],
+          "reduction_factor": null
+        },
+        "pending_confirmation": false,
+        "type": "multi",
+        "upper": 10000.0,
+        "youth": [
+          {
+            "band": "age26_30",
+            "dependant_rates": [
+              {
+                "dependants": 0,
+                "rate": 0.09
+              },
+              {
+                "dependants": 1,
+                "rate": 0.09
+              },
+              {
+                "dependants": 2,
+                "rate": 0.09
+              },
+              {
+                "dependants": 3,
+                "rate": 0.09
+              },
+              {
+                "dependants": 4,
+                "rate": 0.0
+              },
+              {
+                "dependants": 5,
+                "rate": 0.0
+              },
+              {
+                "dependants": 6,
+                "rate": 0.0
+              }
+            ]
+          },
+          {
+            "band": "under_25",
+            "dependant_rates": [
+              {
+                "dependants": 0,
+                "rate": 0.0
+              },
+              {
+                "dependants": 1,
+                "rate": 0.0
+              },
+              {
+                "dependants": 2,
+                "rate": 0.0
+              },
+              {
+                "dependants": 3,
+                "rate": 0.0
+              },
+              {
+                "dependants": 4,
+                "rate": 0.0
+              },
+              {
+                "dependants": 5,
+                "rate": 0.0
+              },
+              {
+                "dependants": 6,
+                "rate": 0.0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "base_rate": 0.2,
+        "estimate": false,
+        "household": {
+          "rates": [
+            {
+              "dependants": 0,
+              "rate": 0.2
+            },
+            {
+              "dependants": 1,
+              "rate": 0.18
+            },
+            {
+              "dependants": 2,
+              "rate": 0.16
+            },
+            {
+              "dependants": 3,
+              "rate": 0.09
+            },
+            {
+              "dependants": 4,
+              "rate": 0.0
+            },
+            {
+              "dependants": 5,
+              "rate": 0.0
+            },
+            {
+              "dependants": 6,
+              "rate": 0.0
+            }
+          ],
+          "reduction_factor": null
+        },
+        "pending_confirmation": false,
+        "type": "multi",
+        "upper": 20000.0,
+        "youth": [
+          {
+            "band": "age26_30",
+            "dependant_rates": [
+              {
+                "dependants": 0,
+                "rate": 0.09
+              },
+              {
+                "dependants": 1,
+                "rate": 0.09
+              },
+              {
+                "dependants": 2,
+                "rate": 0.09
+              },
+              {
+                "dependants": 3,
+                "rate": 0.09
+              },
+              {
+                "dependants": 4,
+                "rate": 0.0
+              },
+              {
+                "dependants": 5,
+                "rate": 0.0
+              },
+              {
+                "dependants": 6,
+                "rate": 0.0
+              }
+            ]
+          },
+          {
+            "band": "under_25",
+            "dependant_rates": [
+              {
+                "dependants": 0,
+                "rate": 0.0
+              },
+              {
+                "dependants": 1,
+                "rate": 0.0
+              },
+              {
+                "dependants": 2,
+                "rate": 0.0
+              },
+              {
+                "dependants": 3,
+                "rate": 0.0
+              },
+              {
+                "dependants": 4,
+                "rate": 0.0
+              },
+              {
+                "dependants": 5,
+                "rate": 0.0
+              },
+              {
+                "dependants": 6,
+                "rate": 0.0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "base_rate": 0.26,
+        "estimate": false,
+        "household": {
+          "rates": [
+            {
+              "dependants": 0,
+              "rate": 0.26
+            },
+            {
+              "dependants": 1,
+              "rate": 0.24
+            },
+            {
+              "dependants": 2,
+              "rate": 0.22
+            },
+            {
+              "dependants": 3,
+              "rate": 0.2
+            },
+            {
+              "dependants": 4,
+              "rate": 0.18
+            },
+            {
+              "dependants": 5,
+              "rate": 0.16
+            },
+            {
+              "dependants": 6,
+              "rate": 0.14
+            }
+          ],
+          "reduction_factor": null
+        },
+        "pending_confirmation": false,
+        "type": "multi",
+        "upper": 30000.0,
+        "youth": [
+          {
+            "band": "age26_30",
+            "dependant_rates": [
+              {
+                "dependants": 0,
+                "rate": 0.26
+              },
+              {
+                "dependants": 1,
+                "rate": 0.24
+              },
+              {
+                "dependants": 2,
+                "rate": 0.22
+              },
+              {
+                "dependants": 3,
+                "rate": 0.2
+              },
+              {
+                "dependants": 4,
+                "rate": 0.18
+              },
+              {
+                "dependants": 5,
+                "rate": 0.16
+              },
+              {
+                "dependants": 6,
+                "rate": 0.14
+              }
+            ]
+          },
+          {
+            "band": "under_25",
+            "dependant_rates": [
+              {
+                "dependants": 0,
+                "rate": 0.26
+              },
+              {
+                "dependants": 1,
+                "rate": 0.24
+              },
+              {
+                "dependants": 2,
+                "rate": 0.22
+              },
+              {
+                "dependants": 3,
+                "rate": 0.2
+              },
+              {
+                "dependants": 4,
+                "rate": 0.18
+              },
+              {
+                "dependants": 5,
+                "rate": 0.16
+              },
+              {
+                "dependants": 6,
+                "rate": 0.14
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "base_rate": 0.34,
+        "estimate": false,
+        "household": {
+          "rates": [
+            {
+              "dependants": 0,
+              "rate": 0.34
+            },
+            {
+              "dependants": 1,
+              "rate": 0.34
+            },
+            {
+              "dependants": 2,
+              "rate": 0.34
+            },
+            {
+              "dependants": 3,
+              "rate": 0.34
+            },
+            {
+              "dependants": 4,
+              "rate": 0.34
+            },
+            {
+              "dependants": 5,
+              "rate": 0.34
+            },
+            {
+              "dependants": 6,
+              "rate": 0.34
+            }
+          ],
+          "reduction_factor": null
+        },
+        "pending_confirmation": false,
+        "type": "multi",
+        "upper": 40000.0,
+        "youth": [
+          {
+            "band": "age26_30",
+            "dependant_rates": [
+              {
+                "dependants": 0,
+                "rate": 0.34
+              },
+              {
+                "dependants": 1,
+                "rate": 0.34
+              },
+              {
+                "dependants": 2,
+                "rate": 0.34
+              },
+              {
+                "dependants": 3,
+                "rate": 0.34
+              },
+              {
+                "dependants": 4,
+                "rate": 0.34
+              },
+              {
+                "dependants": 5,
+                "rate": 0.34
+              },
+              {
+                "dependants": 6,
+                "rate": 0.34
+              }
+            ]
+          },
+          {
+            "band": "under_25",
+            "dependant_rates": [
+              {
+                "dependants": 0,
+                "rate": 0.34
+              },
+              {
+                "dependants": 1,
+                "rate": 0.34
+              },
+              {
+                "dependants": 2,
+                "rate": 0.34
+              },
+              {
+                "dependants": 3,
+                "rate": 0.34
+              },
+              {
+                "dependants": 4,
+                "rate": 0.34
+              },
+              {
+                "dependants": 5,
+                "rate": 0.34
+              },
+              {
+                "dependants": 6,
+                "rate": 0.34
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "base_rate": 0.39,
+        "estimate": false,
+        "household": {
+          "rates": [
+            {
+              "dependants": 0,
+              "rate": 0.39
+            },
+            {
+              "dependants": 1,
+              "rate": 0.39
+            },
+            {
+              "dependants": 2,
+              "rate": 0.39
+            },
+            {
+              "dependants": 3,
+              "rate": 0.39
+            },
+            {
+              "dependants": 4,
+              "rate": 0.39
+            },
+            {
+              "dependants": 5,
+              "rate": 0.39
+            },
+            {
+              "dependants": 6,
+              "rate": 0.39
+            }
+          ],
+          "reduction_factor": null
+        },
+        "pending_confirmation": false,
+        "type": "multi",
+        "upper": 60000.0,
+        "youth": [
+          {
+            "band": "age26_30",
+            "dependant_rates": [
+              {
+                "dependants": 0,
+                "rate": 0.39
+              },
+              {
+                "dependants": 1,
+                "rate": 0.39
+              },
+              {
+                "dependants": 2,
+                "rate": 0.39
+              },
+              {
+                "dependants": 3,
+                "rate": 0.39
+              },
+              {
+                "dependants": 4,
+                "rate": 0.39
+              },
+              {
+                "dependants": 5,
+                "rate": 0.39
+              },
+              {
+                "dependants": 6,
+                "rate": 0.39
+              }
+            ]
+          },
+          {
+            "band": "under_25",
+            "dependant_rates": [
+              {
+                "dependants": 0,
+                "rate": 0.39
+              },
+              {
+                "dependants": 1,
+                "rate": 0.39
+              },
+              {
+                "dependants": 2,
+                "rate": 0.39
+              },
+              {
+                "dependants": 3,
+                "rate": 0.39
+              },
+              {
+                "dependants": 4,
+                "rate": 0.39
+              },
+              {
+                "dependants": 5,
+                "rate": 0.39
+              },
+              {
+                "dependants": 6,
+                "rate": 0.39
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "base_rate": 0.44,
+        "estimate": false,
+        "household": {
+          "rates": [
+            {
+              "dependants": 0,
+              "rate": 0.44
+            },
+            {
+              "dependants": 1,
+              "rate": 0.44
+            },
+            {
+              "dependants": 2,
+              "rate": 0.44
+            },
+            {
+              "dependants": 3,
+              "rate": 0.44
+            },
+            {
+              "dependants": 4,
+              "rate": 0.44
+            },
+            {
+              "dependants": 5,
+              "rate": 0.44
+            },
+            {
+              "dependants": 6,
+              "rate": 0.44
+            }
+          ],
+          "reduction_factor": null
+        },
+        "pending_confirmation": false,
+        "type": "multi",
+        "upper": null,
+        "youth": [
+          {
+            "band": "age26_30",
+            "dependant_rates": [
+              {
+                "dependants": 0,
+                "rate": 0.44
+              },
+              {
+                "dependants": 1,
+                "rate": 0.44
+              },
+              {
+                "dependants": 2,
+                "rate": 0.44
+              },
+              {
+                "dependants": 3,
+                "rate": 0.44
+              },
+              {
+                "dependants": 4,
+                "rate": 0.44
+              },
+              {
+                "dependants": 5,
+                "rate": 0.44
+              },
+              {
+                "dependants": 6,
+                "rate": 0.44
+              }
+            ]
+          },
+          {
+            "band": "under_25",
+            "dependant_rates": [
+              {
+                "dependants": 0,
+                "rate": 0.44
+              },
+              {
+                "dependants": 1,
+                "rate": 0.44
+              },
+              {
+                "dependants": 2,
+                "rate": 0.44
+              },
+              {
+                "dependants": 3,
+                "rate": 0.44
+              },
+              {
+                "dependants": 4,
+                "rate": 0.44
+              },
+              {
+                "dependants": 5,
+                "rate": 0.44
+              },
+              {
+                "dependants": 6,
+                "rate": 0.44
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "contributions": {
+      "employee_rate": 0.0,
+      "employer_rate": 0.0,
+      "monthly_salary_cap": null
+    },
+    "payroll": {
+      "allowed_payments_per_year": [
+        10,
+        12,
+        14
+      ],
+      "default_payments_per_year": 14
+    },
+    "youth": {
+      "bands": [
+        "age26_30",
+        "under_25"
+      ]
+    }
+  },
+  "rental": {
+    "brackets": [
+      {
+        "rate": 0.15,
+        "type": "single",
+        "upper": 12000.0
+      },
+      {
+        "rate": 0.25,
+        "type": "single",
+        "upper": 24000.0
+      },
+      {
+        "rate": 0.35,
+        "type": "single",
+        "upper": 36000.0
+      },
+      {
+        "rate": 0.45,
+        "type": "single",
+        "upper": null
+      }
+    ]
+  },
+  "toggles": {
+    "presumptive_relief": true,
+    "tekmiria_reduction": true
+  },
+  "warnings": [
+    {
+      "applies_to": [
+        "employment",
+        "pension"
+      ],
+      "documentation_key": "warnings.links.partial_year_review",
+      "documentation_url": "https://www.sepenet.gr/el/library/content/apolysi-symvasi-ergasias",
+      "id": "employment.partial_year_review",
+      "message_key": "warnings.employment.partial_year_review",
+      "severity": "warning"
+    }
+  ],
+  "year": 2026
+}
