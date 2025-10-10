@@ -15,9 +15,9 @@ from contextlib import contextmanager
 from numbers import Real
 from time import perf_counter
 from types import MappingProxyType
-from typing import Any
+from typing import Any, TypeVar
 
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
 from greektax.backend.app.localization import get_translator
 from greektax.backend.app.models import (
@@ -52,6 +52,41 @@ _LOGGER = logging.getLogger(__name__)
 
 _RESPONSE_VALIDATION_ENV = "GREEKTAX_VALIDATE_CALCULATION_RESPONSE"
 
+TModel = TypeVar("TModel", bound=BaseModel)
+
+
+def _as_mapping(value: Any) -> Mapping[str, Any]:
+    """Return a mapping representation for arbitrary mapping-like inputs."""
+
+    if isinstance(value, Mapping):
+        return value
+
+    if isinstance(value, BaseModel):
+        dumped = value.model_dump(mode="python", serialize_as_any=True)
+    elif hasattr(value, "model_dump"):
+        dumped = value.model_dump(mode="python", serialize_as_any=True)
+    else:
+        return dict(value)
+
+    if isinstance(dumped, Mapping):
+        return dumped
+
+    return dict(dumped)
+
+
+def _build_model(value: Any, model_cls: type[TModel], *, validate: bool) -> TModel:
+    """Normalise ``value`` into ``model_cls`` using optional validation."""
+
+    if isinstance(value, model_cls):
+        return value
+
+    payload = dict(_as_mapping(value))
+
+    if validate:
+        return model_cls.model_validate(payload)
+
+    return model_cls.model_construct(**payload)
+
 
 def _profiling_enabled() -> bool:
     """Return ``True`` when calculation profiling should be captured."""
@@ -74,80 +109,39 @@ def _construct_response_model(
 ) -> CalculationResponse:
     """Construct a ``CalculationResponse`` using fast-path construction by default."""
 
-    payload = {
-        "summary": summary,
-        "details": details,
-        "meta": meta,
-    }
-
-    if _response_validation_enabled():
-        return CalculationResponse.model_validate(payload)
+    validate = _response_validation_enabled()
 
     if isinstance(summary, Summary):
         summary_model = summary
     else:
-        raw_summary = (
-            summary.model_dump(mode="python", serialize_as_any=True)
-            if hasattr(summary, "model_dump")
-            else summary
-        )
-        if not isinstance(raw_summary, Mapping):
-            raw_summary = dict(raw_summary)
-        summary_payload = dict(raw_summary)
-        labels_data = summary_payload.pop("labels", {})
-        raw_labels = (
-            labels_data.model_dump(mode="python", serialize_as_any=True)
-            if hasattr(labels_data, "model_dump")
-            else labels_data
-        )
-        if not isinstance(raw_labels, Mapping):
-            raw_labels = dict(raw_labels)
-        labels_payload = dict(raw_labels)
+        summary_payload = dict(_as_mapping(summary))
+        labels_payload = summary_payload.pop("labels", {})
+        labels_model = _build_model(labels_payload, SummaryLabels, validate=validate)
         breakdown_data = summary_payload.get("deductions_breakdown")
         if breakdown_data is not None:
-            breakdown_models: list[DeductionBreakdownEntry] = []
-            for entry in breakdown_data:
-                if isinstance(entry, DeductionBreakdownEntry):
-                    breakdown_models.append(entry)
-                elif hasattr(entry, "model_dump"):
-                    breakdown_models.append(
-                        DeductionBreakdownEntry.model_construct(
-                            **entry.model_dump(mode="python", serialize_as_any=True)
-                        )
-                    )
-                else:
-                    breakdown_models.append(
-                        DeductionBreakdownEntry.model_construct(**dict(entry))
-                    )
-            summary_payload["deductions_breakdown"] = breakdown_models
-        summary_model = Summary.model_construct(
-            labels=SummaryLabels.model_construct(**labels_payload),
-            **summary_payload,
+            summary_payload["deductions_breakdown"] = [
+                _build_model(entry, DeductionBreakdownEntry, validate=validate)
+                for entry in breakdown_data
+            ]
+        summary_model = _build_model(
+            {**summary_payload, "labels": labels_model},
+            Summary,
+            validate=validate,
         )
 
-    detail_models: list[DetailEntry] = []
-    for entry in details:
-        if isinstance(entry, DetailEntry):
-            detail_models.append(entry)
-            continue
-        if hasattr(entry, "model_dump"):
-            payload_entry = entry.model_dump(mode="python", serialize_as_any=True)
-        else:
-            payload_entry = dict(entry)
-        detail_models.append(DetailEntry.model_construct(**payload_entry))
+    detail_models = [
+        _build_model(entry, DetailEntry, validate=validate)
+        for entry in details
+    ]
+    meta_model = _build_model(meta, ResponseMeta, validate=validate)
 
-    if isinstance(meta, ResponseMeta):
-        meta_model = meta
-    else:
-        if hasattr(meta, "model_dump"):
-            meta_payload = meta.model_dump(mode="python", serialize_as_any=True)
-        else:
-            meta_payload = dict(meta)
-        meta_model = ResponseMeta.model_construct(**meta_payload)
+    payload = {
+        "summary": summary_model,
+        "details": detail_models,
+        "meta": meta_model,
+    }
 
-    return CalculationResponse.model_construct(
-        summary=summary_model, details=detail_models, meta=meta_model
-    )
+    return _build_model(payload, CalculationResponse, validate=validate)
 
 
 @contextmanager
