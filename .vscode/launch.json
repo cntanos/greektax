@@ -9,12 +9,13 @@
             "module": "flask",
             "cwd": "${workspaceFolder}",
             "env": {
-                "FLASK_APP": "greektax.backend.app:create_app",
                 "FLASK_DEBUG": "1",
                 "PYTHONPATH": "${workspaceFolder}/src"
             },
             "envFile": "${workspaceFolder}/.env",
             "args": [
+                "--app",
+                "greektax.backend.app:create_app",
                 "run",
                 "--host",
                 "127.0.0.1",
