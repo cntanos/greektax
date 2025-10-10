@@ -270,10 +270,6 @@ class CalculationInput(BaseModel):
     def model_post_init(self, __context: Any) -> None:  # type: ignore[override]
         object.__setattr__(self, "toggles", MappingProxyType(dict(self.toggles)))
 
-    def toggle_enabled(self, key: str) -> bool:
-        value = self.toggles.get(key)
-        return bool(value) if value is not None else False
-
     @property
     def taxpayer_age(self) -> int | None:
         if self.taxpayer_birth_year is None:
@@ -292,10 +288,6 @@ class CalculationInput(BaseModel):
         if age <= 30:
             return "age26_30"
         return None
-
-    @property
-    def youth_relief_applied(self) -> bool:
-        return self.youth_rate_category is not None
 
     @property
     def rental_taxable_income(self) -> float:
