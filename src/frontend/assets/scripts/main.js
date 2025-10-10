@@ -6,7 +6,11 @@
  * returned by the Flask back-end.
  */
 
-import { applyTheme, initialiseThemeControls } from "./modules/theming.js";
+import {
+  applyTheme,
+  initialiseThemeControls,
+  resolveStoredTheme,
+} from "./modules/theming.js";
 import { createApiClient } from "./modules/apiClient.js";
 import {
   coerceFiniteNumber,
@@ -41,6 +45,14 @@ import {
 } from "./utils/dom.js";
 
 const apiClient = createApiClient();
+
+if (typeof window !== "undefined") {
+  window.__GREEKTAX_API_BASE = apiClient.apiBase;
+}
+
+if (typeof console !== "undefined" && console.info) {
+  console.info("GreekTax main module initialising");
+}
 const CALCULATOR_STORAGE_KEY = "greektax.calculator.v1";
 const CALCULATOR_STORAGE_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours
 const PLOTLY_SDK_URL = "https://cdn.plot.ly/plotly-2.26.0.min.js";
@@ -322,6 +334,7 @@ const employmentWithholdingInput = document.getElementById(
   "employment-withholding",
 );
 const employmentModeSelect = document.getElementById("employment-mode");
+const yearSelect = document.getElementById("year-select");
 const yearAlertsContainer = document.getElementById("year-alerts");
 const pensionModeSelect = document.getElementById("pension-mode");
 const pensionPaymentsInput = document.getElementById("pension-payments");
@@ -5439,6 +5452,9 @@ function initialiseCalculator() {
 }
 
 async function bootstrap() {
+  if (typeof window !== "undefined") {
+    window.__GREEKTAX_BOOTSTRAP_STAGE = "start";
+  }
   const onThemeApplied = () => {
     if (lastCalculation) {
       renderCalculation(lastCalculation);
@@ -5446,8 +5462,14 @@ async function bootstrap() {
   };
 
   const initialTheme = resolveStoredTheme();
+  if (typeof window !== "undefined") {
+    window.__GREEKTAX_BOOTSTRAP_STAGE = "theme";
+  }
   applyTheme(initialTheme, { buttons: themeButtons, onThemeApplied });
   const initialLocale = resolveStoredLocale();
+  if (typeof window !== "undefined") {
+    window.__GREEKTAX_BOOTSTRAP_STAGE = "applyLocale";
+  }
   await applyLocale(initialLocale);
 
   initialiseLocaleControls();
@@ -5455,9 +5477,24 @@ async function bootstrap() {
   initialiseCalculator();
   void refreshApplicationVersion();
 
+  if (typeof window !== "undefined") {
+    window.__GREEKTAX_BOOTSTRAP_STAGE = "initialised";
+  }
   console.info("GreekTax interface initialised");
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  void bootstrap();
-});
+const startBootstrap = () => {
+  try {
+    void bootstrap();
+  } catch (error) {
+    if (typeof console !== "undefined" && console.error) {
+      console.error("GreekTax failed to bootstrap the interface.", error);
+    }
+  }
+};
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", startBootstrap);
+} else {
+  startBootstrap();
+}

@@ -32,6 +32,7 @@ else:  # pragma: no cover - executed only when optional dependency missing
 # from ``src/frontend`` during local development.
 FRONTEND_ROOT = Path(__file__).resolve().parents[4] / "src" / "frontend"
 ASSETS_ROOT = FRONTEND_ROOT / "assets"
+TRANSLATIONS_ROOT = Path(__file__).resolve().parents[4] / "src" / "greektax" / "translations"
 
 
 def _parse_allowed_origins(raw: str | None) -> set[str]:
@@ -145,6 +146,13 @@ def create_app() -> Flask:
         """Expose static assets (CSS/JS) used by the prototype UI shell."""
 
         return send_from_directory(ASSETS_ROOT, filename)
+
+    @app.route("/greektax/translations/<path:filename>", methods=["GET"])
+    def serve_translation_assets(filename: str):
+        """Expose localisation metadata for the static front-end shell."""
+
+        response = send_from_directory(TRANSLATIONS_ROOT, filename)
+        return response
 
     @app.route("/health", methods=["GET"])
     def health_check():
