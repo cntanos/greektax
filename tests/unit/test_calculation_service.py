@@ -9,7 +9,10 @@ import pytest
 from pydantic import ValidationError
 
 from greektax.backend.app.models import NET_INCOME_INPUT_ERROR, CalculationRequest
-from greektax.backend.app.services.calculation_service import calculate_tax
+from greektax.backend.app.services.calculation_service import (
+    CalculationResponse,
+    calculate_tax,
+)
 from greektax.backend.config.year_config import (
     TaxBracket,
     YearConfiguration,
@@ -717,6 +720,55 @@ def test_calculate_tax_accepts_request_model_instance() -> None:
     assert result["meta"] == {"year": 2024, "locale": "en"}
     assert result["summary"]["income_total"] == pytest.approx(12_000.0)
     assert result["summary"]["taxable_income"] == pytest.approx(expected["taxable"])
+
+
+def test_calculate_tax_fast_path_skips_response_validation(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Fast-path construction should bypass Pydantic validation by default."""
+
+    request = build_request({"year": 2024, "employment": {"gross_income": 12_000}})
+
+    monkeypatch.delenv("GREEKTAX_VALIDATE_CALCULATION_RESPONSE", raising=False)
+
+    def _raise_validation(cls: type, value: Any, *args: Any, **kwargs: Any) -> None:
+        raise AssertionError("model_validate should not be invoked in fast path")
+
+    monkeypatch.setattr(
+        "greektax.backend.app.services.calculation_service.CalculationResponse.model_validate",
+        classmethod(_raise_validation),
+    )
+
+    result = calculate_tax(request)
+
+    assert result["summary"]["income_total"] == pytest.approx(12_000.0)
+
+
+def test_calculate_tax_optional_validation_matches_fast_path(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Opt-in validation should produce the same serialised payload."""
+
+    payload = build_request({"year": 2024, "employment": {"gross_income": 12_000}})
+
+    monkeypatch.delenv("GREEKTAX_VALIDATE_CALCULATION_RESPONSE", raising=False)
+    baseline = calculate_tax(payload)
+
+    original_validate = CalculationResponse.model_validate
+    calls: list[Any] = []
+
+    def _counting_validate(cls: type, value: Any, *args: Any, **kwargs: Any):
+        calls.append(value)
+        return original_validate(value, *args, **kwargs)
+
+    monkeypatch.setattr(
+        "greektax.backend.app.services.calculation_service.CalculationResponse.model_validate",
+        classmethod(_counting_validate),
+    )
+    monkeypatch.setenv("GREEKTAX_VALIDATE_CALCULATION_RESPONSE", "true")
+
+    validated = calculate_tax(payload)
+
+    assert calls, "Expected validation to run when debug flag is enabled"
+    assert validated == baseline
 
 
 def test_calculate_tax_defaults_to_zero_summary() -> None:
