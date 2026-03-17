@@ -5630,7 +5630,7 @@ function printSummary() {
   const generatedDisplay = formatDateTime(exportData.generatedAt, { locale });
   const footerText =
     translate("print.footer", { year: new Date().getFullYear() }) ||
-    "© 2025 Christos Ntanos for CogniSys. Released under the GNU GPL v3.";
+    "© 2026 Christos Ntanos for CogniSys. Released under the GNU GPL v3.";
 
   const tableHeaderSection =
     translate("export.csv.header_section") || "Section";
