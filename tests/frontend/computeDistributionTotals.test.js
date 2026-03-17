@@ -1,30 +1,9 @@
 import { strict as assert } from 'node:assert';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
 import test from 'node:test';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-function loadComputeDistributionTotals() {
-  const sourcePath = resolve(
-    __dirname,
-    '../../src/frontend/assets/scripts/main.js',
-  );
-  const source = readFileSync(sourcePath, 'utf8');
-  const snippetMatch = source.match(
-    /const DISTRIBUTION_EXPENSE_FIELDS[\s\S]*?function computeDistributionTotals[\s\S]*?return { totals, totalValue };\n}/,
-  );
-  if (!snippetMatch) {
-    throw new Error('Unable to load computeDistributionTotals from main.js');
-  }
-  const factory = new Function(`${snippetMatch[0]}; return computeDistributionTotals;`);
-  return factory();
-}
+import { computeDistributionTotals } from '../../src/frontend/assets/scripts/charts/distribution.js';
 
 test('computeDistributionTotals keeps insurance separate from expenses', () => {
-  const computeDistributionTotals = loadComputeDistributionTotals();
   const detail = {
     gross_income: 15000,
     net_income: 6800,

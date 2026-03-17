@@ -8,7 +8,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const htmlPath = resolve(__dirname, '../../src/frontend/index.html');
-const scriptPath = resolve(__dirname, '../../src/frontend/assets/scripts/main.js');
+const entrypointPath = resolve(__dirname, '../../src/frontend/assets/scripts/main.js');
+const appPath = resolve(__dirname, '../../src/frontend/assets/scripts/ui/app.js');
 
 test('index declares Plotly with pinned SRI and crossorigin', () => {
   const html = readFileSync(htmlPath, 'utf8');
@@ -30,17 +31,19 @@ test('index declares Plotly with pinned SRI and crossorigin', () => {
   );
 });
 
-test('main.js does not dynamically inject Plotly script URLs', () => {
-  const source = readFileSync(scriptPath, 'utf8');
+test('runtime scripts do not dynamically inject Plotly script URLs', () => {
+  const sources = [readFileSync(entrypointPath, 'utf8'), readFileSync(appPath, 'utf8')];
 
-  assert.equal(
-    source.includes('cdn.plot.ly/plotly-2.26.0.min.js'),
-    false,
-    'Runtime script source should not be hardcoded in main.js',
-  );
-  assert.equal(
-    source.includes('data-plotly-sdk'),
-    false,
-    'main.js should not use marker attributes for dynamic Plotly injection',
-  );
+  sources.forEach((source) => {
+    assert.equal(
+      source.includes('cdn.plot.ly/plotly-2.26.0.min.js'),
+      false,
+      'Runtime script source should not be hardcoded in runtime modules',
+    );
+    assert.equal(
+      source.includes('data-plotly-sdk'),
+      false,
+      'Runtime modules should not use marker attributes for dynamic Plotly injection',
+    );
+  });
 });
