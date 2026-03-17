@@ -1,23 +1,19 @@
-"""WSGI entrypoint for Passenger-compatible deployments.
+"""WSGI entrypoint for Passenger-style hosts.
 
-Flask/Gunicorn docs commonly reference ``from myproject import create_app``.
-In this project the factory lives at ``greektax.backend.app.create_app`` under
-``src/``.
+This module is production-facing code, not scaffolding. Passenger and similar
+hosts may import it directly from ``src/greektax/backend`` where the repository
+root is not on ``sys.path``. The path adjustment below keeps
+``greektax.backend.app.create_app`` importable in that environment.
 """
 
 import sys
 from pathlib import Path
 
-# Hosting environments may execute this file directly from
-# ``src/greektax/backend`` without adding the repository ``src/`` directory to
-# ``sys.path``. Prepend it so absolute imports like
-# ``from greektax.backend.app import create_app`` always resolve.
+# Compute ``.../src`` from ``.../src/greektax/backend/passenger_wsgi.py``.
 SRC_DIR = Path(__file__).resolve().parents[2]
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
-from greektax.backend.app import (  # noqa: E402
-    create_app,  # app factory in src/greektax/backend/app/__init__.py
-)
+from greektax.backend.app import create_app  # noqa: E402
 
 application = create_app()
