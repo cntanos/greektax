@@ -18,6 +18,9 @@ jobs:
         with:
           python-version: "3.11"
           cache: "pip"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -29,6 +32,16 @@ jobs:
         run: ruff check src tests
       - name: Run mypy
         run: mypy src
+      - name: Run dead-code check (vulture)
+        run: vulture src tests --min-confidence 100 --ignore-names cls,__context,package
+      - name: Run frontend static checks
+        run: node --test tests/frontend
+      - name: Check bundle-size budgets
+        run: python scripts/check_bundle_size.py
+      - name: Dependency vulnerability scan
+        run: pip-audit -r requirements.txt -r requirements-dev.txt
+      - name: Report outdated dependencies
+        run: pip list --outdated
       - name: Check requirements sync
         run: python scripts/sync_requirements.py --check
       - name: Validate YAML configs
