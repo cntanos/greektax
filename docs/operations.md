@@ -43,3 +43,24 @@ connect so contributors can plan multi-disciplinary changes without surprises.
 - **Full workflow**: Coordinate with the localisation guide in
   [`docs/i18n.md`](i18n.md) when new deductions introduce user-facing copy or
   metadata that the UI must surface.
+
+
+## Front-end script security and CSP
+- **When to use**: Before production releases and whenever script loading,
+  charting dependencies, or reverse-proxy headers change.
+- **Key actions**:
+  - Keep Plotly loading static in `src/frontend/index.html` with pinned SRI and
+    `crossorigin="anonymous"`.
+  - Avoid runtime script injection from `main.js`; chart rendering should rely
+    on predeclared scripts only.
+  - Set Content-Security-Policy headers to an allowlist that matches current
+    script origins.
+- **Recommended CSP baseline** (adjust for your deployment domain):
+  - `default-src 'self';`
+  - `script-src 'self' https://cdn.plot.ly;`
+  - `style-src 'self';`
+  - `img-src 'self' data:;`
+  - `connect-src 'self';`
+- **Stay aligned**: If moving Plotly to `src/frontend/assets/vendor/`, remove
+  `https://cdn.plot.ly` from `script-src` and update frontend checks under
+  `tests/frontend/`.

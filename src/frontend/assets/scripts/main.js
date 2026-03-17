@@ -72,8 +72,6 @@ const CALCULATOR_STORAGE_KEY = "greektax.calculator.v1";
 const CALCULATOR_STORAGE_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours
 const THEME_STORAGE_KEY = "greektax.theme";
 const DEFAULT_THEME = "dark";
-const PLOTLY_SDK_URL = "https://cdn.plot.ly/plotly-2.26.0.min.js";
-const PLOTLY_SDK_ATTRIBUTE = "data-plotly-sdk";
 const SVG_NS = "http://www.w3.org/2000/svg";
 const AUTO_SELECTABLE_INPUT_TYPES = new Set([
   "email",
@@ -88,6 +86,7 @@ const AUTO_SELECT_DATASET_KEY = "autoSelectPending";
 
 let plotlyLoaderPromise = null;
 let pendingPlotlyJob = null;
+let chartLibraryWarningShown = false;
 let sankeyRenderSequence = 0;
 let sankeyPlotlyRef = null;
 let sankeyResizeObserver = null;
@@ -817,46 +816,22 @@ function ensurePlotlyLoaded() {
     return plotlyLoaderPromise;
   }
 
-  plotlyLoaderPromise = new Promise((resolve, reject) => {
-    const selector = `script[${PLOTLY_SDK_ATTRIBUTE}]`;
-    const existingScript = document.querySelector(selector);
-
-    if (existingScript?.dataset.loaded === "true" && typeof Plotly !== "undefined") {
-      resolve(Plotly);
-      return;
-    }
-
-    const script = existingScript || document.createElement("script");
-    script.src = PLOTLY_SDK_URL;
-    script.async = true;
-    script.setAttribute(PLOTLY_SDK_ATTRIBUTE, "true");
-
-    const handleLoad = () => {
-      script.dataset.loaded = "true";
-      if (typeof Plotly !== "undefined") {
-        resolve(Plotly);
-      } else {
-        reject(new Error("Plotly loaded without exposing a global"));
-      }
-    };
-
-    const handleError = () => {
-      reject(new Error("Failed to load the Plotly visualisation library"));
-    };
-
-    script.addEventListener("load", handleLoad, { once: true });
-    script.addEventListener("error", handleError, { once: true });
-
-    if (!existingScript) {
-      document.head.appendChild(script);
-    }
-  })
-    .catch((error) => {
-      plotlyLoaderPromise = null;
-      throw error;
-    });
+  plotlyLoaderPromise = Promise.reject(
+    new Error("Plotly is unavailable. Confirm the static Plotly script loaded successfully."),
+  ).catch((error) => {
+    plotlyLoaderPromise = null;
+    throw error;
+  });
 
   return plotlyLoaderPromise;
+}
+
+function warnChartLibraryUnavailable() {
+  if (chartLibraryWarningShown) {
+    return;
+  }
+  chartLibraryWarningShown = true;
+  setCalculatorStatus(t("status.chart_library_unavailable"), { tone: "warning" });
 }
 
 function scheduleIdleWork(callback) {
@@ -3910,6 +3885,7 @@ function renderSankey(result) {
       .catch((error) => {
         console.error("Unable to initialise the Sankey diagram", error);
         if (renderToken === sankeyRenderSequence) {
+          warnChartLibraryUnavailable();
           sankeyWrapper.hidden = true;
           sankeyChart.setAttribute("aria-hidden", "true");
           sankeyChart.removeAttribute("aria-label");

@@ -322,7 +322,8 @@
       "ready": "Configuration loaded. Enter your details to calculate.",
       "select_year": "Please select a tax year before calculating.",
       "validation_errors": "Please fix the highlighted fields and try again.",
-      "year_error": "Unable to load tax year configuration metadata."
+      "year_error": "Unable to load tax year configuration metadata.",
+      "chart_library_unavailable": "Charts are temporarily unavailable because the visualisation library could not be loaded."
     },
     "statuses": {
       "trade_fee": {
