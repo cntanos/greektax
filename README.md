@@ -66,6 +66,24 @@ mypy src                       # Static type checks
 python scripts/validate_config.py           # Validate YAML configuration
 ```
 
+### Dependency metadata source of truth
+
+`pyproject.toml` is the canonical source for both runtime and development
+Python dependencies. The generated `requirements.txt`,
+`requirements-dev.txt`, and `src/greektax/backend/requirements.txt` files are
+derived from `pyproject.toml` via:
+
+```bash
+python scripts/sync_requirements.py
+```
+
+Use check mode in CI or before commits to ensure generated files have not
+drifted:
+
+```bash
+python scripts/sync_requirements.py --check
+```
+
 ### 3. Refresh localisation bundles when strings change
 
 ```bash
