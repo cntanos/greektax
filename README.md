@@ -16,9 +16,8 @@ pip install -e .
 Run the core checks before submitting changes:
 
 ```bash
+python scripts/quality.py
 pytest
-ruff check src tests
-mypy src
 python scripts/validate_config.py
 ```
 

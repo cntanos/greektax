@@ -22,6 +22,8 @@ dev = [
     "pytest-cov>=4.1.0",
     "ruff>=0.4.0",
     "mypy>=1.8.0",
+    "pip-audit>=2.7.0",
+    "vulture>=2.11",
 ]
 
 [tool.setuptools]
