@@ -154,9 +154,9 @@ which checks (in order):
 3. Localhost-style hostnames to fall back to the same-origin Flask deployment
    during development.
 
-If none of these signals are present the script uses the default
-PythonAnywhere endpoint baked into `REMOTE_API_BASE`. This mirrors the behaviour
-documented in the README deployment section and keeps the static bundle
-configurable without code edits. Each API request returns localised payloads or
-configuration snapshots, so the front-end remains thin and defers all
-tax-specific behaviour to the backend service.
+If none of these signals are present, the script uses same-origin `/api/v1`
+(`LOCAL_API_BASE`/`REMOTE_API_BASE`). This removes the hard-coded cross-origin
+fallback and requires explicit deployment configuration whenever the API is
+hosted on a different origin than the static UI. Each API request returns
+localised payloads or configuration snapshots, so the front-end remains thin
+and defers all tax-specific behaviour to the backend service.
