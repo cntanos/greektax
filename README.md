@@ -16,6 +16,7 @@ maintainability, and ease of deployment through a modern Python stack.
 3. [Architecture & Planning References](#architecture--planning-references)
 4. [Contributor Checklist](#contributor-checklist)
 5. [Versioning & Release Guidance](#versioning--release-guidance)
+6. [Contributing Guide](#contributing-guide)
 
 ## Overview
 
@@ -34,8 +35,8 @@ Repository layout:
 ```
 ├── docs/                   # Architecture, roadmap, and localisation references
 ├── src/
-│   ├── greektax/backend/   # Flask API scaffolding and configuration
-│   └── frontend/           # Static assets and UI placeholders
+│   ├── greektax/backend/   # Flask API, tax rules, and deployment entrypoints
+│   └── frontend/           # Static assets powering the production UI
 ├── tests/                  # Unit, integration, and regression coverage
 ├── pyproject.toml          # Project metadata and tooling configuration
 └── Requirements.md         # Functional and non-functional requirements
@@ -57,7 +58,7 @@ tooling.
 
 ### 2. Run verification commands
 
-Use the automated checks to keep the scaffold healthy:
+Use the automated checks to keep the codebase healthy:
 
 ```bash
 pytest                         # Execute unit and integration tests
@@ -232,6 +233,12 @@ Before opening a pull request:
   - Sync relevant references in `docs/` if behaviour, endpoints, or workflows
     change.
   - Note roadmap impacts in [`docs/project_plan.md`](docs/project_plan.md).
+
+
+## Contributing Guide
+
+See [`docs/contributing.md`](docs/contributing.md) for repository hygiene
+expectations, including what belongs in root, `src/`, and `docs/`.
 
 ## Versioning & Release Guidance
 

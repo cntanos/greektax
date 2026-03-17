@@ -394,6 +394,7 @@ def _apply_deduction_credits(
             note = None
             if income_cap is not None and donations > income_cap:
                 rate_label = format_percentage(donations_config.credit_rate)
+                assert cap_rate is not None
                 cap_label = format_percentage(cap_rate)
                 note = (
                     "Only donations up to "
