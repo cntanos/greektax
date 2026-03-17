@@ -1,5 +1,7 @@
 # Performance & Accessibility Baseline
 
+This document is the canonical source for performance baseline capture and profiling procedures.
+
 Sprint 18 introduces lightweight tooling for tracking calculation timings,
 front-end bundle sizes, and accessibility metadata so the team can monitor
 optimisation work over time. The `scripts/performance_snapshot.py` helper wraps
