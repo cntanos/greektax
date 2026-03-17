@@ -5,8 +5,8 @@ In this project the factory lives at ``greektax.backend.app.create_app`` under
 ``src/``.
 """
 
-from pathlib import Path
 import sys
+from pathlib import Path
 
 # Hosting environments may execute this file directly from
 # ``src/greektax/backend`` without adding the repository ``src/`` directory to

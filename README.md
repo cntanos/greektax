@@ -144,10 +144,10 @@ application = create_app()
 
 ### 5. Point static deployments at the correct API base URL
 
-The front-end script now detects the API endpoint from the hosting environment
-without requiring a custom build. Hosting providers can inject
-`window.GREEKTAX_API_BASE` or a `<meta data-api-base>` element before
-`assets/scripts/main.js` loads.
+The front-end now defaults to a same-origin API base (`/api/v1`) when no
+override is supplied. For cross-origin deployments, hosting providers must
+explicitly configure `window.GREEKTAX_API_BASE` or a `<meta data-api-base>`
+element before `assets/scripts/main.js` loads.
 
 - **cPanel or basic HTML editors**: open the page template and add the snippet
   below inside `<head>`:
@@ -159,8 +159,9 @@ without requiring a custom build. Hosting providers can inject
 
 - **Static site generators / template includes**: expose an include or partial
   that writes the `<meta data-api-base>` tag or an inline script assigning
-  `window.GREEKTAX_API_BASE`. Pull the base URL from the deployment config so
-  each environment (preview, staging, production) renders the correct value.
+  `window.GREEKTAX_API_BASE`. Pull the base URL from deployment config so each
+  environment (preview, staging, production) renders the correct value. This is
+  required whenever the API runs on a different origin than the static site.
 
 - **Small config JSON**: serve a lightweight `greektax.config.json` alongside
   the static bundle and hydrate the global before the main script executes:
@@ -176,14 +177,15 @@ without requiring a custom build. Hosting providers can inject
         }
       }
     } catch (error) {
-      console.warn('Unable to load greektax.config.json; falling back to defaults.', error);
+      console.warn('Unable to load greektax.config.json; using same-origin /api/v1.', error);
     }
   </script>
   <script defer src="/assets/scripts/main.js"></script>
   ```
 
   The JSON file can be generated during deployment (e.g. via CI secrets) to
-  avoid manual edits to the bundled assets.
+  avoid manual edits to the bundled assets. If the file is missing, the UI will
+  fail over to same-origin `/api/v1` instead of any hard-coded remote API.
 
 #### 5a. cPanel deployment expectations
 
