@@ -29,5 +29,7 @@ jobs:
         run: ruff check src tests
       - name: Run mypy
         run: mypy src
+      - name: Check requirements sync
+        run: python scripts/sync_requirements.py --check
       - name: Validate YAML configs
         run: python -m greektax.backend.config.validator
