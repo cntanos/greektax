@@ -3,3 +3,5 @@ deployment:
   tasks:
     - export DEPLOYPATH=$HOME/public_html/wp-content/uploads/greektax
     - /bin/cp -r src/frontend/* "$DEPLOYPATH"
+    - if [ -f "$HOME/.greektax-deploy.env" ]; then set -a; . "$HOME/.greektax-deploy.env"; set +a; fi
+    - python3 scripts/configure_frontend.py --target "$DEPLOYPATH/index.html"
