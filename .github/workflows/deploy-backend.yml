@@ -8,6 +8,9 @@ on:
     types:
       - completed
 
+permissions:
+  contents: read
+
 concurrency:
   group: deploy-backend
   cancel-in-progress: false
@@ -66,25 +69,12 @@ jobs:
             echo "::error::PYTHONANYWHERE_SSH_KEY is not a valid SSH private key."
             exit 1
           fi
-      - name: Prepare SSH key
-        id: prepare-key
-        env:
-          PYTHONANYWHERE_SSH_KEY: ${{ secrets.PYTHONANYWHERE_SSH_KEY }}
-        run: |
-          set -euo pipefail
-
-          sanitized_key="$(printf '%s\n' "${PYTHONANYWHERE_SSH_KEY}" | tr -d '\r')"
-          {
-            echo 'key<<EOF'
-            printf '%s\n' "${sanitized_key}"
-            echo 'EOF'
-          } >> "${GITHUB_OUTPUT}"
       - name: Push code to PythonAnywhere
-        uses: appleboy/ssh-action@v0.1.10
+        uses: appleboy/ssh-action@334f9259f2f8eb3376d33fa4c684fff373f2c2a6  # v0.1.10
         with:
           host: ssh.pythonanywhere.com
           username: ${{ env.PYTHONANYWHERE_USERNAME }}
-          key: ${{ steps.prepare-key.outputs.key }}
+          key: ${{ secrets.PYTHONANYWHERE_SSH_KEY }}
           envs: |
             PYTHONANYWHERE_USERNAME=${{ env.PYTHONANYWHERE_USERNAME }}
             PYTHONANYWHERE_APP_DIR=${{ env.PYTHONANYWHERE_APP_DIR }}
