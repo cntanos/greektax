@@ -17,7 +17,10 @@ import {
   SVG_NS,
   THEME_STORAGE_KEY,
 } from "../config/constants.js";
-import { computeDistributionTotals } from "../charts/distribution.js";
+import {
+  computeDistributionTotals,
+  computeDistributionForDetail,
+} from "../charts/distribution.js";
 import { mergeTranslationCatalogues, isPlainObject } from "../i18n/catalog.js";
 import { createI18nState } from "../state/i18nState.js";
 import { toFiniteNumber } from "../validation/numbers.js";
@@ -3678,7 +3681,7 @@ function renderSankey(result) {
     }
 
     const sourceIndex = ensureNode(sourceLabel);
-    const breakdown = computeDistributionForDetail(detail);
+    const breakdown = computeDistributionForDetail(detail, toFiniteNumber);
     if (!breakdown || breakdown.gross <= 0) {
       return;
     }
@@ -5540,6 +5543,148 @@ function initialiseCalculator() {
       updateEmploymentContributionPreview(lastCalculation?.details || []);
       applyEmploymentModeLabels();
     });
+}
+
+function resolveEmploymentContributionPreviewMessage(type, replacements = {}) {
+  const config = EMPLOYMENT_CONTRIBUTION_PREVIEW_MESSAGES[type];
+  if (!config) {
+    return "";
+  }
+
+  const message = t(config.key, replacements);
+  if (typeof message === "string" && message && message !== config.key) {
+    return message;
+  }
+
+  const locale = getActiveLocale();
+  const fallbackTemplate =
+    (config.fallback && (config.fallback[locale] || config.fallback.en)) || "";
+  if (!fallbackTemplate) {
+    return "";
+  }
+
+  return formatTemplate(fallbackTemplate, replacements);
+}
+
+function getManualEmploymentContributionValue() {
+  if (!employmentEmployeeContributionsInput) {
+    return 0;
+  }
+
+  const raw = (employmentEmployeeContributionsInput.value ?? "").trim();
+  if (!raw) {
+    return 0;
+  }
+
+  const normalised = raw.replace(",", ".");
+  const value = Number.parseFloat(normalised);
+  if (!Number.isFinite(value) || value <= 0) {
+    return 0;
+  }
+
+  return value;
+}
+
+function applyEmploymentContributionPreview(message) {
+  if (!employmentEmployeeContributionsPreview) {
+    return;
+  }
+
+  if (typeof message === "string" && message.trim()) {
+    employmentEmployeeContributionsPreview.textContent = message;
+    employmentEmployeeContributionsPreview.hidden = false;
+  } else {
+    employmentEmployeeContributionsPreview.textContent = "";
+    employmentEmployeeContributionsPreview.hidden = true;
+  }
+}
+
+function applyEmploymentModeLabels() {
+  if (!employmentModeSelect) {
+    return;
+  }
+
+  const annualOption = employmentModeSelect.querySelector(
+    'option[value="annual"]',
+  );
+  const monthlyOption = employmentModeSelect.querySelector(
+    'option[value="monthly"]',
+  );
+
+  if (annualOption) {
+    const annualLabel = t("fields.employment-mode-annual");
+    if (annualLabel && annualLabel !== "fields.employment-mode-annual") {
+      annualOption.textContent = annualLabel;
+    }
+  }
+  if (monthlyOption) {
+    const monthlyLabel = t("fields.employment-mode-monthly");
+    if (monthlyLabel && monthlyLabel !== "fields.employment-mode-monthly") {
+      monthlyOption.textContent = monthlyLabel;
+    }
+  }
+}
+
+function updateEmploymentContributionPreview(details) {
+  if (!employmentEmployeeContributionsPreview) {
+    return;
+  }
+
+  const includeSocial = employmentIncludeSocialToggle
+    ? Boolean(employmentIncludeSocialToggle.checked)
+    : true;
+
+  if (!includeSocial) {
+    const excludedMessage = resolveEmploymentContributionPreviewMessage(
+      "excluded",
+    );
+    applyEmploymentContributionPreview(excludedMessage);
+    return;
+  }
+
+  const manualValue = getManualEmploymentContributionValue();
+  if (manualValue > 0) {
+    const manualMessage = resolveEmploymentContributionPreviewMessage(
+      "manual",
+      {
+        amount: formatCurrency(manualValue),
+      },
+    );
+    applyEmploymentContributionPreview(manualMessage);
+    return;
+  }
+
+  const detailsList = Array.isArray(details) ? details : [];
+  const employmentDetail = detailsList.find(
+    (detail) => detail && detail.category === "employment",
+  );
+
+  if (employmentDetail) {
+    const totalContributions = toFiniteNumber(
+      employmentDetail.employee_contributions,
+    );
+    const manualPortion = toFiniteNumber(
+      employmentDetail.employee_contributions_manual,
+    );
+    const automaticContributions = Math.max(
+      totalContributions - manualPortion,
+      0,
+    );
+
+    if (automaticContributions > 0) {
+      const message = resolveEmploymentContributionPreviewMessage(
+        "automatic",
+        {
+          amount: formatCurrency(automaticContributions),
+        },
+      );
+      applyEmploymentContributionPreview(message);
+      return;
+    }
+  }
+
+  const fallbackMessage = resolveEmploymentContributionPreviewMessage("empty");
+  applyEmploymentContributionPreview(fallbackMessage);
 }
 
 export async function bootstrapApp() {

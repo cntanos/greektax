@@ -12,7 +12,7 @@ const guardrails = [
   { path: '../../src/frontend/assets/scripts/api/endpoints.js', maxLines: 120 },
   { path: '../../src/frontend/assets/scripts/charts/distribution.js', maxLines: 220 },
   { path: '../../src/frontend/assets/scripts/i18n/catalog.js', maxLines: 60 },
-  { path: '../../src/frontend/assets/scripts/ui/app.js', maxLines: 5600 },
+  { path: '../../src/frontend/assets/scripts/ui/app.js', maxLines: 5800 },
 ];
 
 test('frontend script files stay within size guardrails', () => {

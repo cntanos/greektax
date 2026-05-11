@@ -11,7 +11,7 @@ function sumDetailFields(detail, fields, toFiniteNumber) {
   }, 0);
 }
 
-function computeDistributionForDetail(detail, toFiniteNumber) {
+export function computeDistributionForDetail(detail, toFiniteNumber) {
   const empty = { net_income: 0, taxes: 0, insurance: 0, expenses: 0, gross: 0 };
   if (!detail) {
     return empty;
