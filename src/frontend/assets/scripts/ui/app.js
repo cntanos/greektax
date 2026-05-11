@@ -10,6 +10,7 @@ import { buildApiEndpoints } from "../api/endpoints.js";
 import {
   AUTO_SELECTABLE_INPUT_TYPES,
   AUTO_SELECT_DATASET_KEY,
+  CALCULATOR_PERSISTENCE_OPTIN_KEY,
   CALCULATOR_STORAGE_KEY,
   CALCULATOR_STORAGE_TTL_MS,
   DEFAULT_THEME,
@@ -59,6 +60,7 @@ let lastCalculation = null;
 let loadedCalculatorState = null;
 let pendingCalculatorState = null;
 let calculatorStatePersistHandle = null;
+let calculatorPersistenceOptIn = false;
 let hasAppliedThemeOnce = false;
 let themeTransitionHandle = null;
 let plotlyLoaderPromise = null;
@@ -486,6 +488,7 @@ const toggleDeductions = document.getElementById("toggle-deductions");
 const toggleObligations = document.getElementById("toggle-obligations");
 const calculatorForm = document.getElementById("calculator-form");
 const calculatorStatus = document.getElementById("calculator-status");
+const rememberEntriesToggle = document.getElementById("remember-entries");
 const resultsSection = document.getElementById("calculation-results");
 const sankeyWrapper = document.getElementById("sankey-wrapper");
 const sankeyChart = document.getElementById("sankey-chart");
@@ -825,7 +828,42 @@ function persistTheme(theme) {
   }
 }
 
+function loadStoredPersistencePreference() {
+  try {
+    const raw = window.localStorage.getItem(CALCULATOR_PERSISTENCE_OPTIN_KEY);
+    return raw === "1" || raw === "true";
+  } catch (error) {
+    console.warn("Unable to read calculator persistence preference", error);
+    return false;
+  }
+}
+
+function persistPersistencePreference(enabled) {
+  try {
+    if (enabled) {
+      window.localStorage.setItem(CALCULATOR_PERSISTENCE_OPTIN_KEY, "1");
+    } else {
+      window.localStorage.removeItem(CALCULATOR_PERSISTENCE_OPTIN_KEY);
+    }
+  } catch (error) {
+    console.warn("Unable to save calculator persistence preference", error);
+  }
+}
+
+function clearStoredCalculatorState() {
+  try {
+    window.localStorage.removeItem(CALCULATOR_STORAGE_KEY);
+  } catch (error) {
+    console.warn("Unable to clear stored calculator state", error);
+  }
+}
+
 function loadStoredCalculatorState() {
+  if (!calculatorPersistenceOptIn) {
+    clearStoredCalculatorState();
+    return null;
+  }
+
   try {
     const raw = window.localStorage.getItem(CALCULATOR_STORAGE_KEY);
     if (!raw) {
@@ -911,6 +949,9 @@ function captureCalculatorState() {
         return;
       }
     }
+    if (element.dataset && element.dataset.noPersist !== undefined) {
+      return;
+    }
     const key = getElementPersistenceKey(element, nameUsage);
     if (!key) {
       warnMissingPersistenceKey(element);
@@ -990,6 +1031,15 @@ function preserveCurrentFormValues() {
 
 function persistCalculatorState() {
   if (!calculatorForm) {
+    return;
+  }
+
+  if (!calculatorPersistenceOptIn) {
+    clearStoredCalculatorState();
+    if (calculatorStatePersistHandle) {
+      window.clearTimeout(calculatorStatePersistHandle);
+      calculatorStatePersistHandle = null;
+    }
     return;
   }
 
@@ -5463,11 +5513,41 @@ function printSummary() {
   }
 }
 
+function setCalculatorPersistenceOptIn(enabled, { persist = true } = {}) {
+  const next = Boolean(enabled);
+  const wasEnabled = calculatorPersistenceOptIn;
+  calculatorPersistenceOptIn = next;
+  if (persist) {
+    persistPersistencePreference(next);
+  }
+  if (rememberEntriesToggle) {
+    rememberEntriesToggle.checked = next;
+  }
+  if (!next) {
+    clearStoredCalculatorState();
+  } else if (!wasEnabled) {
+    // User just opted in — capture the current form state so they don't lose it.
+    persistCalculatorState();
+  }
+}
+
+function initialiseCalculatorPersistenceControls() {
+  setCalculatorPersistenceOptIn(loadStoredPersistencePreference(), {
+    persist: false,
+  });
+  rememberEntriesToggle?.addEventListener("change", (event) => {
+    const target = event.target;
+    const checked = target instanceof HTMLInputElement && target.checked;
+    setCalculatorPersistenceOptIn(checked);
+  });
+}
+
 function initialiseCalculator() {
   if (!calculatorForm || !yearSelect) {
     return;
   }
 
+  initialiseCalculatorPersistenceControls();
   const storedCalculatorState = loadStoredCalculatorState();
   assignLoadedCalculatorState(storedCalculatorState);
   pendingCalculatorState = loadedCalculatorState

@@ -72,7 +72,9 @@
       "clear": "Clear form",
       "download": "Download summary (JSON)",
       "download_csv": "Download summary (CSV)",
-      "print": "Print summary"
+      "print": "Print summary",
+      "remember_entries": "Remember my entries on this device",
+      "remember_entries_hint": "Off by default. When on, your entries are saved locally for up to two hours; they never leave your device."
     },
     "calculator": {
       "heading": "Tax calculator",
@@ -375,7 +377,7 @@
       "deductions_help_body": "Only enter amounts supported by official receipts or payment slips.",
       "deductions_help_limits": "Statutory limits are applied automatically—donation credits depend on income, while medical, education, and insurance costs follow AADE caps.",
       "deductions_help_summary": "Deductions help",
-      "disclaimer": "Disclaimer: The tool is provided as is. Consult an accountant for specific details. Input data are stored locally on your device for up to two hours and are not stored on a server.",
+      "disclaimer": "Disclaimer: The tool is provided as is. Consult an accountant for specific details. Your entries never leave this device and nothing is saved unless you tick \"Remember my entries\" below — in which case they are kept locally for up to two hours.",
       "freelance_help_body": "Report gross turnover before VAT and only claim expenses you can document (rent, utilities, equipment, professional fees).",
       "freelance_help_contributions": "Choosing an EFKA category preloads mandatory contributions; override with your actual payments if they differ.",
       "freelance_help_summary": "Freelance help",

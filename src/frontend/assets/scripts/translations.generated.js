@@ -8,7 +8,9 @@
         "clear": "Καθαρισμός φόρμας",
         "download": "Λήψη σύνοψης (JSON)",
         "download_csv": "Λήψη σύνοψης (CSV)",
-        "print": "Εκτύπωση σύνοψης"
+        "print": "Εκτύπωση σύνοψης",
+        "remember_entries": "Διατήρηση των καταχωρήσεών μου σε αυτή τη συσκευή",
+        "remember_entries_hint": "Απενεργοποιημένο εξ ορισμού. Όταν είναι ενεργό, οι καταχωρήσεις σας αποθηκεύονται τοπικά για έως δύο ώρες· δεν φεύγουν ποτέ από τη συσκευή σας."
       },
       "calculator": {
         "heading": "Φορολογικός υπολογιστής",
@@ -324,7 +326,7 @@
         "deductions_help_body": "Καταχωρήστε μόνο ποσά με νόμιμες αποδείξεις ή αποδεικτικά πληρωμής.",
         "deductions_help_limits": "Εφαρμόζονται αυτόματα τα νόμιμα όρια—η πίστωση για δωρεές εξαρτάται από το εισόδημα, ενώ ιατρικές, εκπαιδευτικές και ασφαλιστικές δαπάνες ακολουθούν τα όρια της ΑΑΔΕ.",
         "deductions_help_summary": "Βοήθεια για εκπτώσεις",
-        "disclaimer": "Αποποίηση ευθύνης: Το εργαλείο παρέχεται ως έχει. Για συγκεκριμένα στοιχεία συμβουλευτείτε λογιστή. Τα δεδομένα εισόδου αποθηκεύονται τοπικά στη συσκευή σας για έως δύο ώρες και δεν αποθηκεύονται σε διακομιστή.",
+        "disclaimer": "Αποποίηση ευθύνης: Το εργαλείο παρέχεται ως έχει. Για συγκεκριμένα στοιχεία συμβουλευτείτε λογιστή. Οι καταχωρήσεις σας παραμένουν στη συσκευή σας και τίποτα δεν αποθηκεύεται εκτός εάν ενεργοποιήσετε την επιλογή «Διατήρηση των καταχωρήσεών μου» παρακάτω — σε αυτή την περίπτωση φυλάσσονται τοπικά για έως δύο ώρες.",
         "estimate_tag": "≈ εκτίμηση",
         "freelance_contributions_heading": "Ασφαλιστικές εισφορές",
         "freelance_contributions_hint": "Επιλέξτε κατηγορία ΕΦΚΑ για προ-συμπληρωμένες μηνιαίες εισφορές ή καταχωρήστε τα πραγματικά ποσά.",
@@ -379,7 +381,9 @@
         "clear": "Clear form",
         "download": "Download summary (JSON)",
         "download_csv": "Download summary (CSV)",
-        "print": "Print summary"
+        "print": "Print summary",
+        "remember_entries": "Remember my entries on this device",
+        "remember_entries_hint": "Off by default. When on, your entries are saved locally for up to two hours; they never leave your device."
       },
       "calculator": {
         "heading": "Tax calculator",
@@ -695,7 +699,7 @@
         "deductions_help_body": "Only enter amounts supported by official receipts or payment slips.",
         "deductions_help_limits": "Statutory limits are applied automatically—donation credits depend on income, while medical, education, and insurance costs follow AADE caps.",
         "deductions_help_summary": "Deductions help",
-        "disclaimer": "Disclaimer: The tool is provided as is. Consult an accountant for specific details. Input data are stored locally on your device for up to two hours and are not stored on a server.",
+        "disclaimer": "Disclaimer: The tool is provided as is. Consult an accountant for specific details. Your entries never leave this device and nothing is saved unless you tick \"Remember my entries\" below — in which case they are kept locally for up to two hours.",
         "estimate_tag": "≈ estimate",
         "freelance_contributions_heading": "Social security contributions",
         "freelance_contributions_hint": "Select an EFKA class to preload monthly payments or override them with manual totals.",

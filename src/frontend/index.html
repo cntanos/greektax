@@ -1231,6 +1231,30 @@
             </div>
           </fieldset>
 
+          <div class="form-control form-control--remember">
+            <label for="remember-entries" class="remember-entries">
+              <input
+                type="checkbox"
+                id="remember-entries"
+                data-no-persist
+              />
+              <span
+                class="remember-entries__label"
+                data-i18n-key="actions.remember_entries"
+              >
+                Remember my entries on this device
+              </span>
+            </label>
+            <p
+              class="form-hint"
+              id="remember-entries-hint"
+              data-i18n-key="actions.remember_entries_hint"
+            >
+              Off by default. When on, your entries are saved locally for up
+              to two hours; they never leave your device.
+            </p>
+          </div>
+
           <div class="actions">
             <button
               type="submit"
