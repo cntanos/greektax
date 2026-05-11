@@ -22,13 +22,12 @@ Exit codes:
     1 on usage/IO errors
 """
 
-from __future__ import annotations
-
 import argparse
 import os
 import re
 import sys
 from pathlib import Path
+from typing import List, Optional
 
 MARKER_OPEN = "<!-- @greektax/api-base:start -->"
 MARKER_CLOSE = "<!-- @greektax/api-base:end -->"
@@ -74,7 +73,7 @@ def configure(target: Path, api_base: str) -> str:
     return f"injected data-api-base={api_base}"
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(argv: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(
         description="Inject GREEKTAX_API_BASE into a deployed index.html.",
     )
