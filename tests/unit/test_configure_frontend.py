@@ -130,6 +130,7 @@ VERSIONED_HTML = (
     "<html><head>\n"
     "<title>GreekTax</title>\n"
     "</head><body>\n"
+    '<script src="./assets/scripts/translations.generated.js" defer></script>\n'
     '<script type="module" src="./assets/scripts/main.js"></script>\n'
     "</body></html>\n"
 )
@@ -140,6 +141,10 @@ def _stage_bundle(tmp_path: Path) -> Path:
     target.write_text(VERSIONED_HTML, encoding="utf-8")
     scripts = tmp_path / "assets" / "scripts"
     (scripts / "ui").mkdir(parents=True)
+    (scripts / "translations.generated.js").write_text(
+        "window.__GREEKTAX_EMBEDDED_TRANSLATIONS__ = {};\n",
+        encoding="utf-8",
+    )
     (scripts / "main.js").write_text(
         'import { bootstrapApp } from "./ui/app.js";\n'
         "bootstrapApp();\n",
@@ -168,8 +173,18 @@ def test_version_bundle_appends_versions_to_html_and_imports(tmp_path: Path) -> 
     app_js = (tmp_path / "assets" / "scripts" / "ui" / "app.js").read_text("utf-8")
     helpers = (tmp_path / "assets" / "scripts" / "helpers.js").read_text("utf-8")
 
-    # HTML script tag gains a version.
-    assert re.search(r'src="\./assets/scripts/main\.js\?v=[A-Za-z0-9]+"', html)
+    # ES-module entrypoint gains a version.
+    main_match = re.search(
+        r'src="\./assets/scripts/main\.js\?v=([A-Za-z0-9]+)"', html
+    )
+    assert main_match
+    # Classic-script sibling (translations.generated.js) gains the same version.
+    translations_match = re.search(
+        r'src="\./assets/scripts/translations\.generated\.js\?v=([A-Za-z0-9]+)"',
+        html,
+    )
+    assert translations_match
+    assert main_match.group(1) == translations_match.group(1)
     # main.js's relative import gains a version.
     assert re.search(r'from "\./ui/app\.js\?v=[A-Za-z0-9]+"', main_js)
     # app.js's relative import gains a version.
