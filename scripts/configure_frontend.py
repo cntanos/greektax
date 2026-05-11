@@ -1,28 +1,36 @@
 #!/usr/bin/env python3
 """Inject deployment-specific configuration into the served frontend.
 
-Reads ``GREEKTAX_API_BASE`` from the environment and injects a
-``<meta data-api-base="..." />`` tag into a deployed ``index.html`` so the
-frontend points its API calls at the right backend host. The source
-``src/frontend/index.html`` stays deployment-agnostic.
+Two responsibilities, both run from a deploy hook after the static files
+have been copied into the docroot:
 
-Intended to run from a deploy hook (cPanel ``.cpanel.yml``, GitHub
-Actions, etc.) after the static files have been placed in the docroot.
-Re-running is safe: any previous injection is replaced. When the env
-var is unset or empty, any previous injection is removed so the
-frontend falls back to its same-origin default.
+1. **API base injection.** Reads ``GREEKTAX_API_BASE`` from the environment
+   and writes a ``<meta data-api-base="..." />`` tag into the deployed
+   ``index.html`` so the frontend talks to the right backend host.
+2. **Cache-buster versioning.** Computes a short content hash from every
+   JavaScript file under ``<docroot>/assets/scripts/`` and appends
+   ``?v=<hash>`` to (a) the ``<script type="module" src="...">`` tag in
+   ``index.html`` and (b) every relative ``import`` / ``export ... from``
+   in those JS files. When the bundle content changes, the hash changes,
+   so the browser fetches the new files instead of serving stale ones
+   from its long-lived ``immutable`` cache.
+
+Both steps are idempotent: any previous injection or version query is
+stripped before the new one is written, so re-running the script after a
+no-op deploy produces the same output as the first run.
 
 Usage::
 
     GREEKTAX_API_BASE=https://example.com/api/v1 \\
-        python scripts/configure_frontend.py --target /path/to/index.html
+        python3 scripts/configure_frontend.py --target /path/to/index.html
 
 Exit codes:
-    0 on success (including the env-unset cleanup path)
+    0 on success (including no-op paths)
     1 on usage/IO errors
 """
 
 import argparse
+import hashlib
 import os
 import re
 import sys
@@ -37,6 +45,18 @@ INJECTION_PATTERN = re.compile(
 )
 HEAD_CLOSE = "</head>"
 
+# Match `"..."` or `'...'` containing a relative path ending in `.js`,
+# with an optional pre-existing `?v=<hash>` query.
+JS_IMPORT_PATH_PATTERN = re.compile(
+    r"""(?P<quote>["'])(?P<path>\.{1,2}/[^"'?\s]*\.js)(?:\?v=[A-Za-z0-9]+)?(?P=quote)"""
+)
+
+# Match the loader script tag in index.html, optionally already versioned.
+SCRIPT_TAG_PATTERN = re.compile(
+    r"""(?P<prefix><script\b[^>]*?src=")(?P<path>\./assets/scripts/main\.js)"""
+    r"""(?:\?v=[A-Za-z0-9]+)?(?P<suffix>"[^>]*></script>)"""
+)
+
 
 def _strip_previous(html: str) -> str:
     return INJECTION_PATTERN.sub("", html)
@@ -44,18 +64,14 @@ def _strip_previous(html: str) -> str:
 
 def _build_block(api_base: str) -> str:
     return (
-        f"    {MARKER_OPEN}\n"
-        f'    <meta data-api-base="{api_base}" />\n'
-        f"    {MARKER_CLOSE}\n  "
+        "    " + MARKER_OPEN + "\n"
+        '    <meta data-api-base="' + api_base + '" />\n'
+        "    " + MARKER_CLOSE + "\n  "
     )
 
 
 def configure(target: Path, api_base: str) -> str:
-    """Inject (or remove) the meta tag in ``target``.
-
-    Returns a short status string for logging. Raises ``RuntimeError``
-    if the target lacks a ``</head>`` tag and an injection is needed.
-    """
+    """Inject (or remove) the meta tag in ``target``."""
     html = target.read_text(encoding="utf-8")
     stripped = _strip_previous(html)
 
@@ -67,15 +83,103 @@ def configure(target: Path, api_base: str) -> str:
 
     head_idx = stripped.find(HEAD_CLOSE)
     if head_idx == -1:
-        raise RuntimeError(f"could not find {HEAD_CLOSE!r} in {target}")
+        raise RuntimeError("could not find " + repr(HEAD_CLOSE) + " in " + str(target))
     new_html = stripped[:head_idx] + _build_block(api_base) + stripped[head_idx:]
     target.write_text(new_html, encoding="utf-8")
-    return f"injected data-api-base={api_base}"
+    return "injected data-api-base=" + api_base
+
+
+def _strip_versions_in_js(text: str) -> str:
+    return JS_IMPORT_PATH_PATTERN.sub(
+        lambda m: m.group("quote") + m.group("path") + m.group("quote"),
+        text,
+    )
+
+
+def _strip_version_in_script_tag(text: str) -> str:
+    return SCRIPT_TAG_PATTERN.sub(
+        lambda m: m.group("prefix") + m.group("path") + m.group("suffix"),
+        text,
+    )
+
+
+def _apply_version_to_js(text: str, version: str) -> str:
+    return JS_IMPORT_PATH_PATTERN.sub(
+        lambda m: (
+            m.group("quote") + m.group("path") + "?v=" + version + m.group("quote")
+        ),
+        text,
+    )
+
+
+def _apply_version_to_script_tag(text: str, version: str) -> str:
+    return SCRIPT_TAG_PATTERN.sub(
+        lambda m: (
+            m.group("prefix") + m.group("path") + "?v=" + version + m.group("suffix")
+        ),
+        text,
+    )
+
+
+def version_bundle(target: Path) -> str:
+    """Append ``?v=<hash>`` to every relative import and to the loader tag.
+
+    The hash is the first 12 hex chars of the SHA-256 over every JS file
+    under ``<target.parent>/assets/scripts/`` (sorted by relative path,
+    after stripping any existing ``?v=...`` from import statements). The
+    same hash is then appended to all relative imports and to the
+    ``<script type="module" src="...">`` tag in ``target``.
+
+    Returns a status string. If the scripts directory does not exist,
+    returns a short message and makes no changes (this is the common
+    case when running against a test fixture or unconfigured target).
+    """
+    scripts_dir = target.parent / "assets" / "scripts"
+    if not scripts_dir.is_dir():
+        return "skipped version_bundle: " + str(scripts_dir) + " not present"
+
+    js_files = sorted(
+        scripts_dir.rglob("*.js"),
+        key=lambda p: p.relative_to(scripts_dir).as_posix(),
+    )
+    if not js_files:
+        return "skipped version_bundle: no .js files under " + str(scripts_dir)
+
+    # Strip any pre-existing ?v=... so the hash is content-stable.
+    cleaned_sources = {}
+    for path in js_files:
+        original = path.read_text(encoding="utf-8")
+        cleaned = _strip_versions_in_js(original)
+        cleaned_sources[path] = cleaned
+
+    digest = hashlib.sha256()
+    for path in js_files:
+        rel = path.relative_to(scripts_dir).as_posix()
+        digest.update(rel.encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(cleaned_sources[path].encode("utf-8"))
+    version = digest.hexdigest()[:12]
+
+    rewrites = 0
+    for path, cleaned in cleaned_sources.items():
+        versioned = _apply_version_to_js(cleaned, version)
+        if versioned != path.read_text(encoding="utf-8"):
+            path.write_text(versioned, encoding="utf-8")
+            rewrites += 1
+
+    html = target.read_text(encoding="utf-8")
+    html_clean = _strip_version_in_script_tag(html)
+    html_versioned = _apply_version_to_script_tag(html_clean, version)
+    if html_versioned != html:
+        target.write_text(html_versioned, encoding="utf-8")
+        rewrites += 1
+
+    return "versioned " + str(len(js_files)) + " JS files + index.html with ?v=" + version
 
 
 def main(argv: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Inject GREEKTAX_API_BASE into a deployed index.html.",
+        description="Inject GREEKTAX_API_BASE and cache-buster version into a deployed index.html.",
     )
     parser.add_argument(
         "--target",
@@ -88,14 +192,20 @@ def main(argv: Optional[List[str]] = None) -> int:
     api_base = (os.environ.get("GREEKTAX_API_BASE") or "").strip()
 
     if not args.target.exists():
-        print(f"error: {args.target} does not exist", file=sys.stderr)
+        print("error: " + str(args.target) + " does not exist", file=sys.stderr)
         return 1
     try:
         status = configure(args.target, api_base)
     except RuntimeError as exc:
-        print(f"error: {exc}", file=sys.stderr)
+        print("error: " + str(exc), file=sys.stderr)
         return 1
     print(status)
+    try:
+        bundle_status = version_bundle(args.target)
+    except RuntimeError as exc:
+        print("error: " + str(exc), file=sys.stderr)
+        return 1
+    print(bundle_status)
     return 0
 
 
