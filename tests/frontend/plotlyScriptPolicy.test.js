@@ -13,7 +13,7 @@ const appPath = resolve(__dirname, '../../src/frontend/assets/scripts/ui/app.js'
 
 test('index declares Plotly with pinned SRI and crossorigin', () => {
   const html = readFileSync(htmlPath, 'utf8');
-  const plotlyScriptPattern = /<script\s+[^>]*src="https:\/\/cdn\.plot\.ly\/plotly-2\.26\.0\.min\.js"[^>]*>/;
+  const plotlyScriptPattern = /<script\s+[^>]*src="https:\/\/cdn\.plot\.ly\/plotly-2\.35\.3\.min\.js"[^>]*>/;
   const match = html.match(plotlyScriptPattern);
 
   assert.ok(match, 'Expected a static Plotly script tag in index.html');
@@ -21,7 +21,7 @@ test('index declares Plotly with pinned SRI and crossorigin', () => {
 
   assert.match(
     tag,
-    /integrity="sha384-xuh4dD2xC9BZ4qOrUrLt8psbgevXF2v\+K\+FrXxV4MlJHnWKgnaKoh74vd\/6Ik8uF"/,
+    /integrity="sha384-MqL7Cy3itNqCI1Wlc926K0XhyRKJ\/NMqTaytIIEB\+QIdInOploxqRIHRKLlhPykM"/,
     'Expected Plotly script tag to include the pinned SHA-384 integrity hash',
   );
   assert.match(
@@ -36,7 +36,7 @@ test('runtime scripts do not dynamically inject Plotly script URLs', () => {
 
   sources.forEach((source) => {
     assert.equal(
-      source.includes('cdn.plot.ly/plotly-2.26.0.min.js'),
+      source.includes('cdn.plot.ly/plotly-2.35.3.min.js'),
       false,
       'Runtime script source should not be hardcoded in runtime modules',
     );
