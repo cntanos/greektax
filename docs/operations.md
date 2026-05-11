@@ -49,6 +49,19 @@ frontend static checks, and bundle-size budgets.
 5. For outdated dependencies:
    - prioritize security and runtime-critical packages first, then batch lower-risk updates in scheduled maintenance PRs.
 
+## Frontend API base injection
+
+The source `src/frontend/index.html` stays deployment-agnostic: it ships with no `<meta data-api-base>` tag and `resolveApiBase()` falls back to the same-origin `/api/v1`. Cross-origin deployments (where the static frontend and the Flask backend live on different hosts) inject the meta tag at deploy time with `scripts/configure_frontend.py`:
+
+```bash
+GREEKTAX_API_BASE=https://<account>.pythonanywhere.com/api/v1 \
+    python scripts/configure_frontend.py --target /path/to/served/index.html
+```
+
+The injection sits inside `<!-- @greektax/api-base:start --> ... <!-- @greektax/api-base:end -->` markers, so the script is idempotent — re-running it replaces any previous block. Running it with `GREEKTAX_API_BASE` unset or empty removes any prior injection, returning the file to its same-origin default. Keep the backend host value out of the repo: source it from a deploy-time environment variable, a non-committed config file, or a CI secret.
+
+For cPanel-based deploys, invoke the script from `.cpanel.yml` (or the equivalent post-deploy hook) after the static files have been copied into the docroot. CORS must permit the frontend origin → backend origin call; verify with a manual cross-origin fetch before relying on the deployed page.
+
 ## Year configuration refreshes
 
 When introducing or updating filing years in `src/greektax/backend/config/data/*.yaml`:
