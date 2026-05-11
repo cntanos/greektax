@@ -51,9 +51,11 @@ JS_IMPORT_PATH_PATTERN = re.compile(
     r"""(?P<quote>["'])(?P<path>\.{1,2}/[^"'?\s]*\.js)(?:\?v=[A-Za-z0-9]+)?(?P=quote)"""
 )
 
-# Match the loader script tag in index.html, optionally already versioned.
+# Match any local script tag in index.html, optionally already versioned.
+# Covers both the ES-module entrypoint (./assets/scripts/main.js) and any
+# classic-script siblings such as ./assets/scripts/translations.generated.js.
 SCRIPT_TAG_PATTERN = re.compile(
-    r"""(?P<prefix><script\b[^>]*?src=")(?P<path>\./assets/scripts/main\.js)"""
+    r"""(?P<prefix><script\b[^>]*?src=")(?P<path>\./assets/scripts/[^"?\s]+\.js)"""
     r"""(?:\?v=[A-Za-z0-9]+)?(?P<suffix>"[^>]*></script>)"""
 )
 
