@@ -8,7 +8,7 @@ from warnings import warn
 
 from flask import Flask, Response, jsonify, request, send_from_directory
 from flask.typing import ResponseReturnValue
-from werkzeug.exceptions import BadRequest
+from werkzeug.exceptions import BadRequest, RequestEntityTooLarge
 
 from .routes import register_routes
 
@@ -84,10 +84,40 @@ def _apply_default_cors_headers(
     return response
 
 
+DEFAULT_MAX_REQUEST_BYTES = 64 * 1024
+
+
+def _resolve_max_request_bytes() -> int:
+    raw = os.getenv("GREEKTAX_MAX_REQUEST_BYTES")
+    if raw is None:
+        return DEFAULT_MAX_REQUEST_BYTES
+    try:
+        value = int(raw)
+    except ValueError:
+        return DEFAULT_MAX_REQUEST_BYTES
+    return value if value > 0 else DEFAULT_MAX_REQUEST_BYTES
+
+
+def _attach_security_headers(response: Response) -> Response:
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault(
+        "Referrer-Policy", "strict-origin-when-cross-origin"
+    )
+    response.headers.setdefault("X-Frame-Options", "DENY")
+    if not request.path.startswith("/assets/"):
+        response.headers["Cache-Control"] = "no-store"
+    if request.headers.get("X-Forwarded-Proto") == "https":
+        response.headers["Strict-Transport-Security"] = (
+            "max-age=31536000; includeSubDomains"
+        )
+    return response
+
+
 def create_app() -> Flask:
     """Create and configure the Flask application instance."""
 
     app = Flask(__name__)
+    app.config["MAX_CONTENT_LENGTH"] = _resolve_max_request_bytes()
 
     allowed_origins = _parse_allowed_origins(
         os.getenv("GREEKTAX_ALLOWED_ORIGINS")
@@ -157,10 +187,22 @@ def create_app() -> Flask:
         message = error.description or "Invalid request"
         return jsonify({"error": "bad_request", "message": message}), 400
 
+    @app.errorhandler(RequestEntityTooLarge)
+    def handle_too_large(error: RequestEntityTooLarge):
+        """Reject oversized request bodies with a structured response."""
+
+        return jsonify(
+            {"error": "payload_too_large", "message": "Request body too large."}
+        ), 413
+
     @app.errorhandler(ValueError)
     def handle_value_error(error: ValueError):
         """Gracefully surface domain validation errors to clients."""
 
         return jsonify({"error": "validation_error", "message": str(error)}), 400
+
+    @app.after_request
+    def _security_headers(response: Response) -> Response:
+        return _attach_security_headers(response)
 
     return app
