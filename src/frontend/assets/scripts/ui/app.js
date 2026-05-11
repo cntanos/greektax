@@ -61,6 +61,13 @@ let pendingCalculatorState = null;
 let calculatorStatePersistHandle = null;
 let hasAppliedThemeOnce = false;
 let themeTransitionHandle = null;
+let plotlyLoaderPromise = null;
+let pendingPlotlyJob = null;
+let chartLibraryWarningShown = false;
+let sankeyRenderSequence = 0;
+let sankeyPlotlyRef = null;
+let sankeyResizeObserver = null;
+let sankeyWindowResizeHandler = null;
 let isApplyingYearMetadata = false;
 let partialYearWarningActive = false;
 let hasPendingFormChanges = false;
@@ -94,6 +101,20 @@ const EMPLOYMENT_CONTRIBUTION_PREVIEW_MESSAGES = {
       el: "Χρησιμοποιείται το ποσό που καταχωρήσατε: {{amount}} ετησίως.",
     },
   },
+};
+
+const DISTRIBUTION_CATEGORIES = [
+  { key: "net_income", colorVar: "--flow-net" },
+  { key: "taxes", colorVar: "--flow-taxes" },
+  { key: "insurance", colorVar: "--flow-contributions" },
+  { key: "expenses", colorVar: "--flow-expenses" },
+];
+
+const DISTRIBUTION_FALLBACK_COLORS = {
+  net_income: "#0f6dff",
+  taxes: "#ff4d6a",
+  insurance: "#00bfa6",
+  expenses: "#f5a524",
 };
 
 function buildCalculatorFormNameUsage() {
