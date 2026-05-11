@@ -62,6 +62,24 @@ The injection sits inside `<!-- @greektax/api-base:start --> ... <!-- @greektax/
 
 For cPanel-based deploys, invoke the script from `.cpanel.yml` (or the equivalent post-deploy hook) after the static files have been copied into the docroot. CORS must permit the frontend origin → backend origin call; verify with a manual cross-origin fetch before relying on the deployed page.
 
+## Frontend Content Security Policy
+
+`src/frontend/index.html` carries a `<meta http-equiv="Content-Security-Policy">` tag with the following effective policy:
+
+| Directive | Value | Why |
+| --- | --- | --- |
+| `default-src` | `'self'` | Block all non-same-origin loads unless overridden below. |
+| `script-src` | `'self' https://cdn.plot.ly` | Allow the Plotly CDN bundle (pinned via SRI). |
+| `style-src` | `'self' 'unsafe-inline'` | Inline `element.style.X = ...` assignments inside `app.js` (chart layout, theming) need the `unsafe-inline` keyword. |
+| `img-src` | `'self' data:` | Plotly emits inline data-URI rasters for some icons. |
+| `connect-src` | `'self' https://*.pythonanywhere.com` | Allow XHR/fetch to any PythonAnywhere-hosted backend. Tighten to the exact host if you don't want the wildcard. |
+| `frame-ancestors` | `'none'` | Cannot be embedded in an iframe. |
+| `base-uri` | `'self'` | Lock `<base>` element. |
+| `form-action` | `'self'` | Prevent off-origin form posts. |
+| `object-src` | `'none'` | No Flash/plugin loads. |
+
+If you move the backend off `*.pythonanywhere.com`, replace the host token in `connect-src` and redeploy. CSP violations are reported by the browser as console errors with the directive that blocked the load.
+
 ## Year configuration refreshes
 
 When introducing or updating filing years in `src/greektax/backend/config/data/*.yaml`:
