@@ -20,7 +20,7 @@ try {
 
 const condTest = JSDOM
   ? test
-  : (name, fn) => condTest(name, { skip: "jsdom is not installed" }, fn);
+  : (name, fn) => test(name, { skip: "jsdom is not installed" }, fn);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
