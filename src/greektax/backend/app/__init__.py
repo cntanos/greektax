@@ -94,10 +94,15 @@ def create_app() -> Flask:
     )
 
     if not allowed_origins:
-        warn(
-            "No allowed origins configured; cross-origin requests will be rejected.",
-            stacklevel=1,
+        message = (
+            "No allowed origins configured; cross-origin requests will be rejected."
         )
+        if os.getenv("FLASK_ENV") == "production":
+            raise RuntimeError(
+                message
+                + " Set GREEKTAX_ALLOWED_ORIGINS or unset FLASK_ENV=production to start."
+            )
+        warn(message, stacklevel=1)
 
     if CORS is not None:
         CORS(

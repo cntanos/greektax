@@ -5,6 +5,28 @@ from flask.testing import FlaskClient
 
 from greektax.backend.app import create_app
 
+
+def test_create_app_fails_fast_without_origins_in_production(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """When FLASK_ENV=production, missing allow-list must abort startup."""
+
+    monkeypatch.setenv("FLASK_ENV", "production")
+    monkeypatch.delenv("GREEKTAX_ALLOWED_ORIGINS", raising=False)
+    with pytest.raises(RuntimeError, match="GREEKTAX_ALLOWED_ORIGINS"):
+        create_app()
+
+
+def test_create_app_only_warns_outside_production(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Outside production, an empty allow-list still emits the legacy warning."""
+
+    monkeypatch.delenv("FLASK_ENV", raising=False)
+    monkeypatch.delenv("GREEKTAX_ALLOWED_ORIGINS", raising=False)
+    with pytest.warns(UserWarning, match="No allowed origins configured"):
+        create_app()
+
 ALLOWED_ORIGIN = "https://allowed.test"
 ALLOWED_EMBEDDER = "https://embedder.test"
 DISALLOWED_ORIGIN = "https://blocked.test"
