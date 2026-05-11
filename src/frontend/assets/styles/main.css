@@ -691,6 +691,29 @@ main {
   margin-top: 0.75rem;
 }
 
+.form-control--remember {
+  margin-top: 1rem;
+}
+
+.remember-entries {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-weight: 600;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.remember-entries input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+}
+
+.remember-entries__label {
+  font-weight: 600;
+}
+
 .form-intro {
   margin: 0 0 1rem;
   font-size: 0.95rem;
