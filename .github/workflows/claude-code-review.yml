@@ -46,16 +46,45 @@ jobs:
           # Use Opus 4.7 instead of the action's default Sonnet 4.6 — stronger
           # reasoning on regression-prone areas like the Pydantic models and
           # the Sankey rendering path. Cost is charged to Max quota only.
-          claude_args: --model claude-opus-4-7
+          # Allow the two posting paths: `gh pr comment` for the top-level
+          # summary and the inline-comment MCP tool for line-specific findings.
+          claude_args: |
+            --model claude-opus-4-7
+            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"
+          # Collapse Claude's output into a single sticky comment that gets
+          # updated on each push instead of stacking a new comment per push.
+          use_sticky_comment: true
           # Surface Claude's reasoning in the workflow log so we can diagnose
           # quality issues without re-running.
           show_full_output: true
           prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+
             Review this pull request against the GreekTax repository
             following the conventions and priorities documented in
-            `CLAUDE.md` (loaded automatically by the action from the
-            base branch). Be terse and actionable. File inline review
-            comments anchored to specific file:line locations using
-            the tag scheme described there ([bug] / [security] /
-            [perf] / [test] / [nit]). File no comments if nothing in
-            the diff warrants one.
+            `CLAUDE.md` (loaded automatically from the base branch).
+            Be terse and actionable.
+
+            Post your output in two channels:
+
+            1. A SINGLE top-level summary via `gh pr comment` with this
+               structure:
+                 - One short paragraph describing what the PR does.
+                 - A short bulleted list of the most material findings
+                   (omit if there are none) tagged with [bug] /
+                   [security] / [perf] / [test] / [nit].
+                 - A final line beginning with `Verdict:` followed by
+                   one of "Ready", "Address findings then merge", or
+                   "Needs rework".
+
+            2. (Optional) Inline review comments anchored to specific
+               file:line locations via
+               `mcp__github_inline_comment__create_inline_comment` with
+               `confirmed: true`. Use these only when a finding is
+               anchored to a specific line and the reader benefits
+               from seeing it in context. Otherwise rely on the
+               summary.
+
+            Do NOT emit review text as raw model output — only post
+            it through the two channels above.
