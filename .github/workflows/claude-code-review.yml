@@ -40,35 +40,22 @@ jobs:
           fetch-depth: 0
 
       - name: Run Claude review
-        uses: anthropics/claude-code-action@v1
+        uses: anthropics/claude-code-action@f4fb5c6cdccc1ee7af63692f5d08d56efaa64cc8  # v1 (2026-05-12)
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # Use Opus 4.7 instead of the action's default Sonnet 4.6 — stronger
+          # reasoning on regression-prone areas like the Pydantic models and
+          # the Sankey rendering path. Cost is charged to Max quota only.
+          claude_args: --model claude-opus-4-7
+          # Surface Claude's reasoning in the workflow log so we can diagnose
+          # quality issues without re-running.
+          show_full_output: true
           prompt: |
-            You are reviewing a pull request against the GreekTax repository
-            (a Greek tax calculator: Python/Flask backend + static JS
-            frontend, no auth, no PII storage, no DB). Be terse and
-            actionable.
-
-            Focus on:
-            - Correctness of the changed logic, especially edge cases around
-              the Pydantic models in src/greektax/backend/app/models/ and the
-              Sankey/distribution rendering path in
-              src/frontend/assets/scripts/ui/app.js.
-            - Security: input validation on API routes, XSS surfaces in JS
-              (textContent vs innerHTML), localStorage usage, CSP/CORS
-              regressions, secret hygiene in workflows.
-            - Test coverage for new branches.
-            - Adherence to the existing patterns (see docs/architecture.md
-              and CLAUDE.md) — avoid suggesting refactors outside the PR's
-              scope.
-
-            Skip:
-            - Style nits already enforced by ruff/mypy.
-            - Hypothetical generality. This is a single-deployment project.
-
-            Format the review as:
-            - A 1-2 sentence summary of what the PR does.
-            - A bulleted list of findings, each tagged [bug] / [security]
-              / [perf] / [test] / [nit]. Cite file:line for each.
-            - Final verdict: "Ready", "Address findings then merge", or
-              "Needs rework".
+            Review this pull request against the GreekTax repository
+            following the conventions and priorities documented in
+            `CLAUDE.md` (loaded automatically by the action from the
+            base branch). Be terse and actionable. File inline review
+            comments anchored to specific file:line locations using
+            the tag scheme described there ([bug] / [security] /
+            [perf] / [test] / [nit]). File no comments if nothing in
+            the diff warrants one.
