@@ -1,0 +1,71 @@
+name: Claude PR Review
+
+# Runs Claude (via anthropics/claude-code-action) against every PR opened
+# or updated, posting a single review comment. No @claude mention needed —
+# the action infers PR context from the trigger.
+#
+# Setup requirements (see PR description):
+#   1. Install the Claude GitHub App on this repository.
+#   2. Add an `ANTHROPIC_API_KEY` repository secret.
+#   3. (Optional) Disable the previous AI reviewer (OpenAI Codex) at
+#      https://chatgpt.com/codex/cloud/settings/general.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: claude-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    # Skip drafts so we only spend tokens on PRs that are ready for review.
+    if: ${{ github.event.pull_request.draft == false }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@v4
+        with:
+          # Full history so Claude can inspect base...head diffs accurately.
+          fetch-depth: 0
+
+      - name: Run Claude review
+        uses: anthropics/claude-code-action@v1
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        with:
+          prompt: |
+            You are reviewing a pull request against the GreekTax repository
+            (a Greek tax calculator: Python/Flask backend + static JS
+            frontend, no auth, no PII storage, no DB). Be terse and
+            actionable.
+
+            Focus on:
+            - Correctness of the changed logic, especially edge cases around
+              the Pydantic models in src/greektax/backend/app/models/ and the
+              Sankey/distribution rendering path in
+              src/frontend/assets/scripts/ui/app.js.
+            - Security: input validation on API routes, XSS surfaces in JS
+              (textContent vs innerHTML), localStorage usage, CSP/CORS
+              regressions, secret hygiene in workflows.
+            - Test coverage for new branches.
+            - Adherence to the existing patterns (see docs/architecture.md
+              and CLAUDE.md) — avoid suggesting refactors outside the PR's
+              scope.
+
+            Skip:
+            - Style nits already enforced by ruff/mypy.
+            - Hypothetical generality. This is a single-deployment project.
+
+            Format the review as:
+            - A 1-2 sentence summary of what the PR does.
+            - A bulleted list of findings, each tagged [bug] / [security]
+              / [perf] / [test] / [nit]. Cite file:line for each.
+            - Final verdict: "Ready", "Address findings then merge", or
+              "Needs rework".
