@@ -32,6 +32,7 @@ python scripts/validate_config.py
 
 ## Notes for contributors
 
+- Local environment defaults live in `.env.example`. Copy it to `.env` (gitignored) and edit as needed.
 - Dependency metadata is managed in `pyproject.toml`. Regenerate derived requirements files with `python scripts/sync_requirements.py`.
 - If UI translation strings change, run `python scripts/embed_translations.py` and commit the generated bundle.
 - Keep README updates minimal: point to canonical docs instead of duplicating procedures.

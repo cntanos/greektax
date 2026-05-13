@@ -53,8 +53,9 @@ prioritise findings.
 ### Tests
 
 - Frontend tests: `tests/frontend/*.test.js`, run via
-  `node --test tests/frontend`. JSDOM-dependent tests skip gracefully
-  when jsdom is not installed.
+  `npm run test:frontend` (which globs `tests/frontend/*.test.js`).
+  JSDOM- and acorn-dependent tests skip gracefully when those optional
+  dev deps are not installed.
 - Backend tests: `tests/{unit,integration,e2e}/`, run via `pytest`.
 - `tests/frontend/fileSizeGuardrails.test.js` caps
   `src/frontend/assets/scripts/ui/app.js` at 5900 lines. If a change
