@@ -20,6 +20,8 @@ permissions:
   contents: read
   pull-requests: write
   issues: write
+  # OIDC token used by the action for the GitHub-side commenting flow.
+  id-token: write
 
 concurrency:
   group: claude-review-${{ github.event.pull_request.number }}
@@ -32,7 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout PR
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           # Full history so Claude can inspect base...head diffs accurately.
           fetch-depth: 0
