@@ -1,0 +1,13 @@
+{
+  "name": "greektax-frontend-tests",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:frontend": "node --test tests/frontend/*.test.js"
+  },
+  "optionalDependencies": {
+    "acorn": "^8.16.0",
+    "jsdom": "^25.0.0"
+  }
+}
