@@ -49,12 +49,12 @@ ad-hoc investigations while keeping the API contract unchanged. The snapshot now
 reports minimum and maximum iteration durations to surface jitter alongside the
 average and cumulative timings. After significant localisation batches or UI
 refresh work, coordinate reruns with the
-[`docs/i18n.md`](i18n.md) and [`docs/ui_improvement_plan.md`](ui_improvement_plan.md)
-workflows so bundle and render changes stay measurable.
+[`docs/i18n.md`](i18n.md) workflow so bundle and render changes stay
+measurable.
 
 ## Related Workflows
 
 - [`docs/i18n.md`](i18n.md) – localisation guidance for catalogue updates that
   often precede performance sampling.
-- [`docs/ui_improvement_plan.md`](ui_improvement_plan.md) – UI polish checklist
-  that may influence asset payloads and accessibility metrics captured here.
+- [`docs/archive/ui_improvement_plan.md`](archive/ui_improvement_plan.md) –
+  archived Sprint 16 UI polish checklist (delivered).
