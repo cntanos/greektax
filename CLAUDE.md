@@ -93,10 +93,26 @@ prioritise findings.
 
 ## Output format
 
-Use inline review comments anchored to specific file:line locations.
-Inline comments are the only mechanism the current workflow uses to
-surface findings — there is no top-level summary review. Each comment
-should be 1-3 sentences and prefixed with a tag in brackets:
+Two channels:
+
+1. **One top-level summary comment** posted via `gh pr comment`. Use
+   this for the holistic read of the PR — what it does, the main
+   findings, and a verdict. Format:
+
+   - One short paragraph describing what the PR does.
+   - A short bulleted list of material findings, each prefixed with
+     `[bug]` / `[security]` / `[perf]` / `[test]` / `[nit]`. Omit
+     the list if there are no findings worth surfacing.
+   - A final line beginning with `Verdict:` followed by one of
+     "Ready", "Address findings then merge", or "Needs rework".
+
+2. **Inline review comments** anchored to specific file:line locations
+   via `mcp__github_inline_comment__create_inline_comment` (with
+   `confirmed: true`). Use these only when a finding is genuinely
+   anchored to one location and reading it in context helps. Keep
+   each one 1-3 sentences with the same tag prefix.
+
+Tag legend:
 
 - `[bug]` — incorrect behaviour or regression
 - `[security]` — security-relevant change worth attention
@@ -104,5 +120,7 @@ should be 1-3 sentences and prefixed with a tag in brackets:
 - `[test]` — missing or weak test coverage
 - `[nit]` — minor suggestion, use sparingly
 
-If nothing in the diff warrants a comment, file none. Silence is an
-acceptable signal.
+If nothing in the diff warrants attention, post a summary that says
+so (one paragraph + `Verdict: Ready`) and skip the inline channel.
+Silence on both channels is also acceptable, but a one-line "Ready"
+is clearer for the reader.
