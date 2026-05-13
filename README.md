@@ -35,3 +35,4 @@ python scripts/validate_config.py
 - Dependency metadata is managed in `pyproject.toml`. Regenerate derived requirements files with `python scripts/sync_requirements.py`.
 - If UI translation strings change, run `python scripts/embed_translations.py` and commit the generated bundle.
 - Keep README updates minimal: point to canonical docs instead of duplicating procedures.
+- Pull requests get an automated review from Claude (see [`.github/workflows/claude-code-review.yml`](.github/workflows/claude-code-review.yml)).
