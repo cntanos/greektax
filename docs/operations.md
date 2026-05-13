@@ -7,7 +7,7 @@ Use this page as a routing index. Detailed procedures live in their canonical do
 - **Localisation updates** → [`docs/i18n.md`](i18n.md)
 - **Performance baselines** → [`docs/performance_baseline.md`](performance_baseline.md)
 - **Architecture and system boundaries** → [`docs/architecture.md`](architecture.md)
-- **UI review loops** → [`docs/ui_improvement_plan.md`](ui_improvement_plan.md)
+- **UI review loops** → see [`docs/archive/ui_improvement_plan.md`](archive/ui_improvement_plan.md) for the Sprint 16 visual-polish checklist (delivered; retained for context).
 - **Contribution process** → [`docs/contributing.md`](contributing.md)
 
 ## Quality gate command

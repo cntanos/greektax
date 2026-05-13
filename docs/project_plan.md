@@ -9,10 +9,12 @@
   sprint or pivot scope.
 
 ## Documentation baseline
-- Track overlapping or outdated guidance in [docs/documentation_audit.md](./documentation_audit.md) before touching shared
-  docs so updates target the canonical source.
+
 - Follow the conventions in [docs/documentation_style.md](./documentation_style.md) when drafting or revising
   documentation across the repository.
+- Historical audits and delivered planning notes live under
+  [docs/archive/](./archive/); consult them when the rationale behind a past
+  decision is unclear, but treat them as frozen.
 
 ## Recent tax logic updates
 
@@ -51,7 +53,7 @@
        `freelance` configuration schema and scenario coverage noted in recent
        sprints.
      - Provide guided activity-start workflows and metadata hints that mirror
-       the UX flows documented in the [UI improvement plan](./ui_improvement_plan.md).
+       the UX flows documented in the [UI improvement plan](./archive/ui_improvement_plan.md).
    - **1.3 Investment & Rental**
      - Support rental, capital-gains, and other investment categories with
        aggregated summaries, respecting provisional toggles in the 2026
@@ -68,7 +70,7 @@
 2. **Non-functional requirements**
    - **2.1 Localisation & Accessibility**
      - Preserve bilingual coverage with catalogues embedded in the static
-       bundle and validated against the [UI improvement plan](./ui_improvement_plan.md).
+       bundle and validated against the [UI improvement plan](./archive/ui_improvement_plan.md).
      - Maintain accessibility checks, focus order, and responsive behaviour for
        all calculator views.
    - **2.2 Performance & Observability**
