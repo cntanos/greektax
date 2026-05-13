@@ -34,17 +34,49 @@ where the message lists each failing field and its validation error.
 Metadata endpoints support the front-end in building dynamic forms:
 
 ```
+GET /api/v1/config/meta
 GET /api/v1/config/years
 GET /api/v1/config/<year>/investment-categories?locale=<locale>
 GET /api/v1/config/<year>/deductions?locale=<locale>
 ```
 
-The first returns all configured tax years plus a suggested default. The second
-exposes investment income categories (identifier, rate, locale-aware label) for
-the requested year. The third surfaces deduction hints for the UI, returning the
-deduction identifier, the applicable income categories, the translated display
-label and description, as well as validation metadata (e.g., minimum, maximum,
-or numeric type) to apply on the client.
+`/meta` returns shell metadata used by the bootstrap (default locale, available
+locales, calculator version). `/years` returns all configured tax years plus a
+suggested default. `/investment-categories` exposes investment income categories
+(identifier, rate, locale-aware label) for the requested year. `/deductions`
+surfaces deduction hints for the UI, returning the deduction identifier, the
+applicable income categories, the translated display label and description, as
+well as validation metadata (e.g., minimum, maximum, or numeric type) to apply
+on the client.
+
+Localisation and infrastructure endpoints:
+
+```
+GET /api/v1/translations/
+GET /api/v1/translations/<locale>
+GET /health
+```
+
+`/translations/` returns the discovery payload (default locale plus the list of
+available locale codes). `/translations/<locale>` returns the full translation
+catalogue for the requested locale. `/health` is a minimal liveness probe used
+by infrastructure monitoring; it returns `{"status": "ok"}` with HTTP 200.
+
+### Response headers
+
+All responses receive a baseline set of hardening headers added by an
+`after_request` hook: `X-Content-Type-Options: nosniff`,
+`Referrer-Policy: strict-origin-when-cross-origin`, `X-Frame-Options: DENY`,
+and `Cache-Control: no-store` (suppressed for `/assets/*`). When the upstream
+proxy reports `X-Forwarded-Proto: https`, the hook also adds
+`Strict-Transport-Security: max-age=31536000; includeSubDomains`.
+
+### Request size limit
+
+Inbound JSON payloads are capped at `MAX_CONTENT_LENGTH` (default 64 KiB,
+configurable via the `GREEKTAX_MAX_REQUEST_BYTES` environment variable).
+Oversized requests are rejected with HTTP 413 and a structured body of
+`{"error": "payload_too_large", "message": "Request body too large."}`.
 
 ## Pydantic Models
 
