@@ -6,7 +6,9 @@ name: Claude PR Review
 #
 # Setup requirements (see PR description):
 #   1. Install the Claude GitHub App on this repository.
-#   2. Add an `ANTHROPIC_API_KEY` repository secret.
+#   2. Mint a CLAUDE_CODE_OAUTH_TOKEN (`claude setup-token` locally) so the
+#      action runs against your Claude.ai Max subscription quota instead of
+#      pay-as-you-go API billing. Add it as a repository secret.
 #   3. (Optional) Disable the previous AI reviewer (OpenAI Codex) at
 #      https://chatgpt.com/codex/cloud/settings/general.
 
@@ -37,9 +39,8 @@ jobs:
 
       - name: Run Claude review
         uses: anthropics/claude-code-action@v1
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           prompt: |
             You are reviewing a pull request against the GreekTax repository
             (a Greek tax calculator: Python/Flask backend + static JS
