@@ -43,3 +43,13 @@ Place contributor-facing references in `docs/`:
 
 If a file is an example/template, label it clearly in the filename or heading
 (e.g. `*.example.*`) and explain where it is used.
+
+## Pull Request Review
+
+Every pull request opened against `main` receives an automated review from
+Claude via the `Claude PR Review` workflow at
+[`.github/workflows/claude-code-review.yml`](../.github/workflows/claude-code-review.yml).
+The review comment appears within ~2 minutes of opening or pushing to a PR and
+ends with a verdict line (`Ready`, `Address findings then merge`, or
+`Needs rework`). Use it as a sanity check rather than a gate — the human
+reviewer remains the deciding voice.
