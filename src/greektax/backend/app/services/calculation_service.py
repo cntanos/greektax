@@ -224,8 +224,8 @@ def _normalise_payload(
 
     other_income = request.other.taxable_income
 
-    if birth_year is not None and request.year in {2025, 2026}:
-        birth_year_limit = 2025
+    birth_year_limit = config.rules.max_birth_year_with_income
+    if birth_year is not None and birth_year_limit is not None:
         if birth_year > birth_year_limit:
             has_income = any(
                 (
@@ -240,7 +240,8 @@ def _normalise_payload(
             )
             if has_income:
                 raise ValueError(
-                    "Invalid calculation payload: demographics.birth_year must be 2025 or earlier when income is provided"
+                    "Invalid calculation payload: demographics.birth_year must be "
+                    f"{birth_year_limit} or earlier when income is provided"
                 )
 
     obligations = request.obligations
@@ -311,6 +312,8 @@ def _normalise_payload(
         deductions_education=deductions_education,
         deductions_insurance=deductions_insurance,
         toggles=toggles,
+        age_reference_year=config.rules.age_reference_year,
+        youth_bands=config.rules.youth_bands,
         tax_residency_transfer_to_greece=(
             request.demographics.tax_residency_transfer_to_greece
         ),

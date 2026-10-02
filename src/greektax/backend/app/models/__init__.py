@@ -60,17 +60,8 @@ __all__ = [
     "DetailEntry",
     "ResponseMeta",
     "format_validation_error",
-    "youth_age_reference_year",
     "NET_INCOME_INPUT_ERROR",
 ]
-
-
-def youth_age_reference_year(year: int) -> int:
-    """Return the reference year used to derive youth relief ages."""
-
-    if year in {2025, 2026}:
-        return 2026
-    return year
 
 
 class CalculationInput(BaseModel):
@@ -128,6 +119,8 @@ class CalculationInput(BaseModel):
     toggles: Mapping[str, bool] = Field(default_factory=dict)
     taxpayer_birth_year: int | None = None
     tax_residency_transfer_to_greece: bool = False
+    age_reference_year: int
+    youth_bands: tuple[tuple[str, int], ...] = ()
 
     @model_validator(mode="after")
     def _validate_taxpayer_birth_year(self) -> CalculationInput:
@@ -135,7 +128,7 @@ class CalculationInput(BaseModel):
         if birth_year is None:
             return self
 
-        reference_year = youth_age_reference_year(self.year)
+        reference_year = self.age_reference_year
         if reference_year > self.year:
             max_allowed = reference_year - 1
         else:
@@ -279,8 +272,7 @@ class CalculationInput(BaseModel):
     def taxpayer_age(self) -> int | None:
         if self.taxpayer_birth_year is None:
             return None
-        reference_year = youth_age_reference_year(self.year)
-        age = reference_year - self.taxpayer_birth_year
+        age = self.age_reference_year - self.taxpayer_birth_year
         return age if age >= 0 else None
 
     @property
@@ -288,10 +280,9 @@ class CalculationInput(BaseModel):
         age = self.taxpayer_age
         if age is None:
             return None
-        if age <= 25:
-            return "under_25"
-        if age <= 30:
-            return "age26_30"
+        for band_id, max_age in self.youth_bands:
+            if age <= max_age:
+                return band_id
         return None
 
     @property

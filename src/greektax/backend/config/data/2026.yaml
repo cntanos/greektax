@@ -6,6 +6,23 @@ meta:
   toggles:
     tekmiria_reduction: true
     presumptive_relief: true
+rules:
+  # Youth relief age = age_reference_year - birth year (defaults to the tax year).
+  age_reference_year: 2026
+  youth_bands:
+    under_25: 25
+    age26_30: 30
+  youth_relief_categories: [employment, freelance, agricultural]
+  residency_transfer_taxable_share: 0.5
+  max_birth_year_with_income: 2025
+  salary_credit:
+    income_categories: [employment]
+    reduction_threshold: 12000
+    reduction_step: 1000
+    reduction_per_step: 20
+    # Before 2025 pension and agricultural income could also claim the credit,
+    # and the credit was shared across all credit-eligible general income.
+    shared_across_general_income: false
 income:
   employment:
     payroll:
