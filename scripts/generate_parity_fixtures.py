@@ -301,6 +301,14 @@ def _invalid_cases(year: int) -> list[dict[str, Any]]:
             "payload": {"year": year, "investment": {"dividends": -5}},
         },
         {
+            "name": "invalid/toggles_not_mapping",
+            "payload": {"year": year, "toggles": ["tekmiria_reduction"]},
+        },
+        {
+            "name": "invalid/investment_not_mapping",
+            "payload": {"year": year, "investment": 1000},
+        },
+        {
             "name": "invalid/future_birth_year_with_income",
             "payload": {
                 "year": year,

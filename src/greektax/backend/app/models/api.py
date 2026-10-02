@@ -285,7 +285,7 @@ class CalculationRequest(BaseModel):
             return {}
         if isinstance(value, Mapping):
             return value
-        raise TypeError("Investment section must be an object mapping categories to amounts")
+        raise ValueError("Investment section must be an object mapping categories to amounts")
 
     @field_validator("investment", mode="after")
     @classmethod
@@ -312,7 +312,7 @@ class CalculationRequest(BaseModel):
             return {}
         if isinstance(value, Mapping):
             return value
-        raise TypeError(
+        raise ValueError(
             "Toggles section must be an object mapping identifiers to booleans"
         )
 

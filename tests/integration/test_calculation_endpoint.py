@@ -237,3 +237,25 @@ def test_calculation_endpoint_defaults_missing_demographics(
     explicit_summary = explicit_response.get_json()["summary"]
 
     assert missing_summary == explicit_summary
+
+
+@pytest.mark.parametrize(
+    ("section", "value", "message"),
+    [
+        ("toggles", ["tekmiria_reduction"], "Toggles section must be an object"),
+        ("investment", 1000, "Investment section must be an object"),
+    ],
+)
+def test_calculation_endpoint_rejects_non_mapping_sections(
+    client: FlaskClient, section: str, value: object, message: str
+) -> None:
+    """A non-object section is a validation error (400), not a server error."""
+
+    response = client.post(
+        "/api/v1/calculations", json={"year": 2026, section: value}
+    )
+
+    assert response.status_code == HTTPStatus.BAD_REQUEST
+    payload = response.get_json()
+    assert payload["error"] == "validation_error"
+    assert f"{section}: Value error, {message}" in payload["message"]

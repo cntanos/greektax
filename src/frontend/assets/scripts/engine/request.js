@@ -416,8 +416,7 @@ const mappingOrEmpty = (message) => (value) => {
   if (isMapping(value)) {
     return value;
   }
-  // Python raises TypeError here, which Pydantic does not convert.
-  throw new EngineError(message);
+  throw new ValueErrorSignal(message);
 };
 
 const CalculationRequest = {
