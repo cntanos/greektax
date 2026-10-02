@@ -8,6 +8,12 @@
 
 import { buildApiEndpoints } from "../api/endpoints.js";
 import {
+  getApplicationVersion,
+  getDeductionsPayload,
+  getInvestmentPayload,
+  getYearsPayload,
+} from "../config/clientConfig.js";
+import {
   AUTO_SELECTABLE_INPUT_TYPES,
   AUTO_SELECT_DATASET_KEY,
   CALCULATOR_PERSISTENCE_OPTIN_KEY,
@@ -29,10 +35,6 @@ import { toFiniteNumber } from "../validation/numbers.js";
 const {
   API_BASE,
   CALCULATIONS_ENDPOINT,
-  CONFIG_YEARS_ENDPOINT,
-  CONFIG_META_ENDPOINT,
-  CONFIG_INVESTMENT_ENDPOINT,
-  CONFIG_DEDUCTIONS_ENDPOINT,
   TRANSLATIONS_ENDPOINT,
 } = buildApiEndpoints();
 
@@ -2604,12 +2606,7 @@ async function loadYearOptions() {
 
   setCalculatorStatus(t("status.loading_years"));
   try {
-    const response = await fetch(CONFIG_YEARS_ENDPOINT);
-    if (!response.ok) {
-      throw new Error(`Unable to load years (${response.status})`);
-    }
-
-    const payload = await response.json();
+    const payload = getYearsPayload();
     const years = Array.isArray(payload.years) ? payload.years : [];
     yearSelect.innerHTML = "";
     yearMetadataByYear.clear();
@@ -2673,14 +2670,9 @@ async function refreshApplicationVersion() {
     versionElement.dataset.versionFallback?.trim() || versionElement.textContent || "";
 
   try {
-    const response = await fetch(CONFIG_META_ENDPOINT, { credentials: "omit" });
-    if (!response.ok) {
-      throw new Error(`Unable to load application metadata (${response.status})`);
-    }
-
-    const payload = await response.json();
+    const bundledVersion = getApplicationVersion();
     const version =
-      typeof payload?.version === "string" ? payload.version.trim() : "";
+      typeof bundledVersion === "string" ? bundledVersion.trim() : "";
     if (version) {
       versionElement.textContent = version;
       return;
@@ -2742,14 +2734,7 @@ async function refreshInvestmentCategories() {
   }
 
   try {
-    const response = await fetch(
-      CONFIG_INVESTMENT_ENDPOINT(year, currentLocale || "en"),
-    );
-    if (!response.ok) {
-      throw new Error(`Unable to load investment categories (${response.status})`);
-    }
-
-    const payload = await response.json();
+    const payload = getInvestmentPayload(year, currentLocale || "en");
     currentInvestmentCategories = Array.isArray(payload.categories)
       ? payload.categories
       : [];
@@ -3100,14 +3085,7 @@ async function refreshDeductionHints() {
   }
 
   try {
-    const response = await fetch(
-      CONFIG_DEDUCTIONS_ENDPOINT(year, currentLocale || "en"),
-    );
-    if (!response.ok) {
-      throw new Error(`Unable to load deduction hints (${response.status})`);
-    }
-
-    const payload = await response.json();
+    const payload = getDeductionsPayload(year, currentLocale || "en");
     currentDeductionHints = Array.isArray(payload.hints) ? payload.hints : [];
     dynamicFieldLabels = {};
     deductionValidationByInput = {};
