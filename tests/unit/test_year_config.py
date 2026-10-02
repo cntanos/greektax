@@ -51,3 +51,19 @@ def test_available_years_ignores_non_numeric_filenames(
     years = year_config.available_years()
 
     assert years == (2024, 2025, 2026)
+
+
+@pytest.mark.parametrize("year", year_config.available_years())
+@pytest.mark.parametrize("category", ["pension", "freelance", "agricultural", "other"])
+def test_general_income_categories_share_article_15_scale(
+    year: int, category: str
+) -> None:
+    """Article 15 KFE sets one scale for wage, pension and business income.
+
+    The calculator taxes all general income on the employment brackets, so a
+    per-category scale that differs would only mislead the bracket summaries.
+    """
+
+    config = year_config.load_year_configuration(year)
+
+    assert getattr(config, category).brackets == config.employment.brackets
