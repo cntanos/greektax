@@ -10,6 +10,7 @@
 
 Sources for each rule are in [`docs/reference/tax_rules_2025_2026.md`](docs/reference/tax_rules_2025_2026.md).
 
+- 2026: the 20,000-30,000 rate keeps falling by 2 points for every dependent child beyond the fourth (12% with 7 children, down to 0%); it previously stopped at 14%.
 - Tax reduction phase-out (Art. 16(2) ΚΦΕ) now uses taxable salary/pension income instead of gross income: employee contributions and the Article 5Γ exemption are deducted first. Employees above 12,000 pay less tax than before.
 - Pensions get the Article 16 tax reduction again in 2025 and 2026 (pensioners were overcharged by up to the full reduction, e.g. 777).
 - Professional farmers get the reduction on agricultural income in 2025 and 2026, phased out above 12,000 like salaries; farmers without that status do not get it in any year.
