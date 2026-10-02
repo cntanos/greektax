@@ -4,8 +4,8 @@
  *
  * - "server" (default): POST to the API, as before.
  * - "shadow": POST to the API and also run the client engine; show the server
- *   result and report any difference in the browser console. Nothing is sent
- *   anywhere else.
+ *   result as soon as it arrives and report any difference in the browser
+ *   console afterwards. Nothing is sent anywhere else.
  * - "client": run the client engine only; no calculation request is made.
  */
 
@@ -80,6 +80,29 @@ export function diffResults(expected, actual, path = "") {
   return differences;
 }
 
+const importEngine = () => import("../engine/calculate.js");
+
+const scheduleIdle = (task) =>
+  typeof requestIdleCallback === "function"
+    ? requestIdleCallback(task, { timeout: 2000 })
+    : setTimeout(task, 0);
+
+/**
+ * In shadow and client modes, start downloading the client engine once the
+ * page is idle, so the first calculation does not wait for it. Returns whether
+ * a download was scheduled. A failed download is left for the calculation to
+ * report.
+ */
+export function preloadEngine(mode, { loadEngine = importEngine, schedule = scheduleIdle } = {}) {
+  if (mode !== "shadow" && mode !== "client") {
+    return false;
+  }
+  schedule(() => {
+    loadEngine().catch(() => {});
+  });
+  return true;
+}
+
 async function settle(run) {
   try {
     return { result: await run() };
@@ -97,7 +120,7 @@ export async function runCalculation({
   mode,
   acceptLanguage,
   requestServer,
-  loadEngine = () => import("../engine/calculate.js"),
+  loadEngine = importEngine,
   logger = console,
 }) {
   const runClient = async () => {
@@ -115,18 +138,22 @@ export async function runCalculation({
     return requestServer(payload);
   }
 
-  const server = await settle(() => requestServer(payload));
-  const client = await settle(runClient);
-  const differences = diffResults(server, client);
-  if (differences.length) {
-    logger.warn(`${SHADOW_LOG_PREFIX} client engine differs from the server`, {
-      differences,
-      payload,
-    });
-  } else {
-    logger.info(`${SHADOW_LOG_PREFIX} client engine matches the server`);
-  }
+  // Both run at once; the user never waits for the client engine.
+  const serverRun = settle(() => requestServer(payload));
+  const clientRun = settle(runClient);
+  Promise.all([serverRun, clientRun]).then(([server, client]) => {
+    const differences = diffResults(server, client);
+    if (differences.length) {
+      logger.warn(`${SHADOW_LOG_PREFIX} client engine differs from the server`, {
+        differences,
+        payload,
+      });
+    } else {
+      logger.info(`${SHADOW_LOG_PREFIX} client engine matches the server`);
+    }
+  });
 
+  const server = await serverRun;
   if (server.error !== undefined) {
     throw new Error(server.error);
   }

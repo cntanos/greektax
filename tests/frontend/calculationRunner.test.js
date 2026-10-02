@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 
 import {
   diffResults,
+  preloadEngine,
   prepareClientPayload,
   resolveEngineMode,
   runCalculation,
@@ -23,6 +24,9 @@ const recordingLogger = () => {
     info: (...args) => calls.info.push(args),
   };
 };
+
+// Shadow comparisons are logged after the result is returned.
+const flush = () => new Promise((resolve) => setImmediate(resolve));
 
 const fakeEngine = (calculateTax) => async () => ({ calculateTax, ENGINE_LOCALES: ["el", "en"] });
 
@@ -102,6 +106,7 @@ test("shadow mode returns the server result and logs nothing alarming when engin
     logger,
   });
   assert.deepEqual(result, { total: 1 });
+  await flush();
   assert.equal(logger.calls.warn.length, 0);
   assert.equal(logger.calls.info.length, 1);
 });
@@ -116,6 +121,7 @@ test("shadow mode warns with the differing paths but still shows the server resu
     logger,
   });
   assert.deepEqual(result, { summary: { tax_total: 100 } });
+  await flush();
   assert.equal(logger.calls.warn.length, 1);
   assert.deepEqual(
     logger.calls.warn[0][1].differences.map((entry) => entry.path),
@@ -139,5 +145,38 @@ test("shadow mode compares errors and rethrows the server error", async () => {
     }),
     /same message/,
   );
+  await flush();
   assert.equal(logger.calls.warn.length, 0);
+  assert.equal(logger.calls.info.length, 1);
+});
+
+test("shadow mode does not wait for a client engine that never loads", async () => {
+  const logger = recordingLogger();
+  const result = await runCalculation({
+    payload: { year: 2026 },
+    mode: "shadow",
+    requestServer: async () => ({ total: 1 }),
+    loadEngine: () => new Promise(() => {}),
+    logger,
+  });
+  assert.deepEqual(result, { total: 1 });
+  await flush();
+  assert.equal(logger.calls.warn.length + logger.calls.info.length, 0);
+});
+
+test("preloadEngine schedules a download only in shadow and client modes", async () => {
+  const scheduled = [];
+  const schedule = (task) => scheduled.push(task);
+  let loads = 0;
+  const loadEngine = async () => {
+    loads += 1;
+    throw new Error("network down");
+  };
+  assert.equal(preloadEngine("server", { loadEngine, schedule }), false);
+  assert.equal(preloadEngine("shadow", { loadEngine, schedule }), true);
+  assert.equal(preloadEngine("client", { loadEngine, schedule }), true);
+  assert.equal(scheduled.length, 2);
+  scheduled.forEach((task) => task());
+  await flush();
+  assert.equal(loads, 2);
 });

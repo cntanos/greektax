@@ -65,10 +65,12 @@ The injection sits inside `<!-- @greektax/api-base:start --> ... <!-- @greektax/
 `GREEKTAX_ENGINE_MODE` chooses where calculations run. The same script writes it into the page as `<meta name="greektax-engine" content="...">`:
 
 - `server` (default, or unset): the page posts each calculation to the API, as before.
-- `shadow`: the page posts to the API and also runs the client-side engine (`assets/scripts/engine/`). It shows the server's result and logs `[GreekTax shadow] client engine matches the server`, or a warning listing the differing fields, to the browser console. Nothing else is sent anywhere.
+- `shadow`: the page posts to the API and also runs the client-side engine (`assets/scripts/engine/`). It shows the server's result as soon as it arrives, without waiting for the client engine, and afterwards logs `[GreekTax shadow] client engine matches the server`, or a warning listing the differing fields, to the browser console. Nothing else is sent anywhere.
 - `client`: the page runs the client-side engine only and makes no calculation request.
 
 Any other value makes the script exit with an error. Set it in `~/.greektax-deploy.env` on the cPanel host (sourced by `.cpanel.yml`) and redeploy.
+
+In `shadow` and `client` modes the page downloads the client engine (about 109 KB of JavaScript before compression) while it is idle after loading; `server` mode never downloads it.
 
 For cPanel-based deploys, invoke the script from `.cpanel.yml` (or the equivalent post-deploy hook) after the static files have been copied into the docroot. CORS must permit the frontend origin → backend origin call; verify with a manual cross-origin fetch before relying on the deployed page.
 
