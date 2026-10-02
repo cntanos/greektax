@@ -80,7 +80,6 @@ def _valid_rules() -> dict[str, object]:
             "reduction_threshold": 12000,
             "reduction_step": 1000,
             "reduction_per_step": 20,
-            "shared_across_general_income": False,
         },
     }
 
@@ -94,7 +93,6 @@ def test_rules_parse_with_defaults() -> None:
     assert rules.age_reference_year == 2025
     assert rules.youth_bands == (("under_25", 25), ("age26_30", 30))
     assert rules.max_birth_year_with_income is None
-    assert rules.salary_credit.shared_across_general_income is False
 
 
 @pytest.mark.parametrize(
@@ -110,8 +108,7 @@ def test_rules_parse_with_defaults() -> None:
         (("salary_credit", "reduction_threshold"), "12000"),
         (("age_reference_year",), 2026.0),
         (("max_birth_year_with_income",), "2025"),
-        (("salary_credit", "shared_across_general_income"), None),
-        (("salary_credit", "shared_across_general_income"), "false"),
+        (("salary_credit", "income_categories"), ["employment", "rental"]),
     ],
 )
 def test_rules_reject_invalid_values(path: tuple[str, ...], value: object) -> None:

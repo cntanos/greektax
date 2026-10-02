@@ -1,16 +1,15 @@
-"""Expose configuration metadata consumed by the decoupled front-end.
+"""Configuration payloads bundled into the frontend.
 
-These endpoints bridge the YAML-backed year configuration and the SPA so that
-UI forms can populate payroll frequencies, trade fee settings, and warning
-messages without duplicating business rules.
+``scripts/build_client_config.py`` writes these into
+``client-config.generated.js`` so the UI can populate payroll frequencies,
+trade fee settings and warning messages without duplicating business rules.
+They are the payloads the retired configuration API used to serve.
 """
 
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from typing import Any
-
-from flask import Blueprint, jsonify, request
 
 from greektax.backend.app.localization import get_translator, normalise_locale
 from greektax.backend.config.year_config import (
@@ -27,8 +26,6 @@ from greektax.backend.config.year_config import (
     load_year_configuration,
 )
 from greektax.backend.version import get_project_version
-
-blueprint = Blueprint("config", __name__, url_prefix="/api/v1/config")
 
 
 def _serialise_payroll_config(config: PayrollConfig) -> dict[str, Any]:
@@ -245,36 +242,25 @@ def _serialise_year(year: int) -> dict[str, Any]:
     }
 
 
-@blueprint.get("/meta")
-def get_application_metadata() -> tuple[Any, int]:
-    """Expose lightweight application metadata such as the version identifier."""
+def application_metadata() -> dict[str, Any]:
+    """Application metadata such as the version identifier."""
 
-    payload = {"version": get_project_version()}
-    return jsonify(payload), 200
+    return {"version": get_project_version()}
 
 
-@blueprint.get("/years")
-def list_years() -> tuple[Any, int]:
-    """Return all configured years with lightweight metadata."""
+def years_payload() -> dict[str, Any]:
+    """All configured years with their metadata."""
 
     years = [_serialise_year(year) for year in available_years()]
     default_year = years[-1]["year"] if years else None
-    payload = {"years": years, "default_year": default_year}
-    return jsonify(payload), 200
+    return {"years": years, "default_year": default_year}
 
 
-@blueprint.get("/<int:year>/investment-categories")
-def get_investment_categories(year: int) -> tuple[Any, int]:
-    """Expose configured investment categories with locale-aware labels."""
+def investment_categories(year: int, locale: str) -> dict[str, Any]:
+    """Configured investment categories with locale-aware labels."""
 
-    try:
-        config = load_year_configuration(year)
-    except FileNotFoundError as exc:  # pragma: no cover - defensive routing
-        return jsonify({"error": "not_found", "message": str(exc)}), 404
-
-    locale_hint = request.args.get("locale")
-    locale = normalise_locale(locale_hint)
-    translator = get_translator(locale)
+    config = load_year_configuration(year)
+    translator = get_translator(normalise_locale(locale))
 
     categories = []
     for key, rate in sorted(config.investment.rates.items()):
@@ -286,22 +272,14 @@ def get_investment_categories(year: int) -> tuple[Any, int]:
             }
         )
 
-    payload = {"year": year, "locale": translator.locale, "categories": categories}
-    return jsonify(payload), 200
+    return {"year": year, "locale": translator.locale, "categories": categories}
 
 
-@blueprint.get("/<int:year>/deductions")
-def get_deduction_hints(year: int) -> tuple[Any, int]:
-    """Expose deduction hint metadata with locale-aware labelling."""
+def deduction_hints(year: int, locale: str) -> dict[str, Any]:
+    """Deduction hint metadata with locale-aware labels."""
 
-    try:
-        config = load_year_configuration(year)
-    except FileNotFoundError as exc:  # pragma: no cover - defensive routing
-        return jsonify({"error": "not_found", "message": str(exc)}), 404
-
-    locale_hint = request.args.get("locale")
-    locale = normalise_locale(locale_hint)
-    translator = get_translator(locale)
+    config = load_year_configuration(year)
+    translator = get_translator(normalise_locale(locale))
 
     hints: list[dict[str, Any]] = []
     for hint in config.deductions.hints:
@@ -342,5 +320,4 @@ def get_deduction_hints(year: int) -> tuple[Any, int]:
             entry["allowances"] = allowances
         hints.append(entry)
 
-    payload = {"year": year, "locale": translator.locale, "hints": hints}
-    return jsonify(payload), 200
+    return {"year": year, "locale": translator.locale, "hints": hints}

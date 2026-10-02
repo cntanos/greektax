@@ -49,39 +49,26 @@ frontend static checks, and bundle-size budgets.
 5. For outdated dependencies:
    - prioritize security and runtime-critical packages first, then batch lower-risk updates in scheduled maintenance PRs.
 
-## Frontend API base injection
+## Deployment
 
-The source `src/frontend/index.html` stays deployment-agnostic: it ships with no `<meta data-api-base>` tag and `resolveApiBase()` falls back to the same-origin `/api/v1`. Cross-origin deployments (where the static frontend and the Flask backend live on different hosts) inject the meta tag at deploy time with `scripts/configure_frontend.py`:
+The site is static: `.cpanel.yml` copies `src/frontend/` into the cPanel docroot and then runs
 
 ```bash
-GREEKTAX_API_BASE=https://<account>.pythonanywhere.com/api/v1 \
-    python scripts/configure_frontend.py --target /path/to/served/index.html
+python3 scripts/configure_frontend.py --target "$DEPLOYPATH/index.html"
 ```
 
-The injection sits inside `<!-- @greektax/api-base:start --> ... <!-- @greektax/api-base:end -->` markers, so the script is idempotent — re-running it replaces any previous block. Running it with `GREEKTAX_API_BASE` unset or empty removes any prior injection, returning the file to its same-origin default. Keep the backend host value out of the repo: source it from a deploy-time environment variable, a non-committed config file, or a CI secret.
+which appends `?v=<hash>` to every local script reference (the `<script>` tags in `index.html` and every relative `import`, including the engine's dynamic `import()`), so browsers fetch new files after each deploy instead of serving stale ones. The hash only depends on the scripts' content, so re-running it is harmless.
 
-### Calculation engine mode
-
-`GREEKTAX_ENGINE_MODE` chooses where calculations run. The same script writes it into the page as `<meta name="greektax-engine" content="...">`:
-
-- `server` (default, or unset): the page posts each calculation to the API, as before.
-- `shadow`: the page posts to the API and also runs the client-side engine (`assets/scripts/engine/`). It shows the server's result as soon as it arrives, without waiting for the client engine, and afterwards logs `[GreekTax shadow] client engine matches the server`, or a warning listing the differing fields, to the browser console. Nothing else is sent anywhere.
-- `client`: the page runs the client-side engine only and makes no calculation request.
-
-Any other value makes the script exit with an error. Set it in `~/.greektax-deploy.env` on the cPanel host (sourced by `.cpanel.yml`) and redeploy.
-
-In `shadow` and `client` modes the page downloads the client engine (about 109 KB of JavaScript before compression) while it is idle after loading; `server` mode never downloads it.
-
-For cPanel-based deploys, invoke the script from `.cpanel.yml` (or the equivalent post-deploy hook) after the static files have been copied into the docroot. CORS must permit the frontend origin → backend origin call; verify with a manual cross-origin fetch before relying on the deployed page.
+There is no server-side component and no deploy-time configuration. Calculations run in the browser with the bundled engine (`assets/scripts/engine/`), which `ui/calculationRunner.js` downloads once the page is idle; no input leaves the device.
 
 ## Year configuration refreshes
 
 When introducing or updating filing years in `src/greektax/backend/config/data/*.yaml`:
 
-1. Update the year YAML file. Year-specific calculation rules that are not rate tables (youth age bands and reference year, which categories get youth relief, the residency-transfer share, the salary-credit reduction and sharing) live in its `rules` section; the engine has no year-specific branches in code.
+1. Update the year YAML file, citing the source of each changed figure in a YAML comment (see [`docs/reference/tax_rules_2025_2026.md`](reference/tax_rules_2025_2026.md) for the current ones). Year-specific calculation rules that are not rate tables (youth age bands and reference year, which categories get youth relief, the residency-transfer share, which income the salary credit covers and how it is reduced) live in its `rules` section; the engine has no year-specific branches in code.
 2. Run `python scripts/validate_config.py`.
 3. Run `python scripts/build_client_config.py` to rebuild the bundled frontend configuration (`src/frontend/assets/scripts/data/client-config.generated.js`). Rebuild it as well after translation or version changes; `pytest` fails while it is stale.
-4. Run `python scripts/generate_parity_fixtures.py` and review the diff in `tests/data/parity/`. Every changed expectation should be an intended consequence of the YAML change; `pytest` fails while the fixtures are stale. The client-side engine must then still match them: run `npm run test:frontend`.
+4. Run `python scripts/generate_parity_fixtures.py` and review the diff in `tests/data/parity/`. Every changed expectation should be an intended consequence of the YAML change; `pytest` fails while the fixtures are stale. The JavaScript engine must then still match them: run `npm run test:frontend`.
 5. Run `pytest`.
 6. Document any user-facing copy impacts in the i18n workflow doc.
 

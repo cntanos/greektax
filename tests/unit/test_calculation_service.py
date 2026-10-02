@@ -123,15 +123,8 @@ def _employment_expectations(  # noqa: PLR0913
     )
     credit_amount = employment.tax_credit.amount_for_children(children)
     credit_reduction = 0.0
-    reduction_base = gross_income
-    if monthly_income is not None:
-        payments = (
-            payments_per_year
-            or employment.payroll.default_payments_per_year
-            or 0
-        )
-        if payments:
-            reduction_base = monthly_income * payments
+    # Article 16(2) ΚΦΕ phases the reduction out on taxable salary income.
+    reduction_base = taxable_income
     if reduction_base > 12_000:
         credit_reduction = ((reduction_base - 12_000) / 1_000) * 20.0
     exempt_from_reduction = employment.tax_credit.income_reduction_exempt_from_dependants
@@ -583,10 +576,9 @@ def _freelance_expectations(request: CalculationRequest) -> dict[str, Any]:
     )
     credit_amount = config.employment.tax_credit.amount_for_children(dependents)
     credit_reduction = 0.0
-    if employment_gross > 12_000:
-        credit_reduction = ((employment_gross - 12_000) / 1_000) * 20.0
+    if employment_taxable > 12_000:
+        credit_reduction = ((employment_taxable - 12_000) / 1_000) * 20.0
     credit_after_reduction = max(credit_amount - credit_reduction, 0.0)
-    credit_applied = min(credit_after_reduction, total_tax_before_credit)
 
     employment_share = (
         employment_taxable / total_taxable if total_taxable else 0.0
@@ -596,12 +588,9 @@ def _freelance_expectations(request: CalculationRequest) -> dict[str, Any]:
         total_tax_before_credit - employment_tax_before_credit
     )
 
-    employment_credit = (
-        credit_applied * (employment_tax_before_credit / total_tax_before_credit)
-        if total_tax_before_credit
-        else 0.0
-    )
-    freelance_credit = credit_applied - employment_credit
+    # The salary credit only offsets the tax attributable to the salary.
+    employment_credit = min(credit_after_reduction, employment_tax_before_credit)
+    freelance_credit = 0.0
 
     employment_tax = employment_tax_before_credit - employment_credit
     freelance_tax = freelance_tax_before_credit - freelance_credit
@@ -954,8 +943,8 @@ def test_employment_tax_credit_not_reduced_below_threshold() -> None:
     assert employment_detail["credits"] == pytest.approx(base_credit)
 
 
-def test_employment_tax_credit_reduced_using_gross_income() -> None:
-    """Salary credits are reduced based on gross income above €12k and never negative."""
+def test_employment_tax_credit_phase_out_uses_taxable_income() -> None:
+    """Gross pay above 12,000 with taxable pay below it keeps the full credit."""
 
     request = build_request(
         {
@@ -972,17 +961,12 @@ def test_employment_tax_credit_reduced_using_gross_income() -> None:
     base_credit = config.employment.tax_credit.amount_for_children(
         request.dependents.children
     )
-    gross_income = request.employment.gross_income
-    reduction = ((gross_income - 12_000) / 1_000) * 20.0
-    expected_credit = max(base_credit - reduction, 0.0)
-
     assert employment_detail["taxable_income"] < 12_000
-    assert employment_detail["credits"] == pytest.approx(expected_credit)
-    assert employment_detail["credits"] >= 0.0
+    assert employment_detail["credits"] == pytest.approx(base_credit)
 
 
 def test_salary_credit_reduction_uses_derived_income_when_no_declared() -> None:
-    """Monthly salary inputs still reduce the credit when above the threshold."""
+    """Monthly salary inputs reduce the credit once taxable pay exceeds 12,000."""
 
     request = build_request(
         {
@@ -1003,15 +987,13 @@ def test_salary_credit_reduction_uses_derived_income_when_no_declared() -> None:
         request.dependents.children
     )
 
-    monthly_income = request.employment.monthly_income or 0.0
-    payments_per_year = request.employment.payments_per_year or 0
-    derived_income = monthly_income * payments_per_year
-    assert derived_income > 12_000
+    taxable_income = employment_detail["taxable_income"]
+    assert taxable_income > 12_000
 
-    reduction = ((derived_income - 12_000) / 1_000) * 20.0
+    reduction = ((taxable_income - 12_000) / 1_000) * 20.0
     expected_credit = max(base_credit - reduction, 0.0)
 
-    assert employment_detail["credits"] == pytest.approx(expected_credit)
+    assert employment_detail["credits"] == pytest.approx(expected_credit, abs=0.01)
     assert employment_detail["credits"] >= 0.0
 
 
@@ -1766,7 +1748,7 @@ def test_2026_youth_relief_applies_to_agricultural_income() -> None:
     base_payload = {
         "year": 2026,
         "dependents": {"children": 0},
-        "agricultural": {"gross_revenue": 20_000},
+        "agricultural": {"gross_revenue": 20_000, "professional_farmer": True},
         "demographics": {"birth_year": 1999},
     }
 
@@ -1883,7 +1865,7 @@ def test_youth_band_classifies_age_twenty_five_in_reference_year() -> None:
 
     request = build_request(
         {
-            "year": 2025,
+            "year": 2026,
             "employment": {"gross_income": 15_000},
             "demographics": {"taxpayer_birth_year": 2001},
         }
@@ -1892,6 +1874,32 @@ def test_youth_band_classifies_age_twenty_five_in_reference_year() -> None:
     result = calculate_tax(request)
 
     assert result["meta"]["youth_relief_category"] == "under_25"
+
+
+def test_no_youth_relief_before_2026() -> None:
+    """The reduced youth rates start in 2026 (Law 5246/2025)."""
+
+    result = calculate_tax(
+        build_request(
+            {
+                "year": 2025,
+                "employment": {"gross_income": 15_000},
+                "demographics": {"taxpayer_birth_year": 2003},
+            }
+        )
+    )
+    adult = calculate_tax(
+        build_request(
+            {
+                "year": 2025,
+                "employment": {"gross_income": 15_000},
+                "demographics": {"taxpayer_birth_year": 1980},
+            }
+        )
+    )
+
+    assert "youth_relief_category" not in result["meta"]
+    assert result["summary"]["tax_total"] == pytest.approx(adult["summary"]["tax_total"])
 
 
 def test_calculate_tax_combines_employment_and_pension_credit() -> None:
@@ -1908,9 +1916,11 @@ def test_calculate_tax_combines_employment_and_pension_credit() -> None:
 
     result = calculate_tax(request)
 
-    assert result["summary"]["tax_total"] == pytest.approx(2_054.86, rel=1e-4)
+    # Taxable 8,613 + 10,000 = 18,613; scale 900 + 22% of 8,613 = 2,794.86;
+    # credit 900 less 6.613 x 20 = 767.74, shared in proportion to the tax.
+    assert result["summary"]["tax_total"] == pytest.approx(2_027.12, rel=1e-4)
     assert result["summary"]["taxable_income"] == pytest.approx(18_613.0)
-    assert result["summary"]["net_income"] == pytest.approx(16_558.14, rel=1e-4)
+    assert result["summary"]["net_income"] == pytest.approx(16_585.88, rel=1e-4)
 
     employment_detail = next(
         detail for detail in result["details"] if detail["category"] == "employment"
@@ -1922,11 +1932,11 @@ def test_calculate_tax_combines_employment_and_pension_credit() -> None:
     assert employment_detail["tax_before_credits"] == pytest.approx(1_293.3, rel=1e-4)
     assert pension_detail["tax_before_credits"] == pytest.approx(1_501.56, rel=1e-4)
 
-    assert employment_detail["credits"] == pytest.approx(342.43, rel=1e-4)
-    assert pension_detail["credits"] == pytest.approx(397.57, rel=1e-4)
+    assert employment_detail["credits"] == pytest.approx(355.26, rel=1e-4)
+    assert pension_detail["credits"] == pytest.approx(412.48, rel=1e-4)
 
-    assert employment_detail["total_tax"] == pytest.approx(950.87, rel=1e-4)
-    assert pension_detail["total_tax"] == pytest.approx(1_103.99, rel=1e-4)
+    assert employment_detail["total_tax"] == pytest.approx(938.03, rel=1e-4)
+    assert pension_detail["total_tax"] == pytest.approx(1_089.09, rel=1e-4)
     assert employment_detail["employee_contributions"] == pytest.approx(1_387.0)
 
 
@@ -2045,8 +2055,13 @@ def test_calculate_tax_multi_year_credit_difference() -> None:
         expected_2026["tax"], rel=1e-4
     )
 
-    assert expected_2025["credit"] == pytest.approx(expected_2024["credit"])
-    assert expected_2026["credit"] == pytest.approx(expected_2025["credit"])
+    # The statutory amounts are unchanged; the credit applied differs only
+    # through each year's contribution rates (the phase-out uses taxable pay).
+    amounts = {
+        year: load_year_configuration(year).employment.tax_credit.amount_for_children(2)
+        for year in (2024, 2025, 2026)
+    }
+    assert amounts[2024] == amounts[2025] == amounts[2026] == pytest.approx(1_120.0)
     assert result_2026["meta"]["year"] == request_2026.year
 
 
@@ -2080,7 +2095,7 @@ def test_2026_dependant_credit_tiers_match_taxheaven_schedule() -> None:
     config = load_year_configuration(2026)
     credit = config.employment.tax_credit
 
-    assert credit.pending_confirmation is True
+    assert credit.pending_confirmation is False
     assert credit.incremental_amount_per_child == pytest.approx(220.0)
     expected_amounts = {
         0: 777.0,
@@ -2131,14 +2146,28 @@ def test_2026_rental_mid_band_cut() -> None:
     assert result["summary"]["tax_total"] == pytest.approx(expected_tax)
 
 
-def test_2026_efka_categories_marked_as_estimates() -> None:
-    """All 2026 EFKA categories surface the provisional estimate flag."""
+def test_2026_efka_categories_use_official_amounts() -> None:
+    """2026 EFKA amounts are the official ones (e-EFKA circular 6/2026)."""
 
     config = load_year_configuration(2026)
-    categories = config.freelance.efka_categories
+    categories = {category.id: category for category in config.freelance.efka_categories}
 
-    assert categories, "Expected EFKA categories for 2026"
-    assert all(category.estimate for category in categories)
+    expected = {
+        "general_class_1": 250.77,
+        "general_class_2": 300.93,
+        "general_class_3": 360.63,
+        "general_class_4": 433.47,
+        "general_class_5": 519.45,
+        "general_class_6": 675.87,
+        "general_reduced": 150.46,
+    }
+    for category_id, amount in expected.items():
+        assert categories[category_id].monthly_amount == pytest.approx(amount)
+    assert not any(category.estimate for category in categories.values())
+    engineer = categories["engineer_class_1"]
+    assert engineer.monthly_amount == pytest.approx(250.77)
+    assert engineer.auxiliary_monthly_amount == pytest.approx(46.57)
+    assert engineer.lump_sum_monthly_amount == pytest.approx(31.05)
 
 
 def test_calculate_tax_with_freelance_category_contributions() -> None:
@@ -2237,8 +2266,6 @@ def test_calculate_tax_applies_deductions_across_components() -> None:
             "deductions": {
                 "donations": 2_000,
                 "medical": 1_000,
-                "education": 1_000,
-                "insurance": 1_000,
             },
         }
     )
@@ -2253,18 +2280,11 @@ def test_calculate_tax_applies_deductions_across_components() -> None:
         if income_cap is not None
         else request.deductions.donations
     )
+    # Donations count up to 5% of income (1,500) at 20%; medical expenses of
+    # 1,000 do not exceed 5% of income, so they earn no credit.
     expected_donation_credit = eligible_donations * rules.donations.credit_rate
-    expected_education_credit = (
-        min(request.deductions.education, rules.education.max_eligible_expense)
-        * rules.education.credit_rate
-    )
-    expected_insurance_credit = (
-        min(request.deductions.insurance, rules.insurance.max_eligible_expense)
-        * rules.insurance.credit_rate
-    )
-    expected_total_credit = (
-        expected_donation_credit + expected_education_credit + expected_insurance_credit
-    )
+    expected_total_credit = expected_donation_credit
+    assert expected_total_credit == pytest.approx(300.0)
 
     result = calculate_tax(request)
 
@@ -2290,7 +2310,7 @@ def test_calculate_tax_applies_deductions_across_components() -> None:
     assert agricultural_detail["taxable_income"] == pytest.approx(10_000.0)
 
     summary = result["summary"]
-    assert summary["deductions_entered"] == pytest.approx(5_000.0)
+    assert summary["deductions_entered"] == pytest.approx(3_000.0)
     assert summary["deductions_applied"] == pytest.approx(expected_total_credit)
 
     breakdown = summary.get("deductions_breakdown")
@@ -2317,13 +2337,13 @@ def test_calculate_tax_applies_donation_credit_to_freelance_tax() -> None:
 
     baseline = calculate_tax(base_request)
     with_donation = calculate_tax(
-        base_request.model_copy(update={"deductions": {"donations": 100}})
+        base_request.model_copy(update={"deductions": {"donations": 500}})
     )
 
     baseline_tax = baseline["summary"]["tax_total"]
     donation_tax = with_donation["summary"]["tax_total"]
 
-    expected_credit = 100 * donation_rules.credit_rate
+    expected_credit = 500 * donation_rules.credit_rate
     assert baseline_tax - donation_tax == pytest.approx(expected_credit)
 
     breakdown = with_donation["summary"].get("deductions_breakdown")
@@ -2429,33 +2449,27 @@ def test_calculate_tax_with_agricultural_and_other_income() -> None:
     assert summary["tax_total"] == pytest.approx(2_660.0)
 
 
-def test_agricultural_only_income_has_no_salary_credit_in_2025() -> None:
-    """Agricultural-only income no longer benefits from the salary tax credit."""
+def test_agricultural_income_without_professional_status_has_no_credit() -> None:
+    """Only professional farmers get the Article 16 reduction on farm income."""
 
-    request = build_request(
-        {
-            "year": 2025,
-            "agricultural": {
-                "gross_revenue": 12_000,
-                "deductible_expenses": 2_000,
-            },
-        }
+    result = calculate_tax(
+        build_request(
+            {
+                "year": 2025,
+                "agricultural": {"gross_revenue": 12_000, "deductible_expenses": 2_000},
+            }
+        )
     )
-
-    result = calculate_tax(request)
 
     agricultural_detail = next(
         detail for detail in result["details"] if detail["category"] == "agricultural"
     )
-
-    assert agricultural_detail["credits"] == pytest.approx(0.0)
-    assert agricultural_detail["tax"] == pytest.approx(
-        agricultural_detail["tax_before_credits"]
-    )
+    assert agricultural_detail.get("credits", 0.0) == pytest.approx(0.0)
+    assert result["summary"]["tax_total"] == pytest.approx(900.0)
 
 
-def test_professional_farmer_credit_removed_for_2025() -> None:
-    """Professional farmers no longer receive the employment tax credit in 2025."""
+def test_professional_farmer_gets_the_credit_in_2025() -> None:
+    """Professional farmers keep the Article 16 reduction in 2025."""
 
     request = build_request(
         {
@@ -2471,12 +2485,12 @@ def test_professional_farmer_credit_removed_for_2025() -> None:
     )
 
     result = calculate_tax(request)
+    details = {detail["category"]: detail for detail in result["details"]}
 
-    agricultural_detail = next(
-        detail for detail in result["details"] if detail["category"] == "agricultural"
-    )
+    # Taxable farm income 25,000: 1,120 less 13 x 20 = 860, within its tax.
+    assert details["agricultural"]["credits"] == pytest.approx(860.0)
+    assert details["other"].get("credits", 0.0) == pytest.approx(0.0)
 
-    assert agricultural_detail["credits"] == pytest.approx(0.0)
 
 def test_calculate_tax_trade_fee_reduction_rules() -> None:
     """Trade fee toggles keep the amount at zero after the abolition."""

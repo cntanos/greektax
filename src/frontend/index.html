@@ -1124,9 +1124,10 @@
                 required for all deduction categories.
               </p>
               <p data-i18n-key="ui.deductions_help_limits">
-                The calculator applies statutory limits automatically (e.g. 20%
-                credit for donations, AADE caps for medical, education, and
-                insurance costs).
+                Statutory limits are applied automatically: donations earn a 20%
+                credit only when they exceed €100 in the year, counting up to 5%
+                of taxable income; medical expenses earn 10% of the amount above
+                5% of income, up to €3,000.
               </p>
             </details>
             <div class="form-grid double">
@@ -1156,38 +1157,6 @@
                 <input
                   id="deductions-medical"
                   name="deductions.medical"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value="0"
-                />
-              </div>
-              <div class="form-control">
-                <label
-                  for="deductions-education"
-                  data-i18n-key="fields.deductions-education"
-                >
-                  Education expenses (€)
-                </label>
-                <input
-                  id="deductions-education"
-                  name="deductions.education"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value="0"
-                />
-              </div>
-              <div class="form-control">
-                <label
-                  for="deductions-insurance"
-                  data-i18n-key="fields.deductions-insurance"
-                >
-                  Insurance premiums (€)
-                </label>
-                <input
-                  id="deductions-insurance"
-                  name="deductions.insurance"
                   type="number"
                   min="0"
                   step="0.01"

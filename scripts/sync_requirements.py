@@ -13,7 +13,6 @@ PYPROJECT_PATH = ROOT / "pyproject.toml"
 
 REQUIREMENTS_PATH = ROOT / "requirements.txt"
 REQUIREMENTS_DEV_PATH = ROOT / "requirements-dev.txt"
-BACKEND_REQUIREMENTS_PATH = ROOT / "src/greektax/backend/requirements.txt"
 
 
 def _load_pyproject() -> dict:
@@ -41,7 +40,6 @@ def build_expected_requirements() -> dict[Path, str]:
 
     return {
         REQUIREMENTS_PATH: runtime_content,
-        BACKEND_REQUIREMENTS_PATH: runtime_content,
         REQUIREMENTS_DEV_PATH: _render_dev_requirements(dev_dependencies),
     }
 

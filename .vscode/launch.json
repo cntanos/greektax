@@ -2,50 +2,6 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Backend: Flask API",
-            "type": "python",
-            "request": "launch",
-            "python": "${command:python.interpreterPath}",
-            "module": "flask",
-            "cwd": "${workspaceFolder}",
-            "args": [
-                "--app",
-                "greektax.backend.app:create_app",
-                "run",
-                "--host",
-                "127.0.0.1",
-                "--port",
-                "5000",
-                "--no-debugger",
-                "--no-reload"
-            ],
-            "envFile": "${workspaceFolder}/.env",
-            "env": {
-                "PYTHONPATH": "${workspaceFolder}/src",
-                "FLASK_DEBUG": "1"
-            },
-            "jinja": true,
-            "justMyCode": true,
-            "console": "integratedTerminal",
-            "internalConsoleOptions": "neverOpen"
-        },
-        {
-            "name": "Backend: Attach to running API",
-            "type": "python",
-            "request": "attach",
-            "connect": {
-                "host": "127.0.0.1",
-                "port": 5678
-            },
-            "pathMappings": [
-                {
-                    "localRoot": "${workspaceFolder}",
-                    "remoteRoot": "${workspaceFolder}"
-                }
-            ],
-            "justMyCode": true
-        },
-        {
             "name": "Tests: Pytest (workspace)",
             "type": "python",
             "request": "launch",
@@ -55,7 +11,6 @@
             "args": [
                 "tests"
             ],
-            "envFile": "${workspaceFolder}/.env",
             "env": {
                 "PYTHONPATH": "${workspaceFolder}/src"
             },
@@ -76,7 +31,6 @@
             "args": [
                 "${relativeFile}"
             ],
-            "envFile": "${workspaceFolder}/.env",
             "env": {
                 "PYTHONPATH": "${workspaceFolder}/src"
             },
@@ -99,7 +53,6 @@
                 "${input:pytestFilter}",
                 "tests"
             ],
-            "envFile": "${workspaceFolder}/.env",
             "env": {
                 "PYTHONPATH": "${workspaceFolder}/src"
             },
@@ -114,7 +67,6 @@
             "python": "${command:python.interpreterPath}",
             "program": "${workspaceFolder}/scripts/validate_config.py",
             "cwd": "${workspaceFolder}",
-            "envFile": "${workspaceFolder}/.env",
             "env": {
                 "PYTHONPATH": "${workspaceFolder}/src"
             },
@@ -129,7 +81,6 @@
             "python": "${command:python.interpreterPath}",
             "program": "${workspaceFolder}/scripts/embed_translations.py",
             "cwd": "${workspaceFolder}",
-            "envFile": "${workspaceFolder}/.env",
             "env": {
                 "PYTHONPATH": "${workspaceFolder}/src"
             },
@@ -144,7 +95,6 @@
             "python": "${command:python.interpreterPath}",
             "program": "${workspaceFolder}/scripts/performance_snapshot.py",
             "cwd": "${workspaceFolder}",
-            "envFile": "${workspaceFolder}/.env",
             "env": {
                 "PYTHONPATH": "${workspaceFolder}/src"
             },
@@ -159,7 +109,6 @@
             "python": "${command:python.interpreterPath}",
             "program": "${file}",
             "cwd": "${fileDirname}",
-            "envFile": "${workspaceFolder}/.env",
             "env": {
                 "PYTHONPATH": "${workspaceFolder}/src"
             },
@@ -173,7 +122,7 @@
             "id": "pytestFilter",
             "type": "promptString",
             "description": "Pytest -k expression",
-            "default": "integration"
+            "default": "parity"
         }
     ]
 }

@@ -1,12 +1,11 @@
 /**
  * Front-end logic for the GreekTax prototype calculator.
  *
- * The script bootstraps localisation-aware metadata retrieval, provides client
- * validation for numeric fields, and renders interactive calculation results
- * returned by the Flask back-end.
+ * The script bootstraps localisation-aware metadata, provides client validation
+ * for numeric fields, and renders interactive calculation results computed in
+ * the browser by the engine in ../engine/.
  */
 
-import { buildApiEndpoints } from "../api/endpoints.js";
 import {
   getApplicationVersion,
   getDeductionsPayload,
@@ -30,23 +29,13 @@ import {
 } from "../charts/distribution.js";
 import { mergeTranslationCatalogues, isPlainObject } from "../i18n/catalog.js";
 import { createI18nState } from "../state/i18nState.js";
-import {
-  fetchServerCalculation,
-  preloadEngine,
-  resolveEngineMode,
-  runCalculation,
-} from "./calculationRunner.js";
+import { preloadEngine, runCalculation } from "./calculationRunner.js";
 import { toFiniteNumber } from "../validation/numbers.js";
 
-const {
-  API_BASE,
-  CALCULATIONS_ENDPOINT,
-  TRANSLATIONS_ENDPOINT,
-} = buildApiEndpoints();
 
 const i18nState = createI18nState();
 const { translationsByLocale } = i18nState;
-let { availableTranslationLocales, fallbackLocale } = i18nState;
+const { fallbackLocale } = i18nState;
 
 
 let currentLocale = "el";
@@ -294,78 +283,9 @@ function seedEmbeddedTranslations() {
 
 seedEmbeddedTranslations();
 
-async function requestTranslations(locale) {
-  const response = await fetch(TRANSLATIONS_ENDPOINT(locale));
-  if (!response.ok) {
-    throw new Error(`Unable to load translations (${response.status})`);
-  }
-
-  const payload = await response.json();
-  if (!payload || typeof payload !== "object") {
-    throw new Error("Unexpected translations payload");
-  }
-
-  if (Array.isArray(payload.available_locales) && payload.available_locales.length) {
-    availableTranslationLocales = payload.available_locales
-      .map((value) =>
-        typeof value === "string" ? value.toLowerCase().split("-")[0] : null,
-      )
-      .filter((value) => value);
-  }
-
-  const resolvedLocale =
-    typeof payload.locale === "string"
-      ? payload.locale.toLowerCase().split("-")[0]
-      : null;
-  if (resolvedLocale && payload.frontend && typeof payload.frontend === "object") {
-    storeFrontendTranslations(resolvedLocale, payload.frontend);
-  }
-
-  const fallbackPayload = payload.fallback;
-  if (
-    fallbackPayload &&
-    typeof fallbackPayload === "object" &&
-    typeof fallbackPayload.locale === "string" &&
-    fallbackPayload.frontend &&
-    typeof fallbackPayload.frontend === "object"
-  ) {
-    const fallbackResolved = fallbackPayload.locale.toLowerCase().split("-")[0];
-    fallbackLocale = fallbackResolved;
-    storeFrontendTranslations(fallbackResolved, fallbackPayload.frontend);
-    if (!availableTranslationLocales.includes(fallbackResolved)) {
-      availableTranslationLocales.push(fallbackResolved);
-    }
-  }
-
-  if (resolvedLocale && !availableTranslationLocales.includes(resolvedLocale)) {
-    availableTranslationLocales.push(resolvedLocale);
-  }
-
-  if (!availableTranslationLocales.length) {
-    availableTranslationLocales = [fallbackLocale];
-  } else {
-    availableTranslationLocales = Array.from(new Set(availableTranslationLocales));
-  }
-
-  return resolvedLocale || fallbackLocale;
-}
-
-async function ensureTranslations(locale) {
+/** Translations are bundled with the page; unknown locales fall back. */
+function ensureTranslations(locale) {
   const target = normaliseLocaleChoice(locale);
-  if (!translationsByLocale.has(target)) {
-    try {
-      return await requestTranslations(target);
-    } catch (error) {
-      console.error("Failed to load translations", error);
-      if (!translationsByLocale.has(fallbackLocale)) {
-        try {
-          await requestTranslations(fallbackLocale);
-        } catch (fallbackError) {
-          console.error("Failed to load fallback translations", fallbackError);
-        }
-      }
-    }
-  }
   return translationsByLocale.has(target) ? target : fallbackLocale;
 }
 
@@ -472,8 +392,6 @@ const agriculturalProfessionalFarmerInput = document.getElementById(
 const otherIncomeInput = document.getElementById("other-income");
 const deductionsDonationsInput = document.getElementById("deductions-donations");
 const deductionsMedicalInput = document.getElementById("deductions-medical");
-const deductionsEducationInput = document.getElementById("deductions-education");
-const deductionsInsuranceInput = document.getElementById("deductions-insurance");
 const enfiaInput = document.getElementById("enfia-due");
 const luxuryInput = document.getElementById("luxury-due");
 const freelanceSection = document.getElementById("freelance-section");
@@ -1440,7 +1358,7 @@ function applyTheme(theme) {
 }
 
 async function applyLocale(locale) {
-  const resolved = await ensureTranslations(locale);
+  const resolved = ensureTranslations(locale);
   currentLocale = resolved;
   persistLocale(resolved);
   document.documentElement.lang = resolved;
@@ -3530,8 +3448,6 @@ function buildCalculationPayload() {
     const deductionsPayload = {
       donations: readNumber(deductionsDonationsInput),
       medical: readNumber(deductionsMedicalInput),
-      education: readNumber(deductionsEducationInput),
-      insurance: readNumber(deductionsInsuranceInput),
     };
     if (Object.values(deductionsPayload).some((value) => value > 0)) {
       payload.deductions = deductionsPayload;
@@ -4702,17 +4618,11 @@ async function submitCalculation(event) {
   setCalculatorStatus(t("status.calculating"));
 
   try {
-    const result = await runCalculation({
-      payload,
-      mode: resolveEngineMode(document),
-      acceptLanguage: currentLocale,
-      requestServer: (body) =>
-        fetchServerCalculation(CALCULATIONS_ENDPOINT, body, currentLocale),
-    });
+    const result = await runCalculation(payload, currentLocale);
     renderCalculation(result);
     setCalculatorStatus(t("status.calculation_complete"));
   } catch (error) {
-    console.error("Calculation request failed", error);
+    console.error("Calculation failed", error);
     setCalculatorStatus(
       error instanceof Error ? error.message : t("status.calculation_failed"),
       { isError: true },
@@ -5773,7 +5683,7 @@ export async function bootstrapApp() {
   initialiseLocaleControls();
   initialiseThemeControls();
   initialiseCalculator();
-  preloadEngine(resolveEngineMode(document));
+  preloadEngine();
   void refreshApplicationVersion();
 
   console.info("GreekTax interface initialised");

@@ -80,12 +80,10 @@ class CalculationInput(BaseModel):
     employment_include_employee_contributions: bool
     employment_include_manual_contributions: bool
     employment_include_employer_contributions: bool
-    employment_declared_gross_income: float = 0.0
     withholding_tax: float
     pension_income: float
     pension_monthly_income: float | None
     pension_payments_per_year: int | None
-    pension_declared_gross_income: float = 0.0
     freelance_profit: float
     freelance_gross_revenue: float
     freelance_deductible_expenses: float
@@ -114,8 +112,6 @@ class CalculationInput(BaseModel):
     other_taxable_income: float
     deductions_donations: float
     deductions_medical: float
-    deductions_education: float
-    deductions_insurance: float
     toggles: Mapping[str, bool] = Field(default_factory=dict)
     taxpayer_birth_year: int | None = None
     tax_residency_transfer_to_greece: bool = False
@@ -226,26 +222,11 @@ class CalculationInput(BaseModel):
             or self.agricultural_profit > 0
         )
 
-    @property
-    def has_non_agricultural_taxable_income(self) -> bool:
-        return any(
-            (
-                self.has_employment_income,
-                self.has_pension_income,
-                self.freelance_taxable_income > 0,
-                self.other_taxable_income > 0,
-                self.rental_taxable_income > 0,
-                self.has_investment_income,
-            )
-        )
 
     @property
     def qualifies_for_agricultural_tax_credit(self) -> bool:
-        if not self.has_agricultural_income:
-            return False
-        if self.agricultural_professional_farmer:
-            return True
-        return not self.has_non_agricultural_taxable_income
+        # Article 16 ΚΦΕ: only professional farmers (κατ' επάγγελμα αγρότες).
+        return self.has_agricultural_income and self.agricultural_professional_farmer
 
     @property
     def has_other_income(self) -> bool:
@@ -256,8 +237,6 @@ class CalculationInput(BaseModel):
         total = (
             self.deductions_donations
             + self.deductions_medical
-            + self.deductions_education
-            + self.deductions_insurance
         )
         return total if total > 0 else 0.0
 

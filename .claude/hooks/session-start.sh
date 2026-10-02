@@ -1,5 +1,5 @@
 #!/bin/bash
-# SessionStart hook for Claude Code on the web: installs the backend (Python)
+# SessionStart hook for Claude Code on the web: installs the Python
 # and frontend test (Node) dependencies so pytest, ruff, mypy, vulture and
 # `npm run test:frontend` work out of the box in cloud sessions.
 set -euo pipefail
@@ -18,7 +18,7 @@ if [ ! -x "$VENV/bin/python" ]; then
   python3 -m venv "$VENV"
 fi
 
-# Backend runtime + dev tooling (mirrors .github/workflows/ci.yml).
+# Python dependencies + dev tooling (mirrors .github/workflows/ci.yml).
 "$VENV/bin/python" -m pip install --quiet --disable-pip-version-check -r requirements-dev.txt
 "$VENV/bin/python" -m pip install --quiet --disable-pip-version-check --no-deps -e .
 

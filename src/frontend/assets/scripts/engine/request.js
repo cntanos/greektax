@@ -405,8 +405,6 @@ const ObligationsInput = simpleModel("ObligationsInput", { enfia: amount, luxury
 const DeductionsInput = simpleModel("DeductionsInput", {
   donations: amount,
   medical: amount,
-  education: amount,
-  insurance: amount,
 });
 
 const mappingOrEmpty = (message) => (value) => {

@@ -64,7 +64,7 @@ EDGE_AMOUNTS = (
     85_000.0,
     150_000.0,
 )
-CHILDREN = (0, 1, 2, 3, 4, 5, 7)
+CHILDREN = (0, 1, 2, 3, 4, 5, 7, 10)
 # No birth year (no youth relief), then one birth year in each youth band
 # (age 26 to 30, and 25 or under) for every year's age reference year.
 BIRTH_YEARS = (None, 1998, 2004)
@@ -139,13 +139,46 @@ def _grid_cases(year: int) -> list[dict[str, Any]]:
                         }
                     )
 
-    for amount in EDGE_AMOUNTS:
+    # The salary credit only offsets the tax on salaries, pensions and
+    # qualifying agricultural income, even when other income is taxed with it.
+    for salary, other in ((5_000.0, 20_000.0), (15_000.0, 15_000.0), (30_000.0, 5_000.0)):
+        for section in (
+            {"freelance": {"profit": other}},
+            {"pension": {"gross_income": other}},
+            {"agricultural": {"gross_revenue": other, "professional_farmer": True}},
+            {"other": {"taxable_income": other}},
+        ):
+            name = next(iter(section))
+            cases.append(
+                {
+                    "name": f"grid/mixed/employment-{name}/{salary}/{other}",
+                    "payload": {
+                        "year": year,
+                        "employment": {"gross_income": salary},
+                        **section,
+                    },
+                }
+            )
+
+    for donations in (50.0, 100.0, 100.01, 5_000.0):
+        cases.append(
+            {
+                "name": f"grid/donations/{donations}",
+                "payload": {
+                    "year": year,
+                    "employment": {"gross_income": 30_000.0},
+                    "deductions": {"donations": donations},
+                },
+            }
+        )
+
+    for amount in (*EDGE_AMOUNTS, 24_000.0, 24_000.01, 35_000.01, 36_000.0, 36_000.01):
         cases.append(
             {
                 "name": f"grid/rental/{amount}",
                 "payload": {
                     "year": year,
-                    "rental": {"gross_income": amount, "deductible_expenses": amount / 10},
+                    "rental": {"gross_income": amount, "deductible_expenses": 0.0},
                 },
             }
         )
@@ -243,7 +276,7 @@ def _random_cases(year: int, count: int, rng: random.Random) -> list[dict[str, A
         if rng.random() < 0.4:
             payload["deductions"] = {
                 key: _random_amount(rng, 8_000)
-                for key in ("donations", "medical", "education", "insurance")
+                for key in ("donations", "medical")
             }
         if rng.random() < 0.3:
             payload["withholding_tax"] = _random_amount(rng, 15_000)

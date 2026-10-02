@@ -1,11 +1,12 @@
 # GreekTax review guidelines
 
-GreekTax is a Greek tax calculator. The backend is a Python/Flask app
-in `src/greektax/backend/`; the frontend is a static JS bundle in
-`src/frontend/`. There is no auth, no PII storage, no database. The
-single production deployment is `cognisys.gr` (frontend, served via
-cPanel) → `cntanos.pythonanywhere.com` (backend, hosted on
-PythonAnywhere).
+GreekTax is a Greek tax calculator. It is a static site in
+`src/frontend/`: every calculation runs in the browser with the engine in
+`src/frontend/assets/scripts/engine/`, and no input leaves the device.
+The Python package in `src/greektax/` is not deployed; it holds the year
+configuration and the reference engine that the JavaScript engine must
+match exactly. There is no server, no auth, no PII storage, no database.
+The single production deployment is `cognisys.gr`, served via cPanel.
 
 This file is loaded at the start of every PR review. Use it to
 prioritise findings.
@@ -15,9 +16,15 @@ prioritise findings.
 ### Correctness
 
 - Pydantic models in `src/greektax/backend/app/models/` reject extra
-  fields by convention (`model_config = ConfigDict(extra="forbid")`).
-  New optional fields must default cleanly; new required fields are a
-  breaking API change worth calling out.
+  fields by convention (`model_config = ConfigDict(extra="forbid")`), and
+  `engine/request.js` mirrors them. New optional fields must default
+  cleanly in both.
+- Any calculation change that is not purely YAML must be made in both
+  engines (`src/greektax/backend/app/services/` and
+  `src/frontend/assets/scripts/engine/`). `tests/frontend/engineParity.test.js`
+  requires exact agreement on every case in `tests/data/parity/`; flag a PR
+  that regenerates those fixtures without explaining the changed
+  expectations.
 - `src/frontend/assets/scripts/ui/app.js` is a ~5800-line module.
   Every identifier it references must be declared, imported, or a
   browser/standard global. The refactor in PR #221 dropped eleven
@@ -26,29 +33,25 @@ prioritise findings.
   update, member access) that lacks a declaration.
 - Tax brackets and rate tables live in
   `src/greektax/backend/config/data/*.yaml`. Changes there must come
-  with a `python scripts/validate_config.py` check; flag PRs that
-  modify a year file without mentioning it.
+  with a `python scripts/validate_config.py` check and a source for each
+  changed figure; flag PRs that modify a year file without either.
+  `docs/reference/tax_rules_2025_2026.md` records the current figures
+  and their sources.
 
 ### Security
 
-- Backend response headers are set by an `after_request` hook in
-  `src/greektax/backend/app/__init__.py` (see PR #236). New endpoints
-  must not bypass it.
-- `MAX_CONTENT_LENGTH` defaults to 64 KiB. Endpoints accepting larger
-  payloads must justify the bump.
-- CORS is allow-listed via the `GREEKTAX_ALLOWED_ORIGINS` env var.
-  Cross-origin fetch surfaces also need a matching `connect-src` entry
-  in the CSP meta tag in `src/frontend/index.html` (see PR #238).
+- There is no backend. A change that sends user input off the device
+  (for example a `fetch`, a beacon or analytics) is a privacy
+  regression: the page promises that entries never leave the device.
 - localStorage persistence is **opt-in** (PR #241). Form fields that
   need to skip persistence must carry `data-no-persist`. Persisting
   financial data without honouring `calculatorPersistenceOptIn` is a
   regression.
-- XSS: API/user content reaches the DOM via `textContent`.
+- XSS: engine results and user content reach the DOM via `textContent`.
   `innerHTML` is reserved for static-template clearing. Any new
   `innerHTML = <interpolated>` is a bug — call it out.
-- Workflows pin third-party actions by SHA (see `appleboy/ssh-action`
-  in `.github/workflows/deploy-backend.yml`, PR #237). New uses of
-  unpinned tags are a security finding.
+- New third-party (non-GitHub) workflow actions must be pinned by SHA;
+  an unpinned tag is a security finding.
 
 ### Tests
 
@@ -56,7 +59,8 @@ prioritise findings.
   `npm run test:frontend` (which globs `tests/frontend/*.test.js`).
   JSDOM- and acorn-dependent tests skip gracefully when those optional
   dev deps are not installed.
-- Backend tests: `tests/{unit,integration,e2e}/`, run via `pytest`.
+- Python tests (reference engine, configuration, build scripts):
+  `tests/{unit,config}/`, run via `pytest`.
 - `tests/frontend/fileSizeGuardrails.test.js` caps
   `src/frontend/assets/scripts/ui/app.js` at 5900 lines. If a change
   pushes it over, either trim or justify a budget bump in the PR.
@@ -70,7 +74,7 @@ prioritise findings.
   selectors they already cover is noise.
 - Hypothetical generality. This is a single-deployment project;
   suggestions framed as "what if someone forks this for a different
-  backend" are not actionable. Frame findings in terms of the existing
+  host" are not actionable. Frame findings in terms of the existing
   deployment.
 - Translation phrasing. Both EL and EN translations are maintained by
   the project owner; flag *missing keys* or `t(key)` calls that
@@ -84,13 +88,14 @@ prioritise findings.
   `src/frontend/assets/scripts/translations.generated.js`; otherwise
   the deployed UI shows literal keys.
 - Deployed-static-asset cache busting: `scripts/configure_frontend.py`
-  appends `?v=<hash>` to every relative JS import and every
-  `<script src="./assets/scripts/*.js">` tag at deploy time (PR #242).
-  New `<script>` tags or new module imports that bypass this mechanism
-  will hit stale caches.
-- Pre-existing test failures: `tests/e2e/test_smoke_flow.py` asserts
-  `id="api-connection-status"` which doesn't exist in the served HTML.
-  Tracked separately; don't flag.
+  appends `?v=<hash>` to every relative JS import (including dynamic
+  `import()`) and every `<script src="./assets/scripts/*.js">` tag at
+  deploy time (PR #242). New `<script>` tags or module imports that
+  bypass this mechanism will hit stale caches.
+- Generated files: after editing a year file, translations or the
+  version, run `python scripts/build_client_config.py` and
+  `python scripts/generate_parity_fixtures.py`; `pytest` fails while
+  their outputs are stale.
 
 ## Output format
 

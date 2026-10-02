@@ -1,8 +1,8 @@
 year: 2026
 meta:
   version: 1
-  status: draft
-  notes: "2026 configuration with confirmed wage and pension brackets plus provisional credits"
+  status: final
+  notes: "2026 configuration under Law 5246/2025"
   toggles:
     tekmiria_reduction: true
     presumptive_relief: true
@@ -16,13 +16,13 @@ rules:
   residency_transfer_taxable_share: 0.5
   max_birth_year_with_income: 2025
   salary_credit:
-    income_categories: [employment]
+    # Article 16 ΚΦΕ: the credit reduces the tax on salaries and pensions, and on
+    # agricultural income where the farmer qualifies; it falls by 20 per 1,000 of
+    # that taxable income above 12,000 (not for 5+ dependent children).
+    income_categories: [employment, pension, agricultural]
     reduction_threshold: 12000
     reduction_step: 1000
     reduction_per_step: 20
-    # Before 2025 pension and agricultural income could also claim the credit,
-    # and the credit was shared across all credit-eligible general income.
-    shared_across_general_income: false
 income:
   employment:
     payroll:
@@ -34,7 +34,7 @@ income:
     contributions:
       employee_rate: 0.1337
       employer_rate: 0.2179
-      monthly_salary_cap: 7572.62
+      monthly_salary_cap: 7761.94
     tax_brackets: &article15_scale
       - upper: 10000
         rates:
@@ -235,7 +235,6 @@ income:
         "15": 3980
       incremental_amount_per_child: 220
       income_reduction_exempt_from_dependants: 5
-      pending_confirmation: true
     family_tax_credit:
       pending_confirmation: true
       estimate: true
@@ -259,78 +258,51 @@ income:
       reduced_amount: 0
       newly_self_employed_reduction_years: null
       fee_sunset: true
+    # e-EFKA circular 6/2026: monthly contributions of non-salaried insured
+    # persons for 2026 (2025 amounts plus 2.5%). Engineers pay the same main
+    # classes plus auxiliary and lump-sum classes; class N is shown with
+    # auxiliary/lump-sum class N.
     efka_categories:
       - id: general_class_1
         label_key: forms.freelance.efka.category.general_class_1
-        monthly_amount: 273.94
-        pension_monthly_amount: 220.4
-        health_monthly_amount: 53.55
-        estimate: true
+        monthly_amount: 250.77
       - id: general_class_2
         label_key: forms.freelance.efka.category.general_class_2
-        monthly_amount: 328.84
-        pension_monthly_amount: 263.74
-        health_monthly_amount: 65.1
-        estimate: true
+        monthly_amount: 300.93
       - id: general_class_3
         label_key: forms.freelance.efka.category.general_class_3
-        monthly_amount: 395.0
-        pension_monthly_amount: 319.4
-        health_monthly_amount: 75.6
-        estimate: true
+        monthly_amount: 360.63
       - id: general_class_4
         label_key: forms.freelance.efka.category.general_class_4
-        monthly_amount: 475.58
-        pension_monthly_amount: 384.23
-        health_monthly_amount: 91.35
-        estimate: true
+        monthly_amount: 433.47
       - id: general_class_5
         label_key: forms.freelance.efka.category.general_class_5
-        monthly_amount: 561.28
-        pension_monthly_amount: 458.38
-        health_monthly_amount: 102.9
-        estimate: true
+        monthly_amount: 519.45
       - id: general_class_6
         label_key: forms.freelance.efka.category.general_class_6
-        monthly_amount: 660.7
-        pension_monthly_amount: 542.05
-        health_monthly_amount: 118.65
-        estimate: true
+        monthly_amount: 675.87
       - id: general_reduced
         label_key: forms.freelance.efka.category.general_reduced
-        monthly_amount: 164.37
-        pension_monthly_amount: 120.27
-        health_monthly_amount: 44.1
+        monthly_amount: 150.46
         description_key: forms.freelance.efka.category.general_reduced_description
-        estimate: true
       - id: engineer_class_1
         label_key: forms.freelance.efka.category.engineer_class_1
-        monthly_amount: 355.69
-        pension_monthly_amount: 277.23
-        health_monthly_amount: 78.46
-        auxiliary_monthly_amount: 46.19
-        lump_sum_monthly_amount: 30.04
+        monthly_amount: 250.77
+        auxiliary_monthly_amount: 46.57
+        lump_sum_monthly_amount: 31.05
         description_key: forms.freelance.efka.category.engineer_description
-        estimate: true
       - id: engineer_class_2
         label_key: forms.freelance.efka.category.engineer_class_2
-        monthly_amount: 423.54
-        pension_monthly_amount: 328.95
-        health_monthly_amount: 94.58
-        auxiliary_monthly_amount: 53.92
-        lump_sum_monthly_amount: 35.13
+        monthly_amount: 300.93
+        auxiliary_monthly_amount: 56.13
+        lump_sum_monthly_amount: 37.02
         description_key: forms.freelance.efka.category.engineer_description
-        estimate: true
       - id: engineer_class_3
         label_key: forms.freelance.efka.category.engineer_class_3
-        monthly_amount: 504.84
-        pension_monthly_amount: 393.44
-        health_monthly_amount: 111.41
-        auxiliary_monthly_amount: 63.06
-        lump_sum_monthly_amount: 41.86
+        monthly_amount: 360.63
+        auxiliary_monthly_amount: 66.88
+        lump_sum_monthly_amount: 44.18
         description_key: forms.freelance.efka.category.engineer_description
-        estimate: true
-    pending_contribution_update: true
   agricultural:
     tax_brackets: *article15_scale
   other:
@@ -352,19 +324,16 @@ income:
       royalties: 0.20
 deductions:
   rules:
+    # Article 19 ΚΦΕ: 20% of donations, only if they exceed 100 in the year;
+    # donations count up to 5% of taxable income.
     donations:
       credit_rate: 0.20
-      income_cap_rate: 0.10
+      income_cap_rate: 0.05
+      min_total_amount: 100
     medical:
       credit_rate: 0.10
       income_threshold_rate: 0.05
       max_credit: 3000
-    education:
-      credit_rate: 0.10
-      max_eligible_expense: 1000
-    insurance:
-      credit_rate: 0.10
-      max_eligible_expense: 1200
   hints:
     - id: dependents.children
       applies_to:

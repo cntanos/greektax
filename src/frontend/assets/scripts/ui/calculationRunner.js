@@ -1,45 +1,29 @@
 /**
- * Chooses where a calculation runs, controlled by the deploy-time
- * <meta name="greektax-engine" content="..."> tag:
+ * Runs a calculation with the bundled engine (assets/scripts/engine/).
+ * Everything happens in the browser; nothing is sent anywhere.
  *
- * - "server" (default): POST to the API, as before.
- * - "shadow": POST to the API and also run the client engine; show the server
- *   result as soon as it arrives and report any difference in the browser
- *   console afterwards. Nothing is sent anywhere else.
- * - "client": run the client engine only; no calculation request is made.
+ * The engine is loaded separately from the page so that it does not delay the
+ * first render: preloadEngine() fetches it once the page is idle.
  */
 
-export const ENGINE_MODES = ["server", "shadow", "client"];
-const DEFAULT_MODE = "server";
-const SHADOW_LOG_PREFIX = "[GreekTax shadow]";
+const importEngine = () => import("../engine/calculate.js");
 
-export function resolveEngineMode(documentRef) {
-  const meta = documentRef?.querySelector?.('meta[name="greektax-engine"]');
-  const requested = (meta?.getAttribute("content") || "").trim().toLowerCase();
-  return ENGINE_MODES.includes(requested) ? requested : DEFAULT_MODE;
-}
+const scheduleIdle = (task) =>
+  typeof requestIdleCallback === "function"
+    ? requestIdleCallback(task, { timeout: 2000 })
+    : setTimeout(task, 0);
 
-/** POST the payload to the calculation endpoint (the original request). */
-export async function fetchServerCalculation(endpoint, payload, acceptLanguage) {
-  const response = await fetch(endpoint, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Accept-Language": acceptLanguage,
-    },
-    body: JSON.stringify(payload),
+/** Start loading the engine once the page is idle. */
+export function preloadEngine({ loadEngine = importEngine, schedule = scheduleIdle } = {}) {
+  schedule(() => {
+    // A failure is reported by the calculation that needs the engine.
+    loadEngine().catch(() => {});
   });
-  if (!response.ok) {
-    const errorPayload = await response.json().catch(() => ({}));
-    throw new Error(errorPayload.message || response.statusText);
-  }
-  return response.json();
 }
 
 /**
- * Give the client engine exactly what the API route would pass to
- * calculate_tax: the JSON-serialised payload, with the locale resolved as in
- * routes/calculations.py (_resolve_locale).
+ * Give the engine a JSON-normalised copy of the payload (as the parity
+ * fixtures are), with its locale resolved to a supported one ("en" otherwise).
  */
 export function prepareClientPayload(payload, acceptLanguage, availableLocales) {
   const prepared = JSON.parse(JSON.stringify(payload));
@@ -58,104 +42,13 @@ export function prepareClientPayload(payload, acceptLanguage, availableLocales) 
   return prepared;
 }
 
-/** List the paths at which two JSON values differ (numbers via Object.is). */
-export function diffResults(expected, actual, path = "") {
-  if (Object.is(expected, actual)) {
-    return [];
-  }
-  const bothObjects =
-    expected !== null &&
-    actual !== null &&
-    typeof expected === "object" &&
-    typeof actual === "object" &&
-    Array.isArray(expected) === Array.isArray(actual);
-  if (!bothObjects) {
-    return [{ path: path || "(root)", server: expected, client: actual }];
-  }
-  const keys = new Set([...Object.keys(expected), ...Object.keys(actual)]);
-  const differences = [];
-  for (const key of keys) {
-    differences.push(...diffResults(expected[key], actual[key], path ? `${path}.${key}` : key));
-  }
-  return differences;
-}
-
-const importEngine = () => import("../engine/calculate.js");
-
-const scheduleIdle = (task) =>
-  typeof requestIdleCallback === "function"
-    ? requestIdleCallback(task, { timeout: 2000 })
-    : setTimeout(task, 0);
-
 /**
- * In shadow and client modes, start downloading the client engine once the
- * page is idle, so the first calculation does not wait for it. Returns whether
- * a download was scheduled. A failed download is left for the calculation to
- * report.
+ * Return the result to render, or throw an Error whose message is the one to
+ * show the user.
  */
-export function preloadEngine(mode, { loadEngine = importEngine, schedule = scheduleIdle } = {}) {
-  if (mode !== "shadow" && mode !== "client") {
-    return false;
-  }
-  schedule(() => {
-    loadEngine().catch(() => {});
-  });
-  return true;
-}
-
-async function settle(run) {
-  try {
-    return { result: await run() };
-  } catch (error) {
-    return { error: error instanceof Error ? error.message : String(error) };
-  }
-}
-
-/**
- * Run a calculation in the given mode and return the result to render, or
- * throw an Error whose message is the one to show (as the API error did).
- */
-export async function runCalculation({
-  payload,
-  mode,
-  acceptLanguage,
-  requestServer,
-  loadEngine = importEngine,
-  logger = console,
-}) {
-  const runClient = async () => {
-    const engine = await loadEngine();
-    return engine.calculateTax(
-      prepareClientPayload(payload, acceptLanguage, engine.ENGINE_LOCALES),
-    );
-  };
-
-  if (mode === "client") {
-    return runClient();
-  }
-
-  if (mode !== "shadow") {
-    return requestServer(payload);
-  }
-
-  // Both run at once; the user never waits for the client engine.
-  const serverRun = settle(() => requestServer(payload));
-  const clientRun = settle(runClient);
-  Promise.all([serverRun, clientRun]).then(([server, client]) => {
-    const differences = diffResults(server, client);
-    if (differences.length) {
-      logger.warn(`${SHADOW_LOG_PREFIX} client engine differs from the server`, {
-        differences,
-        payload,
-      });
-    } else {
-      logger.info(`${SHADOW_LOG_PREFIX} client engine matches the server`);
-    }
-  });
-
-  const server = await serverRun;
-  if (server.error !== undefined) {
-    throw new Error(server.error);
-  }
-  return server.result;
+export async function runCalculation(payload, locale, loadEngine = importEngine) {
+  const engine = await loadEngine();
+  return engine.calculateTax(
+    prepareClientPayload(payload, locale, engine.ENGINE_LOCALES),
+  );
 }

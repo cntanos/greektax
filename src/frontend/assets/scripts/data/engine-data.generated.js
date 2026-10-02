@@ -23,10 +23,6 @@ export const ENGINE_DATA = Object.freeze({
    "details.trade_fee": "\u03a4\u03ad\u03bb\u03bf\u03c2 \u03b5\u03c0\u03b9\u03c4\u03b7\u03b4\u03b5\u03cd\u03bc\u03b1\u03c4\u03bf\u03c2",
    "forms.deductions.donations": "\u0394\u03c9\u03c1\u03b5\u03ad\u03c2",
    "forms.deductions.donations_hint": "\u03a4\u03b5\u03ba\u03bc\u03b7\u03c1\u03b9\u03c9\u03bc\u03ad\u03bd\u03b5\u03c2 \u03b4\u03c9\u03c1\u03b5\u03ad\u03c2 \u03c3\u03b5 \u03b5\u03c0\u03b9\u03bb\u03ad\u03be\u03b9\u03bc\u03bf\u03c5\u03c2 \u03c6\u03bf\u03c1\u03b5\u03af\u03c2 \u03b4\u03b9\u03ba\u03b1\u03b9\u03bf\u03cd\u03bd\u03c4\u03b1\u03b9 \u03c4\u03b7 \u03bd\u03cc\u03bc\u03b9\u03bc\u03b7 \u03ad\u03ba\u03c0\u03c4\u03c9\u03c3\u03b7 \u03c6\u03cc\u03c1\u03bf\u03c5 (\u03c4\u03b7\u03c1\u03b5\u03af\u03c4\u03b5 \u03c4\u03b1 \u03bd\u03cc\u03bc\u03b9\u03bc\u03b1 \u03c0\u03b1\u03c1\u03b1\u03c3\u03c4\u03b1\u03c4\u03b9\u03ba\u03ac).",
-   "forms.deductions.education": "\u0395\u03ba\u03c0\u03b1\u03b9\u03b4\u03b5\u03c5\u03c4\u03b9\u03ba\u03ad\u03c2 \u03b4\u03b1\u03c0\u03ac\u03bd\u03b5\u03c2",
-   "forms.deductions.education_hint": "\u0394\u03af\u03b4\u03b1\u03ba\u03c4\u03c1\u03b1 \u03ba\u03b1\u03b9 \u03c6\u03c1\u03bf\u03bd\u03c4\u03b9\u03c3\u03c4\u03ae\u03c1\u03b9\u03b1 \u03b5\u03be\u03b1\u03c1\u03c4\u03ce\u03bc\u03b5\u03bd\u03c9\u03bd \u03bc\u03b5 \u03bd\u03cc\u03bc\u03b9\u03bc\u03b5\u03c2 \u03b1\u03c0\u03bf\u03b4\u03b5\u03af\u03be\u03b5\u03b9\u03c2\u00b7 \u03b9\u03c3\u03c7\u03cd\u03bf\u03c5\u03bd \u03b8\u03b5\u03c3\u03bc\u03bf\u03b8\u03b5\u03c4\u03b7\u03bc\u03ad\u03bd\u03b1 \u03cc\u03c1\u03b9\u03b1.",
-   "forms.deductions.insurance": "\u0391\u03c3\u03c6\u03b1\u03bb\u03b9\u03c3\u03c4\u03b9\u03ba\u03ac \u03b1\u03c3\u03c6\u03ac\u03bb\u03b9\u03c3\u03c4\u03c1\u03b1",
-   "forms.deductions.insurance_hint": "\u0391\u03c3\u03c6\u03ac\u03bb\u03b9\u03c3\u03c4\u03c1\u03b1 \u03b6\u03c9\u03ae\u03c2 \u03ba\u03b1\u03b9 \u03c5\u03b3\u03b5\u03af\u03b1\u03c2 \u03c0\u03c1\u03bf\u03c2 \u03b1\u03b4\u03b5\u03b9\u03bf\u03b4\u03bf\u03c4\u03b7\u03bc\u03ad\u03bd\u03bf\u03c5\u03c2 \u03c0\u03b1\u03c1\u03cc\u03c7\u03bf\u03c5\u03c2 \u03bc\u03b5 \u03c0\u03b1\u03c1\u03b1\u03c3\u03c4\u03b1\u03c4\u03b9\u03ba\u03ac (\u03b5\u03c6\u03b1\u03c1\u03bc\u03cc\u03b6\u03bf\u03bd\u03c4\u03b1\u03b9 \u03c0\u03b5\u03c1\u03b9\u03bf\u03c1\u03b9\u03c3\u03bc\u03bf\u03af \u03ad\u03ba\u03c0\u03c4\u03c9\u03c3\u03b7\u03c2).",
    "forms.deductions.medical": "\u0399\u03b1\u03c4\u03c1\u03b9\u03ba\u03ad\u03c2 \u03b4\u03b1\u03c0\u03ac\u03bd\u03b5\u03c2",
    "forms.deductions.medical_hint": "\u0399\u03b1\u03c4\u03c1\u03b9\u03ba\u03ad\u03c2, \u03bd\u03bf\u03c3\u03bf\u03ba\u03bf\u03bc\u03b5\u03b9\u03b1\u03ba\u03ad\u03c2 \u03ba\u03b1\u03b9 \u03c6\u03b1\u03c1\u03bc\u03b1\u03ba\u03b5\u03c5\u03c4\u03b9\u03ba\u03ad\u03c2 \u03b4\u03b1\u03c0\u03ac\u03bd\u03b5\u03c2 \u03bc\u03b5 \u03b1\u03c0\u03bf\u03b4\u03b5\u03af\u03be\u03b5\u03b9\u03c2 \u03c0\u03bf\u03c5 \u03b5\u03ba\u03c0\u03af\u03c0\u03c4\u03bf\u03c5\u03bd \u03c3\u03cd\u03bc\u03c6\u03c9\u03bd\u03b1 \u03bc\u03b5 \u03c4\u03b1 \u03cc\u03c1\u03b9\u03b1 \u03c4\u03b7\u03c2 \u0391\u0391\u0394\u0395.",
    "forms.dependents.children": "\u0395\u03be\u03b1\u03c1\u03c4\u03ce\u03bc\u03b5\u03bd\u03b1 \u03c4\u03ad\u03ba\u03bd\u03b1",
@@ -90,10 +86,6 @@ export const ENGINE_DATA = Object.freeze({
    "details.trade_fee": "Business activity fee",
    "forms.deductions.donations": "Charitable donations",
    "forms.deductions.donations_hint": "Documented donations to eligible charities qualify for the statutory tax credit (retain official receipts).",
-   "forms.deductions.education": "Education expenses",
-   "forms.deductions.education_hint": "Eligible tuition or tutoring expenses for dependents with official receipts; statutory caps apply.",
-   "forms.deductions.insurance": "Insurance premiums",
-   "forms.deductions.insurance_hint": "Life and health insurance premiums paid to authorised providers with receipts (deduction limits apply).",
    "forms.deductions.medical": "Medical expenses",
    "forms.deductions.medical_hint": "Out-of-pocket medical, hospital, and pharmacy costs with receipts; deductible amounts follow AADE limits.",
    "forms.dependents.children": "Dependent children",
@@ -146,15 +138,8 @@ export const ENGINE_DATA = Object.freeze({
    "deductions": {
     "donations": {
      "credit_rate": 0.2,
-     "income_cap_rate": 0.1
-    },
-    "education": {
-     "credit_rate": 0.1,
-     "max_eligible_expense": 1000.0
-    },
-    "insurance": {
-     "credit_rate": 0.1,
-     "max_eligible_expense": 1200.0
+     "income_cap_rate": 0.05,
+     "min_total_amount": 100.0
     },
     "medical": {
      "credit_rate": 0.1,
@@ -351,76 +336,6 @@ export const ENGINE_DATA = Object.freeze({
       14
      ],
      "default": 14
-    },
-    "tax_credit": {
-     "amounts_by_children": [
-      [
-       0,
-       777.0
-      ],
-      [
-       1,
-       900.0
-      ],
-      [
-       2,
-       1120.0
-      ],
-      [
-       3,
-       1340.0
-      ],
-      [
-       4,
-       1580.0
-      ],
-      [
-       5,
-       1780.0
-      ],
-      [
-       6,
-       2000.0
-      ],
-      [
-       7,
-       2220.0
-      ],
-      [
-       8,
-       2440.0
-      ],
-      [
-       9,
-       2660.0
-      ],
-      [
-       10,
-       2880.0
-      ],
-      [
-       11,
-       3100.0
-      ],
-      [
-       12,
-       3320.0
-      ],
-      [
-       13,
-       3540.0
-      ],
-      [
-       14,
-       3760.0
-      ],
-      [
-       15,
-       3980.0
-      ]
-     ],
-     "income_reduction_exempt_from_dependants": 5,
-     "incremental_amount_per_child": 220.0
     }
    },
    "rental": {
@@ -446,12 +361,12 @@ export const ENGINE_DATA = Object.freeze({
     "salary_credit": {
      "income_categories": [
       "employment",
-      "pension"
+      "pension",
+      "agricultural"
      ],
      "reduction_per_step": 20.0,
      "reduction_step": 1000.0,
-     "reduction_threshold": 12000.0,
-     "shared_across_general_income": true
+     "reduction_threshold": 12000.0
     },
     "youth_bands": [
      [
@@ -473,15 +388,8 @@ export const ENGINE_DATA = Object.freeze({
    "deductions": {
     "donations": {
      "credit_rate": 0.2,
-     "income_cap_rate": 0.1
-    },
-    "education": {
-     "credit_rate": 0.1,
-     "max_eligible_expense": 1000.0
-    },
-    "insurance": {
-     "credit_rate": 0.1,
-     "max_eligible_expense": 1200.0
+     "income_cap_rate": 0.05,
+     "min_total_amount": 100.0
     },
     "medical": {
      "credit_rate": 0.1,
@@ -600,43 +508,43 @@ export const ENGINE_DATA = Object.freeze({
     "efka_categories": [
      {
       "id": "general_class_1",
-      "monthly_amount": 260.9
+      "monthly_amount": 244.65
      },
      {
       "id": "general_class_2",
-      "monthly_amount": 313.18
+      "monthly_amount": 293.59
      },
      {
       "id": "general_class_3",
-      "monthly_amount": 376.19
+      "monthly_amount": 351.84
      },
      {
       "id": "general_class_4",
-      "monthly_amount": 452.93
+      "monthly_amount": 422.9
      },
      {
       "id": "general_class_5",
-      "monthly_amount": 534.55
+      "monthly_amount": 506.78
      },
      {
       "id": "general_class_6",
-      "monthly_amount": 629.24
+      "monthly_amount": 659.39
      },
      {
       "id": "general_reduced",
-      "monthly_amount": 156.54
+      "monthly_amount": 146.79
      },
      {
       "id": "engineer_class_1",
-      "monthly_amount": 338.75
+      "monthly_amount": 244.65
      },
      {
       "id": "engineer_class_2",
-      "monthly_amount": 403.37
+      "monthly_amount": 293.59
      },
      {
       "id": "engineer_class_3",
-      "monthly_amount": 480.8
+      "monthly_amount": 351.84
      }
     ],
     "trade_fee": {
@@ -675,76 +583,6 @@ export const ENGINE_DATA = Object.freeze({
       14
      ],
      "default": 14
-    },
-    "tax_credit": {
-     "amounts_by_children": [
-      [
-       0,
-       777.0
-      ],
-      [
-       1,
-       900.0
-      ],
-      [
-       2,
-       1120.0
-      ],
-      [
-       3,
-       1340.0
-      ],
-      [
-       4,
-       1580.0
-      ],
-      [
-       5,
-       1780.0
-      ],
-      [
-       6,
-       2000.0
-      ],
-      [
-       7,
-       2220.0
-      ],
-      [
-       8,
-       2440.0
-      ],
-      [
-       9,
-       2660.0
-      ],
-      [
-       10,
-       2880.0
-      ],
-      [
-       11,
-       3100.0
-      ],
-      [
-       12,
-       3320.0
-      ],
-      [
-       13,
-       3540.0
-      ],
-      [
-       14,
-       3760.0
-      ],
-      [
-       15,
-       3980.0
-      ]
-     ],
-     "income_reduction_exempt_from_dependants": 5,
-     "incremental_amount_per_child": 220.0
     }
    },
    "rental": {
@@ -769,12 +607,13 @@ export const ENGINE_DATA = Object.freeze({
     "residency_transfer_taxable_share": 0.5,
     "salary_credit": {
      "income_categories": [
-      "employment"
+      "employment",
+      "pension",
+      "agricultural"
      ],
      "reduction_per_step": 20.0,
      "reduction_step": 1000.0,
-     "reduction_threshold": 12000.0,
-     "shared_across_general_income": false
+     "reduction_threshold": 12000.0
     },
     "youth_bands": [
      [
@@ -786,9 +625,7 @@ export const ENGINE_DATA = Object.freeze({
       30
      ]
     ],
-    "youth_relief_categories": [
-     "employment"
-    ]
+    "youth_relief_categories": []
    },
    "year": 2025
   },
@@ -796,15 +633,8 @@ export const ENGINE_DATA = Object.freeze({
    "deductions": {
     "donations": {
      "credit_rate": 0.2,
-     "income_cap_rate": 0.1
-    },
-    "education": {
-     "credit_rate": 0.1,
-     "max_eligible_expense": 1000.0
-    },
-    "insurance": {
-     "credit_rate": 0.1,
-     "max_eligible_expense": 1200.0
+     "income_cap_rate": 0.05,
+     "min_total_amount": 100.0
     },
     "medical": {
      "credit_rate": 0.1,
@@ -1424,7 +1254,7 @@ export const ENGINE_DATA = Object.freeze({
     "contributions": {
      "employee_rate": 0.1337,
      "employer_rate": 0.2179,
-     "monthly_salary_cap": 7572.62
+     "monthly_salary_cap": 7761.94
     },
     "payroll": {
      "allowed": [
@@ -1509,43 +1339,43 @@ export const ENGINE_DATA = Object.freeze({
     "efka_categories": [
      {
       "id": "general_class_1",
-      "monthly_amount": 273.94
+      "monthly_amount": 250.77
      },
      {
       "id": "general_class_2",
-      "monthly_amount": 328.84
+      "monthly_amount": 300.93
      },
      {
       "id": "general_class_3",
-      "monthly_amount": 395.0
+      "monthly_amount": 360.63
      },
      {
       "id": "general_class_4",
-      "monthly_amount": 475.58
+      "monthly_amount": 433.47
      },
      {
       "id": "general_class_5",
-      "monthly_amount": 561.28
+      "monthly_amount": 519.45
      },
      {
       "id": "general_class_6",
-      "monthly_amount": 660.7
+      "monthly_amount": 675.87
      },
      {
       "id": "general_reduced",
-      "monthly_amount": 164.37
+      "monthly_amount": 150.46
      },
      {
       "id": "engineer_class_1",
-      "monthly_amount": 355.69
+      "monthly_amount": 250.77
      },
      {
       "id": "engineer_class_2",
-      "monthly_amount": 423.54
+      "monthly_amount": 300.93
      },
      {
       "id": "engineer_class_3",
-      "monthly_amount": 504.84
+      "monthly_amount": 360.63
      }
     ],
     "trade_fee": {
@@ -1584,76 +1414,6 @@ export const ENGINE_DATA = Object.freeze({
       14
      ],
      "default": 14
-    },
-    "tax_credit": {
-     "amounts_by_children": [
-      [
-       0,
-       777.0
-      ],
-      [
-       1,
-       900.0
-      ],
-      [
-       2,
-       1120.0
-      ],
-      [
-       3,
-       1340.0
-      ],
-      [
-       4,
-       1580.0
-      ],
-      [
-       5,
-       1780.0
-      ],
-      [
-       6,
-       2000.0
-      ],
-      [
-       7,
-       2220.0
-      ],
-      [
-       8,
-       2440.0
-      ],
-      [
-       9,
-       2660.0
-      ],
-      [
-       10,
-       2880.0
-      ],
-      [
-       11,
-       3100.0
-      ],
-      [
-       12,
-       3320.0
-      ],
-      [
-       13,
-       3540.0
-      ],
-      [
-       14,
-       3760.0
-      ],
-      [
-       15,
-       3980.0
-      ]
-     ],
-     "income_reduction_exempt_from_dependants": 5,
-     "incremental_amount_per_child": 220.0
     }
    },
    "rental": {
@@ -1682,12 +1442,13 @@ export const ENGINE_DATA = Object.freeze({
     "residency_transfer_taxable_share": 0.5,
     "salary_credit": {
      "income_categories": [
-      "employment"
+      "employment",
+      "pension",
+      "agricultural"
      ],
      "reduction_per_step": 20.0,
      "reduction_step": 1000.0,
-     "reduction_threshold": 12000.0,
-     "shared_across_general_income": false
+     "reduction_threshold": 12000.0
     },
     "youth_bands": [
      [

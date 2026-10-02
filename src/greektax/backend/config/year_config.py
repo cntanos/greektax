@@ -306,11 +306,17 @@ class DonationCreditConfig:
 
     credit_rate: float
     income_cap_rate: float | None = None
+    # Donations qualify only when the year's total exceeds this amount.
+    min_total_amount: float = 0.0
 
     def __post_init__(self) -> None:  # pragma: no cover - defensive validation
         if self.credit_rate < 0 or self.credit_rate > 1:
             raise ConfigurationError(
                 "Donation credit rate must be between 0 and 1"
+            )
+        if self.min_total_amount < 0:
+            raise ConfigurationError(
+                "Donation minimum total amount must be non-negative"
             )
         if self.income_cap_rate is not None:
             if self.income_cap_rate < 0 or self.income_cap_rate > 1:
@@ -341,31 +347,11 @@ class MedicalCreditConfig:
 
 
 @dataclass(frozen=True)
-class CappedExpenseCreditConfig:
-    """Configuration for credits with a capped eligible expense base."""
-
-    credit_rate: float
-    max_eligible_expense: float
-
-    def __post_init__(self) -> None:  # pragma: no cover - defensive validation
-        if self.credit_rate < 0 or self.credit_rate > 1:
-            raise ConfigurationError(
-                "Credit rate must be between 0 and 1"
-            )
-        if self.max_eligible_expense < 0:
-            raise ConfigurationError(
-                "Max eligible expense must be non-negative"
-            )
-
-
-@dataclass(frozen=True)
 class DeductionRuleConfig:
     """Configuration block covering statutory deduction credit rules."""
 
     donations: DonationCreditConfig
     medical: MedicalCreditConfig
-    education: CappedExpenseCreditConfig
-    insurance: CappedExpenseCreditConfig
 
 
 @dataclass(frozen=True)
@@ -422,13 +408,17 @@ class YearWarning:
 
 @dataclass(frozen=True)
 class SalaryCreditRules:
-    """How the salary tax credit is sized, reduced and shared."""
+    """How the salary tax credit (Article 16 ΚΦΕ) is sized and reduced.
+
+    The credit applies to the tax on ``income_categories`` only; it is reduced
+    by ``reduction_per_step`` for every ``reduction_step`` of their taxable
+    income above ``reduction_threshold``.
+    """
 
     income_categories: tuple[str, ...]
     reduction_threshold: float
     reduction_step: float
     reduction_per_step: float
-    shared_across_general_income: bool
 
 
 @dataclass(frozen=True)
@@ -1134,19 +1124,13 @@ def _parse_investment_config(raw: Mapping[str, Any]) -> InvestmentConfig:
 
 def _default_deduction_rules() -> DeductionRuleConfig:
     return DeductionRuleConfig(
-        donations=DonationCreditConfig(credit_rate=0.20, income_cap_rate=0.10),
+        donations=DonationCreditConfig(
+            credit_rate=0.20, income_cap_rate=0.05, min_total_amount=100.0
+        ),
         medical=MedicalCreditConfig(
             credit_rate=0.10,
             income_threshold_rate=0.05,
             max_credit=3_000.0,
-        ),
-        education=CappedExpenseCreditConfig(
-            credit_rate=0.10,
-            max_eligible_expense=1_000.0,
-        ),
-        insurance=CappedExpenseCreditConfig(
-            credit_rate=0.10,
-            max_eligible_expense=1_200.0,
         ),
     )
 
@@ -1165,10 +1149,13 @@ def _parse_donation_credit(
     credit_rate = float(raw["credit_rate"])
     income_cap_raw = raw.get("income_cap_rate")
     income_cap_rate = float(income_cap_raw) if income_cap_raw is not None else None
+    min_total_raw = raw.get("min_total_amount")
+    min_total_amount = float(min_total_raw) if min_total_raw is not None else 0.0
 
     return DonationCreditConfig(
         credit_rate=credit_rate,
         income_cap_rate=income_cap_rate,
+        min_total_amount=min_total_amount,
     )
 
 
@@ -1195,28 +1182,6 @@ def _parse_medical_credit(
     )
 
 
-def _parse_capped_expense_credit(
-    raw: Mapping[str, Any] | None, default: CappedExpenseCreditConfig, context: str
-) -> CappedExpenseCreditConfig:
-    if raw is None:
-        return default
-    if not isinstance(raw, Mapping):
-        raise ConfigurationError(f"{context} deduction rules must be a mapping when provided")
-
-    required_fields = {"credit_rate", "max_eligible_expense"}
-    missing = required_fields - set(raw)
-    if missing:
-        missing_list = ", ".join(sorted(missing))
-        raise ConfigurationError(
-            f"{context} deduction rules missing required field(s): {missing_list}"
-        )
-
-    return CappedExpenseCreditConfig(
-        credit_rate=float(raw["credit_rate"]),
-        max_eligible_expense=float(raw["max_eligible_expense"]),
-    )
-
-
 def _parse_deduction_rules(
     raw: Mapping[str, Any] | None,
 ) -> DeductionRuleConfig:
@@ -1228,19 +1193,8 @@ def _parse_deduction_rules(
 
     donations = _parse_donation_credit(raw.get("donations"), defaults.donations)
     medical = _parse_medical_credit(raw.get("medical"), defaults.medical)
-    education = _parse_capped_expense_credit(
-        raw.get("education"), defaults.education, "Education"
-    )
-    insurance = _parse_capped_expense_credit(
-        raw.get("insurance"), defaults.insurance, "Insurance"
-    )
 
-    return DeductionRuleConfig(
-        donations=donations,
-        medical=medical,
-        education=education,
-        insurance=insurance,
-    )
+    return DeductionRuleConfig(donations=donations, medical=medical)
 
 
 def _parse_deduction_threshold(raw: Mapping[str, Any]) -> DeductionThreshold:
@@ -1474,12 +1428,6 @@ def _parse_salary_credit_rules(raw: Any) -> SalaryCreditRules:
     if reduction_step == 0:
         raise ConfigurationError("rules.salary_credit.reduction_step must be positive")
 
-    shared = raw.get("shared_across_general_income")
-    if not isinstance(shared, bool):
-        raise ConfigurationError(
-            "rules.salary_credit.shared_across_general_income must be true or false"
-        )
-
     return SalaryCreditRules(
         income_categories=_parse_category_list(
             raw.get("income_categories"),
@@ -1494,7 +1442,6 @@ def _parse_salary_credit_rules(raw: Any) -> SalaryCreditRules:
             raw.get("reduction_per_step"),
             context="rules.salary_credit.reduction_per_step",
         ),
-        shared_across_general_income=shared,
     )
 
 

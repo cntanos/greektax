@@ -1,52 +1,33 @@
 #!/usr/bin/env python3
-"""Inject deployment-specific configuration into the served frontend.
+"""Version the deployed frontend's JavaScript so browsers never use stale files.
 
-Two responsibilities, both run from a deploy hook after the static files
-have been copied into the docroot:
+Run from the deploy hook (``.cpanel.yml``) after the static files have been
+copied into the docroot. It computes a short content hash from every
+JavaScript file under ``<docroot>/assets/scripts/`` and appends ``?v=<hash>``
+to (a) the local ``<script src="./assets/scripts/...">`` tags in
+``index.html`` and (b) every relative ``import`` / ``export ... from`` /
+``import("...")`` in those files. When the bundle changes, the hash changes,
+so the browser fetches the new files instead of serving stale ones from its
+long-lived cache.
 
-1. **API base and engine mode injection.** Reads ``GREEKTAX_API_BASE`` from
-   the environment and writes a ``<meta data-api-base="..." />`` tag into the
-   deployed ``index.html`` so the frontend talks to the right backend host.
-   ``GREEKTAX_ENGINE_MODE`` (``server``, ``shadow`` or ``client``) writes a
-   ``<meta name="greektax-engine" content="..." />`` tag that chooses where
-   calculations run; unset or ``server`` adds nothing (the default).
-2. **Cache-buster versioning.** Computes a short content hash from every
-   JavaScript file under ``<docroot>/assets/scripts/`` and appends
-   ``?v=<hash>`` to (a) the ``<script type="module" src="...">`` tag in
-   ``index.html`` and (b) every relative ``import`` / ``export ... from``
-   in those JS files. When the bundle content changes, the hash changes,
-   so the browser fetches the new files instead of serving stale ones
-   from its long-lived ``immutable`` cache.
-
-Both steps are idempotent: any previous injection or version query is
-stripped before the new one is written, so re-running the script after a
-no-op deploy produces the same output as the first run.
+The step is idempotent: any previous version query is stripped before the new
+one is written.
 
 Usage::
 
-    GREEKTAX_API_BASE=https://example.com/api/v1 \\
-        python3 scripts/configure_frontend.py --target /path/to/index.html
+    python3 scripts/configure_frontend.py --target /path/to/index.html
 
 Exit codes:
-    0 on success (including no-op paths)
+    0 on success
     1 on usage/IO errors
 """
 
 import argparse
 import hashlib
-import os
 import re
 import sys
 from pathlib import Path
 from typing import List, Optional
-
-MARKER_OPEN = "<!-- @greektax/api-base:start -->"
-MARKER_CLOSE = "<!-- @greektax/api-base:end -->"
-INJECTION_PATTERN = re.compile(
-    re.escape(MARKER_OPEN) + r".*?" + re.escape(MARKER_CLOSE) + r"\s*",
-    re.DOTALL,
-)
-HEAD_CLOSE = "</head>"
 
 # Match `"..."` or `'...'` containing a relative path ending in `.js`,
 # with an optional pre-existing `?v=<hash>` query.
@@ -61,54 +42,6 @@ SCRIPT_TAG_PATTERN = re.compile(
     r"""(?P<prefix><script\b[^>]*?src=")(?P<path>\./assets/scripts/[^"?\s]+\.js)"""
     r"""(?:\?v=[A-Za-z0-9]+)?(?P<suffix>"[^>]*></script>)"""
 )
-
-
-def _strip_previous(html: str) -> str:
-    return INJECTION_PATTERN.sub("", html)
-
-
-ENGINE_MODES = ("server", "shadow", "client")
-
-
-def _build_block(api_base: str, engine_mode: str = "server") -> str:
-    lines = ["    " + MARKER_OPEN]
-    if api_base:
-        lines.append('    <meta data-api-base="' + api_base + '" />')
-    if engine_mode != "server":
-        lines.append('    <meta name="greektax-engine" content="' + engine_mode + '" />')
-    lines.append("    " + MARKER_CLOSE)
-    return "\n".join(lines) + "\n  "
-
-
-def configure(target: Path, api_base: str, engine_mode: str = "server") -> str:
-    """Inject (or remove) the deployment meta tags in ``target``."""
-    if engine_mode not in ENGINE_MODES:
-        raise RuntimeError(
-            "GREEKTAX_ENGINE_MODE must be one of " + ", ".join(ENGINE_MODES)
-            + "; got " + repr(engine_mode)
-        )
-    html = target.read_text(encoding="utf-8")
-    stripped = _strip_previous(html)
-
-    if not api_base and engine_mode == "server":
-        if stripped != html:
-            target.write_text(stripped, encoding="utf-8")
-            return "removed previous data-api-base injection"
-        return "no data-api-base configured; left target unchanged"
-
-    head_idx = stripped.find(HEAD_CLOSE)
-    if head_idx == -1:
-        raise RuntimeError("could not find " + repr(HEAD_CLOSE) + " in " + str(target))
-    new_html = (
-        stripped[:head_idx] + _build_block(api_base, engine_mode) + stripped[head_idx:]
-    )
-    target.write_text(new_html, encoding="utf-8")
-    injected = []
-    if api_base:
-        injected.append("data-api-base=" + api_base)
-    if engine_mode != "server":
-        injected.append("greektax-engine=" + engine_mode)
-    return "injected " + ", ".join(injected)
 
 
 def _strip_versions_in_js(text: str) -> str:
@@ -201,7 +134,7 @@ def version_bundle(target: Path) -> str:
 
 def main(argv: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Inject GREEKTAX_API_BASE and cache-buster version into a deployed index.html.",
+        description="Append a cache-busting version to the deployed frontend's scripts.",
     )
     parser.add_argument(
         "--target",
@@ -211,24 +144,10 @@ def main(argv: Optional[List[str]] = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    api_base = (os.environ.get("GREEKTAX_API_BASE") or "").strip()
-    engine_mode = (os.environ.get("GREEKTAX_ENGINE_MODE") or "server").strip().lower()
-
     if not args.target.exists():
         print("error: " + str(args.target) + " does not exist", file=sys.stderr)
         return 1
-    try:
-        status = configure(args.target, api_base, engine_mode)
-    except RuntimeError as exc:
-        print("error: " + str(exc), file=sys.stderr)
-        return 1
-    print(status)
-    try:
-        bundle_status = version_bundle(args.target)
-    except RuntimeError as exc:
-        print("error: " + str(exc), file=sys.stderr)
-        return 1
-    print(bundle_status)
+    print(version_bundle(args.target))
     return 0
 
 
