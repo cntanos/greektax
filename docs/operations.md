@@ -66,9 +66,10 @@ For cPanel-based deploys, invoke the script from `.cpanel.yml` (or the equivalen
 
 When introducing or updating filing years in `src/greektax/backend/config/data/*.yaml`:
 
-1. Update the year YAML file.
+1. Update the year YAML file. Year-specific calculation rules that are not rate tables (youth age bands and reference year, which categories get youth relief, the residency-transfer share, the salary-credit reduction and sharing) live in its `rules` section; the engine has no year-specific branches in code.
 2. Run `python scripts/validate_config.py`.
-3. Run `pytest`.
-4. Document any user-facing copy impacts in the i18n workflow doc.
+3. Run `python scripts/generate_parity_fixtures.py` and review the diff in `tests/data/parity/`. Every changed expectation should be an intended consequence of the YAML change; `pytest` fails while the fixtures are stale.
+4. Run `pytest`.
+5. Document any user-facing copy impacts in the i18n workflow doc.
 
 For localisation details, use [`docs/i18n.md`](i18n.md) directly.

@@ -3,6 +3,22 @@ meta:
   version: 1
   status: draft
   notes: "Initial 2024 configuration with employment and freelance coverage"
+rules:
+  # Youth relief age = age_reference_year - birth year (defaults to the tax year).
+  age_reference_year: 2024
+  youth_bands:
+    under_25: 25
+    age26_30: 30
+  youth_relief_categories: [employment]
+  residency_transfer_taxable_share: 0.5
+  salary_credit:
+    income_categories: [employment, pension]
+    reduction_threshold: 12000
+    reduction_step: 1000
+    reduction_per_step: 20
+    # Before 2025 pension and agricultural income could also claim the credit,
+    # and the credit was shared across all credit-eligible general income.
+    shared_across_general_income: true
 income:
   employment:
     payroll:

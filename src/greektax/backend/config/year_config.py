@@ -421,6 +421,29 @@ class YearWarning:
 
 
 @dataclass(frozen=True)
+class SalaryCreditRules:
+    """How the salary tax credit is sized, reduced and shared."""
+
+    income_categories: tuple[str, ...]
+    reduction_threshold: float
+    reduction_step: float
+    reduction_per_step: float
+    shared_across_general_income: bool
+
+
+@dataclass(frozen=True)
+class RulesConfig:
+    """Year-specific calculation rules that are not rate tables."""
+
+    age_reference_year: int
+    youth_bands: tuple[tuple[str, int], ...]
+    youth_relief_categories: tuple[str, ...]
+    residency_transfer_taxable_share: float
+    salary_credit: SalaryCreditRules
+    max_birth_year_with_income: int | None = None
+
+
+@dataclass(frozen=True)
 class YearConfiguration:
     """Structured representation of a tax year configuration."""
 
@@ -435,6 +458,7 @@ class YearConfiguration:
     investment: InvestmentConfig
     deductions: DeductionConfig
     warnings: Sequence[YearWarning]
+    rules: RulesConfig
 
 
 def _parse_progressive_brackets(
@@ -1415,6 +1439,113 @@ def _parse_year_warnings(
     return tuple(warnings)
 
 
+_GENERAL_INCOME_CATEGORIES = frozenset(
+    {"employment", "pension", "freelance", "agricultural", "other"}
+)
+
+
+def _parse_category_list(raw: Any, *, context: str) -> tuple[str, ...]:
+    if not isinstance(raw, list) or not all(isinstance(item, str) for item in raw):
+        raise ConfigurationError(f"{context} must be a list of category names")
+    unknown = sorted(set(raw) - _GENERAL_INCOME_CATEGORIES)
+    if unknown:
+        raise ConfigurationError(f"{context} has unknown categories: {', '.join(unknown)}")
+    if len(set(raw)) != len(raw):
+        raise ConfigurationError(f"{context} must not repeat categories")
+    return tuple(raw)
+
+
+def _parse_non_negative(raw: Any, *, context: str) -> float:
+    if isinstance(raw, bool) or not isinstance(raw, (int, float)):
+        raise ConfigurationError(f"{context} must be a number")
+    value = float(raw)
+    if value < 0:
+        raise ConfigurationError(f"{context} must be non-negative")
+    return value
+
+
+def _parse_salary_credit_rules(raw: Any) -> SalaryCreditRules:
+    if not isinstance(raw, Mapping):
+        raise ConfigurationError("rules.salary_credit must be a mapping")
+
+    reduction_step = _parse_non_negative(
+        raw.get("reduction_step"), context="rules.salary_credit.reduction_step"
+    )
+    if reduction_step == 0:
+        raise ConfigurationError("rules.salary_credit.reduction_step must be positive")
+
+    shared = raw.get("shared_across_general_income")
+    if not isinstance(shared, bool):
+        raise ConfigurationError(
+            "rules.salary_credit.shared_across_general_income must be true or false"
+        )
+
+    return SalaryCreditRules(
+        income_categories=_parse_category_list(
+            raw.get("income_categories"),
+            context="rules.salary_credit.income_categories",
+        ),
+        reduction_threshold=_parse_non_negative(
+            raw.get("reduction_threshold"),
+            context="rules.salary_credit.reduction_threshold",
+        ),
+        reduction_step=reduction_step,
+        reduction_per_step=_parse_non_negative(
+            raw.get("reduction_per_step"),
+            context="rules.salary_credit.reduction_per_step",
+        ),
+        shared_across_general_income=shared,
+    )
+
+
+def _parse_rules(year: int, raw: Any) -> RulesConfig:
+    if not isinstance(raw, Mapping):
+        raise ConfigurationError("Configuration must include a 'rules' section")
+
+    reference_raw = raw.get("age_reference_year", year)
+    if isinstance(reference_raw, bool) or not isinstance(reference_raw, int):
+        raise ConfigurationError("rules.age_reference_year must be an integer")
+
+    bands_raw = raw.get("youth_bands")
+    if not isinstance(bands_raw, Mapping) or not bands_raw:
+        raise ConfigurationError("rules.youth_bands must map band ids to maximum ages")
+    bands: list[tuple[str, int]] = []
+    for band_id, max_age in bands_raw.items():
+        if isinstance(max_age, bool) or not isinstance(max_age, int) or max_age < 0:
+            raise ConfigurationError(
+                f"rules.youth_bands.{band_id} must be a non-negative integer age"
+            )
+        bands.append((str(band_id), max_age))
+    ages = [age for _, age in bands]
+    if ages != sorted(ages) or len(set(ages)) != len(ages):
+        raise ConfigurationError("rules.youth_bands must list strictly increasing ages")
+
+    share = _parse_non_negative(
+        raw.get("residency_transfer_taxable_share"),
+        context="rules.residency_transfer_taxable_share",
+    )
+    if share > 1:
+        raise ConfigurationError("rules.residency_transfer_taxable_share must not exceed 1")
+
+    max_birth_raw = raw.get("max_birth_year_with_income")
+    if max_birth_raw is not None and (
+        isinstance(max_birth_raw, bool) or not isinstance(max_birth_raw, int)
+    ):
+        raise ConfigurationError("rules.max_birth_year_with_income must be an integer")
+
+    return RulesConfig(
+        age_reference_year=reference_raw,
+        youth_bands=tuple(bands),
+        youth_relief_categories=_parse_category_list(
+            raw.get("youth_relief_categories"),
+            context="rules.youth_relief_categories",
+        ),
+        residency_transfer_taxable_share=share,
+        salary_credit=_parse_salary_credit_rules(raw.get("salary_credit")),
+        max_birth_year_with_income=max_birth_raw,
+    )
+
+
 def _parse_year_configuration(year: int, raw: Mapping[str, Any]) -> YearConfiguration:
     income_section = raw.get("income")
     if not isinstance(income_section, Mapping):
@@ -1477,6 +1608,7 @@ def _parse_year_configuration(year: int, raw: Mapping[str, Any]) -> YearConfigur
         investment=_parse_investment_config(investment_raw),
         deductions=_parse_deductions_config(raw.get("deductions")),
         warnings=_parse_year_warnings(raw.get("warnings")),
+        rules=_parse_rules(year, raw.get("rules")),
     )
 
 

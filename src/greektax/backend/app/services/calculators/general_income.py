@@ -120,7 +120,7 @@ def _build_general_income_components(
         if taxable_income < 0:
             taxable_income = 0.0
         if payload.tax_residency_transfer_to_greece and taxable_income > 0:
-            taxable_income *= 0.5
+            taxable_income *= config.rules.residency_transfer_taxable_share
         include_employee_total = include_auto or include_manual
         components.append(
             GeneralIncomeComponent(
@@ -213,9 +213,7 @@ def _apply_progressive_tax(
     else:
         dependants = payload.children if payload.children > 0 else 0
         youth_category = payload.youth_rate_category
-        youth_relief_categories = {"employment"}
-        if config.year >= 2026:
-            youth_relief_categories.update({"freelance", "agricultural"})
+        youth_relief_categories = set(config.rules.youth_relief_categories)
 
         def _resolve_rate(index: int, bracket) -> float:
             component = components[index]
@@ -240,7 +238,9 @@ def _apply_progressive_tax(
     credit_candidates: list[float] = []
     credit_categories: set[str] = set()
 
-    salary_credit_categories = {"employment"} if config.year >= 2025 else {"employment", "pension"}
+    salary_credit_rules = config.rules.salary_credit
+    salary_credit_categories = set(salary_credit_rules.income_categories)
+    shared_credit = salary_credit_rules.shared_across_general_income
 
     derived_salary_income = sum(
         component.gross_income
@@ -248,21 +248,22 @@ def _apply_progressive_tax(
         if component.credit_eligible and component.category in salary_credit_categories
     )
     salary_credit_income = derived_salary_income
-    if config.year >= 2025:
-        declared_employment = payload.employment_declared_gross_income
-        if declared_employment > 0:
-            salary_credit_income = declared_employment
-    else:
-        declared_total = 0.0
-        if payload.employment_declared_gross_income > 0:
-            declared_total += payload.employment_declared_gross_income
-        if payload.pension_declared_gross_income > 0:
-            declared_total += payload.pension_declared_gross_income
-        if declared_total > 0:
-            salary_credit_income = declared_total
+    declared_by_category = {
+        "employment": payload.employment_declared_gross_income,
+        "pension": payload.pension_declared_gross_income,
+    }
+    declared_total = 0.0
+    for category, declared in declared_by_category.items():
+        if category in salary_credit_categories and declared > 0:
+            declared_total += declared
+    if declared_total > 0:
+        salary_credit_income = declared_total
     credit_reduction = 0.0
-    if salary_credit_income > 12_000:
-        credit_reduction = ((salary_credit_income - 12_000) / 1_000) * 20.0
+    if salary_credit_income > salary_credit_rules.reduction_threshold:
+        credit_reduction = (
+            (salary_credit_income - salary_credit_rules.reduction_threshold)
+            / salary_credit_rules.reduction_step
+        ) * salary_credit_rules.reduction_per_step
 
     reduction_exempt_from = (
         config.employment.tax_credit.income_reduction_exempt_from_dependants
@@ -291,7 +292,7 @@ def _apply_progressive_tax(
         )
         credit_categories.add("employment")
 
-    if config.year < 2025 and any(
+    if shared_credit and any(
         component.category == "pension" for component in components
     ):
         credit_candidates.append(
@@ -302,7 +303,7 @@ def _apply_progressive_tax(
         )
         credit_categories.add("pension")
 
-    if config.year < 2025 and any(
+    if shared_credit and any(
         component.category == "agricultural" and component.credit_eligible
         for component in components
     ):
@@ -314,7 +315,7 @@ def _apply_progressive_tax(
         )
         credit_categories.add("agricultural")
 
-    if config.year < 2025 and credit_candidates:
+    if shared_credit and credit_candidates:
         credit_categories.update(
             component.category
             for component in components

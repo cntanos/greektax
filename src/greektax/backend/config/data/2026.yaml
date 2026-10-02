@@ -6,6 +6,23 @@ meta:
   toggles:
     tekmiria_reduction: true
     presumptive_relief: true
+rules:
+  # Youth relief age = age_reference_year - birth year (defaults to the tax year).
+  age_reference_year: 2026
+  youth_bands:
+    under_25: 25
+    age26_30: 30
+  youth_relief_categories: [employment, freelance, agricultural]
+  residency_transfer_taxable_share: 0.5
+  max_birth_year_with_income: 2025
+  salary_credit:
+    income_categories: [employment]
+    reduction_threshold: 12000
+    reduction_step: 1000
+    reduction_per_step: 20
+    # Before 2025 pension and agricultural income could also claim the credit,
+    # and the credit was shared across all credit-eligible general income.
+    shared_across_general_income: false
 income:
   employment:
     payroll:
@@ -234,186 +251,7 @@ income:
     contributions:
       employee_rate: 0.0
       employer_rate: 0.0
-    tax_brackets:
-      - upper: 10000
-        rates:
-          household:
-            dependants:
-              0: 0.09
-              1: 0.09
-              2: 0.09
-              3: 0.09
-              4: 0.0
-              5: 0.0
-              6: 0.0
-          youth:
-            under_25:
-              dependants:
-                0: 0.0
-                1: 0.0
-                2: 0.0
-                3: 0.0
-                4: 0.0
-                5: 0.0
-                6: 0.0
-            age26_30:
-              dependants:
-                0: 0.09
-                1: 0.09
-                2: 0.09
-                3: 0.09
-                4: 0.0
-                5: 0.0
-                6: 0.0
-      - upper: 20000
-        rates:
-          household:
-            dependants:
-              0: 0.2
-              1: 0.18
-              2: 0.16
-              3: 0.09
-              4: 0.0
-              5: 0.0
-              6: 0.0
-          youth:
-            under_25:
-              dependants:
-                0: 0.0
-                1: 0.0
-                2: 0.0
-                3: 0.0
-                4: 0.0
-                5: 0.0
-                6: 0.0
-            age26_30:
-              dependants:
-                0: 0.09
-                1: 0.09
-                2: 0.09
-                3: 0.09
-                4: 0.0
-                5: 0.0
-                6: 0.0
-      - upper: 30000
-        rates:
-          household:
-            dependants:
-              0: 0.26
-              1: 0.24
-              2: 0.22
-              3: 0.2
-              4: 0.18
-              5: 0.16
-              6: 0.14
-          youth:
-            under_25:
-              dependants:
-                0: 0.26
-                1: 0.24
-                2: 0.22
-                3: 0.2
-                4: 0.18
-                5: 0.16
-                6: 0.14
-            age26_30:
-              dependants:
-                0: 0.26
-                1: 0.24
-                2: 0.22
-                3: 0.2
-                4: 0.18
-                5: 0.16
-                6: 0.14
-      - upper: 40000
-        rates:
-          household:
-            dependants:
-              0: 0.34
-              1: 0.34
-              2: 0.34
-              3: 0.34
-              4: 0.34
-              5: 0.34
-              6: 0.34
-          youth:
-            under_25:
-              dependants:
-                0: 0.34
-                1: 0.34
-                2: 0.34
-                3: 0.34
-                4: 0.34
-                5: 0.34
-                6: 0.34
-            age26_30:
-              dependants:
-                0: 0.34
-                1: 0.34
-                2: 0.34
-                3: 0.34
-                4: 0.34
-                5: 0.34
-                6: 0.34
-      - upper: 60000
-        rates:
-          household:
-            dependants:
-              0: 0.39
-              1: 0.39
-              2: 0.39
-              3: 0.39
-              4: 0.39
-              5: 0.39
-              6: 0.39
-          youth:
-            under_25:
-              dependants:
-                0: 0.39
-                1: 0.39
-                2: 0.39
-                3: 0.39
-                4: 0.39
-                5: 0.39
-                6: 0.39
-            age26_30:
-              dependants:
-                0: 0.39
-                1: 0.39
-                2: 0.39
-                3: 0.39
-                4: 0.39
-                5: 0.39
-                6: 0.39
-      - rates:
-          household:
-            dependants:
-              0: 0.44
-              1: 0.44
-              2: 0.44
-              3: 0.44
-              4: 0.44
-              5: 0.44
-              6: 0.44
-          youth:
-            under_25:
-              dependants:
-                0: 0.44
-                1: 0.44
-                2: 0.44
-                3: 0.44
-                4: 0.44
-                5: 0.44
-                6: 0.44
-            age26_30:
-              dependants:
-                0: 0.44
-                1: 0.44
-                2: 0.44
-                3: 0.44
-                4: 0.44
-                5: 0.44
-                6: 0.44
+    tax_brackets: *article15_scale
   freelance:
     tax_brackets: *article15_scale
     trade_fee:
