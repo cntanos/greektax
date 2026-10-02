@@ -120,7 +120,7 @@ class CalculationInput(BaseModel):
     taxpayer_birth_year: int | None = None
     tax_residency_transfer_to_greece: bool = False
     age_reference_year: int
-    youth_bands: tuple[tuple[str, int], ...] = ()
+    youth_bands: tuple[tuple[str, int], ...]
 
     @model_validator(mode="after")
     def _validate_taxpayer_birth_year(self) -> CalculationInput:

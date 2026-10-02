@@ -935,5 +935,5 @@
 {"error":"Unknown EFKA category selection","name":"invalid/efka_category","payload":{"freelance":{"efka_category":"no_such_category","profit":1000},"year":2024}},
 {"error":"Invalid calculation payload: freelance.trade_fee_location: Value error, Invalid trade fee location selection","name":"invalid/trade_fee_location","payload":{"freelance":{"profit":1000,"trade_fee_location":"elsewhere"},"year":2024}},
 {"error":"Invalid calculation payload: investment: Value error, Investment amount for category 'dividends' cannot be negative","name":"invalid/negative_investment","payload":{"investment":{"dividends":-5},"year":2024}},
-{"error":"1 validation error for CalculationInput\n  Value error, taxpayer_birth_year must be 2024 or earlier [type=value_error, input_value={'year': 2024, 'locale': ...nsfer_to_greece': False}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/value_error","name":"invalid/future_birth_year_with_income","payload":{"demographics":{"birth_year":2025},"employment":{"gross_income":1000},"year":2024}}
+{"error":"Invalid calculation payload: Value error, taxpayer_birth_year must be 2024 or earlier","name":"invalid/future_birth_year_with_income","payload":{"demographics":{"birth_year":2025},"employment":{"gross_income":1000},"year":2024}}
 ]

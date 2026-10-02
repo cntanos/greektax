@@ -371,7 +371,10 @@ def calculate_tax(
     config: YearConfiguration = load_year_configuration(year)
 
     with _profile_section("normalise_payload", timings):
-        normalised = _normalise_payload(request_model, config)
+        try:
+            normalised = _normalise_payload(request_model, config)
+        except ValidationError as exc:
+            raise ValueError(format_validation_error(exc)) from exc
 
     translator = get_translator(normalised.locale)
 
