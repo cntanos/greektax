@@ -43,6 +43,13 @@ prioritise findings.
 - There is no backend. A change that sends user input off the device
   (for example a `fetch`, a beacon or analytics) is a privacy
   regression: the page promises that entries never leave the device.
+- `src/frontend/index.html` carries a Content-Security-Policy meta tag:
+  scripts only from the site and `cdn.plot.ly`, `connect-src 'none'`,
+  `form-action 'none'`, no `'unsafe-eval'`; inline styles are allowed
+  (Plotly and the printable summary need them).
+  `tests/frontend/contentSecurityPolicy.test.js` locks it. Any change that
+  loosens it, or adds an external script without updating it, needs a
+  justification.
 - localStorage persistence is **opt-in** (PR #241). Form fields that
   need to skip persistence must carry `data-no-persist`. Persisting
   financial data without honouring `calculatorPersistenceOptIn` is a

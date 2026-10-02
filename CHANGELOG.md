@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Security
+
+- `index.html` now carries a Content-Security-Policy: scripts only from the site and the pinned Plotly build, no network requests, no form submissions, no `eval`.
+
 ### Calculation corrections
 
 Sources for each rule are in [`docs/reference/tax_rules_2025_2026.md`](docs/reference/tax_rules_2025_2026.md).
