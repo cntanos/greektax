@@ -18,7 +18,7 @@ income:
       employee_rate: 0.1337
       employer_rate: 0.2179
       monthly_salary_cap: 7572.62
-    tax_brackets:
+    tax_brackets: &article15_scale
       - upper: 10000
         rates:
           household:
@@ -415,72 +415,7 @@ income:
                 5: 0.44
                 6: 0.44
   freelance:
-    tax_brackets:
-      - upper: 12000
-        rates:
-          household:
-            dependants:
-              0: 0.085
-              1: 0.08
-              2: 0.075
-              3: 0.07
-              4: 0.065
-            reduction_factor: 0.02
-          youth:
-            under_25: 0.05
-            age26_30: 0.06
-      - upper: 24000
-        rates:
-          household:
-            dependants:
-              0: 0.22
-              1: 0.215
-              2: 0.205
-              3: 0.195
-              4: 0.185
-            reduction_factor: 0.015
-          youth:
-            under_25: 0.18
-            age26_30: 0.195
-      - upper: 36000
-        rates:
-          household:
-            dependants:
-              0: 0.29
-              1: 0.285
-              2: 0.275
-              3: 0.265
-              4: 0.255
-            reduction_factor: 0.01
-          youth:
-            under_25: 0.23
-            age26_30: 0.255
-      - upper: 50000
-        rates:
-          household:
-            dependants:
-              0: 0.37
-              1: 0.365
-              2: 0.355
-              3: 0.345
-              4: 0.335
-            reduction_factor: 0.01
-          youth:
-            under_25: 0.3
-            age26_30: 0.32
-      - rates:
-          household:
-            dependants:
-              0: 0.45
-              1: 0.445
-              2: 0.435
-              3: 0.425
-              4: 0.415
-            reduction_factor: 0.01
-          youth:
-            under_25: 0.36
-            age26_30: 0.38
-        pending_confirmation: true
+    tax_brackets: *article15_scale
     trade_fee:
       standard_amount: 0
       reduced_amount: 0
@@ -559,139 +494,9 @@ income:
         estimate: true
     pending_contribution_update: true
   agricultural:
-    tax_brackets:
-      - upper: 12000
-        rates:
-          household:
-            dependants:
-              0: 0.085
-              1: 0.08
-              2: 0.075
-              3: 0.07
-              4: 0.065
-            reduction_factor: 0.02
-          youth:
-            under_25: 0.05
-            age26_30: 0.06
-      - upper: 24000
-        rates:
-          household:
-            dependants:
-              0: 0.22
-              1: 0.215
-              2: 0.205
-              3: 0.195
-              4: 0.185
-            reduction_factor: 0.015
-          youth:
-            under_25: 0.18
-            age26_30: 0.195
-      - upper: 36000
-        rates:
-          household:
-            dependants:
-              0: 0.29
-              1: 0.285
-              2: 0.275
-              3: 0.265
-              4: 0.255
-            reduction_factor: 0.01
-          youth:
-            under_25: 0.23
-            age26_30: 0.255
-      - upper: 50000
-        rates:
-          household:
-            dependants:
-              0: 0.37
-              1: 0.365
-              2: 0.355
-              3: 0.345
-              4: 0.335
-            reduction_factor: 0.01
-          youth:
-            under_25: 0.3
-            age26_30: 0.32
-      - rates:
-          household:
-            dependants:
-              0: 0.45
-              1: 0.445
-              2: 0.435
-              3: 0.425
-              4: 0.415
-            reduction_factor: 0.01
-          youth:
-            under_25: 0.36
-            age26_30: 0.38
-        pending_confirmation: true
+    tax_brackets: *article15_scale
   other:
-    tax_brackets:
-      - upper: 12000
-        rates:
-          household:
-            dependants:
-              0: 0.085
-              1: 0.08
-              2: 0.075
-              3: 0.07
-              4: 0.065
-            reduction_factor: 0.02
-          youth:
-            under_25: 0.05
-            age26_30: 0.06
-      - upper: 24000
-        rates:
-          household:
-            dependants:
-              0: 0.22
-              1: 0.215
-              2: 0.205
-              3: 0.195
-              4: 0.185
-            reduction_factor: 0.015
-          youth:
-            under_25: 0.18
-            age26_30: 0.195
-      - upper: 36000
-        rates:
-          household:
-            dependants:
-              0: 0.29
-              1: 0.285
-              2: 0.275
-              3: 0.265
-              4: 0.255
-            reduction_factor: 0.01
-          youth:
-            under_25: 0.23
-            age26_30: 0.255
-      - upper: 50000
-        rates:
-          household:
-            dependants:
-              0: 0.37
-              1: 0.365
-              2: 0.355
-              3: 0.345
-              4: 0.335
-            reduction_factor: 0.01
-          youth:
-            under_25: 0.3
-            age26_30: 0.32
-      - rates:
-          household:
-            dependants:
-              0: 0.45
-              1: 0.445
-              2: 0.435
-              3: 0.425
-              4: 0.415
-            reduction_factor: 0.01
-          youth:
-            under_25: 0.36
-            age26_30: 0.38
-        pending_confirmation: true
+    tax_brackets: *article15_scale
   rental:
     tax_brackets:
       - upper: 12000
