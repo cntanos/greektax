@@ -336,9 +336,13 @@ def build_fixtures() -> dict[str, list[dict[str, Any]]]:
 
 
 def _serialise(entries: list[dict[str, Any]]) -> str:
-    return json.dumps(entries, ensure_ascii=False, sort_keys=True, separators=(",", ":")).replace(
-        '},{"name"', '},\n{"name"'
-    ) + "\n"
+    """Write one case per line so fixture diffs point at the changed cases."""
+
+    lines = [
+        json.dumps(entry, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+        for entry in entries
+    ]
+    return "[\n" + ",\n".join(lines) + "\n]\n"
 
 
 def main(argv: list[str] | None = None) -> int:

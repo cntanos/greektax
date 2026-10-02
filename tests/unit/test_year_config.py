@@ -80,6 +80,7 @@ def _valid_rules() -> dict[str, object]:
             "reduction_threshold": 12000,
             "reduction_step": 1000,
             "reduction_per_step": 20,
+            "shared_across_general_income": False,
         },
     }
 
@@ -109,6 +110,8 @@ def test_rules_parse_with_defaults() -> None:
         (("salary_credit", "reduction_threshold"), "12000"),
         (("age_reference_year",), 2026.0),
         (("max_birth_year_with_income",), "2025"),
+        (("salary_credit", "shared_across_general_income"), None),
+        (("salary_credit", "shared_across_general_income"), "false"),
     ],
 )
 def test_rules_reject_invalid_values(path: tuple[str, ...], value: object) -> None:

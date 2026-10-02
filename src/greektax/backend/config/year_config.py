@@ -1474,6 +1474,12 @@ def _parse_salary_credit_rules(raw: Any) -> SalaryCreditRules:
     if reduction_step == 0:
         raise ConfigurationError("rules.salary_credit.reduction_step must be positive")
 
+    shared = raw.get("shared_across_general_income")
+    if not isinstance(shared, bool):
+        raise ConfigurationError(
+            "rules.salary_credit.shared_across_general_income must be true or false"
+        )
+
     return SalaryCreditRules(
         income_categories=_parse_category_list(
             raw.get("income_categories"),
@@ -1488,10 +1494,7 @@ def _parse_salary_credit_rules(raw: Any) -> SalaryCreditRules:
             raw.get("reduction_per_step"),
             context="rules.salary_credit.reduction_per_step",
         ),
-        shared_across_general_income=_parse_boolean_flag(
-            raw.get("shared_across_general_income"),
-            context="rules.salary_credit.shared_across_general_income",
-        ),
+        shared_across_general_income=shared,
     )
 
 
