@@ -22,6 +22,7 @@ const guardrails = [
   { path: '../../src/frontend/assets/scripts/engine/request.js', maxLines: 540 },
   { path: '../../src/frontend/assets/scripts/state/i18nState.js', maxLines: 40 },
   { path: '../../src/frontend/assets/scripts/validation/numbers.js', maxLines: 40 },
+  { path: '../../src/frontend/assets/scripts/ui/calculationRunner.js', maxLines: 180 },
   { path: '../../src/frontend/assets/scripts/ui/app.js', maxLines: 5900 },
 ];
 

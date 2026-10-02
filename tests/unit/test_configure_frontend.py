@@ -255,3 +255,66 @@ def test_main_runs_both_steps(
     assert '<meta data-api-base="https://api.example.com/v1" />' in html
     # Cache-bust query.
     assert re.search(r'src="\./assets/scripts/main\.js\?v=[A-Za-z0-9]+"', html)
+
+
+def test_engine_mode_meta_is_injected_alongside_api_base(tmp_path: Path) -> None:
+    target = tmp_path / "index.html"
+    target.write_text(HTML, encoding="utf-8")
+
+    status = configure_frontend.configure(target, "https://api.example.com/v1", "shadow")
+
+    assert "greektax-engine=shadow" in status
+    output = target.read_text(encoding="utf-8")
+    assert '<meta data-api-base="https://api.example.com/v1" />' in output
+    assert '<meta name="greektax-engine" content="shadow" />' in output
+
+
+def test_engine_mode_meta_without_api_base(tmp_path: Path) -> None:
+    target = tmp_path / "index.html"
+    target.write_text(HTML, encoding="utf-8")
+
+    configure_frontend.configure(target, "", "client")
+
+    output = target.read_text(encoding="utf-8")
+    assert '<meta name="greektax-engine" content="client" />' in output
+    assert "data-api-base" not in output
+
+
+def test_server_engine_mode_adds_no_meta_and_removes_previous(tmp_path: Path) -> None:
+    target = tmp_path / "index.html"
+    target.write_text(HTML, encoding="utf-8")
+    configure_frontend.configure(target, "", "shadow")
+
+    status = configure_frontend.configure(target, "", "server")
+
+    assert "removed" in status
+    output = target.read_text(encoding="utf-8")
+    assert configure_frontend.MARKER_OPEN not in output
+    assert "greektax-engine" not in output
+
+
+def test_invalid_engine_mode_is_rejected(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    target = tmp_path / "index.html"
+    target.write_text(HTML, encoding="utf-8")
+    monkeypatch.setenv("GREEKTAX_ENGINE_MODE", "hybrid")
+
+    rc = configure_frontend.main(["--target", str(target)])
+
+    assert rc == 1
+    assert target.read_text(encoding="utf-8") == HTML
+
+
+def test_main_reads_engine_mode_from_env(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    target = tmp_path / "index.html"
+    target.write_text(HTML, encoding="utf-8")
+    monkeypatch.delenv("GREEKTAX_API_BASE", raising=False)
+    monkeypatch.setenv("GREEKTAX_ENGINE_MODE", " Shadow ")
+
+    rc = configure_frontend.main(["--target", str(target)])
+
+    assert rc == 0
+    assert 'content="shadow"' in target.read_text(encoding="utf-8")

@@ -60,6 +60,16 @@ GREEKTAX_API_BASE=https://<account>.pythonanywhere.com/api/v1 \
 
 The injection sits inside `<!-- @greektax/api-base:start --> ... <!-- @greektax/api-base:end -->` markers, so the script is idempotent — re-running it replaces any previous block. Running it with `GREEKTAX_API_BASE` unset or empty removes any prior injection, returning the file to its same-origin default. Keep the backend host value out of the repo: source it from a deploy-time environment variable, a non-committed config file, or a CI secret.
 
+### Calculation engine mode
+
+`GREEKTAX_ENGINE_MODE` chooses where calculations run. The same script writes it into the page as `<meta name="greektax-engine" content="...">`:
+
+- `server` (default, or unset): the page posts each calculation to the API, as before.
+- `shadow`: the page posts to the API and also runs the client-side engine (`assets/scripts/engine/`). It shows the server's result and logs `[GreekTax shadow] client engine matches the server`, or a warning listing the differing fields, to the browser console. Nothing else is sent anywhere.
+- `client`: the page runs the client-side engine only and makes no calculation request.
+
+Any other value makes the script exit with an error. Set it in `~/.greektax-deploy.env` on the cPanel host (sourced by `.cpanel.yml`) and redeploy.
+
 For cPanel-based deploys, invoke the script from `.cpanel.yml` (or the equivalent post-deploy hook) after the static files have been copied into the docroot. CORS must permit the frontend origin → backend origin call; verify with a manual cross-origin fetch before relying on the deployed page.
 
 ## Year configuration refreshes
