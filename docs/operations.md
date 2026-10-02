@@ -59,6 +59,8 @@ python3 scripts/configure_frontend.py --target "$DEPLOYPATH/index.html"
 
 which appends `?v=<hash>` to every local script reference (the `<script>` tags in `index.html` and every relative `import`, including the engine's dynamic `import()`), so browsers fetch new files after each deploy instead of serving stale ones. The hash only depends on the scripts' content, so re-running it is harmless.
 
+`index.html` carries a Content-Security-Policy meta tag: scripts only from the site and the pinned Plotly build on `cdn.plot.ly`, no network requests (`connect-src 'none'`), no form submissions and no `eval`. A new external script or any network call needs a matching policy change, and `tests/frontend/contentSecurityPolicy.test.js` fails until it is made. If the host (cPanel/WordPress) also sends a CSP header, the browser applies both, so the stricter rules win.
+
 There is no server-side component and no deploy-time configuration. Calculations run in the browser with the bundled engine (`assets/scripts/engine/`), which `ui/calculationRunner.js` downloads once the page is idle; no input leaves the device.
 
 ## Year configuration refreshes
