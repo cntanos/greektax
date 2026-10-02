@@ -4,9 +4,12 @@
 Two responsibilities, both run from a deploy hook after the static files
 have been copied into the docroot:
 
-1. **API base injection.** Reads ``GREEKTAX_API_BASE`` from the environment
-   and writes a ``<meta data-api-base="..." />`` tag into the deployed
-   ``index.html`` so the frontend talks to the right backend host.
+1. **API base and engine mode injection.** Reads ``GREEKTAX_API_BASE`` from
+   the environment and writes a ``<meta data-api-base="..." />`` tag into the
+   deployed ``index.html`` so the frontend talks to the right backend host.
+   ``GREEKTAX_ENGINE_MODE`` (``server``, ``shadow`` or ``client``) writes a
+   ``<meta name="greektax-engine" content="..." />`` tag that chooses where
+   calculations run; unset or ``server`` adds nothing (the default).
 2. **Cache-buster versioning.** Computes a short content hash from every
    JavaScript file under ``<docroot>/assets/scripts/`` and appends
    ``?v=<hash>`` to (a) the ``<script type="module" src="...">`` tag in
@@ -64,20 +67,30 @@ def _strip_previous(html: str) -> str:
     return INJECTION_PATTERN.sub("", html)
 
 
-def _build_block(api_base: str) -> str:
-    return (
-        "    " + MARKER_OPEN + "\n"
-        '    <meta data-api-base="' + api_base + '" />\n'
-        "    " + MARKER_CLOSE + "\n  "
-    )
+ENGINE_MODES = ("server", "shadow", "client")
 
 
-def configure(target: Path, api_base: str) -> str:
-    """Inject (or remove) the meta tag in ``target``."""
+def _build_block(api_base: str, engine_mode: str = "server") -> str:
+    lines = ["    " + MARKER_OPEN]
+    if api_base:
+        lines.append('    <meta data-api-base="' + api_base + '" />')
+    if engine_mode != "server":
+        lines.append('    <meta name="greektax-engine" content="' + engine_mode + '" />')
+    lines.append("    " + MARKER_CLOSE)
+    return "\n".join(lines) + "\n  "
+
+
+def configure(target: Path, api_base: str, engine_mode: str = "server") -> str:
+    """Inject (or remove) the deployment meta tags in ``target``."""
+    if engine_mode not in ENGINE_MODES:
+        raise RuntimeError(
+            "GREEKTAX_ENGINE_MODE must be one of " + ", ".join(ENGINE_MODES)
+            + "; got " + repr(engine_mode)
+        )
     html = target.read_text(encoding="utf-8")
     stripped = _strip_previous(html)
 
-    if not api_base:
+    if not api_base and engine_mode == "server":
         if stripped != html:
             target.write_text(stripped, encoding="utf-8")
             return "removed previous data-api-base injection"
@@ -86,9 +99,16 @@ def configure(target: Path, api_base: str) -> str:
     head_idx = stripped.find(HEAD_CLOSE)
     if head_idx == -1:
         raise RuntimeError("could not find " + repr(HEAD_CLOSE) + " in " + str(target))
-    new_html = stripped[:head_idx] + _build_block(api_base) + stripped[head_idx:]
+    new_html = (
+        stripped[:head_idx] + _build_block(api_base, engine_mode) + stripped[head_idx:]
+    )
     target.write_text(new_html, encoding="utf-8")
-    return "injected data-api-base=" + api_base
+    injected = []
+    if api_base:
+        injected.append("data-api-base=" + api_base)
+    if engine_mode != "server":
+        injected.append("greektax-engine=" + engine_mode)
+    return "injected " + ", ".join(injected)
 
 
 def _strip_versions_in_js(text: str) -> str:
@@ -192,12 +212,13 @@ def main(argv: Optional[List[str]] = None) -> int:
     args = parser.parse_args(argv)
 
     api_base = (os.environ.get("GREEKTAX_API_BASE") or "").strip()
+    engine_mode = (os.environ.get("GREEKTAX_ENGINE_MODE") or "server").strip().lower()
 
     if not args.target.exists():
         print("error: " + str(args.target) + " does not exist", file=sys.stderr)
         return 1
     try:
-        status = configure(args.target, api_base)
+        status = configure(args.target, api_base, engine_mode)
     except RuntimeError as exc:
         print("error: " + str(exc), file=sys.stderr)
         return 1

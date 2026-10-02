@@ -30,6 +30,11 @@ import {
 } from "../charts/distribution.js";
 import { mergeTranslationCatalogues, isPlainObject } from "../i18n/catalog.js";
 import { createI18nState } from "../state/i18nState.js";
+import {
+  fetchServerCalculation,
+  resolveEngineMode,
+  runCalculation,
+} from "./calculationRunner.js";
 import { toFiniteNumber } from "../validation/numbers.js";
 
 const {
@@ -4696,21 +4701,13 @@ async function submitCalculation(event) {
   setCalculatorStatus(t("status.calculating"));
 
   try {
-    const response = await fetch(CALCULATIONS_ENDPOINT, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Accept-Language": currentLocale,
-      },
-      body: JSON.stringify(payload),
+    const result = await runCalculation({
+      payload,
+      mode: resolveEngineMode(document),
+      acceptLanguage: currentLocale,
+      requestServer: (body) =>
+        fetchServerCalculation(CALCULATIONS_ENDPOINT, body, currentLocale),
     });
-
-    if (!response.ok) {
-      const errorPayload = await response.json().catch(() => ({}));
-      throw new Error(errorPayload.message || response.statusText);
-    }
-
-    const result = await response.json();
     renderCalculation(result);
     setCalculatorStatus(t("status.calculation_complete"));
   } catch (error) {

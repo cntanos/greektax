@@ -16,6 +16,9 @@ import { EngineError, parseCalculationRequest } from "./request.js";
 
 export { EngineError };
 
+/** Locales with bundled label catalogues (the API's available locales). */
+export const ENGINE_LOCALES = ENGINE_DATA.locales;
+
 const BASE_LOCALE = "en";
 const roundCurrency = (value) => pyRound(value, 2);
 

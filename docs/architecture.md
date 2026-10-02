@@ -27,7 +27,7 @@ GreekTax is split into an API service that performs all tax logic and a static f
 - `assets/scripts/main.js` resolves API base URL and performs endpoint calls.
 - `assets/scripts/translations.generated.js` embeds UI copy generated from shared catalogues.
 - `assets/scripts/data/*.generated.js` bundle the configuration API responses and the engine's year data and labels, built by `scripts/build_client_config.py`.
-- `assets/scripts/engine/` is a client-side port of the calculation engine (`calculateTax(payload)` returns the same response as `POST /api/v1/calculations`). It is not yet wired into the UI. `tests/frontend/engineParity.test.js` requires it to match the Python engine exactly on every case in `tests/data/parity/`, so a rule change that is not purely YAML must be made in both engines.
+- `assets/scripts/engine/` is a client-side port of the calculation engine (`calculateTax(payload)` returns the same response as `POST /api/v1/calculations`). `ui/calculationRunner.js` chooses between it and the API according to the deploy-time `GREEKTAX_ENGINE_MODE` (`server`, `shadow` or `client`; see `docs/operations.md`). `tests/frontend/engineParity.test.js` requires it to match the Python engine exactly on every case in `tests/data/parity/`, so a rule change that is not purely YAML must be made in both engines.
 
 ## Request/Data Flow
 
