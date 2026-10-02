@@ -930,5 +930,7 @@
 {"error":"Unknown EFKA category selection","name":"invalid/efka_category","payload":{"freelance":{"efka_category":"no_such_category","profit":1000},"year":2025}},
 {"error":"Invalid calculation payload: freelance.trade_fee_location: Value error, Invalid trade fee location selection","name":"invalid/trade_fee_location","payload":{"freelance":{"profit":1000,"trade_fee_location":"elsewhere"},"year":2025}},
 {"error":"Invalid calculation payload: investment: Value error, Investment amount for category 'dividends' cannot be negative","name":"invalid/negative_investment","payload":{"investment":{"dividends":-5},"year":2025}},
+{"error":"Invalid calculation payload: toggles: Value error, Toggles section must be an object mapping identifiers to booleans","name":"invalid/toggles_not_mapping","payload":{"toggles":["tekmiria_reduction"],"year":2025}},
+{"error":"Invalid calculation payload: investment: Value error, Investment section must be an object mapping categories to amounts","name":"invalid/investment_not_mapping","payload":{"investment":1000,"year":2025}},
 {"error":"Invalid calculation payload: demographics.birth_year must be 2025 or earlier when income is provided","name":"invalid/future_birth_year_with_income","payload":{"demographics":{"birth_year":2026},"employment":{"gross_income":1000},"year":2025}}
 ]
