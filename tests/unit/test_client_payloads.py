@@ -1,30 +1,27 @@
-"""Integration coverage for configuration metadata endpoints."""
+"""Configuration payloads bundled into the frontend (client-config.generated.js)."""
 
-from http import HTTPStatus
 from shutil import copy2
 from unittest.mock import patch
 
 import pytest
 import yaml
-from flask.testing import FlaskClient
 
 from greektax.backend.config import year_config
+from greektax.backend.config.client_payloads import (
+    application_metadata,
+    deduction_hints,
+    investment_categories,
+    years_payload,
+)
 from greektax.backend.version import get_project_version
 
 
-def test_meta_endpoint(client: FlaskClient) -> None:
-    response = client.get("/api/v1/config/meta")
-
-    assert response.status_code == HTTPStatus.OK
-    payload = response.get_json()
-    assert payload == {"version": get_project_version()}
+def test_application_metadata() -> None:
+    assert application_metadata() == {"version": get_project_version()}
 
 
-def test_list_years_endpoint(client: FlaskClient) -> None:
-    response = client.get("/api/v1/config/years")
-
-    assert response.status_code == HTTPStatus.OK
-    payload = response.get_json()
+def test_years_payload() -> None:
+    payload = years_payload()
     years = payload["years"]
     assert any(entry["year"] == 2024 for entry in years)
     assert any(entry["year"] == 2025 for entry in years)
@@ -58,7 +55,7 @@ def test_list_years_endpoint(client: FlaskClient) -> None:
     assert trade_fee.get("reduced_amount") in {None, 0}
     assert trade_fee.get("sunset") is None
     assert trade_fee.get("newly_self_employed_reduction_years") is None
-    assert freelance_meta.get("pending_contribution_update") is True
+    assert freelance_meta.get("pending_contribution_update") is False
     transition_trade_fee = transition_year["freelance"]["trade_fee"]
     assert transition_trade_fee["standard_amount"] == 0
     assert transition_trade_fee["fee_sunset"] is False
@@ -68,10 +65,9 @@ def test_list_years_endpoint(client: FlaskClient) -> None:
     general_category = next(
         category for category in categories if category["id"] == "general_class_1"
     )
-    assert general_category["monthly_amount"] > 0
-    assert "pension_monthly_amount" in general_category
-    assert "health_monthly_amount" in general_category
-    assert general_category["estimate"] is True
+    # e-EFKA circular 6/2026.
+    assert general_category["monthly_amount"] == pytest.approx(250.77)
+    assert general_category["estimate"] is False
 
     warnings = current_year["warnings"]
     assert isinstance(warnings, list) and warnings
@@ -93,9 +89,7 @@ def test_list_years_endpoint(client: FlaskClient) -> None:
     assert modern_trade_fee["fee_sunset"] is True
 
 
-def test_list_years_endpoint_discovers_new_config_file(
-    client: FlaskClient, tmp_path
-) -> None:
+def test_years_payload_discovers_new_config_file(tmp_path) -> None:
     original_directory = year_config.CONFIG_DIRECTORY
     for filename in ("2024.yaml", "2025.yaml"):
         copy2(original_directory / filename, tmp_path / filename)
@@ -112,42 +106,31 @@ def test_list_years_endpoint_discovers_new_config_file(
     year_config.load_year_configuration.cache_clear()
     with patch.object(year_config, "CONFIG_DIRECTORY", tmp_path):
         year_config.load_year_configuration.cache_clear()
-        response = client.get("/api/v1/config/years")
+        payload = years_payload()
 
     year_config.load_year_configuration.cache_clear()
 
-    assert response.status_code == HTTPStatus.OK
-    payload = response.get_json()
     years = payload["years"]
     discovered = {entry["year"] for entry in years}
     assert {2024, 2025, 2030}.issubset(discovered)
     assert payload["default_year"] == 2030
 
 
-def test_investment_categories_endpoint(client: FlaskClient) -> None:
-    response = client.get("/api/v1/config/2024/investment-categories?locale=el")
-
-    assert response.status_code == HTTPStatus.OK
-    payload = response.get_json()
+def test_investment_categories() -> None:
+    payload = investment_categories(2024, "el")
     assert payload["locale"] == "el"
     categories = {item["id"]: item for item in payload["categories"]}
     assert "dividends" in categories
     assert categories["dividends"]["label"] == "Μερίσματα"
 
 
-def test_investment_categories_missing_year(client: FlaskClient) -> None:
-    response = client.get("/api/v1/config/1999/investment-categories")
-
-    assert response.status_code == HTTPStatus.NOT_FOUND
-    payload = response.get_json()
-    assert payload["error"] == "not_found"
+def test_investment_categories_missing_year() -> None:
+    with pytest.raises(FileNotFoundError):
+        investment_categories(1999, "en")
 
 
-def test_deduction_hints_endpoint(client: FlaskClient) -> None:
-    response = client.get("/api/v1/config/2024/deductions?locale=el")
-
-    assert response.status_code == HTTPStatus.OK
-    payload = response.get_json()
+def test_deduction_hints() -> None:
+    payload = deduction_hints(2024, "el")
     assert payload["locale"] == "el"
 
     hints = {hint["id"]: hint for hint in payload["hints"]}

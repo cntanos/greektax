@@ -235,96 +235,11 @@ def _apply_progressive_tax(
             _resolve_rate,
         )
 
-    credit_candidates: list[float] = []
-    credit_categories: set[str] = set()
-
+    # Article 16 ΚΦΕ: one credit, reduced above a taxable-income threshold, that
+    # can only offset the tax on the credit categories (salaries, pensions and
+    # qualifying agricultural income), shared in proportion to that tax.
     salary_credit_rules = config.rules.salary_credit
     salary_credit_categories = set(salary_credit_rules.income_categories)
-    shared_credit = salary_credit_rules.shared_across_general_income
-
-    derived_salary_income = sum(
-        component.gross_income
-        for component in components
-        if component.credit_eligible and component.category in salary_credit_categories
-    )
-    salary_credit_income = derived_salary_income
-    declared_by_category = {
-        "employment": payload.employment_declared_gross_income,
-        "pension": payload.pension_declared_gross_income,
-    }
-    declared_total = 0.0
-    for category, declared in declared_by_category.items():
-        if category in salary_credit_categories and declared > 0:
-            declared_total += declared
-    if declared_total > 0:
-        salary_credit_income = declared_total
-    credit_reduction = 0.0
-    if salary_credit_income > salary_credit_rules.reduction_threshold:
-        credit_reduction = (
-            (salary_credit_income - salary_credit_rules.reduction_threshold)
-            / salary_credit_rules.reduction_step
-        ) * salary_credit_rules.reduction_per_step
-
-    reduction_exempt_from = (
-        config.employment.tax_credit.income_reduction_exempt_from_dependants
-    )
-
-    def _credit_after_reduction(credit: float, dependants: int) -> float:
-        if credit_reduction <= 0:
-            return credit
-
-        if reduction_exempt_from is not None and dependants >= reduction_exempt_from:
-            return credit
-
-        reduced = credit - credit_reduction
-        if reduced < 0:
-            return 0.0
-        return reduced
-
-    if any(
-        component.category == "employment" for component in components
-    ):
-        credit_candidates.append(
-            _credit_after_reduction(
-                config.employment.tax_credit.amount_for_children(payload.children),
-                payload.children,
-            )
-        )
-        credit_categories.add("employment")
-
-    if shared_credit and any(
-        component.category == "pension" for component in components
-    ):
-        credit_candidates.append(
-            _credit_after_reduction(
-                config.pension.tax_credit.amount_for_children(payload.children),
-                payload.children,
-            )
-        )
-        credit_categories.add("pension")
-
-    if shared_credit and any(
-        component.category == "agricultural" and component.credit_eligible
-        for component in components
-    ):
-        credit_candidates.append(
-            _credit_after_reduction(
-                config.employment.tax_credit.amount_for_children(payload.children),
-                payload.children,
-            )
-        )
-        credit_categories.add("agricultural")
-
-    if shared_credit and credit_candidates:
-        credit_categories.update(
-            component.category
-            for component in components
-            if component.credit_eligible
-        )
-
-    credit_requested = max(credit_candidates) if credit_candidates else 0.0
-    total_tax_before_credit = sum(taxes_before_credit)
-    credit_applied = min(credit_requested, total_tax_before_credit)
 
     for component, tax_before_credit in zip(components, taxes_before_credit):
         component.tax_before_credit = tax_before_credit
@@ -332,9 +247,34 @@ def _apply_progressive_tax(
     eligible_components = [
         component
         for component in components
-        if component.credit_eligible and component.category in credit_categories
+        if component.credit_eligible and component.category in salary_credit_categories
     ]
+
+    credit_income = sum(component.taxable_income for component in eligible_components)
+    credit_reduction = 0.0
+    if credit_income > salary_credit_rules.reduction_threshold:
+        credit_reduction = (
+            (credit_income - salary_credit_rules.reduction_threshold)
+            / salary_credit_rules.reduction_step
+        ) * salary_credit_rules.reduction_per_step
+
+    credit_requested = 0.0
+    if eligible_components:
+        credit_requested = config.employment.tax_credit.amount_for_children(
+            payload.children
+        )
+        reduction_exempt_from = (
+            config.employment.tax_credit.income_reduction_exempt_from_dependants
+        )
+        exempt = (
+            reduction_exempt_from is not None
+            and payload.children >= reduction_exempt_from
+        )
+        if credit_reduction > 0 and not exempt:
+            credit_requested = max(credit_requested - credit_reduction, 0.0)
+
     eligible_tax = sum(component.tax_before_credit for component in eligible_components)
+    credit_applied = min(credit_requested, eligible_tax)
 
     for component in components:
         if component in eligible_components and eligible_tax > 0:
@@ -388,7 +328,13 @@ def _apply_deduction_credits(
     donations_config = rules.donations
     donations = max(payload.deductions_donations, 0.0)
     if donations > 0:
-        if income_for_thresholds > 0:
+        if donations <= donations_config.min_total_amount:
+            eligible = 0.0
+            note = (
+                "Donations qualify only when the year's total exceeds "
+                f"€{donations_config.min_total_amount:,.2f}."
+            )
+        elif income_for_thresholds > 0:
             cap_rate = donations_config.income_cap_rate
             income_cap = income_for_thresholds * cap_rate if cap_rate is not None else None
             eligible = min(donations, income_cap) if income_cap is not None else donations
@@ -445,42 +391,6 @@ def _apply_deduction_credits(
         _append_breakdown(
             "medical",
             (medical, eligible_expense, medical_config.credit_rate),
-            requested,
-            note,
-        )
-
-    education_config = rules.education
-    education = max(payload.deductions_education, 0.0)
-    if education > 0:
-        eligible = min(education, education_config.max_eligible_expense)
-        note = None
-        if education > education_config.max_eligible_expense:
-            note = (
-                "Education expenses eligible for credits are capped at "
-                f"€{education_config.max_eligible_expense:,.2f}; excess is ignored."
-            )
-        requested = eligible * education_config.credit_rate
-        _append_breakdown(
-            "education",
-            (education, eligible, education_config.credit_rate),
-            requested,
-            note,
-        )
-
-    insurance_config = rules.insurance
-    insurance = max(payload.deductions_insurance, 0.0)
-    if insurance > 0:
-        eligible = min(insurance, insurance_config.max_eligible_expense)
-        note = None
-        if insurance > insurance_config.max_eligible_expense:
-            note = (
-                "Life and health insurance premiums eligible for credits are capped at "
-                f"€{insurance_config.max_eligible_expense:,.2f}."
-            )
-        requested = eligible * insurance_config.credit_rate
-        _append_breakdown(
-            "insurance",
-            (insurance, eligible, insurance_config.credit_rate),
             requested,
             note,
         )

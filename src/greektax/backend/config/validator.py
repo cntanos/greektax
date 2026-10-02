@@ -374,25 +374,6 @@ def _validate_deduction_rules(config: DeductionRuleConfig) -> list[str]:
             )
         )
 
-    for scope, entry in {
-        "education": config.education,
-        "insurance": config.insurance,
-    }.items():
-        if entry.credit_rate < 0 or entry.credit_rate > 1:
-            errors.append(
-                _format_scope(
-                    f"deductions.rules.{scope}",
-                    "credit_rate must be between 0 and 1",
-                )
-            )
-        if entry.max_eligible_expense < 0:
-            errors.append(
-                _format_scope(
-                    f"deductions.rules.{scope}",
-                    "max_eligible_expense must be non-negative",
-                )
-            )
-
     return errors
 
 

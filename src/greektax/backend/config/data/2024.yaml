@@ -12,13 +12,13 @@ rules:
   youth_relief_categories: [employment]
   residency_transfer_taxable_share: 0.5
   salary_credit:
-    income_categories: [employment, pension]
+    # Article 16 ΚΦΕ: the credit reduces the tax on salaries and pensions, and on
+    # agricultural income where the farmer qualifies; it falls by 20 per 1,000 of
+    # that taxable income above 12,000 (not for 5+ dependent children).
+    income_categories: [employment, pension, agricultural]
     reduction_threshold: 12000
     reduction_step: 1000
     reduction_per_step: 20
-    # Before 2025 pension and agricultural income could also claim the credit,
-    # and the credit was shared across all credit-eligible general income.
-    shared_across_general_income: true
 income:
   employment:
     payroll:
@@ -199,19 +199,16 @@ income:
       royalties: 0.20
 deductions:
   rules:
+    # Article 19 ΚΦΕ: 20% of donations, only if they exceed 100 in the year;
+    # donations count up to 5% of taxable income.
     donations:
       credit_rate: 0.20
-      income_cap_rate: 0.10
+      income_cap_rate: 0.05
+      min_total_amount: 100
     medical:
       credit_rate: 0.10
       income_threshold_rate: 0.05
       max_credit: 3000
-    education:
-      credit_rate: 0.10
-      max_eligible_expense: 1000
-    insurance:
-      credit_rate: 0.10
-      max_eligible_expense: 1200
   hints:
     - id: dependents.children
       applies_to:
@@ -284,24 +281,6 @@ deductions:
       label_key: forms.deductions.medical
       description_key: forms.deductions.medical_hint
       input_id: deductions-medical
-      validation:
-        type: currency
-        min: 0
-    - id: deductions.education
-      applies_to:
-        - deductions
-      label_key: forms.deductions.education
-      description_key: forms.deductions.education_hint
-      input_id: deductions-education
-      validation:
-        type: currency
-        min: 0
-    - id: deductions.insurance
-      applies_to:
-        - deductions
-      label_key: forms.deductions.insurance
-      description_key: forms.deductions.insurance_hint
-      input_id: deductions-insurance
       validation:
         type: currency
         min: 0

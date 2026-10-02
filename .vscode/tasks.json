@@ -3,6 +3,14 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "Serve frontend",
+      "type": "shell",
+      "command": "${config:python.defaultInterpreterPath}",
+      "args": ["-m", "http.server", "8000", "--bind", "127.0.0.1", "--directory", "src/frontend"],
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
       "label": "Run pytest",
       "type": "shell",
       "command": "${config:python.defaultInterpreterPath}",

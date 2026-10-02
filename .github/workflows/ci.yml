@@ -35,7 +35,7 @@ jobs:
       - name: Run dead-code check (vulture)
         run: vulture src tests --min-confidence 100 --ignore-names cls,__context,package
       - name: Run frontend static checks
-        run: node --test tests/frontend
+        run: npm run test:frontend
       - name: Check bundle-size budgets
         run: python scripts/check_bundle_size.py
       - name: Dependency vulnerability scan

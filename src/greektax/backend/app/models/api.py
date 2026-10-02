@@ -226,8 +226,6 @@ class DeductionsInput(BaseModel):
 
     donations: float = Field(default=0.0, ge=0)
     medical: float = Field(default=0.0, ge=0)
-    education: float = Field(default=0.0, ge=0)
-    insurance: float = Field(default=0.0, ge=0)
 
 
 class OtherIncomeInput(BaseModel):
@@ -248,7 +246,7 @@ class ObligationsInput(BaseModel):
 
 
 class CalculationRequest(BaseModel):
-    """Complete payload accepted by the calculation endpoint."""
+    """Complete payload accepted by the calculation engine."""
 
     model_config = ConfigDict(extra="forbid")
 

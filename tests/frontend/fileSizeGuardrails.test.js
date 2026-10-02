@@ -9,7 +9,6 @@ const __dirname = dirname(__filename);
 
 const guardrails = [
   { path: '../../src/frontend/assets/scripts/main.js', maxLines: 40 },
-  { path: '../../src/frontend/assets/scripts/api/endpoints.js', maxLines: 120 },
   { path: '../../src/frontend/assets/scripts/charts/distribution.js', maxLines: 220 },
   { path: '../../src/frontend/assets/scripts/config/constants.js', maxLines: 60 },
   { path: '../../src/frontend/assets/scripts/config/clientConfig.js', maxLines: 60 },
@@ -22,7 +21,7 @@ const guardrails = [
   { path: '../../src/frontend/assets/scripts/engine/request.js', maxLines: 540 },
   { path: '../../src/frontend/assets/scripts/state/i18nState.js', maxLines: 40 },
   { path: '../../src/frontend/assets/scripts/validation/numbers.js', maxLines: 40 },
-  { path: '../../src/frontend/assets/scripts/ui/calculationRunner.js', maxLines: 180 },
+  { path: '../../src/frontend/assets/scripts/ui/calculationRunner.js', maxLines: 60 },
   { path: '../../src/frontend/assets/scripts/ui/app.js', maxLines: 5900 },
 ];
 

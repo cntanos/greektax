@@ -14,7 +14,6 @@ import {
   formatGroupedCurrency,
   formatPercentage,
   pyMax,
-  pyMaxOf,
   pyMin,
   pyRound,
   pySum,
@@ -268,85 +267,41 @@ function applyProgressiveTax(components, input, config) {
     );
   }
 
-  const creditCandidates = [];
-  const creditCategories = new Set();
+  // Article 16 ΚΦΕ: one credit, reduced above a taxable-income threshold, that
+  // can only offset the tax on the credit categories (salaries, pensions and
+  // qualifying agricultural income), shared in proportion to that tax.
   const salaryRules = config.rules.salary_credit;
   const salaryCategories = new Set(salaryRules.income_categories);
-  const sharedCredit = salaryRules.shared_across_general_income;
-
-  let salaryCreditIncome = pySum(
-    components
-      .filter((item) => item.credit_eligible && salaryCategories.has(item.category))
-      .map((item) => item.gross_income),
-  );
-  const declaredByCategory = [
-    ["employment", input.employment_declared_gross_income],
-    ["pension", input.pension_declared_gross_income],
-  ];
-  let declaredTotal = 0;
-  for (const [category, declared] of declaredByCategory) {
-    if (salaryCategories.has(category) && declared > 0) {
-      declaredTotal += declared;
-    }
-  }
-  if (declaredTotal > 0) {
-    salaryCreditIncome = declaredTotal;
-  }
-  let creditReduction = 0;
-  if (salaryCreditIncome > salaryRules.reduction_threshold) {
-    creditReduction =
-      ((salaryCreditIncome - salaryRules.reduction_threshold) / salaryRules.reduction_step) *
-      salaryRules.reduction_per_step;
-  }
-
-  const exemptFrom = config.employment.tax_credit.income_reduction_exempt_from_dependants;
-  const creditAfterReduction = (credit, dependants) => {
-    if (creditReduction <= 0) {
-      return credit;
-    }
-    if (exemptFrom !== null && dependants >= exemptFrom) {
-      return credit;
-    }
-    const reduced = credit - creditReduction;
-    return reduced < 0 ? 0 : reduced;
-  };
-
-  const has = (predicate) => components.some(predicate);
-
-  if (has((item) => item.category === "employment")) {
-    creditCandidates.push(
-      creditAfterReduction(creditForChildren(config.employment.tax_credit, input.children), input.children),
-    );
-    creditCategories.add("employment");
-  }
-  if (sharedCredit && has((item) => item.category === "pension")) {
-    creditCandidates.push(
-      creditAfterReduction(creditForChildren(config.pension.tax_credit, input.children), input.children),
-    );
-    creditCategories.add("pension");
-  }
-  if (sharedCredit && has((item) => item.category === "agricultural" && item.credit_eligible)) {
-    creditCandidates.push(
-      creditAfterReduction(creditForChildren(config.employment.tax_credit, input.children), input.children),
-    );
-    creditCategories.add("agricultural");
-  }
-  if (sharedCredit && creditCandidates.length) {
-    components.filter((item) => item.credit_eligible).forEach((item) => creditCategories.add(item.category));
-  }
-
-  const creditRequested = creditCandidates.length ? pyMaxOf(creditCandidates) : 0;
-  const totalTaxBeforeCredit = pySum(taxesBeforeCredit);
-  const creditApplied = pyMin(creditRequested, totalTaxBeforeCredit);
 
   components.forEach((item, index) => {
     item.tax_before_credit = taxesBeforeCredit[index];
   });
 
   const eligible = components.filter(
-    (item) => item.credit_eligible && creditCategories.has(item.category),
+    (item) => item.credit_eligible && salaryCategories.has(item.category),
   );
+
+  const creditIncome = pySum(eligible.map((item) => item.taxable_income));
+  let creditReduction = 0;
+  if (creditIncome > salaryRules.reduction_threshold) {
+    creditReduction =
+      ((creditIncome - salaryRules.reduction_threshold) / salaryRules.reduction_step) *
+      salaryRules.reduction_per_step;
+  }
+
+  let creditRequested = 0;
+  if (eligible.length) {
+    const taxCredit = config.employment.tax_credit;
+    creditRequested = creditForChildren(taxCredit, input.children);
+    const exemptFrom = taxCredit.income_reduction_exempt_from_dependants;
+    const exempt = exemptFrom !== null && input.children >= exemptFrom;
+    if (creditReduction > 0 && !exempt) {
+      creditRequested = pyMax(creditRequested - creditReduction, 0);
+    }
+  }
+
   const eligibleTax = pySum(eligible.map((item) => item.tax_before_credit));
+  const creditApplied = pyMin(creditRequested, eligibleTax);
 
   for (const item of components) {
     if (eligible.includes(item) && eligibleTax > 0) {
@@ -382,7 +337,12 @@ function applyDeductionCredits(input, components, translate, rules) {
   if (donations > 0) {
     let eligible;
     let note = null;
-    if (incomeForThresholds > 0) {
+    if (donations <= donationsConfig.min_total_amount) {
+      eligible = 0;
+      note =
+        "Donations qualify only when the year's total exceeds " +
+        `€${formatGroupedCurrency(donationsConfig.min_total_amount)}.`;
+    } else if (incomeForThresholds > 0) {
       const capRate = donationsConfig.income_cap_rate;
       const incomeCap = capRate !== null ? incomeForThresholds * capRate : null;
       eligible = incomeCap !== null ? pyMin(donations, incomeCap) : donations;
@@ -427,32 +387,6 @@ function applyDeductionCredits(input, components, translate, rules) {
       note = note ? `${note} ${extraNote}`.trim() : extraNote;
     }
     append("medical", [medical, eligibleExpense, medicalConfig.credit_rate], requested, note);
-  }
-
-  const educationConfig = rules.education;
-  const education = pyMax(input.deductions_education, 0);
-  if (education > 0) {
-    const eligible = pyMin(education, educationConfig.max_eligible_expense);
-    let note = null;
-    if (education > educationConfig.max_eligible_expense) {
-      note =
-        "Education expenses eligible for credits are capped at " +
-        `€${formatGroupedCurrency(educationConfig.max_eligible_expense)}; excess is ignored.`;
-    }
-    append("education", [education, eligible, educationConfig.credit_rate], eligible * educationConfig.credit_rate, note);
-  }
-
-  const insuranceConfig = rules.insurance;
-  const insurance = pyMax(input.deductions_insurance, 0);
-  if (insurance > 0) {
-    const eligible = pyMin(insurance, insuranceConfig.max_eligible_expense);
-    let note = null;
-    if (insurance > insuranceConfig.max_eligible_expense) {
-      note =
-        "Life and health insurance premiums eligible for credits are capped at " +
-        `€${formatGroupedCurrency(insuranceConfig.max_eligible_expense)}.`;
-    }
-    append("insurance", [insurance, eligible, insuranceConfig.credit_rate], eligible * insuranceConfig.credit_rate, note);
   }
 
   const totalRequested = pySum(breakdown.map((item) => item.credit_requested));

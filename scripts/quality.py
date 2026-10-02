@@ -12,7 +12,7 @@ COMMANDS: list[list[str]] = [
     ["vulture", "src", "tests", "--min-confidence", "100", "--ignore-names", "cls,__context,package"],
     ["pip-audit", "-r", "requirements.txt", "-r", "requirements-dev.txt"],
     ["python", "scripts/check_bundle_size.py"],
-    ["node", "--test", "tests/frontend"],
+    ["npm", "run", "test:frontend"],
 ]
 
 

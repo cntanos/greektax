@@ -1,8 +1,9 @@
 /**
  * Read-only access to the configuration bundled at build time.
  *
- * Each getter returns the same payload the corresponding /api/v1/config
- * endpoint returned, so callers keep their existing response handling.
+ * Each getter returns a payload built by
+ * src/greektax/backend/config/client_payloads.py (see
+ * scripts/build_client_config.py).
  */
 
 import { CLIENT_CONFIG } from "../data/client-config.generated.js";

@@ -120,7 +120,6 @@ def _normalise_payload(
 
     employment_monthly_income: float | None = None
     employment_income = 0.0
-    employment_declared_gross = employment_input.gross_income
 
     if employment_input.monthly_income is not None and employment_input.monthly_income > 0:
         payments = employment_payments or employment_payroll.default_payments_per_year
@@ -198,7 +197,6 @@ def _normalise_payload(
 
     pension_monthly_income: float | None = None
     pension_income = 0.0
-    pension_declared_gross = pension_input.gross_income
 
     if pension_input.monthly_income is not None and pension_input.monthly_income > 0:
         payments = pension_payments or pension_payroll.default_payments_per_year
@@ -251,8 +249,6 @@ def _normalise_payload(
     deductions = request.deductions
     deductions_donations = deductions.donations
     deductions_medical = deductions.medical
-    deductions_education = deductions.education
-    deductions_insurance = deductions.insurance
 
     normalised = CalculationInput(
         year=request.year,
@@ -271,12 +267,10 @@ def _normalise_payload(
         employment_input.include_manual_employee_contributions,
         employment_include_employer_contributions=
         employment_input.include_employer_contributions,
-        employment_declared_gross_income=employment_declared_gross,
         withholding_tax=withholding_tax,
         pension_income=pension_income,
         pension_monthly_income=pension_monthly_income,
         pension_payments_per_year=pension_payments,
-        pension_declared_gross_income=pension_declared_gross,
         freelance_profit=profit,
         freelance_gross_revenue=freelance_gross_revenue,
         freelance_deductible_expenses=freelance_deductible_expenses,
@@ -309,8 +303,6 @@ def _normalise_payload(
         other_taxable_income=other_income,
         deductions_donations=deductions_donations,
         deductions_medical=deductions_medical,
-        deductions_education=deductions_education,
-        deductions_insurance=deductions_insurance,
         toggles=toggles,
         age_reference_year=config.rules.age_reference_year,
         youth_bands=config.rules.youth_bands,
@@ -496,7 +488,7 @@ def calculate_tax(
     }
 
     youth_category = normalised.youth_rate_category
-    if youth_category:
+    if youth_category and config.rules.youth_relief_categories:
         meta_payload["youth_relief_category"] = youth_category
 
     if normalised.presumptive_relief_applied:

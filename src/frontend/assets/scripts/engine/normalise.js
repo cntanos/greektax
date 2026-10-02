@@ -128,33 +128,15 @@ export class CalculationInput {
     return this.other_taxable_income > 0;
   }
 
-  get has_non_agricultural_taxable_income() {
-    return (
-      this.has_employment_income ||
-      this.has_pension_income ||
-      this.freelance_taxable_income > 0 ||
-      this.other_taxable_income > 0 ||
-      this.rental_taxable_income > 0 ||
-      this.has_investment_income
-    );
-  }
-
   get qualifies_for_agricultural_tax_credit() {
-    if (!this.has_agricultural_income) {
-      return false;
-    }
-    if (this.agricultural_professional_farmer) {
-      return true;
-    }
-    return !this.has_non_agricultural_taxable_income;
+    // Article 16 ΚΦΕ: only professional farmers (κατ' επάγγελμα αγρότες).
+    return this.has_agricultural_income && this.agricultural_professional_farmer;
   }
 
   get total_deductions() {
     const total =
       this.deductions_donations +
-      this.deductions_medical +
-      this.deductions_education +
-      this.deductions_insurance;
+      this.deductions_medical;
     return total > 0 ? total : 0;
   }
 
@@ -188,7 +170,6 @@ export function normalisePayload(request, config) {
   );
   let employmentMonthlyIncome = null;
   let employmentIncome = 0;
-  const employmentDeclaredGross = employment.gross_income;
   if (employment.monthly_income !== null && employment.monthly_income > 0) {
     const payments = employmentPayments || employmentPayroll.default;
     employmentPayments = payments;
@@ -242,7 +223,6 @@ export function normalisePayload(request, config) {
   );
   let pensionMonthlyIncome = null;
   let pensionIncome = 0;
-  const pensionDeclaredGross = pension.gross_income;
   if (pension.monthly_income !== null && pension.monthly_income > 0) {
     const payments = pensionPayments || pensionPayroll.default;
     pensionPayments = payments;
@@ -293,12 +273,10 @@ export function normalisePayload(request, config) {
     employment_include_employee_contributions: employment.include_employee_contributions,
     employment_include_manual_contributions: employment.include_manual_employee_contributions,
     employment_include_employer_contributions: employment.include_employer_contributions,
-    employment_declared_gross_income: employmentDeclaredGross,
     withholding_tax: request.withholding_tax,
     pension_income: pensionIncome,
     pension_monthly_income: pensionMonthlyIncome,
     pension_payments_per_year: pensionPayments,
-    pension_declared_gross_income: pensionDeclaredGross,
     freelance_profit: profit,
     freelance_deductible_expenses: freelance.deductible_expenses,
     freelance_category_contribution: categoryContribution,
@@ -324,7 +302,5 @@ export function normalisePayload(request, config) {
     other_taxable_income: otherIncome,
     deductions_donations: request.deductions.donations,
     deductions_medical: request.deductions.medical,
-    deductions_education: request.deductions.education,
-    deductions_insurance: request.deductions.insurance,
   });
 }

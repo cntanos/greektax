@@ -24,11 +24,9 @@ copies in root.
 
 `src/` should contain importable application code and runtime assets only.
 
-- Python packages under `src/greektax/` (backend app, configuration, shared
-  translations)
-- static frontend bundle assets under `src/frontend/`
-- production entrypoints that are executed by hosts (for example
-  `src/greektax/backend/passenger_wsgi.py`)
+- Python packages under `src/greektax/` (year configuration, the reference
+  calculation engine, shared translations)
+- the static site under `src/frontend/`, which is what gets deployed
 
 Do not add placeholder package markers or scratch modules that are not imported
 by runtime code, tests, or packaging configuration.
@@ -37,7 +35,7 @@ by runtime code, tests, or packaging configuration.
 
 Place contributor-facing references in `docs/`:
 
-- architecture and API contracts
+- architecture and tax-rule references
 - operational runbooks and manual test guides
 - roadmap/planning notes
 

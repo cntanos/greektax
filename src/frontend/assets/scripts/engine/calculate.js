@@ -2,9 +2,9 @@
  * Client-side tax calculation, mirroring calculate_tax in
  * src/greektax/backend/app/services/calculation_service.py.
  *
- * calculateTax(payload) returns the same JSON structure as
- * POST /api/v1/calculations, or throws EngineError with the same message the
- * API returns in its 400 response.
+ * calculateTax(payload) returns the same JSON structure as the Python
+ * calculate_tax, or throws EngineError with the same message as its ValueError.
+ * tests/frontend/engineParity.test.js holds the two to exact agreement.
  */
 
 import { ENGINE_DATA } from "../data/engine-data.generated.js";
@@ -225,7 +225,7 @@ export function calculateTax(payload) {
 
   const meta = { year: input.year, locale: translate.locale };
   const youthCategory = input.youth_rate_category;
-  if (youthCategory) {
+  if (youthCategory && config.rules.youth_relief_categories.length) {
     meta.youth_relief_category = youthCategory;
   }
 

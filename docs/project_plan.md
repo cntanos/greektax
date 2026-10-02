@@ -44,7 +44,7 @@
    - **1.1 Employment & Pension**
      - Maintain `employment` and `pension` income pipelines within the
        calculation service, including dependant credits and payroll-frequency
-       validation aligned with the [API contract](./api_contract.md).
+       validation aligned with the request model in `app/models/api.py`.
      - Surface year-specific warnings, allowances, and toggleable input groups
        in the UI, referencing the localisation keys defined in
        [`main.js`](../src/frontend/assets/scripts/main.js).
@@ -61,8 +61,8 @@
      - Keep the Sankey and summary views synchronised with calculation outputs
        so category totals stay localisation-ready.
    - **1.4 Shared Reporting & Validation**
-     - Expose locale-aware configuration and calculation endpoints as defined in
-       the [API contract](./api_contract.md).
+     - Bundle locale-aware configuration with the site and run calculations in
+       the browser (see [architecture](./architecture.md)).
      - Generate printable, shareable, or downloadable summaries only where they
        align with current calculator outputs, flagging legacy export paths as
        deprecated.
@@ -335,7 +335,7 @@
   catalogues into the static bundle whenever translations change, keeping the
   Flask responses and front-end shell aligned.【F:scripts/embed_translations.py†L1-L109】
 
-## Sprint 25 (Current)
+## Sprint 25 (Completed)
 
 **Objectives**
 - Update contributor-facing documentation to reflect the simplified Python/Flask
@@ -352,6 +352,16 @@
   pipeline, and calculation engine responsibilities.【F:README.md†L1-L140】
 - Captured Sprint 25 outcomes and future documentation follow-ups in the project
   plan to keep the roadmap consistent with the cleaned codebase.
+
+## Client-only migration and 2025-2026 rule review (Completed)
+
+- Calculations moved from the Flask API to a JavaScript port of the engine that
+  runs in the browser; the Python engine remains as its reference, enforced by
+  the parity fixtures. The API, the PythonAnywhere deployment and the backend
+  deploy workflow were removed.
+- The 2025 and 2026 rules were checked against published sources and corrected
+  (see [`reference/tax_rules_2025_2026.md`](./reference/tax_rules_2025_2026.md)
+  and the [changelog](../CHANGELOG.md)).
 
 > _This plan is updated at the end of each sprint to capture accomplishments_
 > _and upcoming milestones._
