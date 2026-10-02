@@ -32,6 +32,7 @@ import { mergeTranslationCatalogues, isPlainObject } from "../i18n/catalog.js";
 import { createI18nState } from "../state/i18nState.js";
 import {
   fetchServerCalculation,
+  preloadEngine,
   resolveEngineMode,
   runCalculation,
 } from "./calculationRunner.js";
@@ -5772,6 +5773,7 @@ export async function bootstrapApp() {
   initialiseLocaleControls();
   initialiseThemeControls();
   initialiseCalculator();
+  preloadEngine(resolveEngineMode(document));
   void refreshApplicationVersion();
 
   console.info("GreekTax interface initialised");
