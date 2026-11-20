@@ -110,10 +110,9 @@ function buildComponents(input, config) {
   const components = [];
 
   // Article 5Γ ΚΦΕ: only a share of the taxable income is taxed, for the
-  // categories the year's rules list.
+  // categories the taxpayer is admitted for.
   const residencyShare = (category) =>
-    input.tax_residency_transfer_to_greece &&
-    config.rules.residency_transfer_categories.includes(category)
+    input.tax_residency_transfer_categories.includes(category)
       ? config.rules.residency_transfer_taxable_share
       : 1;
 

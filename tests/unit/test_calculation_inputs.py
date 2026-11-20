@@ -132,3 +132,39 @@ def test_tax_residency_transfer_leaves_other_categories_untouched() -> None:
         {**payload, "demographics": {"tax_residency_transfer_to_greece": True}}
     )
     assert relocated["summary"]["tax_total"] == plain["summary"]["tax_total"]
+
+
+def _mixed_residency(employment_flag: bool, freelance_flag: bool, **extra) -> dict:
+    result = calculate_tax(
+        {
+            "year": 2026,
+            "employment": {
+                "gross_income": 30_000,
+                "include_social_contributions": False,
+                "tax_residency_transfer": employment_flag,
+            },
+            "freelance": {"profit": 20_000, "tax_residency_transfer": freelance_flag},
+            **extra,
+        }
+    )
+    return {detail["category"]: detail["taxable_income"] for detail in result["details"]}
+
+
+def test_tax_residency_transfer_is_applied_per_category() -> None:
+    # AADE issues a separate Article 5Γ decision for each income category.
+    assert _mixed_residency(False, False) == {"employment": 30_000, "freelance": 20_000}
+    assert _mixed_residency(True, False) == {"employment": 15_000, "freelance": 20_000}
+    assert _mixed_residency(False, True) == {"employment": 30_000, "freelance": 10_000}
+    assert _mixed_residency(True, True) == {"employment": 15_000, "freelance": 10_000}
+
+
+def test_demographics_residency_flag_still_covers_both_categories() -> None:
+    flagged = _mixed_residency(
+        False, False, demographics={"tax_residency_transfer_to_greece": True}
+    )
+    assert flagged == {"employment": 15_000, "freelance": 10_000}
+    # Together with a category flag the share is applied once, not twice.
+    both = _mixed_residency(
+        True, False, demographics={"tax_residency_transfer_to_greece": True}
+    )
+    assert both == flagged

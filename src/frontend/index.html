@@ -265,19 +265,6 @@
                     want the calculator to assume no youth relief applies.
                   </p>
                 </div>
-                <div class="form-control form-control--toggle">
-                  <label
-                    for="tax-residency-transfer"
-                    data-i18n-key="fields.tax-residency-transfer"
-                  >
-                    Tax residency transfer to Greece
-                  </label>
-                  <input
-                    id="tax-residency-transfer"
-                    name="demographics.tax_residency_transfer_to_greece"
-                    type="checkbox"
-                  />
-                </div>
               </div>
             </div>
             <div
@@ -556,6 +543,29 @@
                 >
                   Enter PAYE income tax already withheld on payslips to offset the
                   balance due.
+                </p>
+              </div>
+              <div class="form-control form-control--toggle">
+                <label
+                  for="employment-residency-transfer"
+                  data-i18n-key="fields.employment-residency-transfer"
+                >
+                  Article 5Γ applies to this salary (tax residency transfer)
+                </label>
+                <input
+                  id="employment-residency-transfer"
+                  name="employment.tax_residency_transfer"
+                  type="checkbox"
+                  aria-describedby="employment-residency-transfer-hint"
+                />
+                <p
+                  id="employment-residency-transfer-hint"
+                  class="form-hint"
+                  data-static-hint="true"
+                  data-i18n-key="hints.employment-residency-transfer"
+                >
+                  Tick if AADE has admitted you to Article 5Γ for salaried work:
+                  half of the taxable salary is exempt for seven tax years.
                 </p>
               </div>
               <div class="form-control form-control--advanced">
@@ -847,6 +857,30 @@
                   name="freelance.include_trade_fee"
                   checked
                 />
+              </div>
+              <div class="form-control form-control--toggle">
+                <label
+                  for="freelance-residency-transfer"
+                  data-i18n-key="fields.freelance-residency-transfer"
+                >
+                  Article 5Γ applies to this activity (tax residency transfer)
+                </label>
+                <input
+                  id="freelance-residency-transfer"
+                  name="freelance.tax_residency_transfer"
+                  type="checkbox"
+                  aria-describedby="freelance-residency-transfer-hint"
+                />
+                <p
+                  id="freelance-residency-transfer-hint"
+                  class="form-hint"
+                  data-static-hint="true"
+                  data-i18n-key="hints.freelance-residency-transfer"
+                >
+                  Tick if AADE has admitted you to Article 5Γ for your business
+                  activity: half of the taxable profit is exempt for seven tax
+                  years.
+                </p>
               </div>
             </div>
             <p

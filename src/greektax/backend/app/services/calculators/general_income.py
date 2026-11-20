@@ -60,12 +60,9 @@ def _build_general_income_components(
     components: list[GeneralIncomeComponent] = []
 
     # Article 5Γ ΚΦΕ: only a share of the taxable income is taxed, for the
-    # categories the year's rules list.
+    # categories the taxpayer is admitted for.
     def _residency_share(category: str) -> float:
-        if (
-            payload.tax_residency_transfer_to_greece
-            and category in config.rules.residency_transfer_categories
-        ):
+        if category in payload.tax_residency_transfer_categories:
             return config.rules.residency_transfer_taxable_share
         return 1.0
 

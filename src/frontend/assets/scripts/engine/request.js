@@ -318,6 +318,7 @@ const EmploymentInput = {
     payments_per_year: optionalCount,
     employee_contributions: amount,
     include_social_contributions: { type: "bool", default: true },
+    tax_residency_transfer: { type: "bool", default: false },
     include_employee_contributions: { type: "bool", default: true },
     include_manual_employee_contributions: { type: "bool", default: true },
     include_employer_contributions: { type: "bool", default: true },
@@ -389,6 +390,7 @@ const FreelanceInput = {
     },
     years_active: optionalCount,
     newly_self_employed: freelanceBool("newly_self_employed"),
+    tax_residency_transfer: { type: "bool", default: false },
   },
 };
 

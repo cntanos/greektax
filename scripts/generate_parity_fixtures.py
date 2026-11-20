@@ -203,6 +203,25 @@ def _grid_cases(year: int) -> list[dict[str, Any]]:
                 }
             )
 
+    # Article 5Γ is granted per category: each flag halves only its own income.
+    for employment_flag, freelance_flag in ((True, False), (False, True), (True, True)):
+        cases.append(
+            {
+                "name": f"grid/residency-category/{employment_flag}/{freelance_flag}",
+                "payload": {
+                    "year": year,
+                    "employment": {
+                        "gross_income": 30_000.0,
+                        "tax_residency_transfer": employment_flag,
+                    },
+                    "freelance": {
+                        "profit": 25_000.0,
+                        "tax_residency_transfer": freelance_flag,
+                    },
+                },
+            }
+        )
+
     for donations in (50.0, 100.0, 100.01, 5_000.0):
         cases.append(
             {
