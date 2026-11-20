@@ -115,6 +115,8 @@ class CalculationInput(BaseModel):
     toggles: Mapping[str, bool] = Field(default_factory=dict)
     taxpayer_birth_year: int | None = None
     tax_residency_transfer_to_greece: bool = False
+    # Categories the taxpayer is admitted to Article 5Γ ΚΦΕ for.
+    tax_residency_transfer_categories: tuple[str, ...] = ()
     age_reference_year: int
     youth_bands: tuple[tuple[str, int], ...]
 

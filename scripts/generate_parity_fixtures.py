@@ -160,6 +160,68 @@ def _grid_cases(year: int) -> list[dict[str, Any]]:
                 }
             )
 
+    # Agricultural profit is taxed on the scale on its own (Article 29(3) ΚΦΕ),
+    # with or without professional-farmer status, next to pooled income.
+    for professional in (False, True):
+        for farm in (8_000.0, 20_000.0, 20_000.01, 35_000.0):
+            cases.append(
+                {
+                    "name": f"grid/separate/agricultural/{professional}/{farm}",
+                    "payload": {
+                        "year": year,
+                        "dependents": {"children": 1},
+                        "employment": {"gross_income": 18_000.0},
+                        "freelance": {"profit": 9_000.0},
+                        "agricultural": {
+                            "gross_revenue": farm,
+                            "professional_farmer": professional,
+                        },
+                        **_demographics(1998),
+                    },
+                }
+            )
+
+    # Article 5Γ ΚΦΕ: the exempt share applies to salary and freelance income.
+    for salary, profit in ((0.0, 40_000.0), (30_000.0, 0.0), (30_000.0, 25_000.0)):
+        for contributions in (0.0, 4_000.0):
+            payload: dict[str, Any] = {
+                "year": year,
+                "demographics": {"tax_residency_transfer_to_greece": True},
+                "agricultural": {"gross_revenue": 6_000.0},
+            }
+            if salary:
+                payload["employment"] = {"gross_income": salary}
+            if profit:
+                payload["freelance"] = {
+                    "profit": profit,
+                    "mandatory_contributions": contributions,
+                }
+            cases.append(
+                {
+                    "name": f"grid/residency/{salary}/{profit}/{contributions}",
+                    "payload": payload,
+                }
+            )
+
+    # Article 5Γ is granted per category: each flag halves only its own income.
+    for employment_flag, freelance_flag in ((True, False), (False, True), (True, True)):
+        cases.append(
+            {
+                "name": f"grid/residency-category/{employment_flag}/{freelance_flag}",
+                "payload": {
+                    "year": year,
+                    "employment": {
+                        "gross_income": 30_000.0,
+                        "tax_residency_transfer": employment_flag,
+                    },
+                    "freelance": {
+                        "profit": 25_000.0,
+                        "tax_residency_transfer": freelance_flag,
+                    },
+                },
+            }
+        )
+
     for donations in (50.0, 100.0, 100.01, 5_000.0):
         cases.append(
             {

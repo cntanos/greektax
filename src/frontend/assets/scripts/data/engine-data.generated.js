@@ -357,6 +357,11 @@ export const ENGINE_DATA = Object.freeze({
    "rules": {
     "age_reference_year": 2024,
     "max_birth_year_with_income": null,
+    "professional_farmer_zero_rate_upper": null,
+    "residency_transfer_categories": [
+     "employment",
+     "freelance"
+    ],
     "residency_transfer_taxable_share": 0.5,
     "salary_credit": {
      "income_categories": [
@@ -368,6 +373,9 @@ export const ENGINE_DATA = Object.freeze({
      "reduction_step": 1000.0,
      "reduction_threshold": 12000.0
     },
+    "separately_taxed_categories": [
+     "agricultural"
+    ],
     "youth_bands": [
      [
       "under_25",
@@ -604,6 +612,11 @@ export const ENGINE_DATA = Object.freeze({
    "rules": {
     "age_reference_year": 2026,
     "max_birth_year_with_income": 2025,
+    "professional_farmer_zero_rate_upper": null,
+    "residency_transfer_categories": [
+     "employment",
+     "freelance"
+    ],
     "residency_transfer_taxable_share": 0.5,
     "salary_credit": {
      "income_categories": [
@@ -615,6 +628,9 @@ export const ENGINE_DATA = Object.freeze({
      "reduction_step": 1000.0,
      "reduction_threshold": 12000.0
     },
+    "separately_taxed_categories": [
+     "agricultural"
+    ],
     "youth_bands": [
      [
       "under_25",
@@ -1439,6 +1455,11 @@ export const ENGINE_DATA = Object.freeze({
    "rules": {
     "age_reference_year": 2026,
     "max_birth_year_with_income": 2025,
+    "professional_farmer_zero_rate_upper": 20000.0,
+    "residency_transfer_categories": [
+     "employment",
+     "freelance"
+    ],
     "residency_transfer_taxable_share": 0.5,
     "salary_credit": {
      "income_categories": [
@@ -1450,6 +1471,9 @@ export const ENGINE_DATA = Object.freeze({
      "reduction_step": 1000.0,
      "reduction_threshold": 12000.0
     },
+    "separately_taxed_categories": [
+     "agricultural"
+    ],
     "youth_bands": [
      [
       "under_25",

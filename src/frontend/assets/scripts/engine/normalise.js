@@ -258,12 +258,26 @@ export function normalisePayload(request, config) {
     }
   }
 
+  // Article 5Γ ΚΦΕ is granted per income category; the demographics flag is
+  // the older all-categories switch.
+  const residencyCategories = [
+    ["employment", request.employment.tax_residency_transfer],
+    ["freelance", request.freelance.tax_residency_transfer],
+  ]
+    .filter(
+      ([category, selected]) =>
+        config.rules.residency_transfer_categories.includes(category) &&
+        (selected || request.demographics.tax_residency_transfer_to_greece),
+    )
+    .map(([category]) => category);
+
   return new CalculationInput({
     year: request.year,
     locale: request.locale || "en",
     children: request.dependents.children,
     taxpayer_birth_year: birthYear,
     tax_residency_transfer_to_greece: request.demographics.tax_residency_transfer_to_greece,
+    tax_residency_transfer_categories: residencyCategories,
     age_reference_year: config.rules.age_reference_year,
     youth_bands: config.rules.youth_bands,
     employment_income: employmentIncome,

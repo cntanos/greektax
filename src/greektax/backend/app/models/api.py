@@ -96,6 +96,8 @@ class EmploymentInput(BaseModel):
     payments_per_year: int | None = Field(default=None, ge=0)
     employee_contributions: float = Field(default=0.0, ge=0)
     include_social_contributions: bool = True
+    # Article 5Γ ΚΦΕ: admitted to the residency-transfer regime for this salary.
+    tax_residency_transfer: bool = False
     include_employee_contributions: bool = True
     include_manual_employee_contributions: bool = True
     include_employer_contributions: bool = True
@@ -161,6 +163,8 @@ class FreelanceInput(BaseModel):
     trade_fee_location: str = "standard"
     years_active: int | None = Field(default=None, ge=0)
     newly_self_employed: bool = False
+    # Article 5Γ ΚΦΕ: admitted to the residency-transfer regime for this activity.
+    tax_residency_transfer: bool = False
 
     @field_validator(
         "include_trade_fee",

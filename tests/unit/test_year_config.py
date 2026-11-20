@@ -75,6 +75,7 @@ def _valid_rules() -> dict[str, object]:
         "youth_bands": {"under_25": 25, "age26_30": 30},
         "youth_relief_categories": ["employment"],
         "residency_transfer_taxable_share": 0.5,
+        "residency_transfer_categories": ["employment", "freelance"],
         "salary_credit": {
             "income_categories": ["employment"],
             "reduction_threshold": 12000,
@@ -93,6 +94,19 @@ def test_rules_parse_with_defaults() -> None:
     assert rules.age_reference_year == 2025
     assert rules.youth_bands == (("under_25", 25), ("age26_30", 30))
     assert rules.max_birth_year_with_income is None
+    assert rules.separately_taxed_categories == ()
+    assert rules.professional_farmer_zero_rate_upper is None
+
+
+def test_rules_parse_farm_rules() -> None:
+    raw = _valid_rules()
+    raw["separately_taxed_categories"] = ["agricultural"]
+    raw["professional_farmer_zero_rate_upper"] = 20000
+
+    rules = year_config._parse_rules(2026, raw)
+
+    assert rules.separately_taxed_categories == ("agricultural",)
+    assert rules.professional_farmer_zero_rate_upper == 20000.0
 
 
 @pytest.mark.parametrize(
@@ -104,11 +118,17 @@ def test_rules_parse_with_defaults() -> None:
         (("youth_bands",), {}),
         (("residency_transfer_taxable_share",), 1.5),
         (("residency_transfer_taxable_share",), -0.1),
+        (("residency_transfer_categories",), ["rental"]),
+        (("residency_transfer_categories",), None),
         (("salary_credit", "reduction_step"), 0),
         (("salary_credit", "reduction_threshold"), "12000"),
         (("age_reference_year",), 2026.0),
         (("max_birth_year_with_income",), "2025"),
         (("salary_credit", "income_categories"), ["employment", "rental"]),
+        (("separately_taxed_categories",), ["rental"]),
+        (("separately_taxed_categories",), "agricultural"),
+        (("professional_farmer_zero_rate_upper",), -1),
+        (("professional_farmer_zero_rate_upper",), "20000"),
     ],
 )
 def test_rules_reject_invalid_values(path: tuple[str, ...], value: object) -> None:

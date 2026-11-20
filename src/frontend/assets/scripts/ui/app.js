@@ -315,8 +315,11 @@ const themeButtons = Array.from(
 const yearSelect = document.getElementById("year-select");
 const childrenInput = document.getElementById("children-input");
 const birthYearInput = document.getElementById("birth-year");
-const taxResidencyTransferCheckbox = document.getElementById(
-  "tax-residency-transfer",
+const employmentResidencyTransferCheckbox = document.getElementById(
+  "employment-residency-transfer",
+);
+const freelanceResidencyTransferCheckbox = document.getElementById(
+  "freelance-residency-transfer",
 );
 const employmentIncomeInput = document.getElementById("employment-income");
 const employmentMonthlyIncomeInput = document.getElementById(
@@ -3258,11 +3261,6 @@ function buildCalculationPayload() {
     demographics.birth_year = birthYear;
   }
 
-  const taxResidencyTransferEnabled = Boolean(
-    taxResidencyTransferCheckbox?.checked,
-  );
-  demographics.tax_residency_transfer_to_greece = taxResidencyTransferEnabled;
-
   payload.demographics = demographics;
 
   const employmentPayload = {};
@@ -3281,6 +3279,10 @@ function buildCalculationPayload() {
   );
   if (manualEmployeeContributions > 0) {
     employmentPayload.employee_contributions = manualEmployeeContributions;
+  }
+
+  if (employmentResidencyTransferCheckbox?.checked) {
+    employmentPayload.tax_residency_transfer = true;
   }
 
   const includeSocial = employmentIncludeSocialToggle
@@ -3390,6 +3392,9 @@ function buildCalculationPayload() {
     }
 
     freelancePayload.include_trade_fee = Boolean(tradeFeeToggle?.checked);
+    if (freelanceResidencyTransferCheckbox?.checked) {
+      freelancePayload.tax_residency_transfer = true;
+    }
 
     if (Object.keys(freelancePayload).length > 1 || revenue > 0 || expenses > 0) {
       payload.freelance = freelancePayload;
@@ -5411,8 +5416,10 @@ function setCalculatorPersistenceOptIn(enabled, { persist = true } = {}) {
   }
   if (!next) {
     clearStoredCalculatorState();
-  } else if (!wasEnabled) {
+  } else if (!wasEnabled && persist) {
     // User just opted in — capture the current form state so they don't lose it.
+    // Not at start-up (persist is false there): the form is still empty then,
+    // and saving it would overwrite the entries about to be restored.
     persistCalculatorState();
   }
 }

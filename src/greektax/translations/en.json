@@ -136,7 +136,6 @@
       "agricultural-professional-farmer": "Professional farmer status",
       "children-input": "Dependent children",
       "birth-year": "Birth year",
-      "tax-residency-transfer": "Tax residency transfer to Greece",
       "deductions-donations": "Charitable donations (€)",
       "deductions-medical": "Medical expenses (€)",
       "employment-employee-contributions": "Employee EFKA contributions (outside payroll) (€)",
@@ -148,6 +147,8 @@
       "employment-monthly-income": "Gross salary per payment (€)",
       "employment-payments": "Salary payments per year",
       "employment-withholding": "Tax already withheld (PAYE) (€)",
+      "employment-residency-transfer": "Article 5Γ applies to this salary (tax residency transfer)",
+      "freelance-residency-transfer": "Article 5Γ applies to this activity (tax residency transfer)",
       "enfia-due": "ENFIA amount (€)",
       "freelance": {
         "efka": {
@@ -245,6 +246,8 @@
       "pension-scope": "(for retirement pensions)",
       "pension-section-intro": "If you receive a pension, fill in the fields below; otherwise leave them blank.",
       "employment-withholding": "Enter PAYE income tax already withheld on your payslips to reduce the balance due.",
+      "employment-residency-transfer": "Tick if AADE has admitted you to Article 5Γ for salaried work: half of the taxable salary is exempt for seven tax years.",
+      "freelance-residency-transfer": "Tick if AADE has admitted you to Article 5Γ for your business activity: half of the taxable profit is exempt for seven tax years.",
       "income-toggle-intro": "Enable each category you need—income, deductions, or other adjustments—to reveal its fields.",
       "year-select": "Choose the tax year you want to estimate.",
       "other-income": "Include taxable amounts such as unemployment benefits, alimony received, taxable scholarships, prizes, or other income not covered above.",

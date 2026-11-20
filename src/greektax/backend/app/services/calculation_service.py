@@ -110,6 +110,18 @@ def _normalise_payload(
 
     birth_year = demographics.birth_year
 
+    # Article 5Γ ΚΦΕ is granted per income category; the demographics flag is
+    # the older all-categories switch.
+    residency_categories = tuple(
+        category
+        for category, selected in (
+            ("employment", request.employment.tax_residency_transfer),
+            ("freelance", request.freelance.tax_residency_transfer),
+        )
+        if category in config.rules.residency_transfer_categories
+        and (selected or demographics.tax_residency_transfer_to_greece)
+    )
+
     employment_input = request.employment
     employment_payroll = config.employment.payroll
     employment_payments = _validate_payments(
@@ -309,6 +321,7 @@ def _normalise_payload(
         tax_residency_transfer_to_greece=(
             request.demographics.tax_residency_transfer_to_greece
         ),
+        tax_residency_transfer_categories=residency_categories,
     )
 
     return normalised

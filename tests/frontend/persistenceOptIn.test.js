@@ -174,3 +174,35 @@ condTest("Remember checkbox itself is excluded from the persisted snapshot", asy
     "remember-entries key must not appear in the persisted snapshot"
   );
 });
+
+condTest("saved entries survive a reload when Remember is on", async () => {
+  const { dom, mod } = await freshAppEnvironment();
+  const saved = {
+    timestamp: Date.now(),
+    values: {
+      "toggle-employment": true,
+      "toggle-freelance": true,
+      "employment.gross_income": "37500",
+      "employment.tax_residency_transfer": true,
+      "freelance.tax_residency_transfer": true,
+    },
+  };
+  dom.window.localStorage.setItem(OPTIN_KEY, "1");
+  dom.window.localStorage.setItem(CALCULATOR_KEY, JSON.stringify(saved));
+
+  await mod.bootstrapApp();
+  await new Promise((resolve) => setTimeout(resolve, 250));
+
+  const byId = (id) => dom.window.document.getElementById(id);
+  assert.equal(dom.window.localStorage.getItem(OPTIN_KEY), "1");
+  assert.equal(byId("employment-income").value, "37500");
+  assert.equal(byId("employment-residency-transfer").checked, true);
+  assert.equal(byId("freelance-residency-transfer").checked, true);
+
+  const stored = JSON.parse(dom.window.localStorage.getItem(CALCULATOR_KEY));
+  assert.equal(
+    stored.values["employment.gross_income"],
+    "37500",
+    "start-up must not overwrite the saved entries with the empty form"
+  );
+});
