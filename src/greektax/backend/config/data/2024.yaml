@@ -10,7 +10,11 @@ rules:
     under_25: 25
     age26_30: 30
   youth_relief_categories: [employment]
+  # Article 5Γ ΚΦΕ: 50% of the income from salaried work and from individual
+  # business activity earned in Greece is exempt for seven tax years (AADE
+  # questions and answers on Article 5Γ, 02/10/2025).
   residency_transfer_taxable_share: 0.5
+  residency_transfer_categories: [employment, freelance]
   # Article 29(3) ΚΦΕ: profit from an individual agricultural business is taxed
   # on the Article 15 scale on its own, not added to salaries, pensions or
   # business profit.

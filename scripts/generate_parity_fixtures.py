@@ -181,6 +181,28 @@ def _grid_cases(year: int) -> list[dict[str, Any]]:
                 }
             )
 
+    # Article 5Γ ΚΦΕ: the exempt share applies to salary and freelance income.
+    for salary, profit in ((0.0, 40_000.0), (30_000.0, 0.0), (30_000.0, 25_000.0)):
+        for contributions in (0.0, 4_000.0):
+            payload: dict[str, Any] = {
+                "year": year,
+                "demographics": {"tax_residency_transfer_to_greece": True},
+                "agricultural": {"gross_revenue": 6_000.0},
+            }
+            if salary:
+                payload["employment"] = {"gross_income": salary}
+            if profit:
+                payload["freelance"] = {
+                    "profit": profit,
+                    "mandatory_contributions": contributions,
+                }
+            cases.append(
+                {
+                    "name": f"grid/residency/{salary}/{profit}/{contributions}",
+                    "payload": payload,
+                }
+            )
+
     for donations in (50.0, 100.0, 100.01, 5_000.0):
         cases.append(
             {

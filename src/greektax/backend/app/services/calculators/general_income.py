@@ -59,6 +59,16 @@ def _build_general_income_components(
 ) -> list[GeneralIncomeComponent]:
     components: list[GeneralIncomeComponent] = []
 
+    # Article 5Γ ΚΦΕ: only a share of the taxable income is taxed, for the
+    # categories the year's rules list.
+    def _residency_share(category: str) -> float:
+        if (
+            payload.tax_residency_transfer_to_greece
+            and category in config.rules.residency_transfer_categories
+        ):
+            return config.rules.residency_transfer_taxable_share
+        return 1.0
+
     if payload.has_employment_income:
         payments_per_year = payload.employment_payments_per_year
         if not payments_per_year or payments_per_year <= 0:
@@ -119,8 +129,8 @@ def _build_general_income_components(
         taxable_income = payload.employment_income - employee_contrib
         if taxable_income < 0:
             taxable_income = 0.0
-        if payload.tax_residency_transfer_to_greece and taxable_income > 0:
-            taxable_income *= config.rules.residency_transfer_taxable_share
+        if taxable_income > 0:
+            taxable_income *= _residency_share("employment")
         include_employee_total = include_auto or include_manual
         components.append(
             GeneralIncomeComponent(
@@ -159,7 +169,8 @@ def _build_general_income_components(
                 category="freelance",
                 label_key="details.freelance",
                 gross_income=payload.freelance_profit,
-                taxable_income=payload.freelance_taxable_income,
+                taxable_income=payload.freelance_taxable_income
+                * _residency_share("freelance"),
                 credit_eligible=True,
                 deductible_expenses=payload.freelance_deductible_expenses,
                 contributions=payload.freelance_total_contributions,

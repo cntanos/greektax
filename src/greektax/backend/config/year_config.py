@@ -429,6 +429,8 @@ class RulesConfig:
     youth_bands: tuple[tuple[str, int], ...]
     youth_relief_categories: tuple[str, ...]
     residency_transfer_taxable_share: float
+    # Article 5Γ ΚΦΕ: the categories whose taxable income the share applies to.
+    residency_transfer_categories: tuple[str, ...]
     salary_credit: SalaryCreditRules
     max_birth_year_with_income: int | None = None
     # Article 29(3) ΚΦΕ: categories taxed on the scale on their own, not added
@@ -1503,6 +1505,10 @@ def _parse_rules(year: int, raw: Any) -> RulesConfig:
             context="rules.youth_relief_categories",
         ),
         residency_transfer_taxable_share=share,
+        residency_transfer_categories=_parse_category_list(
+            raw.get("residency_transfer_categories"),
+            context="rules.residency_transfer_categories",
+        ),
         salary_credit=_parse_salary_credit_rules(raw.get("salary_credit")),
         max_birth_year_with_income=max_birth_raw,
         separately_taxed_categories=_parse_category_list(

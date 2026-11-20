@@ -95,3 +95,40 @@ def test_non_mapping_sections_are_validation_errors(
 ) -> None:
     with pytest.raises(ValueError, match=f"{section}: Value error, {message}"):
         calculate_tax({"year": 2026, section: value})
+
+
+@pytest.mark.parametrize("year", [2024, 2025, 2026])
+def test_tax_residency_transfer_halves_taxable_freelance_income(year: int) -> None:
+    # Article 5Γ ΚΦΕ covers individual business activity as well as salaries:
+    # half of the profit left after contributions is taxed.
+    payload = {
+        "year": year,
+        "freelance": {"profit": 40_000, "mandatory_contributions": 4_000},
+    }
+    plain = calculate_tax(payload)
+    relocated = calculate_tax(
+        {**payload, "demographics": {"tax_residency_transfer_to_greece": True}}
+    )
+    half = calculate_tax({"year": year, "freelance": {"profit": 18_000}})
+
+    detail = relocated["details"][0]
+    assert plain["details"][0]["taxable_income"] == pytest.approx(36_000)
+    assert detail["taxable_income"] == pytest.approx(18_000)
+    assert detail["tax"] == pytest.approx(half["details"][0]["tax"])
+    # The exempt half is still income: only the tax falls.
+    assert detail["net_income"] == pytest.approx(36_000 - detail["tax"])
+
+
+def test_tax_residency_transfer_leaves_other_categories_untouched() -> None:
+    payload = {
+        "year": 2026,
+        "pension": {"gross_income": 20_000},
+        "agricultural": {"gross_revenue": 15_000},
+        "rental": {"gross_income": 10_000},
+        "other": {"taxable_income": 5_000},
+    }
+    plain = calculate_tax(payload)
+    relocated = calculate_tax(
+        {**payload, "demographics": {"tax_residency_transfer_to_greece": True}}
+    )
+    assert relocated["summary"]["tax_total"] == plain["summary"]["tax_total"]

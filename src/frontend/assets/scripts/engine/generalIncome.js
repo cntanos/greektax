@@ -109,6 +109,14 @@ function calculateTradeFee(input, freelance) {
 function buildComponents(input, config) {
   const components = [];
 
+  // Article 5Γ ΚΦΕ: only a share of the taxable income is taxed, for the
+  // categories the year's rules list.
+  const residencyShare = (category) =>
+    input.tax_residency_transfer_to_greece &&
+    config.rules.residency_transfer_categories.includes(category)
+      ? config.rules.residency_transfer_taxable_share
+      : 1;
+
   if (input.has_employment_income) {
     let paymentsPerYear = input.employment_payments_per_year;
     if (!paymentsPerYear || paymentsPerYear <= 0) {
@@ -157,8 +165,8 @@ function buildComponents(input, config) {
     if (taxableIncome < 0) {
       taxableIncome = 0;
     }
-    if (input.tax_residency_transfer_to_greece && taxableIncome > 0) {
-      taxableIncome *= config.rules.residency_transfer_taxable_share;
+    if (taxableIncome > 0) {
+      taxableIncome *= residencyShare("employment");
     }
 
     components.push(
@@ -199,7 +207,7 @@ function buildComponents(input, config) {
         category: "freelance",
         label_key: "details.freelance",
         gross_income: input.freelance_profit,
-        taxable_income: input.freelance_taxable_income,
+        taxable_income: input.freelance_taxable_income * residencyShare("freelance"),
         credit_eligible: true,
         deductible_expenses: input.freelance_deductible_expenses,
         contributions: input.total_freelance_contributions,

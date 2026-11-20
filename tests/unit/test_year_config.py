@@ -75,6 +75,7 @@ def _valid_rules() -> dict[str, object]:
         "youth_bands": {"under_25": 25, "age26_30": 30},
         "youth_relief_categories": ["employment"],
         "residency_transfer_taxable_share": 0.5,
+        "residency_transfer_categories": ["employment", "freelance"],
         "salary_credit": {
             "income_categories": ["employment"],
             "reduction_threshold": 12000,
@@ -117,6 +118,8 @@ def test_rules_parse_farm_rules() -> None:
         (("youth_bands",), {}),
         (("residency_transfer_taxable_share",), 1.5),
         (("residency_transfer_taxable_share",), -0.1),
+        (("residency_transfer_categories",), ["rental"]),
+        (("residency_transfer_categories",), None),
         (("salary_credit", "reduction_step"), 0),
         (("salary_credit", "reduction_threshold"), "12000"),
         (("age_reference_year",), 2026.0),

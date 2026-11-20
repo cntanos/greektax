@@ -137,6 +137,7 @@ def _engine_year(config: YearConfiguration) -> dict[str, Any]:
             "youth_bands": [list(band) for band in rules.youth_bands],
             "youth_relief_categories": list(rules.youth_relief_categories),
             "residency_transfer_taxable_share": rules.residency_transfer_taxable_share,
+            "residency_transfer_categories": list(rules.residency_transfer_categories),
             "max_birth_year_with_income": rules.max_birth_year_with_income,
             "separately_taxed_categories": list(rules.separately_taxed_categories),
             "professional_farmer_zero_rate_upper": (
