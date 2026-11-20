@@ -204,3 +204,33 @@ def test_reduction_does_not_offset_freelance_tax() -> None:
     details = {d["category"]: d for d in result["details"]}
     assert details["freelance"]["credits"] == pytest.approx(0.0)
     assert details["employment"]["credits"] <= details["employment"]["tax_before_credits"]
+
+
+@pytest.mark.parametrize(
+    ("children", "expected"),
+    [
+        # 40,000 of taxable salary: 0% up to 20,000 (4+ children), the
+        # 20,000-30,000 rate for the child count, 34% on the rest, less the
+        # Article 16 reduction (no phase-out from five children on).
+        (6, 1_400 + 3_400 - 2_000),
+        (7, 1_200 + 3_400 - 2_220),
+        (11, 400 + 3_400 - 3_100),
+        (13, 0 + 3_400 - 3_540),
+    ],
+)
+def test_third_band_keeps_falling_by_two_points_per_child_above_four(
+    children: int, expected: float
+) -> None:
+    # Art. 15(1)(δε) ΚΦΕ: 18% with four children, two points less for each
+    # further child.
+    result = calculate_tax(
+        {
+            "year": 2026,
+            "dependents": {"children": children},
+            "employment": {
+                "gross_income": 40_000,
+                "include_social_contributions": False,
+            },
+        }
+    )
+    assert result["summary"]["tax_total"] == pytest.approx(max(expected, 0.0), abs=0.01)

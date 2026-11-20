@@ -1675,6 +1675,34 @@ export const CLIENT_CONFIG = Object.freeze({
          {
           "dependants": 6,
           "rate": 0.14
+         },
+         {
+          "dependants": 7,
+          "rate": 0.12
+         },
+         {
+          "dependants": 8,
+          "rate": 0.1
+         },
+         {
+          "dependants": 9,
+          "rate": 0.08
+         },
+         {
+          "dependants": 10,
+          "rate": 0.06
+         },
+         {
+          "dependants": 11,
+          "rate": 0.04
+         },
+         {
+          "dependants": 12,
+          "rate": 0.02
+         },
+         {
+          "dependants": 13,
+          "rate": 0.0
          }
         ],
         "reduction_factor": null
@@ -1713,6 +1741,34 @@ export const CLIENT_CONFIG = Object.freeze({
           {
            "dependants": 6,
            "rate": 0.14
+          },
+          {
+           "dependants": 7,
+           "rate": 0.12
+          },
+          {
+           "dependants": 8,
+           "rate": 0.1
+          },
+          {
+           "dependants": 9,
+           "rate": 0.08
+          },
+          {
+           "dependants": 10,
+           "rate": 0.06
+          },
+          {
+           "dependants": 11,
+           "rate": 0.04
+          },
+          {
+           "dependants": 12,
+           "rate": 0.02
+          },
+          {
+           "dependants": 13,
+           "rate": 0.0
           }
          ]
         },
@@ -1746,6 +1802,34 @@ export const CLIENT_CONFIG = Object.freeze({
           {
            "dependants": 6,
            "rate": 0.14
+          },
+          {
+           "dependants": 7,
+           "rate": 0.12
+          },
+          {
+           "dependants": 8,
+           "rate": 0.1
+          },
+          {
+           "dependants": 9,
+           "rate": 0.08
+          },
+          {
+           "dependants": 10,
+           "rate": 0.06
+          },
+          {
+           "dependants": 11,
+           "rate": 0.04
+          },
+          {
+           "dependants": 12,
+           "rate": 0.02
+          },
+          {
+           "dependants": 13,
+           "rate": 0.0
           }
          ]
         }
@@ -2327,6 +2411,34 @@ export const CLIENT_CONFIG = Object.freeze({
          {
           "dependants": 6,
           "rate": 0.14
+         },
+         {
+          "dependants": 7,
+          "rate": 0.12
+         },
+         {
+          "dependants": 8,
+          "rate": 0.1
+         },
+         {
+          "dependants": 9,
+          "rate": 0.08
+         },
+         {
+          "dependants": 10,
+          "rate": 0.06
+         },
+         {
+          "dependants": 11,
+          "rate": 0.04
+         },
+         {
+          "dependants": 12,
+          "rate": 0.02
+         },
+         {
+          "dependants": 13,
+          "rate": 0.0
          }
         ],
         "reduction_factor": null
@@ -2365,6 +2477,34 @@ export const CLIENT_CONFIG = Object.freeze({
           {
            "dependants": 6,
            "rate": 0.14
+          },
+          {
+           "dependants": 7,
+           "rate": 0.12
+          },
+          {
+           "dependants": 8,
+           "rate": 0.1
+          },
+          {
+           "dependants": 9,
+           "rate": 0.08
+          },
+          {
+           "dependants": 10,
+           "rate": 0.06
+          },
+          {
+           "dependants": 11,
+           "rate": 0.04
+          },
+          {
+           "dependants": 12,
+           "rate": 0.02
+          },
+          {
+           "dependants": 13,
+           "rate": 0.0
           }
          ]
         },
@@ -2398,6 +2538,34 @@ export const CLIENT_CONFIG = Object.freeze({
           {
            "dependants": 6,
            "rate": 0.14
+          },
+          {
+           "dependants": 7,
+           "rate": 0.12
+          },
+          {
+           "dependants": 8,
+           "rate": 0.1
+          },
+          {
+           "dependants": 9,
+           "rate": 0.08
+          },
+          {
+           "dependants": 10,
+           "rate": 0.06
+          },
+          {
+           "dependants": 11,
+           "rate": 0.04
+          },
+          {
+           "dependants": 12,
+           "rate": 0.02
+          },
+          {
+           "dependants": 13,
+           "rate": 0.0
           }
          ]
         }
@@ -3009,6 +3177,34 @@ export const CLIENT_CONFIG = Object.freeze({
          {
           "dependants": 6,
           "rate": 0.14
+         },
+         {
+          "dependants": 7,
+          "rate": 0.12
+         },
+         {
+          "dependants": 8,
+          "rate": 0.1
+         },
+         {
+          "dependants": 9,
+          "rate": 0.08
+         },
+         {
+          "dependants": 10,
+          "rate": 0.06
+         },
+         {
+          "dependants": 11,
+          "rate": 0.04
+         },
+         {
+          "dependants": 12,
+          "rate": 0.02
+         },
+         {
+          "dependants": 13,
+          "rate": 0.0
          }
         ],
         "reduction_factor": null
@@ -3047,6 +3243,34 @@ export const CLIENT_CONFIG = Object.freeze({
           {
            "dependants": 6,
            "rate": 0.14
+          },
+          {
+           "dependants": 7,
+           "rate": 0.12
+          },
+          {
+           "dependants": 8,
+           "rate": 0.1
+          },
+          {
+           "dependants": 9,
+           "rate": 0.08
+          },
+          {
+           "dependants": 10,
+           "rate": 0.06
+          },
+          {
+           "dependants": 11,
+           "rate": 0.04
+          },
+          {
+           "dependants": 12,
+           "rate": 0.02
+          },
+          {
+           "dependants": 13,
+           "rate": 0.0
           }
          ]
         },
@@ -3080,6 +3304,34 @@ export const CLIENT_CONFIG = Object.freeze({
           {
            "dependants": 6,
            "rate": 0.14
+          },
+          {
+           "dependants": 7,
+           "rate": 0.12
+          },
+          {
+           "dependants": 8,
+           "rate": 0.1
+          },
+          {
+           "dependants": 9,
+           "rate": 0.08
+          },
+          {
+           "dependants": 10,
+           "rate": 0.06
+          },
+          {
+           "dependants": 11,
+           "rate": 0.04
+          },
+          {
+           "dependants": 12,
+           "rate": 0.02
+          },
+          {
+           "dependants": 13,
+           "rate": 0.0
           }
          ]
         }
@@ -3796,6 +4048,34 @@ export const CLIENT_CONFIG = Object.freeze({
          {
           "dependants": 6,
           "rate": 0.14
+         },
+         {
+          "dependants": 7,
+          "rate": 0.12
+         },
+         {
+          "dependants": 8,
+          "rate": 0.1
+         },
+         {
+          "dependants": 9,
+          "rate": 0.08
+         },
+         {
+          "dependants": 10,
+          "rate": 0.06
+         },
+         {
+          "dependants": 11,
+          "rate": 0.04
+         },
+         {
+          "dependants": 12,
+          "rate": 0.02
+         },
+         {
+          "dependants": 13,
+          "rate": 0.0
          }
         ],
         "reduction_factor": null
@@ -3834,6 +4114,34 @@ export const CLIENT_CONFIG = Object.freeze({
           {
            "dependants": 6,
            "rate": 0.14
+          },
+          {
+           "dependants": 7,
+           "rate": 0.12
+          },
+          {
+           "dependants": 8,
+           "rate": 0.1
+          },
+          {
+           "dependants": 9,
+           "rate": 0.08
+          },
+          {
+           "dependants": 10,
+           "rate": 0.06
+          },
+          {
+           "dependants": 11,
+           "rate": 0.04
+          },
+          {
+           "dependants": 12,
+           "rate": 0.02
+          },
+          {
+           "dependants": 13,
+           "rate": 0.0
           }
          ]
         },
@@ -3867,6 +4175,34 @@ export const CLIENT_CONFIG = Object.freeze({
           {
            "dependants": 6,
            "rate": 0.14
+          },
+          {
+           "dependants": 7,
+           "rate": 0.12
+          },
+          {
+           "dependants": 8,
+           "rate": 0.1
+          },
+          {
+           "dependants": 9,
+           "rate": 0.08
+          },
+          {
+           "dependants": 10,
+           "rate": 0.06
+          },
+          {
+           "dependants": 11,
+           "rate": 0.04
+          },
+          {
+           "dependants": 12,
+           "rate": 0.02
+          },
+          {
+           "dependants": 13,
+           "rate": 0.0
           }
          ]
         }
@@ -4448,6 +4784,34 @@ export const CLIENT_CONFIG = Object.freeze({
          {
           "dependants": 6,
           "rate": 0.14
+         },
+         {
+          "dependants": 7,
+          "rate": 0.12
+         },
+         {
+          "dependants": 8,
+          "rate": 0.1
+         },
+         {
+          "dependants": 9,
+          "rate": 0.08
+         },
+         {
+          "dependants": 10,
+          "rate": 0.06
+         },
+         {
+          "dependants": 11,
+          "rate": 0.04
+         },
+         {
+          "dependants": 12,
+          "rate": 0.02
+         },
+         {
+          "dependants": 13,
+          "rate": 0.0
          }
         ],
         "reduction_factor": null
@@ -4486,6 +4850,34 @@ export const CLIENT_CONFIG = Object.freeze({
           {
            "dependants": 6,
            "rate": 0.14
+          },
+          {
+           "dependants": 7,
+           "rate": 0.12
+          },
+          {
+           "dependants": 8,
+           "rate": 0.1
+          },
+          {
+           "dependants": 9,
+           "rate": 0.08
+          },
+          {
+           "dependants": 10,
+           "rate": 0.06
+          },
+          {
+           "dependants": 11,
+           "rate": 0.04
+          },
+          {
+           "dependants": 12,
+           "rate": 0.02
+          },
+          {
+           "dependants": 13,
+           "rate": 0.0
           }
          ]
         },
@@ -4519,6 +4911,34 @@ export const CLIENT_CONFIG = Object.freeze({
           {
            "dependants": 6,
            "rate": 0.14
+          },
+          {
+           "dependants": 7,
+           "rate": 0.12
+          },
+          {
+           "dependants": 8,
+           "rate": 0.1
+          },
+          {
+           "dependants": 9,
+           "rate": 0.08
+          },
+          {
+           "dependants": 10,
+           "rate": 0.06
+          },
+          {
+           "dependants": 11,
+           "rate": 0.04
+          },
+          {
+           "dependants": 12,
+           "rate": 0.02
+          },
+          {
+           "dependants": 13,
+           "rate": 0.0
           }
          ]
         }
