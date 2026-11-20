@@ -1563,6 +1563,8 @@ def _parse_year_configuration(year: int, raw: Mapping[str, Any]) -> YearConfigur
         )
 
     employment_config = _parse_employment_config(year, employment_raw)
+    rules = _parse_rules(year, raw.get("rules"))
+    _check_farmer_zero_rate_upper(rules, employment_config.brackets)
 
     return YearConfiguration(
         year=year,
@@ -1581,8 +1583,26 @@ def _parse_year_configuration(year: int, raw: Mapping[str, Any]) -> YearConfigur
         investment=_parse_investment_config(investment_raw),
         deductions=_parse_deductions_config(raw.get("deductions")),
         warnings=_parse_year_warnings(raw.get("warnings")),
-        rules=_parse_rules(year, raw.get("rules")),
+        rules=rules,
     )
+
+
+def _check_farmer_zero_rate_upper(
+    rules: RulesConfig, brackets: Sequence[ProgressiveTaxBracket]
+) -> None:
+    # Both engines apply the farmers' 0% to whole brackets, so the limit must be
+    # a bracket boundary of the Article 15 scale; otherwise the 0% would quietly
+    # cover less (or more) income than the law sets.
+    upper = rules.professional_farmer_zero_rate_upper
+    if upper is None:
+        return
+    boundaries = [b.upper_bound for b in brackets if b.upper_bound is not None]
+    if upper not in boundaries:
+        listed = ", ".join(f"{bound:g}" for bound in boundaries)
+        raise ConfigurationError(
+            "rules.professional_farmer_zero_rate_upper must equal an upper bound "
+            f"of the employment tax brackets ({listed}); got {upper:g}"
+        )
 
 
 @lru_cache(maxsize=8)

@@ -145,3 +145,36 @@ def test_rules_reject_invalid_values(path: tuple[str, ...], value: object) -> No
 def test_rules_section_is_required() -> None:
     with pytest.raises(year_config.ConfigurationError):
         year_config._parse_rules(2026, None)
+
+
+@pytest.mark.parametrize("upper", [20000, 10000])
+def test_farmer_zero_rate_upper_on_a_bracket_boundary_is_accepted(
+    isolated_config_directory: Path, upper: int
+) -> None:
+    path = isolated_config_directory / "2026.yaml"
+    path.write_text(
+        path.read_text().replace(
+            "professional_farmer_zero_rate_upper: 20000",
+            f"professional_farmer_zero_rate_upper: {upper}",
+        )
+    )
+    config = year_config.load_year_configuration(2026)
+    assert config.rules.professional_farmer_zero_rate_upper == upper
+
+
+def test_farmer_zero_rate_upper_off_a_bracket_boundary_is_rejected(
+    isolated_config_directory: Path,
+) -> None:
+    # A limit between boundaries would make the 0% cover only the brackets
+    # below it, so the year file is refused instead.
+    path = isolated_config_directory / "2026.yaml"
+    text = path.read_text()
+    assert "professional_farmer_zero_rate_upper: 20000" in text
+    path.write_text(
+        text.replace(
+            "professional_farmer_zero_rate_upper: 20000",
+            "professional_farmer_zero_rate_upper: 21000",
+        )
+    )
+    with pytest.raises(year_config.ConfigurationError, match="upper bound"):
+        year_config.load_year_configuration(2026)
