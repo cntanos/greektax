@@ -101,18 +101,93 @@ def test_salary_and_pension_share_one_reduction_on_combined_taxable_income() -> 
     assert result["summary"]["tax_total"] == pytest.approx(1_988.86, abs=0.01)
 
 
-def test_professional_farmer_reduction_matches_published_examples() -> None:
-    # Published 2026 examples: no children, 15,000 -> 1,183; two children,
-    # 20,000 -> 1,540 (scale tax less the reduction, phased out above 12,000).
-    for children, revenue, expected in ((0, 15_000, 1_183.0), (2, 20_000, 1_540.0)):
-        result = calculate_tax(
-            {
-                "year": 2026,
-                "dependents": {"children": children},
-                "agricultural": {"gross_revenue": revenue, "professional_farmer": True},
-            }
+def _farm_tax(year: int, revenue: float, **extra) -> float:
+    payload = {
+        "year": year,
+        "agricultural": {"gross_revenue": revenue, "professional_farmer": True},
+    }
+    payload.update(extra)
+    return calculate_tax(payload)["summary"]["tax_total"]
+
+
+def test_professional_farmer_zero_rate_matches_published_examples() -> None:
+    # Law 5355/2026, Article 4: 0% on the first two brackets from tax year 2026.
+    # Published examples: no children, 30,000 -> 2,183 (5,083 before the law);
+    # two children, 20,000 -> 0; aged 28 with one child, 19,000 -> 0; and the
+    # tax-free amount without children rises to 22,204.
+    assert _farm_tax(2026, 30_000) == pytest.approx(2_183.0, abs=0.01)
+    assert _farm_tax(2026, 20_000, dependents={"children": 2}) == 0.0
+    assert (
+        _farm_tax(
+            2026,
+            19_000,
+            dependents={"children": 1},
+            demographics={"birth_year": 1998},
         )
-        assert result["summary"]["tax_total"] == pytest.approx(expected, abs=0.01)
+        == 0.0
+    )
+    assert _farm_tax(2026, 22_203) == 0.0
+    assert 0 < _farm_tax(2026, 22_205) < 1
+
+
+def test_professional_farmer_zero_rate_starts_in_2026() -> None:
+    # 2025: 900 + 2,200 + 2,800 scale tax, less the reduction of 777 - 360.
+    assert _farm_tax(2025, 30_000) == pytest.approx(5_483.0, abs=0.01)
+
+
+def test_zero_rate_needs_professional_farmer_status() -> None:
+    result = calculate_tax(
+        {"year": 2026, "agricultural": {"gross_revenue": 30_000}}
+    )
+    assert result["summary"]["tax_total"] == pytest.approx(5_500.0, abs=0.01)
+
+
+@pytest.mark.parametrize("year", [2024, 2025, 2026])
+def test_agricultural_profit_is_taxed_separately_from_salary(year: int) -> None:
+    # Article 29(3) ΚΦΕ: 10,000 of farm profit pays 9% whatever the salary is.
+    result = calculate_tax(
+        {
+            "year": year,
+            "employment": {
+                "gross_income": 20_000,
+                "include_social_contributions": False,
+            },
+            "agricultural": {"gross_revenue": 10_000},
+        }
+    )
+    details = {detail["category"]: detail for detail in result["details"]}
+    alone = calculate_tax(
+        {
+            "year": year,
+            "employment": {
+                "gross_income": 20_000,
+                "include_social_contributions": False,
+            },
+        }
+    )
+    assert details["agricultural"]["total_tax"] == pytest.approx(900.0)
+    assert details["employment"]["total_tax"] == pytest.approx(
+        alone["summary"]["tax_total"]
+    )
+
+
+def test_farm_zero_rate_does_not_reach_salary_taxed_beside_it() -> None:
+    # Salary 20,000 and professional farm profit 10,000 in 2026: the farm profit
+    # is free of tax; the salary pays 2,900 less the reduction, which is sized
+    # on both incomes together (777 - 360).
+    result = calculate_tax(
+        {
+            "year": 2026,
+            "employment": {
+                "gross_income": 20_000,
+                "include_social_contributions": False,
+            },
+            "agricultural": {"gross_revenue": 10_000, "professional_farmer": True},
+        }
+    )
+    details = {detail["category"]: detail for detail in result["details"]}
+    assert details["agricultural"]["total_tax"] == 0.0
+    assert details["employment"]["total_tax"] == pytest.approx(2_483.0, abs=0.01)
 
 
 def test_reduction_does_not_offset_freelance_tax() -> None:

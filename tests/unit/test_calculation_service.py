@@ -1743,12 +1743,16 @@ def test_2026_youth_relief_applies_to_freelance_income() -> None:
 
 
 def test_2026_youth_relief_applies_to_agricultural_income() -> None:
-    """Agricultural income also benefits from the youth relief brackets in 2026."""
+    """Agricultural income also benefits from the youth relief brackets in 2026.
+
+    Without professional-farmer status: professional farmers pay 0% up to
+    20,000 instead (Law 5355/2026).
+    """
 
     base_payload = {
         "year": 2026,
         "dependents": {"children": 0},
-        "agricultural": {"gross_revenue": 20_000, "professional_farmer": True},
+        "agricultural": {"gross_revenue": 20_000, "professional_farmer": False},
         "demographics": {"birth_year": 1999},
     }
 
@@ -1761,7 +1765,7 @@ def test_2026_youth_relief_applies_to_agricultural_income() -> None:
     )
 
     assert agricultural_detail["taxable_income"] == pytest.approx(20_000)
-    assert agricultural_detail["tax_before_credits"] == pytest.approx(1_800, rel=1e-4)
+    assert agricultural_detail["tax"] == pytest.approx(1_800, rel=1e-4)
 
     baseline_request = build_request(
         {**base_payload, "demographics": {"birth_year": 1985}}
@@ -1775,10 +1779,10 @@ def test_2026_youth_relief_applies_to_agricultural_income() -> None:
 
     expected_baseline_tax = 10_000 * 0.09 + 10_000 * 0.20
 
-    assert baseline_detail["tax_before_credits"] == pytest.approx(
+    assert baseline_detail["tax"] == pytest.approx(
         expected_baseline_tax, rel=1e-4
     )
-    assert baseline_detail["tax_before_credits"] > agricultural_detail["tax_before_credits"]
+    assert baseline_detail["tax"] > agricultural_detail["tax"]
 
 
 def test_2026_under_25_dependant_rates_match_announced_scale() -> None:
@@ -2438,15 +2442,17 @@ def test_calculate_tax_with_agricultural_and_other_income() -> None:
         detail for detail in result["details"] if detail["category"] == "other"
     )
 
+    # Article 29(3) ΚΦΕ: agricultural profit goes through the scale on its own
+    # (10,000 at 9% + 3,000 at 22%), so the other income starts at 9% too.
     assert agricultural_detail["taxable_income"] == pytest.approx(13_000.0)
-    assert agricultural_detail["total_tax"] == pytest.approx(1_921.11, rel=1e-4)
+    assert agricultural_detail["total_tax"] == pytest.approx(1_560.0)
     assert other_detail["taxable_income"] == pytest.approx(5_000.0)
-    assert other_detail["total_tax"] == pytest.approx(738.89, rel=1e-4)
+    assert other_detail["total_tax"] == pytest.approx(450.0)
 
     summary = result["summary"]
     assert summary["income_total"] == pytest.approx(20_000.0)
     assert summary["taxable_income"] == pytest.approx(18_000.0)
-    assert summary["tax_total"] == pytest.approx(2_660.0)
+    assert summary["tax_total"] == pytest.approx(2_010.0)
 
 
 def test_agricultural_income_without_professional_status_has_no_credit() -> None:

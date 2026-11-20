@@ -215,8 +215,20 @@ def _apply_progressive_tax(
         youth_category = payload.youth_rate_category
         youth_relief_categories = set(config.rules.youth_relief_categories)
 
-        def _resolve_rate(index: int, bracket) -> float:
-            component = components[index]
+        farmer_zero_upper = config.rules.professional_farmer_zero_rate_upper
+        zero_rate_farmer = (
+            farmer_zero_upper is not None
+            and payload.qualifies_for_agricultural_tax_credit
+        )
+
+        def _rate(component: GeneralIncomeComponent, bracket) -> float:
+            if (
+                zero_rate_farmer
+                and component.category == "agricultural"
+                and bracket.upper_bound is not None
+                and bracket.upper_bound <= farmer_zero_upper
+            ):
+                return 0.0
             if isinstance(bracket, MultiRateBracket):
                 if (
                     component.category in youth_relief_categories
@@ -229,11 +241,32 @@ def _apply_progressive_tax(
                 return bracket.household.rate_for_dependants(dependants)
             return bracket.rate
 
-        taxes_before_credit = allocate_progressive_tax(
-            [component.taxable_income for component in components],
-            config.employment.brackets,
-            _resolve_rate,
+        # Article 29(3) ΚΦΕ: separately taxed categories go through the scale
+        # on their own; everything else is added together first.
+        separate = set(config.rules.separately_taxed_categories)
+        groups: list[list[int]] = [
+            [i for i, item in enumerate(components) if item.category not in separate]
+        ]
+        groups.extend(
+            [i] for i, item in enumerate(components) if item.category in separate
         )
+
+        taxes_before_credit = [0.0 for _ in components]
+        for group in groups:
+            if not group:
+                continue
+            def _resolve_rate(
+                position: int, bracket, members: list[int] = group
+            ) -> float:
+                return _rate(components[members[position]], bracket)
+
+            group_taxes = allocate_progressive_tax(
+                [components[i].taxable_income for i in group],
+                config.employment.brackets,
+                _resolve_rate,
+            )
+            for i, tax in zip(group, group_taxes):
+                taxes_before_credit[i] = tax
 
     # Article 16 ΚΦΕ: one credit, reduced above a taxable-income threshold, that
     # can only offset the tax on the credit categories (salaries, pensions and

@@ -13,6 +13,10 @@ rules:
   youth_relief_categories: []
   residency_transfer_taxable_share: 0.5
   max_birth_year_with_income: 2025
+  # Article 29(3) ΚΦΕ: profit from an individual agricultural business is taxed
+  # on the Article 15 scale on its own, not added to salaries, pensions or
+  # business profit.
+  separately_taxed_categories: [agricultural]
   salary_credit:
     # Article 16 ΚΦΕ: the credit reduces the tax on salaries and pensions, and on
     # agricultural income where the farmer qualifies; it falls by 20 per 1,000 of

@@ -138,6 +138,10 @@ def _engine_year(config: YearConfiguration) -> dict[str, Any]:
             "youth_relief_categories": list(rules.youth_relief_categories),
             "residency_transfer_taxable_share": rules.residency_transfer_taxable_share,
             "max_birth_year_with_income": rules.max_birth_year_with_income,
+            "separately_taxed_categories": list(rules.separately_taxed_categories),
+            "professional_farmer_zero_rate_upper": (
+                rules.professional_farmer_zero_rate_upper
+            ),
             "salary_credit": {
                 "income_categories": list(rules.salary_credit.income_categories),
                 "reduction_threshold": rules.salary_credit.reduction_threshold,

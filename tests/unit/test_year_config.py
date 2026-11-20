@@ -93,6 +93,19 @@ def test_rules_parse_with_defaults() -> None:
     assert rules.age_reference_year == 2025
     assert rules.youth_bands == (("under_25", 25), ("age26_30", 30))
     assert rules.max_birth_year_with_income is None
+    assert rules.separately_taxed_categories == ()
+    assert rules.professional_farmer_zero_rate_upper is None
+
+
+def test_rules_parse_farm_rules() -> None:
+    raw = _valid_rules()
+    raw["separately_taxed_categories"] = ["agricultural"]
+    raw["professional_farmer_zero_rate_upper"] = 20000
+
+    rules = year_config._parse_rules(2026, raw)
+
+    assert rules.separately_taxed_categories == ("agricultural",)
+    assert rules.professional_farmer_zero_rate_upper == 20000.0
 
 
 @pytest.mark.parametrize(
@@ -109,6 +122,10 @@ def test_rules_parse_with_defaults() -> None:
         (("age_reference_year",), 2026.0),
         (("max_birth_year_with_income",), "2025"),
         (("salary_credit", "income_categories"), ["employment", "rental"]),
+        (("separately_taxed_categories",), ["rental"]),
+        (("separately_taxed_categories",), "agricultural"),
+        (("professional_farmer_zero_rate_upper",), -1),
+        (("professional_farmer_zero_rate_upper",), "20000"),
     ],
 )
 def test_rules_reject_invalid_values(path: tuple[str, ...], value: object) -> None:

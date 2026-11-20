@@ -250,8 +250,18 @@ function applyProgressiveTax(components, input, config) {
     const dependants = input.children > 0 ? input.children : 0;
     const youthCategory = input.youth_rate_category;
     const youthCategories = new Set(config.rules.youth_relief_categories);
-    const resolveRate = (index, bracket) => {
-      const item = components[index];
+    const farmerZeroUpper = config.rules.professional_farmer_zero_rate_upper;
+    const zeroRateFarmer =
+      farmerZeroUpper !== null && input.qualifies_for_agricultural_tax_credit;
+    const rateFor = (item, bracket) => {
+      if (
+        zeroRateFarmer &&
+        item.category === "agricultural" &&
+        bracket.upper !== null &&
+        bracket.upper <= farmerZeroUpper
+      ) {
+        return 0;
+      }
       if (isMultiRate(bracket)) {
         if (youthCategories.has(item.category) && youthCategory && youthCategory in bracket.youth) {
           return youthRate(bracket, youthCategory, dependants);
@@ -260,11 +270,32 @@ function applyProgressiveTax(components, input, config) {
       }
       return bracket.rate;
     };
-    taxesBeforeCredit = allocateProgressiveTax(
-      components.map((item) => item.taxable_income),
-      config.employment.brackets,
-      resolveRate,
-    );
+
+    // Article 29(3) ΚΦΕ: separately taxed categories go through the scale on
+    // their own; everything else is added together first.
+    const separate = new Set(config.rules.separately_taxed_categories);
+    const indices = components.map((_, index) => index);
+    const groups = [indices.filter((index) => !separate.has(components[index].category))];
+    for (const index of indices) {
+      if (separate.has(components[index].category)) {
+        groups.push([index]);
+      }
+    }
+
+    taxesBeforeCredit = components.map(() => 0);
+    for (const group of groups) {
+      if (!group.length) {
+        continue;
+      }
+      const groupTaxes = allocateProgressiveTax(
+        group.map((index) => components[index].taxable_income),
+        config.employment.brackets,
+        (position, bracket) => rateFor(components[group[position]], bracket),
+      );
+      group.forEach((index, position) => {
+        taxesBeforeCredit[index] = groupTaxes[position];
+      });
+    }
   }
 
   // Article 16 ΚΦΕ: one credit, reduced above a taxable-income threshold, that

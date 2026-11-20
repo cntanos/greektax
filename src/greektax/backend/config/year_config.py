@@ -431,6 +431,12 @@ class RulesConfig:
     residency_transfer_taxable_share: float
     salary_credit: SalaryCreditRules
     max_birth_year_with_income: int | None = None
+    # Article 29(3) ΚΦΕ: categories taxed on the scale on their own, not added
+    # to the other scale income.
+    separately_taxed_categories: tuple[str, ...] = ()
+    # Article 15(1) ΚΦΕ as amended by Law 5355/2026: professional farmers pay
+    # 0% on agricultural profit in the brackets up to this amount.
+    professional_farmer_zero_rate_upper: float | None = None
 
 
 @dataclass(frozen=True)
@@ -1480,6 +1486,15 @@ def _parse_rules(year: int, raw: Any) -> RulesConfig:
     ):
         raise ConfigurationError("rules.max_birth_year_with_income must be an integer")
 
+    farmer_zero_raw = raw.get("professional_farmer_zero_rate_upper")
+    farmer_zero_upper = (
+        None
+        if farmer_zero_raw is None
+        else _parse_non_negative(
+            farmer_zero_raw, context="rules.professional_farmer_zero_rate_upper"
+        )
+    )
+
     return RulesConfig(
         age_reference_year=reference_raw,
         youth_bands=tuple(bands),
@@ -1490,6 +1505,11 @@ def _parse_rules(year: int, raw: Any) -> RulesConfig:
         residency_transfer_taxable_share=share,
         salary_credit=_parse_salary_credit_rules(raw.get("salary_credit")),
         max_birth_year_with_income=max_birth_raw,
+        separately_taxed_categories=_parse_category_list(
+            raw.get("separately_taxed_categories", []),
+            context="rules.separately_taxed_categories",
+        ),
+        professional_farmer_zero_rate_upper=farmer_zero_upper,
     )
 
 

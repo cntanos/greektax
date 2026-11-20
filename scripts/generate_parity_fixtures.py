@@ -160,6 +160,27 @@ def _grid_cases(year: int) -> list[dict[str, Any]]:
                 }
             )
 
+    # Agricultural profit is taxed on the scale on its own (Article 29(3) ΚΦΕ),
+    # with or without professional-farmer status, next to pooled income.
+    for professional in (False, True):
+        for farm in (8_000.0, 20_000.0, 20_000.01, 35_000.0):
+            cases.append(
+                {
+                    "name": f"grid/separate/agricultural/{professional}/{farm}",
+                    "payload": {
+                        "year": year,
+                        "dependents": {"children": 1},
+                        "employment": {"gross_income": 18_000.0},
+                        "freelance": {"profit": 9_000.0},
+                        "agricultural": {
+                            "gross_revenue": farm,
+                            "professional_farmer": professional,
+                        },
+                        **_demographics(1998),
+                    },
+                }
+            )
+
     for donations in (50.0, 100.0, 100.01, 5_000.0):
         cases.append(
             {
