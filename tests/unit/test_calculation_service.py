@@ -163,6 +163,9 @@ def _employment_expectations(  # noqa: PLR0913
     }
 
 
+# 2026 figures. Rows for 7-10 children follow Art. 15(1)(δε) ΚΦΕ as enacted
+# (two points less per child above four in the 20,000-30,000 band); the table
+# was first written from pre-enactment figures that stopped at 14%.
 TAXHEAVEN_EMPLOYMENT_CREDIT_EXPECTATIONS_2026 = {
     0: {
         12_000: {"tax_before": 1_300.0, "credit": 777.0},
@@ -216,30 +219,30 @@ TAXHEAVEN_EMPLOYMENT_CREDIT_EXPECTATIONS_2026 = {
     7: {
         12_000: {"tax_before": 0.0, "credit": 0.0},
         20_000: {"tax_before": 0.0, "credit": 0.0},
-        30_000: {"tax_before": 1_400.0, "credit": 1_400.0},
-        50_000: {"tax_before": 8_700.0, "credit": 2_220.0},
-        70_000: {"tax_before": 17_000.0, "credit": 2_220.0},
+        30_000: {"tax_before": 1_200.0, "credit": 1_200.0},
+        50_000: {"tax_before": 8_500.0, "credit": 2_220.0},
+        70_000: {"tax_before": 16_800.0, "credit": 2_220.0},
     },
     8: {
         12_000: {"tax_before": 0.0, "credit": 0.0},
         20_000: {"tax_before": 0.0, "credit": 0.0},
-        30_000: {"tax_before": 1_400.0, "credit": 1_400.0},
-        50_000: {"tax_before": 8_700.0, "credit": 2_440.0},
-        70_000: {"tax_before": 17_000.0, "credit": 2_440.0},
+        30_000: {"tax_before": 1_000.0, "credit": 1_000.0},
+        50_000: {"tax_before": 8_300.0, "credit": 2_440.0},
+        70_000: {"tax_before": 16_600.0, "credit": 2_440.0},
     },
     9: {
         12_000: {"tax_before": 0.0, "credit": 0.0},
         20_000: {"tax_before": 0.0, "credit": 0.0},
-        30_000: {"tax_before": 1_400.0, "credit": 1_400.0},
-        50_000: {"tax_before": 8_700.0, "credit": 2_660.0},
-        70_000: {"tax_before": 17_000.0, "credit": 2_660.0},
+        30_000: {"tax_before": 800.0, "credit": 800.0},
+        50_000: {"tax_before": 8_100.0, "credit": 2_660.0},
+        70_000: {"tax_before": 16_400.0, "credit": 2_660.0},
     },
     10: {
         12_000: {"tax_before": 0.0, "credit": 0.0},
         20_000: {"tax_before": 0.0, "credit": 0.0},
-        30_000: {"tax_before": 1_400.0, "credit": 1_400.0},
-        50_000: {"tax_before": 8_700.0, "credit": 2_880.0},
-        70_000: {"tax_before": 17_000.0, "credit": 2_880.0},
+        30_000: {"tax_before": 600.0, "credit": 600.0},
+        50_000: {"tax_before": 7_900.0, "credit": 2_880.0},
+        70_000: {"tax_before": 16_200.0, "credit": 2_880.0},
     },
 }
 

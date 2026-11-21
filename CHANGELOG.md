@@ -14,6 +14,7 @@
 
 Sources for each rule are in [`docs/reference/tax_rules_2025_2026.md`](docs/reference/tax_rules_2025_2026.md).
 
+- In 2026 the 20,000-30,000 rate keeps falling by 2 points for each child above four (Art. 15(1)(δε) ΚΦΕ): 12% with 7 children down to 0% with 13. It used to stay at 14% from six children on.
 - Professional farmers pay 0% on the first 20,000 of agricultural profit from tax year 2026 (Article 4 of Law 5355/2026). Example: no children, 30,000 of profit, tax 2,183 instead of 5,083.
 - Agricultural profit is taxed on the scale on its own in every year (Art. 29(3) ΚΦΕ) instead of being added to salaries, pensions and business profit. People with farm income next to other income pay less than before, e.g. salary 20,000 plus farm profit 10,000: 3,183 instead of 4,883.
 - The tax residency transfer exemption (Art. 5Γ ΚΦΕ) now also halves taxable freelance profit, not only salary. Example: freelance profit 40,000 in 2026 with the box ticked, tax 2,900 instead of 8,900.
